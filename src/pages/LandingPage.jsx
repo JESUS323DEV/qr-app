@@ -1,4 +1,7 @@
+import { useEffect } from 'react'
+import { Link, useLocation } from 'react-router-dom'
 import Movil from '../components/Movil'
+import { tematicasConDemos, negociosDe } from '../lib/tematicas'
 import Placa from '../components/Placa'
 import { enlaceWhatsapp } from '../lib/whatsapp'
 import { marca, hero, porque, pasos, botones, ejemplos, precio, preguntas, cierre, pie } from '../landing/contenido'
@@ -45,6 +48,13 @@ function PantallaPendiente({ sector }) {
 }
 
 export default function LandingPage() {
+  const { hash } = useLocation()
+
+  // Al volver desde una temática con /#ejemplos, baja hasta esa sección
+  useEffect(() => {
+    if (hash) document.getElementById(hash.slice(1))?.scrollIntoView()
+  }, [hash])
+
   return (
     <div className="min-h-svh bg-papel font-texto text-tinta">
       <header className="mx-auto flex w-full max-w-[68rem] items-center justify-between px-4 py-[1.1rem] sm:px-6">
@@ -129,15 +139,22 @@ export default function LandingPage() {
             <Titulo>{ejemplos.titulo}</Titulo>
           </Seccion>
           <ul className="mx-auto -mt-[1.5rem] flex w-full max-w-[68rem] snap-x snap-mandatory gap-[1.25rem] overflow-x-auto px-4 pb-[4.5rem] [scrollbar-width:none] sm:px-6 md:grid md:grid-cols-3 md:gap-[2rem] md:overflow-visible md:pb-[5.5rem]">
-            {ejemplos.lista.map(e => (
-              <li key={e.sector} className="w-[72%] max-w-[17rem] shrink-0 snap-center md:w-full md:max-w-[17rem]">
-                <Movil src={e.slug ? `/${e.slug}` : null} titulo={e.sector} className="border-papel/15">
-                  <PantallaPendiente sector={e.sector} />
-                </Movil>
-                <p className="mt-[1rem] font-semibold">{e.sector}</p>
-                <p className="mt-[0.2rem] text-papel/65">{e.texto}</p>
-              </li>
-            ))}
+            {tematicasConDemos().map(t => {
+              const demo = negociosDe(t.key)[0]
+              return (
+                <li key={t.key} className="mx-auto w-[72%] max-w-[17rem] shrink-0 snap-center md:w-full md:max-w-[17rem]">
+                  <Movil src={`/${demo.slug}`} titulo={demo.nombre} className="border-papel/15" />
+                  <p className="mt-[1rem] font-semibold">{t.nombre}</p>
+                  <p className="mt-[0.2rem] text-papel/65">{t.texto}</p>
+                  <Link
+                    to={`/tematicas/${t.key}`}
+                    className="mt-[0.6rem] inline-block font-semibold underline decoration-papel/30 underline-offset-[0.3em] hover:decoration-papel"
+                  >
+                    {ejemplos.verMas}
+                  </Link>
+                </li>
+              )
+            })}
           </ul>
         </div>
 

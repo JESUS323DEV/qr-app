@@ -6,6 +6,7 @@ Proyecto de Jesús (desarrollador autodidacta, marca JesúsDev, Barcelona). Es i
 
 - Solo tocar código si el mensaje trae una orden clara ("hazlo", "ponlo", "quita", "cambia", "ok" tras una propuesta). Si es una queja, una duda, una explicación o pregunta "¿me pillas?", responder hablando y no editar nada. "No hagas código" significa solo hablar.
 - Hacer solo lo que se pide. No cambiar diseño, tamaños ni elementos que no se han pedido. Si un cambio propio no era pedido, deshacerlo.
+- Cuando se trabaja en una demo concreta, los cambios son solo para esa demo, salvo que Jesús diga otra cosa. Todas las demos comparten estructura (hero con pestañas, reseña, redes), pero cada una se muestra distinta.
 - No pedir permiso a cada paso ni dar listas de opciones (A, B, C) cuando ya está decidido qué hacer: hacerlo y avisar en una frase. Si hay que recomendar, dar una recomendación.
 - No apuntar nada en la memoria ni en archivos de notas que Jesús no haya dictado.
 - Todo 100 % responsive y pensado primero para móvil. Usar medidas relativas, no porcentajes de pantalla mezclados con píxeles fijos. Pensar el diseño para móvil bajo (360×640), normal (360×780), alto (440×956), tableta y escritorio.

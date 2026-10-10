@@ -76,9 +76,9 @@ export default {
   },
 
   redes: [
-    { platform: 'instagram', href: 'https://instagram.com/almendrarestaurante' },
-    { platform: 'tiktok',    href: 'https://tiktok.com/@almendrarestaurante' },
-    { platform: 'facebook',  href: 'https://facebook.com/almendrarestaurante' },
+    { platform: 'instagram', href: 'https://instagram.com' },
+    { platform: 'tiktok',    href: 'https://tiktok.com' },
+    { platform: 'facebook',  href: 'https://facebook.com' },
   ],
 
   // Botones opcionales que contrata el negocio (por decidir). Máximo dos.

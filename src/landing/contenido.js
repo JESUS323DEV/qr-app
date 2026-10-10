@@ -60,14 +60,10 @@ export const botones = {
   ],
 }
 
-// Cuando existan las miniwebs, cada ejemplo llevará el slug de la suya.
+// Las demos del catálogo salen solas de los negocios y su temática (lib/tematicas.js).
 export const ejemplos = {
   titulo: 'Así se ve en el móvil',
-  lista: [
-    { sector: 'Peluquería', texto: 'Lo primero, pedir cita.', slug: null },
-    { sector: 'Cafetería', texto: 'Lo primero, la carta.', slug: null },
-    { sector: 'Tienda de barrio', texto: 'Lo primero, escribir por WhatsApp.', slug: null },
-  ],
+  verMas: 'Ver más',
 }
 
 export const precio = {
