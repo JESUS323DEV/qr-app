@@ -4,6 +4,7 @@ const px = (id, w, h) => `https://images.pexels.com/photos/${id}/pexels-photo-${
 
 export default {
   slug: 'ladysalon',
+  sector: 'Peluquería y estética',
   demo: true, // demo del catálogo: lleva las flechas para pasar a otras demos
   nombre: 'LadySalon',
   lema: 'Peluquería y estética',
@@ -29,7 +30,7 @@ export default {
   },
 
   hero: {
-    diseno: 'editorial',
+    diseno: 'diagonal',
     titulo: 'Lady',
     destacado: 'Salon',
     texto: 'Color, corte y estética con cita previa.',

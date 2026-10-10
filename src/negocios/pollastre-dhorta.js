@@ -5,6 +5,7 @@ const px = (id, w, h) => `https://images.pexels.com/photos/${id}/pexels-photo-${
 // Demo en catalán para un negocio real (datos de contacto sacados de platform). Horario por confirmar.
 export default {
   slug: 'el-pollastre-d-horta',
+  sector: 'Pollería',
   demo: true, // demo del catálogo: lleva las flechas para pasar a otras demos
   nombre: "El Pollastre d'Horta",
   lema: "Pollastres a l'ast",
@@ -12,7 +13,7 @@ export default {
     colors: {
       bg:      '#FBF6E7',
       surface: '#F1E6C8',
-      primary: '#1E4B32',
+      primary: '#2E6B47',
       accent:  '#B8862E',
       text:    '#26231A',
       muted:   '#6E6754',
@@ -32,12 +33,11 @@ export default {
   hero: {
     diseno: 'banner',
     siglas: 'PH',
-    titulo: 'El pollastre',
-    destacado: 'que fa olor a casa.',
     pestanas: [
       {
         tipo: 'plats',
         texto: 'Plats',
+        titular: ['El pollastre', 'que fa olor a casa.'],
         fotos: [
           { src: px(25391590, 1000, 800), alt: "Pollastres a l'ast" },
           { src: px(27643001, 1000, 800), alt: 'Cruixent per fora' },
@@ -47,12 +47,13 @@ export default {
       {
         tipo: 'onsom',
         texto: 'On som',
-        direccion: 'Av. Mare de Déu de Montserrat, 148 · Horta-Guinardó',
+        titular: ['Av. Mare de Déu', 'de Montserrat, 148'],
         mapa: 'Av. Mare de Déu de Montserrat 148, Barcelona',
       },
       {
         tipo: 'horari',
         texto: 'Horari',
+        titular: ['Obert de dimarts', 'a diumenge.'],
         titulo: 'Horari',
         foto: px(13458086, 1000, 800),
         lineas: [
@@ -64,8 +65,8 @@ export default {
       {
         tipo: 'comanda',
         texto: 'Comanda',
+        titular: ["Truca i te'l", 'tenim a punt.'],
         foto: px(27643001, 1000, 800),
-        texto_llamada: 'Truca i te la tenim a punt',
         telefono: '93 435 58 16',
         whatsapp: enlaceWhatsapp('34695078648', "Hola, voldria fer una comanda a El Pollastre d'Horta."),
         texto_whatsapp: 'o per WhatsApp',
@@ -77,6 +78,12 @@ export default {
   resena: {
     texto: "Valora'ns a Google",
     url: 'https://search.google.com/local/writereview?placeid=EJEMPLO',
+  },
+
+  // Cuerpo de la miniweb (reseña y redes) con un verde muy suave
+  cuerpo: {
+    fondo: '#EEF3EC',
+    card: '#E1EADF',
   },
 
   redesTexto: 'Segueix-nos a les xarxes',

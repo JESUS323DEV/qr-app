@@ -6,10 +6,11 @@ import Img from '../components/Img'
    debajo un bloque del color principal con el titular en mayúsculas y las pestañas.
    Pestañas (solo cambian al tocarlas):
    - plats: las fotos pasan solas con fundido, con un indicador de pasos abajo a la derecha.
-   - onsom: el mapa (se carga la primera vez que se toca) con la dirección encima.
+   - onsom: el mapa (se carga la primera vez que se toca); la dirección va en el titular.
    - horari: foto fija con el horario encima.
    - comanda: foto fija con el teléfono para llamar y, si hay, WhatsApp.
-   hero: siglas, titulo, destacado, pestanas[{ tipo, texto, ... }] */
+   El titular del bloque cambia con cada pestaña (titular: [primera línea, segunda línea]).
+   hero: siglas, pestanas[{ tipo, texto, titular, ... }] */
 
 const TURNO_MS = 4500
 
@@ -53,22 +54,15 @@ function EscenaPlats({ pestana, activa }) {
 }
 
 function EscenaOnSom({ pestana, cargar }) {
-  return (
-    <>
-      {cargar && (
-        <iframe
-          title="Mapa"
-          src={`https://www.google.com/maps?q=${encodeURIComponent(pestana.mapa)}&output=embed`}
-          className="absolute inset-0 h-full w-full border-0"
-          loading="lazy"
-          referrerPolicy="no-referrer-when-downgrade"
-        />
-      )}
-      <div className="absolute bottom-[0.8rem] left-[1.25rem] max-w-[calc(100%-2.5rem)] rounded-[0.5rem] bg-white/80 px-[0.7rem] py-[0.45rem] text-demo-text backdrop-blur-sm">
-        <p className="text-[0.75rem] font-semibold">{pestana.direccion}</p>
-      </div>
-    </>
-  )
+  return cargar ? (
+    <iframe
+      title="Mapa"
+      src={`https://www.google.com/maps?q=${encodeURIComponent(pestana.mapa)}&output=embed`}
+      className="absolute inset-0 h-full w-full border-0"
+      loading="lazy"
+      referrerPolicy="no-referrer-when-downgrade"
+    />
+  ) : null
 }
 
 function EscenaHorari({ pestana }) {
@@ -97,8 +91,7 @@ function EscenaComanda({ pestana }) {
       <Img src={pestana.foto} alt="" className="absolute inset-0 h-full w-full object-cover" />
       <Velo />
       <Abajo>
-        <p className="text-[0.85rem] text-white/85">{pestana.texto_llamada}</p>
-        <div className="mt-[0.5rem] flex flex-wrap items-center gap-x-[1rem] gap-y-[0.4rem]">
+        <div className="flex flex-wrap items-center gap-x-[1rem] gap-y-[0.4rem]">
           <a
             href={`tel:${pestana.telefono.replace(/\s/g, '')}`}
             className="inline-flex items-center gap-[0.45rem] rounded-full bg-white px-[1rem] py-[0.5rem] text-[1rem] font-semibold text-demo-primary"
@@ -168,10 +161,19 @@ export default function HeroBanner({ hero, nombre, lema }) {
 
       {/* Bloque de color con el titular y las pestañas */}
       <div className="bg-demo-primary px-[1.25rem] pb-[1.1rem] pt-[1.1rem] text-demo-bg">
-        <h1 className="font-demo-heading text-[clamp(2rem,1.6rem+2vw,2.6rem)] uppercase leading-[1]">
-          {hero.titulo}
-          <br />
-          {hero.destacado}
+        {/* El titular cambia con la pestaña (fundido); todos ocupan el mismo hueco */}
+        <h1 className="grid font-demo-heading text-[clamp(2rem,1.6rem+2vw,2.6rem)] uppercase leading-[1]" aria-live="polite">
+          {pestanas.map((p, i) => (
+            <span
+              key={p.tipo}
+              aria-hidden={i !== activa}
+              className={`col-start-1 row-start-1 transition-opacity duration-500 ${i === activa ? 'opacity-100 delay-200' : 'opacity-0'}`}
+            >
+              {p.titular[0]}
+              <br />
+              {p.titular[1]}
+            </span>
+          ))}
         </h1>
         <div className="mt-[0.9rem] grid grid-cols-4 gap-[0.4rem]">
           {pestanas.map((p, i) => (

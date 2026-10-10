@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { secuenciaDemos, tematicaDe, getTematica } from '../lib/tematicas'
+import { secuenciaDemos, estiloDe, getEstilo } from '../lib/estilos'
 import useAutoHide from '../lib/useAutoHide'
 
 /* Flechas para pasar de una demo a otra, solo en móvil (por debajo de lg). Adaptado de platform.
    - Atrás bloqueado en la primera demo y adelante en la última.
-   - Al cambiar de temática sale una pantalla corta de transición.
+   - Al cambiar de estilo sale una pantalla corta de transición.
    - Se desvanecen solas (useAutoHide) para no estorbar a la demo.
    No se muestra dentro de un iframe (los móviles del catálogo). */
 export default function DemoPager({ negocio }) {
@@ -30,12 +30,12 @@ export default function DemoPager({ negocio }) {
 
   const irA = destino => {
     if (!destino || transicion) return
-    if (tematicaDe(destino) === tematicaDe(negocio)) {
+    if (estiloDe(destino) === estiloDe(negocio)) {
       ir(destino.slug)
       return
     }
-    // Cambio de temática: pantalla de transición, luego navega y la quita
-    setTransicion(getTematica(tematicaDe(destino)))
+    // Cambio de estilo: pantalla de transición, luego navega y la quita
+    setTransicion(getEstilo(estiloDe(destino)))
     setTimeout(() => ir(destino.slug), 900)
     setTimeout(() => setTransicion(null), 1600)
   }

@@ -60,7 +60,7 @@ export const botones = {
   ],
 }
 
-// Las demos del catálogo salen solas de los negocios y su temática (lib/tematicas.js).
+// Las demos del catálogo salen solas de los negocios y su estilo (lib/estilos.js).
 export const ejemplos = {
   titulo: 'Así se ve en el móvil',
   verMas: 'Ver más',

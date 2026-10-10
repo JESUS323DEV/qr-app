@@ -30,7 +30,9 @@ Proyecto de Jesús (desarrollador autodidacta, marca JesúsDev, Barcelona). Es i
 ## El producto
 
 - Lo que se vende: **placa con QR físico para la tienda + linktree con miniweb y las secciones sencillas que quiera el negocio**.
-- El linktree empieza con 3 botones (web mini, contacto y redes) y admite como máximo 5. Cada botón abre su propia pantalla; contacto es el formulario que envía por WhatsApp.
+- Estructura de la miniweb, todo en una pantalla de móvil: hero con pestañas (fotos, ubicación, horario y reservar/cita/comanda) y debajo la card de reseña de Google y la de redes.
+- Diseños clasificados por estilo, cada uno con su nombre (`src/heros/index.js`): Editorial, Banner, Diagonal y Fullbleed. Cualquier negocio puede usar cualquier estilo; el sector (`sector`) es solo una etiqueta del negocio.
+- Vocabulario: "el cuerpo de la miniweb" es la parte de debajo del hero (la card de reseña de Google y la de redes).
 - Los botones los configura Jesús en el archivo del negocio. El negocio no edita nada por ahora.
 - Precio fijo de momento, sin cuota. Los arreglos posteriores (cualquier cambio, cambios de diseño, etc.) se cobran aparte.
 - Dos planes:
@@ -48,4 +50,4 @@ Proyecto de Jesús (desarrollador autodidacta, marca JesúsDev, Barcelona). Es i
 ## Estado
 
 - Hay una landing del producto en `src/pages/LandingPage.jsx` (textos en `src/landing/contenido.js`; nombre, WhatsApp y precios provisionales). A Jesús no le gusta su diseño: hay que rehacerlo.
-- Siguiente paso: el linktree de ejemplo en móvil (3 botones) con sus pantallas: web mini, contacto (formulario a WhatsApp) y redes.
+- Demos hechas: Almendra (Editorial), El Pollastre d'Horta (Banner, en catalán, para un negocio real), LadySalon (Diagonal) y Laca (Fullbleed). De momento no se hacen más demos.

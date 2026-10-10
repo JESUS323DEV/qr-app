@@ -75,7 +75,11 @@ export default function MiniwebPage() {
       <main key={negocio.slug} className="mx-auto flex min-h-svh w-full max-w-[30rem] flex-col bg-demo-bg">
         <Hero hero={negocio.hero} nombre={negocio.nombre} lema={negocio.lema} />
 
-        <div className="px-[1.25rem] pb-[1.25rem] pt-[1.25rem]">
+        {/* Cuerpo de la miniweb: reseña y redes. Cada negocio puede darle su propio fondo (cuerpo.fondo / cuerpo.card) */}
+        <div
+          className="px-[1.25rem] pb-[1.25rem] pt-[1.25rem]"
+          style={negocio.cuerpo?.fondo ? { background: negocio.cuerpo.fondo } : undefined}
+        >
           <a
             href={negocio.resena.url}
             target="_blank"
@@ -88,7 +92,10 @@ export default function MiniwebPage() {
           </a>
 
           {negocio.redes?.length > 0 && (
-            <div className="mt-[0.9rem] flex flex-col items-center gap-[0.75rem] rounded-[1.5rem] border border-demo-text/10 bg-demo-surface px-[1rem] py-[1rem]">
+            <div
+              className="mt-[0.9rem] flex flex-col items-center gap-[0.75rem] rounded-[1.5rem] border border-demo-text/10 bg-demo-surface px-[1rem] py-[1rem]"
+              style={negocio.cuerpo?.card ? { background: negocio.cuerpo.card } : undefined}
+            >
               <p className="text-[1.1rem] font-semibold">{negocio.redesTexto ?? 'Síguenos en redes'}</p>
               <div className="flex justify-center gap-[0.75rem]">
                 {negocio.redes.map(r => (

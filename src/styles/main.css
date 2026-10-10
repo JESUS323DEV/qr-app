@@ -36,7 +36,7 @@
   --font-demo-body: var(--demo-body-font);
 }
 
-/* Pantalla de transición entre temáticas (DemoPager) */
+/* Pantalla de transición entre estilos (DemoPager) */
 @keyframes fundido {
   0%   { opacity: 0; }
   25%  { opacity: 1; }
