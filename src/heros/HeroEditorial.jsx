@@ -116,6 +116,8 @@ export default function HeroEditorial({ hero }) {
     if (pestanas[i].tipo === 'ubicacion') setMapaPedido(true)
   }
 
+  const enMapa = pestanas[activa]?.tipo === 'ubicacion'
+
   return (
     <div>
       <div className="relative h-[calc(28svh+6.5rem)] min-h-[17.5rem] max-h-[28rem]">
@@ -138,12 +140,12 @@ export default function HeroEditorial({ hero }) {
               </div>
             )
           })}
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[10rem] bg-gradient-to-t from-demo-bg/90 via-demo-bg/55 to-transparent" />
+          <div className={`pointer-events-none absolute inset-x-0 bottom-0 h-[10rem] bg-gradient-to-t from-demo-bg/90 via-demo-bg/55 to-transparent transition-opacity duration-700 ${enMapa ? 'opacity-0' : 'opacity-100'}`} />
         </div>
 
-        {/* Nombre y frase encima de la foto, abajo a la izquierda */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 px-[1.25rem] pb-[1rem] text-demo-text">
-          <h1 className="font-demo-heading text-[clamp(2.9rem,2.3rem+2.8vw,3.6rem)] font-semibold leading-[1.02]">
+        {/* Nombre y frase encima de la foto, abajo a la izquierda (en el mapa se desvanecen) */}
+        <div className={`pointer-events-none absolute inset-x-0 bottom-0 px-[1.25rem] pb-[1rem] text-demo-text transition-opacity duration-700 ${enMapa ? 'opacity-0' : 'opacity-100'}`}>
+          <h1 className="font-demo-heading text-[clamp(2.9rem,2.3rem+2.8vw,3.6rem)] font-semibold leading-[1.02] [text-shadow:0_0_1.25rem_color-mix(in_srgb,var(--demo-bg)_70%,transparent)]">
             {hero.titulo}
             {hero.destacado && (
               <>
@@ -152,7 +154,7 @@ export default function HeroEditorial({ hero }) {
               </>
             )}
           </h1>
-          {hero.texto && <p className="mt-[0.4rem] text-[0.95rem] leading-[1.45] text-demo-text/80">{hero.texto}</p>}
+          {hero.texto && <p className="mt-[0.4rem] text-[0.95rem] leading-[1.45] [text-shadow:0_0_0.5rem_color-mix(in_srgb,var(--demo-bg)_70%,transparent)]">{hero.texto}</p>}
         </div>
       </div>
 
