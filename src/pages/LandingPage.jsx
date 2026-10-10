@@ -1,3 +1,4 @@
+import { rutaNegocio } from '../negocios'
 import { useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import Movil from '../components/Movil'
@@ -144,12 +145,12 @@ export default function LandingPage() {
               const t = getTematica(tematicaDe(n))
               return (
                 <li key={n.slug} className="mx-auto w-[72%] max-w-[16rem] shrink-0 snap-center md:w-full">
-                  <Movil src={`/${n.slug}`} titulo={n.nombre} className="border-papel/15" />
+                  <Movil src={rutaNegocio(n)} titulo={n.nombre} className="border-papel/15" />
                   <p className="mt-[1rem] font-semibold">{n.nombre}</p>
                   <p className="mt-[0.2rem] text-[0.92rem] text-papel/65">{n.sector}</p>
                   <div className="mt-[0.6rem] flex gap-[1rem] text-[0.92rem]">
                     <a
-                      href={`/${n.slug}`}
+                      href={rutaNegocio(n)}
                       target="_blank"
                       rel="noreferrer"
                       className="font-semibold underline decoration-papel/30 underline-offset-[0.3em] hover:decoration-papel"

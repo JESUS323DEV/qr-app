@@ -9,6 +9,8 @@ export default function App() {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/tematicas/:key" element={<TematicaPage />} />
+        {/* Demos del catálogo en /demo/slug; clientes en la raíz, la dirección corta del QR */}
+        <Route path="/demo/:slug" element={<MiniwebPage demo />} />
         <Route path="/:slug" element={<MiniwebPage />} />
       </Routes>
     </BrowserRouter>

@@ -31,8 +31,9 @@ Proyecto de Jesús (desarrollador autodidacta, marca JesúsDev, Barcelona). Es i
 
 - Lo que se vende: **placa con QR físico para la tienda + linktree con miniweb y las secciones sencillas que quiera el negocio**.
 - Estructura de la miniweb, todo en una pantalla de móvil: hero con pestañas (fotos, ubicación, horario y reservar/cita/comanda) y debajo la card de reseña de Google y la de redes.
-- De cara afuera (landing, catálogo, flechas entre demos) las demos se clasifican por **temática de negocio** (Comida, Belleza, Tiendas), que lleva cada negocio en su archivo (`tematica`), junto a su `sector` (Pollería, Estudio de uñas...).
-- Los diseños de hero tienen nombre interno (`src/heros/index.js`): Editorial, Banner, Diagonal, Fullbleed, Mosaico y Portada. Es vocabulario solo para trabajar; no se muestra al cliente. Cualquier negocio puede usar cualquier diseño.
+- De cara afuera (landing, catálogo, flechas entre demos) las demos se clasifican por **temática de negocio** (Comida, Belleza, Salud, Tiendas), que lleva cada negocio en su archivo (`tematica`), junto a su `sector` (Pollería, Estudio de uñas...).
+- Los diseños de hero tienen nombre interno (`src/heros/index.js`): Editorial, Banner, Diagonal, Fullbleed, Mosaico, Portada, Retrato y Ficha. Es vocabulario solo para trabajar; no se muestra al cliente. Cualquier negocio puede usar cualquier diseño.
+- Direcciones: un solo dominio. Los clientes van en la raíz (`dominio/slug`, la dirección corta del QR) y las demos en `/demo/slug` (las que llevan `demo: true`). El slug de un cliente no se cambia nunca una vez impreso el QR. `tematicas` y `demo` son palabras reservadas.
 - Vocabulario: "el cuerpo de la miniweb" es la parte de debajo del hero (la card de reseña de Google y la de redes).
 - Los botones los configura Jesús en el archivo del negocio. El negocio no edita nada por ahora.
 - Precio fijo de momento, sin cuota. Los arreglos posteriores (cualquier cambio, cambios de diseño, etc.) se cobran aparte.
@@ -51,4 +52,6 @@ Proyecto de Jesús (desarrollador autodidacta, marca JesúsDev, Barcelona). Es i
 ## Estado
 
 - Hay una landing del producto en `src/pages/LandingPage.jsx` (textos en `src/landing/contenido.js`; nombre, WhatsApp y precios provisionales). A Jesús no le gusta su diseño: hay que rehacerlo.
-- Demos hechas: Almendra (Editorial), El Pollastre d'Horta (Banner, en catalán, para un negocio real), LadySalon (Diagonal), Laca (Fullbleed), Dulce Lima (Mosaico) y Navaja & Tijera (Portada).
+- Demos hechas: Almendra (Editorial), El Pollastre d'Horta (Banner, en catalán, para un negocio real), LadySalon (Diagonal), Laca (Fullbleed), Dulce Lima (Mosaico), Navaja & Tijera (Portada) y Marta Soler (Retrato, psicóloga, datos inventados).
+- Pendiente (más adelante): pantalla interna para generar el QR de cada negocio con sus colores (librería `qr-code-styling`): forma de los puntos, ojos, inicial o logo en el centro y marco con texto, descargable en alta calidad para imprenta.
+- Página real de Vanessa (`/vanessa`, diseño Ficha): prima de Jesús, psicóloga, para sustituir su Beacons. Con su branding y sus datos reales; no sale en el catálogo. Completa: pestañas Consulta, YouTube (captura del canal con "Suscribirse") y Sobre mí; galería de sus vídeos; Instagram y YouTube arriba; contacto y "Ver más" a su web (vanessa-psicopedagoga.netlify.app).

@@ -24,7 +24,7 @@ export default function DemoPager({ negocio }) {
   const siguiente = secuenciaDemos[i + 1]
 
   const ir = slug => {
-    navigate(`/${slug}`)
+    navigate(`/demo/${slug}`)
     window.scrollTo(0, 0)
   }
 

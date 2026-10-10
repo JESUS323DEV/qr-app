@@ -1,3 +1,4 @@
+import { rutaNegocio } from '../negocios'
 import { useEffect } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import Movil from '../components/Movil'
@@ -39,14 +40,14 @@ export default function TematicaPage() {
         <ul className="mt-[2.5rem] grid grid-cols-[repeat(auto-fill,minmax(15rem,1fr))] gap-x-[2rem] gap-y-[3rem]">
           {demos.map(n => (
             <li key={n.slug} className="mx-auto w-full max-w-[17rem]">
-              <Movil src={`/${n.slug}`} titulo={n.nombre} />
+              <Movil src={rutaNegocio(n)} titulo={n.nombre} />
               <div className="mt-[1rem] flex items-baseline justify-between gap-[1rem]">
                 <div>
                   <p className="font-semibold">{n.nombre}</p>
                   {n.sector && <p className="text-[0.92rem] text-suave">{n.sector}</p>}
                 </div>
                 <a
-                  href={`/${n.slug}`}
+                  href={rutaNegocio(n)}
                   target="_blank"
                   rel="noreferrer"
                   className="shrink-0 text-[0.95rem] font-semibold underline decoration-tinta/30 underline-offset-[0.3em] hover:decoration-tinta"

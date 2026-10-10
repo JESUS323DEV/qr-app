@@ -5,6 +5,7 @@ import { negocios } from '../negocios'
 export const TEMATICAS = [
   { key: 'comida',  nombre: 'Comida',  texto: 'Restaurantes, pollerías, cafeterías, pastelerías y panaderías.' },
   { key: 'belleza', nombre: 'Belleza', texto: 'Peluquerías, barberías, uñas y estética.' },
+  { key: 'salud',   nombre: 'Salud',   texto: 'Psicólogos, fisioterapeutas, logopedas y centros de bienestar.' },
   { key: 'tiendas', nombre: 'Tiendas', texto: 'Tiendas de barrio y comercios.' },
 ]
 

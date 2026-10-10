@@ -44,6 +44,13 @@
   100% { opacity: 0; }
 }
 
+/* Aviso suave para un botón: una onda roja que sale del borde y se desvanece (botón Suscribirse) */
+@keyframes aviso {
+  0%   { box-shadow: 0 0.3rem 0.9rem rgb(0 0 0 / 0.45), 0 0 0 0 rgb(255 0 0 / 0.55); }
+  70%  { box-shadow: 0 0.3rem 0.9rem rgb(0 0 0 / 0.45), 0 0 0 0.75rem rgb(255 0 0 / 0); }
+  100% { box-shadow: 0 0.3rem 0.9rem rgb(0 0 0 / 0.45), 0 0 0 0 rgb(255 0 0 / 0); }
+}
+
 html {
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;

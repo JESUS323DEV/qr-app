@@ -4,6 +4,8 @@ import HeroDiagonal from './HeroDiagonal'
 import HeroFullbleed from './HeroFullbleed'
 import HeroMosaico from './HeroMosaico'
 import HeroPortada from './HeroPortada'
+import HeroRetrato from './HeroRetrato'
+import HeroFicha from './HeroFicha'
 
 // Diseños de hero, cada uno con su nombre. Es vocabulario interno: el cliente nunca lo ve
 // (de cara afuera las demos se clasifican por temática de negocio, lib/tematicas.js).
@@ -15,4 +17,6 @@ export const HEROS = {
   fullbleed: { Componente: HeroFullbleed, nombre: 'Fullbleed', texto: 'Inmersivo: foto a todo el ancho y un detalle para jugar.' },
   mosaico:   { Componente: HeroMosaico,   nombre: 'Mosaico',   texto: 'Escaparate: tres fotos que van rotando, como una vitrina.' },
   portada:   { Componente: HeroPortada,   nombre: 'Portada',   texto: 'Portada de revista en blanco y negro, con la lista de precios.' },
+  retrato:   { Componente: HeroRetrato,   nombre: 'Retrato',   texto: 'Para profesionales que se venden a sí mismos: retrato, bloque oscuro y barra tipo app.' },
+  ficha:     { Componente: HeroFicha,     nombre: 'Ficha',     texto: 'Ficha grande con pestañas de carpeta: foto a un lado y contenido al otro, con vídeo.' },
 }
