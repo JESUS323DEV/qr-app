@@ -1,22 +1,22 @@
 import { useEffect } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import Movil from '../components/Movil'
-import { getEstilo, negociosDe } from '../lib/estilos'
+import { getTematica, negociosDe } from '../lib/tematicas'
 import { marca } from '../landing/contenido'
 
-export default function EstiloPage() {
+export default function TematicaPage() {
   const { key } = useParams()
-  const estilo = getEstilo(key)
-  const demos = estilo ? negociosDe(estilo.key) : []
+  const tematica = getTematica(key)
+  const demos = tematica ? negociosDe(tematica.key) : []
 
   useEffect(() => {
-    if (estilo) document.title = `${estilo.nombre} · ${marca.nombre}`
-  }, [estilo])
+    if (tematica) document.title = `${tematica.nombre} · ${marca.nombre}`
+  }, [tematica])
 
-  if (!estilo) {
+  if (!tematica) {
     return (
       <main className="flex min-h-svh items-center justify-center px-4 text-center font-texto">
-        <p>Este estilo no existe.</p>
+        <p>Esta temática no existe.</p>
       </main>
     )
   }
@@ -33,8 +33,8 @@ export default function EstiloPage() {
       </header>
 
       <main className="mx-auto w-full max-w-[68rem] px-4 pb-[4rem] pt-[1.5rem] sm:px-6">
-        <h1 className="font-titulo text-[clamp(2rem,1.5rem+2.4vw,3.25rem)] leading-[1.08]">{estilo.nombre}</h1>
-        <p className="mt-[0.75rem] max-w-[34rem] text-[1.07rem] leading-[1.6] text-suave">{estilo.texto}</p>
+        <h1 className="font-titulo text-[clamp(2rem,1.5rem+2.4vw,3.25rem)] leading-[1.08]">{tematica.nombre}</h1>
+        <p className="mt-[0.75rem] max-w-[34rem] text-[1.07rem] leading-[1.6] text-suave">{tematica.texto}</p>
 
         <ul className="mt-[2.5rem] grid grid-cols-[repeat(auto-fill,minmax(15rem,1fr))] gap-x-[2rem] gap-y-[3rem]">
           {demos.map(n => (

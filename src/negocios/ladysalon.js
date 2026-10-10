@@ -5,6 +5,7 @@ const px = (id, w, h) => `https://images.pexels.com/photos/${id}/pexels-photo-${
 export default {
   slug: 'ladysalon',
   sector: 'Peluquería y estética',
+  tematica: 'belleza',
   demo: true, // demo del catálogo: lleva las flechas para pasar a otras demos
   nombre: 'LadySalon',
   lema: 'Peluquería y estética',
@@ -69,20 +70,26 @@ export default {
         foto: px(16120490, 900, 1000),
         boton: 'Pedir cita por WhatsApp',
         url: enlaceWhatsapp('34600000000', 'Hola, quiero pedir cita en LadySalon.'),
+        telefono: '600 000 000',
       },
     ],
   },
 
-  // Enlace de "escribir reseña" de la ficha de Google del negocio (este es de ejemplo).
+  // Reseña de Google. Con un cliente real se añade url: el enlace de "escribir reseña" de su ficha (en las demos va sin enlace).
   resena: {
     texto: 'Valóranos en Google',
-    url: 'https://search.google.com/local/writereview?placeid=EJEMPLO',
   },
 
   redes: [
     { platform: 'instagram', href: 'https://instagram.com' },
     { platform: 'tiktok',    href: 'https://tiktok.com' },
     { platform: 'facebook',  href: 'https://facebook.com' },
+  ],
+
+  // Tarjetas del carrusel del cuerpo, después de las redes (textos de ejemplo)
+  carrusel: [
+    { titulo: "Este mes", texto: "Corte y color con un 15 % de descuento los martes." },
+    { titulo: "Sobre nosotras", texto: "Un salón pequeño en el Eixample, con cita previa y sin prisas." },
   ],
 
   // Botones opcionales que contrata el negocio (por decidir). Máximo dos.

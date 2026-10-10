@@ -5,6 +5,7 @@ const px = (id, w, h) => `https://images.pexels.com/photos/${id}/pexels-photo-${
 export default {
   slug: 'almendra',
   sector: 'Restaurante',
+  tematica: 'comida',
   demo: true, // demo del catálogo: lleva las flechas para pasar a otras demos
   nombre: 'Almendra',
   lema: 'Cocina de mercado',
@@ -67,20 +68,26 @@ export default {
         foto: px(941861, 1000, 800),
         boton: 'Reservar por WhatsApp',
         url: enlaceWhatsapp('34600000000', 'Hola, quiero reservar mesa en Almendra.'),
+        telefono: '600 000 000',
       },
     ],
   },
 
-  // Enlace de "escribir reseña" de la ficha de Google del negocio (este es de ejemplo).
+  // Reseña de Google. Con un cliente real se añade url: el enlace de "escribir reseña" de su ficha (en las demos va sin enlace).
   resena: {
     texto: 'Valóranos en Google',
-    url: 'https://search.google.com/local/writereview?placeid=EJEMPLO',
   },
 
   redes: [
     { platform: 'instagram', href: 'https://instagram.com' },
     { platform: 'tiktok',    href: 'https://tiktok.com' },
     { platform: 'facebook',  href: 'https://facebook.com' },
+  ],
+
+  // Tarjetas del carrusel del cuerpo, después de las redes (textos de ejemplo)
+  carrusel: [
+    { titulo: "Menú del día", texto: "De martes a viernes, primero, segundo y postre por 14,90 €." },
+    { titulo: "Cocina de mercado", texto: "Compramos cada mañana en el mercado y la carta cambia con la temporada." },
   ],
 
   // Botones opcionales que contrata el negocio (por decidir). Máximo dos.

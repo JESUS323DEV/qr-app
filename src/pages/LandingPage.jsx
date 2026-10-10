@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import Movil from '../components/Movil'
-import { estilosConDemos, secuenciaDemos, estiloDe, getEstilo } from '../lib/estilos'
+import { tematicasConDemos, secuenciaDemos, tematicaDe, getTematica } from '../lib/tematicas'
 import Placa from '../components/Placa'
 import { enlaceWhatsapp } from '../lib/whatsapp'
 import { marca, hero, porque, pasos, botones, ejemplos, precio, preguntas, cierre, pie } from '../landing/contenido'
@@ -50,7 +50,7 @@ function PantallaPendiente({ sector }) {
 export default function LandingPage() {
   const { hash } = useLocation()
 
-  // Al volver desde un estilo con /#ejemplos, baja hasta esa sección
+  // Al volver desde una temática con /#ejemplos, baja hasta esa sección
   useEffect(() => {
     if (hash) document.getElementById(hash.slice(1))?.scrollIntoView()
   }, [hash])
@@ -138,10 +138,10 @@ export default function LandingPage() {
           <Seccion className="py-[4rem] md:py-[5.5rem]">
             <Titulo>{ejemplos.titulo}</Titulo>
           </Seccion>
-          {/* Todas las demos, ordenadas por estilo */}
+          {/* Todas las demos, ordenadas por temática */}
           <ul className="mx-auto -mt-[1.5rem] flex w-full max-w-[68rem] snap-x snap-mandatory gap-[1.25rem] overflow-x-auto px-4 pb-[2.5rem] [scrollbar-width:none] sm:px-6 md:grid md:grid-cols-4 md:gap-[1.5rem] md:overflow-visible">
             {secuenciaDemos.map(n => {
-              const t = getEstilo(estiloDe(n))
+              const t = getTematica(tematicaDe(n))
               return (
                 <li key={n.slug} className="mx-auto w-[72%] max-w-[16rem] shrink-0 snap-center md:w-full">
                   <Movil src={`/${n.slug}`} titulo={n.nombre} className="border-papel/15" />
@@ -156,7 +156,7 @@ export default function LandingPage() {
                     >
                       Abrir
                     </a>
-                    <Link to={`/estilos/${t.key}`} className="text-papel/65 hover:text-papel">
+                    <Link to={`/tematicas/${t.key}`} className="text-papel/65 hover:text-papel">
                       {t.nombre}
                     </Link>
                   </div>
@@ -165,15 +165,15 @@ export default function LandingPage() {
             })}
           </ul>
 
-          {/* Acceso a cada estilo */}
+          {/* Acceso a cada temática */}
           <div className="mx-auto flex w-full max-w-[68rem] flex-wrap gap-x-[1.5rem] gap-y-[0.5rem] px-4 pb-[4.5rem] sm:px-6 md:pb-[5.5rem]">
-            {estilosConDemos().map(t => (
+            {tematicasConDemos().map(t => (
               <Link
                 key={t.key}
-                to={`/estilos/${t.key}`}
+                to={`/tematicas/${t.key}`}
                 className="font-semibold underline decoration-papel/30 underline-offset-[0.3em] hover:decoration-papel"
               >
-                {ejemplos.verMas} del estilo {t.nombre}
+                {ejemplos.verMas} de {t.nombre.toLowerCase()}
               </Link>
             ))}
           </div>

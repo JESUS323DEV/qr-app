@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Phone } from 'lucide-react'
 import Img from '../components/Img'
 
 /* Diagonal (adaptado del Editorial de platform). La foto, con el corte diagonal abajo, cambia según la pestaña
@@ -95,6 +96,16 @@ function EscenaCita({ pestana }) {
         >
           {pestana.boton}
         </a>
+        {pestana.telefono && (
+          <a
+            href={`tel:${pestana.telefono.replace(/\s/g, '')}`}
+            className="mt-[0.55rem] flex items-center gap-[0.35rem] text-[0.78rem] text-white/85"
+          >
+            {pestana.texto_telefono ?? 'o por teléfono'}
+            <Phone className="h-[0.8rem] w-[0.8rem]" aria-hidden="true" />
+            <span className="underline underline-offset-[0.2em]">{pestana.telefono}</span>
+          </a>
+        )}
       </div>
     </>
   )

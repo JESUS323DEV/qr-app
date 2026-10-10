@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Phone } from 'lucide-react'
 import Img from '../components/Img'
 
 /* Editorial (adaptado del Apetece de platform). La foto grande cambia según la pestaña:
@@ -185,6 +186,16 @@ function EscenaReservar({ pestana }) {
         >
           {pestana.boton}
         </a>
+        {pestana.telefono && (
+          <a
+            href={`tel:${pestana.telefono.replace(/\s/g, '')}`}
+            className="pointer-events-auto mt-[0.55rem] flex w-fit items-center gap-[0.35rem] text-[0.78rem] text-white/80"
+          >
+            {pestana.texto_telefono ?? 'o por teléfono'}
+            <Phone className="h-[0.8rem] w-[0.8rem]" aria-hidden="true" />
+            <span className="underline underline-offset-[0.2em]">{pestana.telefono}</span>
+          </a>
+        )}
       </Pie>
     </>
   )
@@ -237,20 +248,25 @@ export default function HeroEditorial({ hero, nombre, lema }) {
       </div>
 
       <div className="px-[1.25rem] pt-[1.1rem]">
-        <div className="grid gap-[0.4rem]" style={{ gridTemplateColumns: `repeat(${pestanas.length}, minmax(0, 1fr))` }}>
+        {/* Pestañas como el índice de una revista: la activa en negrita con una raya encima, del ancho justo de la palabra */}
+        <div className="grid border-t border-demo-text/15" style={{ gridTemplateColumns: `repeat(${pestanas.length}, minmax(0, 1fr))` }}>
           {pestanas.map((p, i) => (
             <button
               key={p.tipo}
               type="button"
               aria-pressed={i === activa}
               onClick={() => tocar(i)}
-              className={`rounded-full border px-[0.25rem] py-[0.6rem] text-[0.8rem] font-medium transition-colors duration-300 ${
-                i === activa
-                  ? 'border-demo-primary bg-demo-primary text-demo-bg'
-                  : 'border-demo-text/25 hover:border-demo-primary'
+              className={`-mt-px pb-[0.3rem] text-center text-[0.85rem] transition-colors duration-300 ${
+                i === activa ? 'font-bold text-demo-text' : 'font-medium text-demo-muted hover:text-demo-text'
               }`}
             >
-              {p.texto}
+              <span
+                className={`inline-block border-t-[0.15rem] pt-[0.6rem] transition-colors duration-300 ${
+                  i === activa ? 'border-demo-text' : 'border-transparent'
+                }`}
+              >
+                {p.texto}
+              </span>
             </button>
           ))}
         </div>

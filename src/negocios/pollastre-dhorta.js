@@ -6,6 +6,7 @@ const px = (id, w, h) => `https://images.pexels.com/photos/${id}/pexels-photo-${
 export default {
   slug: 'el-pollastre-d-horta',
   sector: 'Pollería',
+  tematica: 'comida',
   demo: true, // demo del catálogo: lleva las flechas para pasar a otras demos
   nombre: "El Pollastre d'Horta",
   lema: "Pollastres a l'ast",
@@ -74,10 +75,9 @@ export default {
     ],
   },
 
-  // Enlace de "escribir reseña" de la ficha de Google del negocio (este es de ejemplo).
+  // Reseña de Google. Con un cliente real se añade url: el enlace de "escribir reseña" de su ficha (en las demos va sin enlace).
   resena: {
     texto: "Valora'ns a Google",
-    url: 'https://search.google.com/local/writereview?placeid=EJEMPLO',
   },
 
   // Cuerpo de la miniweb (reseña y redes) con un verde muy suave
@@ -91,6 +91,12 @@ export default {
     { platform: 'instagram', href: 'https://instagram.com' },
     { platform: 'tiktok',    href: 'https://tiktok.com' },
     { platform: 'facebook',  href: 'https://facebook.com' },
+  ],
+
+  // Tarjetas del carrusel del cuerpo, después de las redes (textos de ejemplo)
+  carrusel: [
+    { titulo: "Aquest mes", texto: "Els dissabtes, mig pollastre amb patates per 9,90 €." },
+    { titulo: "Qui som", texto: "Pollastre a l'ast amb romaní, com sempre, al cor d'Horta-Guinardó." },
   ],
 
   // Botones opcionales que contrata el negocio (por decidir). Máximo dos.

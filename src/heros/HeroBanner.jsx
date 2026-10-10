@@ -175,16 +175,17 @@ export default function HeroBanner({ hero, nombre, lema }) {
             </span>
           ))}
         </h1>
-        <div className="mt-[0.9rem] grid grid-cols-4 gap-[0.4rem]">
+        {/* Pestañas en bloques rectos pegados, en mayúsculas como el titular */}
+        <div className="mt-[0.9rem] grid grid-cols-4 border border-demo-bg/50">
           {pestanas.map((p, i) => (
             <button
               key={p.tipo}
               type="button"
               aria-pressed={i === activa}
               onClick={() => tocar(i)}
-              className={`rounded-full border py-[0.55rem] text-[0.8rem] font-semibold transition-colors duration-300 ${
-                i === activa ? 'border-demo-bg bg-demo-bg text-demo-primary' : 'border-demo-bg/40 text-demo-bg hover:border-demo-bg'
-              }`}
+              className={`py-[0.6rem] font-demo-heading text-[0.9rem] uppercase transition-colors duration-300 ${
+                i > 0 ? 'border-l border-demo-bg/50' : ''
+              } ${i === activa ? 'bg-demo-bg text-demo-primary' : 'text-demo-bg hover:bg-demo-bg/10'}`}
             >
               {p.texto}
             </button>

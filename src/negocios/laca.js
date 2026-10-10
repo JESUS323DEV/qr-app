@@ -5,6 +5,7 @@ const px = (id, w, h) => `https://images.pexels.com/photos/${id}/pexels-photo-${
 export default {
   slug: 'laca',
   sector: 'Estudio de uñas',
+  tematica: 'belleza',
   demo: true, // demo del catálogo: lleva las flechas para pasar a otras demos
   nombre: 'Laca',
   lema: 'Estudio de uñas',
@@ -83,16 +84,21 @@ export default {
     ],
   },
 
-  // Enlace de "escribir reseña" de la ficha de Google del negocio (este es de ejemplo).
+  // Reseña de Google. Con un cliente real se añade url: el enlace de "escribir reseña" de su ficha (en las demos va sin enlace).
   resena: {
     texto: 'Valóranos en Google',
-    url: 'https://search.google.com/local/writereview?placeid=EJEMPLO',
   },
 
   redes: [
     { platform: 'instagram', href: 'https://instagram.com' },
     { platform: 'tiktok',    href: 'https://tiktok.com' },
     { platform: 'facebook',  href: 'https://facebook.com' },
+  ],
+
+  // Tarjetas del carrusel del cuerpo, después de las redes (textos de ejemplo)
+  carrusel: [
+    { titulo: "Novedad", texto: "Nail art de temporada: pregunta por los diseños de otoño." },
+    { titulo: "El estudio", texto: "Trabajamos con calma y producto de calidad para que el color dure." },
   ],
 
   // Botones opcionales que contrata el negocio (por decidir). Máximo dos.
