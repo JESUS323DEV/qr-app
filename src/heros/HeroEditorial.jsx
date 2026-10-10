@@ -119,8 +119,9 @@ export default function HeroEditorial({ hero }) {
   const enMapa = pestanas[activa]?.tipo === 'ubicacion'
 
   return (
-    <div>
-      <div className="relative h-[calc(28svh+6.5rem)] min-h-[17.5rem] max-h-[28rem]">
+    <div className="flex flex-1 flex-col">
+      {/* La foto ocupa el alto que sobra, para que todo quepa en una pantalla */}
+      <div className="relative min-h-[15rem] flex-1">
         {/* El corte diagonal solo recorta la foto; el texto va fuera para que no lo corte */}
         <div
           className="absolute inset-0 overflow-hidden bg-demo-surface"

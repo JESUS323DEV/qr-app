@@ -5,6 +5,8 @@ import { getNegocio } from '../negocios'
 import { HEROS } from '../heros'
 import { applyTheme, resetTheme } from '../lib/applyTheme'
 import { SocialIcon } from '../components/SocialIcons'
+import DemoPager from '../components/DemoPager'
+import DemoHomeButton from '../components/DemoHomeButton'
 
 // Colores oficiales de cada red, como en sus iconos de app
 const COLORES_REDES = {
@@ -63,10 +65,17 @@ export default function MiniwebPage() {
 
   return (
     <div className="min-h-svh bg-demo-surface font-demo-body text-demo-text">
-      <main className="mx-auto flex min-h-svh w-full max-w-[30rem] flex-col bg-demo-bg">
+      {negocio.demo && (
+        <>
+          <DemoPager negocio={negocio} />
+          <DemoHomeButton slug={negocio.slug} />
+        </>
+      )}
+      {/* key: al pasar a otra demo el hero empieza de cero */}
+      <main key={negocio.slug} className="mx-auto flex min-h-svh w-full max-w-[30rem] flex-col bg-demo-bg">
         <Hero hero={negocio.hero} nombre={negocio.nombre} lema={negocio.lema} />
 
-        <div className="px-[1.25rem] pb-[2rem] pt-[1.25rem]">
+        <div className="px-[1.25rem] pb-[1.25rem] pt-[1.25rem]">
           <a
             href={negocio.resena.url}
             target="_blank"
@@ -80,7 +89,7 @@ export default function MiniwebPage() {
 
           {negocio.redes?.length > 0 && (
             <div className="mt-[0.9rem] flex flex-col items-center gap-[0.75rem] rounded-[1.5rem] border border-demo-text/10 bg-demo-surface px-[1rem] py-[1rem]">
-              <p className="text-[1.1rem] font-semibold">Síguenos en redes</p>
+              <p className="text-[1.1rem] font-semibold">{negocio.redesTexto ?? 'Síguenos en redes'}</p>
               <div className="flex justify-center gap-[0.75rem]">
                 {negocio.redes.map(r => (
                   <a

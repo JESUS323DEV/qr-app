@@ -207,8 +207,9 @@ export default function HeroApetece({ hero, nombre, lema }) {
   }
 
   return (
-    <div>
-      <div className="relative h-[36svh] min-h-[12.5rem] max-h-[24rem] overflow-hidden bg-demo-surface">
+    <div className="flex flex-1 flex-col">
+      {/* La foto ocupa el alto que sobra, para que todo quepa en una pantalla */}
+      <div className="relative min-h-[12.5rem] flex-1 overflow-hidden bg-demo-surface">
         {pestanas.map((p, i) => {
           const Escena = ESCENAS[p.tipo]
           return (

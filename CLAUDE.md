@@ -14,7 +14,7 @@ Proyecto de Jesús (desarrollador autodidacta, marca JesúsDev, Barcelona). Es i
 - Diseño que no parezca hecho por una IA: nada de badges o etiquetas en mayúsculas con letra espaciada, titulares partidos en dos colores, tarjetas con icono ni frases de relleno típicas del sector.
 - Copy en español correcto (tildes, eñes, ¿ y ¡) y sin guiones largos (—).
 - No ejecutar `vite build` ni compilar salvo que lo pida. Jesús tiene el servidor de desarrollo abierto y ve los errores en el navegador; no cerrarlo.
-- Git: trabajar siempre en la rama `dev`; `main` solo si lo pide. Commit y push solo cuando lo pida, en español y sin marcas de IA (sin Co-Authored-By).
+- Git: de momento se trabaja en `main`. Se pasa a `dev` cuando Jesús lo pida o para cambios gordos. Commit y push solo cuando lo pida, en español y sin marcas de IA (sin Co-Authored-By).
 
 ## La idea de negocio
 

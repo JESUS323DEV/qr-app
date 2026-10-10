@@ -16,3 +16,7 @@ export const negociosDe = key => negocios.filter(n => tematicaDe(n) === key)
 export const tematicasConDemos = () => TEMATICAS.filter(t => negociosDe(t.key).length > 0)
 
 export const getTematica = key => TEMATICAS.find(t => t.key === key) ?? null
+
+// Orden en que se recorren las demos con las flechas: temática a temática.
+// Solo entran los negocios marcados con demo: true (los de clientes reales no llevan flechas).
+export const secuenciaDemos = TEMATICAS.flatMap(t => negociosDe(t.key).filter(n => n.demo))

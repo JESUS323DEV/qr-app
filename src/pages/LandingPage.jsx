@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import Movil from '../components/Movil'
-import { tematicasConDemos, negociosDe } from '../lib/tematicas'
+import { tematicasConDemos, secuenciaDemos, tematicaDe, getTematica } from '../lib/tematicas'
 import Placa from '../components/Placa'
 import { enlaceWhatsapp } from '../lib/whatsapp'
 import { marca, hero, porque, pasos, botones, ejemplos, precio, preguntas, cierre, pie } from '../landing/contenido'
@@ -138,24 +138,45 @@ export default function LandingPage() {
           <Seccion className="py-[4rem] md:py-[5.5rem]">
             <Titulo>{ejemplos.titulo}</Titulo>
           </Seccion>
-          <ul className="mx-auto -mt-[1.5rem] flex w-full max-w-[68rem] snap-x snap-mandatory gap-[1.25rem] overflow-x-auto px-4 pb-[4.5rem] [scrollbar-width:none] sm:px-6 md:grid md:grid-cols-3 md:gap-[2rem] md:overflow-visible md:pb-[5.5rem]">
-            {tematicasConDemos().map(t => {
-              const demo = negociosDe(t.key)[0]
+          {/* Todas las demos, ordenadas por temática */}
+          <ul className="mx-auto -mt-[1.5rem] flex w-full max-w-[68rem] snap-x snap-mandatory gap-[1.25rem] overflow-x-auto px-4 pb-[2.5rem] [scrollbar-width:none] sm:px-6 md:grid md:grid-cols-4 md:gap-[1.5rem] md:overflow-visible">
+            {secuenciaDemos.map(n => {
+              const t = getTematica(tematicaDe(n))
               return (
-                <li key={t.key} className="mx-auto w-[72%] max-w-[17rem] shrink-0 snap-center md:w-full md:max-w-[17rem]">
-                  <Movil src={`/${demo.slug}`} titulo={demo.nombre} className="border-papel/15" />
-                  <p className="mt-[1rem] font-semibold">{t.nombre}</p>
-                  <p className="mt-[0.2rem] text-papel/65">{t.texto}</p>
-                  <Link
-                    to={`/tematicas/${t.key}`}
-                    className="mt-[0.6rem] inline-block font-semibold underline decoration-papel/30 underline-offset-[0.3em] hover:decoration-papel"
-                  >
-                    {ejemplos.verMas}
-                  </Link>
+                <li key={n.slug} className="mx-auto w-[72%] max-w-[16rem] shrink-0 snap-center md:w-full">
+                  <Movil src={`/${n.slug}`} titulo={n.nombre} className="border-papel/15" />
+                  <p className="mt-[1rem] font-semibold">{n.nombre}</p>
+                  <p className="mt-[0.2rem] text-[0.92rem] text-papel/65">{n.lema}</p>
+                  <div className="mt-[0.6rem] flex gap-[1rem] text-[0.92rem]">
+                    <a
+                      href={`/${n.slug}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="font-semibold underline decoration-papel/30 underline-offset-[0.3em] hover:decoration-papel"
+                    >
+                      Abrir
+                    </a>
+                    <Link to={`/tematicas/${t.key}`} className="text-papel/65 hover:text-papel">
+                      {t.nombre}
+                    </Link>
+                  </div>
                 </li>
               )
             })}
           </ul>
+
+          {/* Acceso a cada temática */}
+          <div className="mx-auto flex w-full max-w-[68rem] flex-wrap gap-x-[1.5rem] gap-y-[0.5rem] px-4 pb-[4.5rem] sm:px-6 md:pb-[5.5rem]">
+            {tematicasConDemos().map(t => (
+              <Link
+                key={t.key}
+                to={`/tematicas/${t.key}`}
+                className="font-semibold underline decoration-papel/30 underline-offset-[0.3em] hover:decoration-papel"
+              >
+                {ejemplos.verMas} de {t.nombre.toLowerCase()}
+              </Link>
+            ))}
+          </div>
         </div>
 
         <Seccion className="py-[4rem] md:py-[5.5rem]">

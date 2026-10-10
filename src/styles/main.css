@@ -36,6 +36,14 @@
   --font-demo-body: var(--demo-body-font);
 }
 
+/* Pantalla de transición entre temáticas (DemoPager) */
+@keyframes fundido {
+  0%   { opacity: 0; }
+  25%  { opacity: 1; }
+  75%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
 html {
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;

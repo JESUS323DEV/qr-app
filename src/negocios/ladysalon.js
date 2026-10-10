@@ -4,6 +4,7 @@ const px = (id, w, h) => `https://images.pexels.com/photos/${id}/pexels-photo-${
 
 export default {
   slug: 'ladysalon',
+  demo: true, // demo del catálogo: lleva las flechas para pasar a otras demos
   nombre: 'LadySalon',
   lema: 'Peluquería y estética',
   theme: {
