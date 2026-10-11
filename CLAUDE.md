@@ -56,6 +56,7 @@ Proyecto de Jesús (desarrollador autodidacta, marca JesúsDev, Barcelona). Es i
 - **Prerenderizar** la landing y las miniwebs (HTML ya pintado al publicar): mejor SEO y vista previa con título e imagen al compartir el enlace por WhatsApp o Instagram.
 - **Secciones ocultas de la landing**: decidir si se quitan o se quedan solo como contenido para buscadores (ahora están en el HTML pero no se pueden ver por el bloqueo de scroll).
 - **Páginas legales**: Política de privacidad y Aviso legal (enlazadas desde el menú; ahora sus enlaces no llevan a ningún sitio).
+- **Botón de compartir**: abre el menú de compartir del móvil (WhatsApp, Instagram...) con el enlace de la página; en ordenador, copia el enlace.
 
 ## Estado
 

@@ -1,4 +1,5 @@
 import { rutaNegocio } from '../negocios'
+import { cartas, rutaCarta, marcaDe, CATEGORIA_CARTAS } from '../cartas'
 import { useEffect } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import Movil from '../components/Movil'
@@ -7,8 +8,15 @@ import { marca } from '../landing/contenido'
 
 export default function TematicaPage() {
   const { key } = useParams()
-  const tematica = getTematica(key)
-  const demos = tematica ? negociosDe(tematica.key) : []
+  // Categoría especial 'cartas' (Cartas digitales); las demás son temáticas de negocio
+  const esCartas = key === CATEGORIA_CARTAS.key
+  const tematica = esCartas ? CATEGORIA_CARTAS : getTematica(key)
+  const demos = esCartas
+    ? cartas.filter(c => c.demo).map(c => {
+        const n = marcaDe(c)
+        return { slug: c.slug, nombre: n?.nombre, sector: 'Carta digital', ruta: rutaCarta(c) }
+      })
+    : tematica ? negociosDe(tematica.key).map(n => ({ ...n, ruta: rutaNegocio(n) })) : []
 
   useEffect(() => {
     if (tematica) document.title = `${tematica.nombre} · ${marca.nombre}`
@@ -40,14 +48,14 @@ export default function TematicaPage() {
         <ul className="mt-[2.5rem] grid grid-cols-[repeat(auto-fill,minmax(15rem,1fr))] gap-x-[2rem] gap-y-[3rem]">
           {demos.map(n => (
             <li key={n.slug} className="mx-auto w-full max-w-[17rem]">
-              <Movil src={rutaNegocio(n)} titulo={n.nombre} />
+              <Movil src={n.ruta} titulo={n.nombre} />
               <div className="mt-[1rem] flex items-baseline justify-between gap-[1rem]">
                 <div>
                   <p className="font-semibold">{n.nombre}</p>
                   {n.sector && <p className="text-[0.92rem] text-suave">{n.sector}</p>}
                 </div>
                 <a
-                  href={rutaNegocio(n)}
+                  href={n.ruta}
                   target="_blank"
                   rel="noreferrer"
                   className="shrink-0 text-[0.95rem] font-semibold underline decoration-tinta/30 underline-offset-[0.3em] hover:decoration-tinta"

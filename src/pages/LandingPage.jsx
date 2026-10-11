@@ -8,13 +8,11 @@ import { SocialIcon } from '../components/SocialIcons'
 import { COLORES_REDES } from '../lib/coloresRedes'
 import { tematicasConDemos, secuenciaDemos, tematicaDe, getTematica } from '../lib/tematicas'
 import { enlaceWhatsapp } from '../lib/whatsapp'
-import { marca, hero, porque, pasos, botones, ejemplos, precio, preguntas, cierre, pie, contactoForm, webCompleta, menu } from '../landing/contenido'
+import { marca, hero, porque, pasos, botones, ejemplos, precio, preguntas, cierre, pie, contactoForm, webCompleta, cartasOfertas, menu } from '../landing/contenido'
 
 const contacto = enlaceWhatsapp(marca.whatsapp, marca.mensajeWhatsapp)
 // Enlace de WhatsApp con el mensaje de pedir presupuesto
 const pedirPresupuesto = enlaceWhatsapp(marca.whatsapp, precio.mensaje)
-// Enlace de WhatsApp para preguntar por una web completa
-const pedirWeb = enlaceWhatsapp(marca.whatsapp, webCompleta.mensaje)
 
 function BotonWhatsapp({ children, className = '', href = contacto }) {
   return (
@@ -122,6 +120,18 @@ function MenuHamburguesa() {
             </div>
 
             <ul className="mt-[2rem] border-t border-linea">
+              {/* Webs completas a medida, en mi otra web */}
+              <li className="border-b border-linea">
+                <a
+                  href={webCompleta.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-[0.35rem] py-[0.8rem] text-[0.95rem] font-semibold transition-colors hover:text-acento"
+                >
+                  {webCompleta.texto}
+                  <ArrowUpRight className="h-[1rem] w-[1rem]" aria-hidden="true" />
+                </a>
+              </li>
               {menu.legales.map(l => (
                 <li key={l.texto} className="border-b border-linea">
                   <a href={l.url} className="block py-[0.8rem] text-[0.95rem] transition-colors hover:text-acento">
@@ -199,9 +209,13 @@ function HeroMiniweb() {
     return () => clearTimeout(t)
   }, [actual, tocado])
 
-  // El móvil que queda en el centro es el "actual" (nombre, sector y rayitas)
-  const alDeslizar = () => {
-    const f = fila.current
+  // Fila de Cartas y ofertas: el móvil del centro es el que se nombra debajo
+  const [actualCarta, setActualCarta] = useState(0)
+  const filaCartas = useRef(null)
+  const ejemploCarta = cartasOfertas.ejemplos[actualCarta]
+
+  // El móvil que queda en el centro de la fila f es el "actual" (nombre, sector y rayitas)
+  const alDeslizar = (f, fijar) => {
     if (!f) return
     const centro = f.scrollLeft + f.clientWidth / 2
     let cerca = 0
@@ -210,7 +224,7 @@ function HeroMiniweb() {
       const d = Math.abs(el.offsetLeft - f.offsetLeft + el.clientWidth / 2 - centro)
       if (d < distancia) { distancia = d; cerca = i }
     })
-    setActual(cerca)
+    fijar(cerca)
   }
 
   // Dos filas de pestañas: tres arriba y dos abajo, centradas
@@ -221,7 +235,7 @@ function HeroMiniweb() {
   ]
   const PESTANAS_ABAJO = [
     { key: 'como', texto: 'Cómo funciona' },
-    { key: 'web', texto: webCompleta.pestana },
+    { key: 'cartas', texto: cartasOfertas.pestana },
   ]
 
   return (
@@ -248,28 +262,76 @@ function HeroMiniweb() {
               </h1>
             </>
           )}
+          {pestana === 'cartas' && (
+            <h2 className="font-titulo text-[clamp(1.9rem,1.5rem+2vw,2.5rem)] font-black leading-[1] tracking-tight">
+              {cartasOfertas.titulo}
+            </h2>
+          )}
 
         </div>
 
-        {/* Pestaña Web completa: el siguiente escalón, una web a medida */}
-        {pestana === 'web' && (
-          <div className="flex flex-1 flex-col justify-center px-[1.25rem] py-[1rem]">
-            <h2 className="font-titulo text-[clamp(1.9rem,1.5rem+2vw,2.5rem)] font-black leading-[1] tracking-tight">{webCompleta.titulo}</h2>
-            <p className="mt-[0.8rem] max-w-[24rem] text-[0.95rem] leading-[1.5] text-suave">{webCompleta.texto}</p>
-            <div className="mt-[1.4rem] flex flex-wrap items-center gap-[0.6rem]">
-              <BotonWhatsapp href={pedirWeb}>{webCompleta.boton}</BotonWhatsapp>
-              {/* Ejemplos de webs completas (platform), en otra pestaña */}
-              <a
-                href={webCompleta.urlEjemplos || '#'}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex min-h-[3.25rem] items-center justify-center gap-[0.35rem] rounded-full border border-tinta/30 px-[1.4rem] text-[1rem] font-bold transition-colors hover:border-acento hover:text-acento"
+        {/* Pestaña Cartas y ofertas: como Inicio, pero con móviles que de momento enseñan un texto
+            en vez de captura; tocarlos abre la demo */}
+        {pestana === 'cartas' && (
+          <>
+            <div className="relative mt-[1rem] min-h-[9rem] flex-1">
+              <ul
+                ref={filaCartas}
+                onScroll={() => alDeslizar(filaCartas.current, setActualCarta)}
+                className="absolute inset-0 flex snap-x snap-mandatory gap-[0.9rem] overflow-x-auto px-[25%] [scrollbar-width:none]"
               >
-                {webCompleta.botonEjemplos}
-                <ArrowUpRight className="h-[1rem] w-[1rem]" aria-hidden="true" />
-              </a>
+                {cartasOfertas.ejemplos.map((d, i) => (
+                  <li key={d.ruta} className="h-full shrink-0 snap-center py-[0.2rem]">
+                    <a
+                      href={d.ruta}
+                      target="_blank"
+                      rel="noreferrer"
+                      aria-label={`Abrir la demo de ${d.nombre}`}
+                      className={`relative block aspect-[390/844] h-full rounded-[1.2rem] border border-white/15 bg-[#1d1d1b] p-[0.3rem] shadow-[0_1rem_2rem_-0.8rem_rgb(0_0_0/0.7)] transition-[opacity,transform] duration-500 ${
+                        i === actualCarta ? 'opacity-100' : 'scale-[0.92] opacity-55'
+                      }`}
+                    >
+                      <span className="flex h-full w-full flex-col items-center justify-center rounded-[0.95rem] bg-papel px-[0.8rem] text-center">
+                        <span className="font-titulo text-[1.05rem] font-black leading-[1.1]">{d.titulo}</span>
+                        <span className="mt-[0.4rem] text-[0.78rem] text-suave">{d.nombre}</span>
+                      </span>
+                      <span
+                        className={`pointer-events-none absolute bottom-[0.7rem] left-1/2 flex -translate-x-1/2 items-center gap-[0.3rem] whitespace-nowrap rounded-full bg-black/75 px-[0.75rem] py-[0.3rem] text-[0.72rem] font-semibold text-white backdrop-blur-sm transition-opacity duration-500 ${
+                          i === actualCarta ? 'opacity-100' : 'opacity-0'
+                        }`}
+                      >
+                        {hero.pista}
+                        <ArrowUpRight className="h-[0.8rem] w-[0.8rem]" aria-hidden="true" />
+                      </span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
             </div>
-          </div>
+
+            {/* Qué ejemplo se ve y rayitas */}
+            <div className="flex items-center justify-between gap-[0.75rem] px-[1.25rem] py-[0.8rem]">
+              <p className="min-w-0 truncate text-[0.82rem]">
+                <span className="font-semibold">{ejemploCarta.nombre}</span>{' '}
+                <span className="text-suave">· {ejemploCarta.sector}</span>
+              </p>
+              <div className="flex shrink-0 gap-[0.3rem]">
+                {cartasOfertas.ejemplos.map((d, i) => (
+                  <button
+                    key={d.ruta}
+                    type="button"
+                    aria-label={`Ver ${d.nombre}`}
+                    onClick={() => {
+                      const f = filaCartas.current
+                      const el = f?.children[i]
+                      if (el) f.scrollTo({ left: el.offsetLeft - f.offsetLeft - (f.clientWidth - el.clientWidth) / 2, behavior: 'smooth' })
+                    }}
+                    className={`h-[0.2rem] rounded-full transition-all duration-500 ${i === actualCarta ? 'w-[1.3rem] bg-acento' : 'w-[0.5rem] bg-tinta/25'}`}
+                  />
+                ))}
+              </div>
+            </div>
+          </>
         )}
 
         {/* Pestaña Contacto: formulario sencillo que, al enviar, abre WhatsApp con el mensaje ya escrito */}
@@ -370,7 +432,7 @@ function HeroMiniweb() {
         <div className="relative mt-[1rem] min-h-[9rem] flex-1">
           <ul
             ref={fila}
-            onScroll={alDeslizar}
+            onScroll={() => alDeslizar(fila.current, setActual)}
             onTouchStart={() => setTocado(true)}
             onMouseDown={() => setTocado(true)}
             className="absolute inset-0 flex snap-x snap-mandatory gap-[0.9rem] overflow-x-auto px-[25%] [scrollbar-width:none]"
@@ -442,6 +504,7 @@ function HeroMiniweb() {
                   setPestana(p.key)
                   // La fila de Ejemplos empieza siempre por la primera demo
                   if (p.key === 'ejemplos') { setActual(0); setTocado(false) }
+                  if (p.key === 'cartas') setActualCarta(0)
                 }}
                 className={`rounded-[0.7rem] py-[0.65rem] text-[0.82rem] font-semibold transition-colors ${
                   f > 0 ? 'w-[calc((100%-0.7rem)/3*1.3)]' : 'w-[calc((100%-0.7rem)/3)]'

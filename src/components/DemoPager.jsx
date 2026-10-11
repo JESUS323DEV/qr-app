@@ -8,8 +8,10 @@ import useAutoHide from '../lib/useAutoHide'
    - Atrás bloqueado en la primera demo y adelante en la última.
    - Al cambiar de temática sale una pantalla corta de transición.
    - Se desvanecen solas (useAutoHide) para no estorbar a la demo.
-   No se muestra dentro de un iframe (los móviles del catálogo). */
-export default function DemoPager({ negocio }) {
+   No se muestra dentro de un iframe (los móviles del catálogo).
+   Por defecto recorre las miniwebs de demo; con `secuencia` y `rutaDe` recorre otra lista (las cartas),
+   y sin `conTransicion` no hay pantalla de cambio de temática. */
+export default function DemoPager({ negocio, secuencia = secuenciaDemos, rutaDe = n => `/demo/${n.slug}`, conTransicion = true }) {
   const navigate = useNavigate()
   const [transicion, setTransicion] = useState(null)
   const visible = useAutoHide(negocio.slug)
@@ -17,26 +19,26 @@ export default function DemoPager({ negocio }) {
   const enMarco = typeof window !== 'undefined' && window.self !== window.top
   if (enMarco) return null
 
-  const i = secuenciaDemos.findIndex(n => n.slug === negocio.slug)
+  const i = secuencia.findIndex(n => n.slug === negocio.slug)
   if (i === -1) return null
 
-  const anterior = secuenciaDemos[i - 1]
-  const siguiente = secuenciaDemos[i + 1]
+  const anterior = secuencia[i - 1]
+  const siguiente = secuencia[i + 1]
 
-  const ir = slug => {
-    navigate(`/demo/${slug}`)
+  const ir = destino => {
+    navigate(rutaDe(destino))
     window.scrollTo(0, 0)
   }
 
   const irA = destino => {
     if (!destino || transicion) return
-    if (tematicaDe(destino) === tematicaDe(negocio)) {
-      ir(destino.slug)
+    if (!conTransicion || tematicaDe(destino) === tematicaDe(negocio)) {
+      ir(destino)
       return
     }
     // Cambio de temática: pantalla de transición, luego navega y la quita
     setTransicion(getTematica(tematicaDe(destino)))
-    setTimeout(() => ir(destino.slug), 900)
+    setTimeout(() => ir(destino), 900)
     setTimeout(() => setTransicion(null), 1600)
   }
 

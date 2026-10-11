@@ -1,0 +1,331 @@
+import { useEffect, useRef, useState } from 'react'
+import { useParams } from 'react-router-dom'
+import { ArrowUpRight, ChevronLeft, ChevronRight } from 'lucide-react'
+import { cartas, getCarta, marcaDe, rutaCarta, ALERGENOS } from '../cartas'
+import DemoPager from '../components/DemoPager'
+import DemoHomeButton from '../components/DemoHomeButton'
+import { rutaNegocio } from '../negocios'
+import { applyTheme, resetTheme } from '../lib/applyTheme'
+import Img from '../components/Img'
+import CartaInmersiva from '../components/carta/CartaInmersiva'
+import CartaHistorias from '../components/carta/CartaHistorias'
+
+/* Carta digital (QR de la mesa), con la marca del negocio.
+   Arriba una franja con foto y el nombre; debajo, fija al hacer scroll, la barra con el idioma y las pestañas
+   (Menú del día y las secciones de la carta). Aquí sí hay scroll dentro de cada pestaña: una carta no cabe en una pantalla. */
+
+// Primera foto del negocio, para la franja de arriba
+const fotoDe = n => {
+  const p = n?.hero?.pestanas?.[0]
+  return p?.fotos?.[0]?.src ?? p?.opciones?.[0]?.foto ?? p?.foto ?? n?.hero?.fondo ?? null
+}
+
+const OCULTAR_FLECHAS_MS = 2500
+
+/* Fila de pestañas que se desliza de lado, con flechas a los lados.
+   Las flechas están escondidas: aparecen al tocar la fila y se esconden solas a los 2,5 s sin tocarla.
+   Solo sale la que sirve (al principio solo la derecha, al final solo la izquierda). */
+function FilaPestanas({ children }) {
+  const fila = useRef(null)
+  const timer = useRef(null)
+  const [visibles, setVisibles] = useState(false)
+  const [puede, setPuede] = useState({ izq: false, der: false })
+
+  const medir = () => {
+    const f = fila.current
+    if (!f) return
+    setPuede({ izq: f.scrollLeft > 4, der: f.scrollLeft + f.clientWidth < f.scrollWidth - 4 })
+  }
+
+  const mostrar = () => {
+    medir()
+    setVisibles(true)
+    clearTimeout(timer.current)
+    timer.current = setTimeout(() => setVisibles(false), OCULTAR_FLECHAS_MS)
+  }
+
+  useEffect(() => {
+    medir()
+    window.addEventListener('resize', medir)
+    return () => {
+      window.removeEventListener('resize', medir)
+      clearTimeout(timer.current)
+    }
+  }, [])
+
+  const mover = direccion => {
+    const f = fila.current
+    f?.scrollBy({ left: direccion * f.clientWidth * 0.7, behavior: 'smooth' })
+    mostrar()
+  }
+
+  const flecha = (lado, activa) =>
+    `absolute inset-y-0 ${lado} flex w-[2.6rem] items-center transition-opacity duration-300 ${
+      visibles && activa ? 'opacity-100' : 'pointer-events-none opacity-0'
+    }`
+
+  return (
+    <div className="relative" onTouchStart={mostrar} onMouseDown={mostrar}>
+      <nav ref={fila} onScroll={medir} className="flex gap-[0.4rem] overflow-x-auto px-[1.25rem] py-[0.7rem] [scrollbar-width:none]">
+        {children}
+      </nav>
+      <button
+        type="button"
+        aria-label="Ver pestañas anteriores"
+        onClick={() => mover(-1)}
+        className={`${flecha('left-0', puede.izq)} justify-start bg-gradient-to-r from-demo-bg via-demo-bg/90 to-transparent pl-[0.4rem]`}
+      >
+        <ChevronLeft className="h-[1.2rem] w-[1.2rem]" />
+      </button>
+      <button
+        type="button"
+        aria-label="Ver más pestañas"
+        onClick={() => mover(1)}
+        className={`${flecha('right-0', puede.der)} justify-end bg-gradient-to-l from-demo-bg via-demo-bg/90 to-transparent pr-[0.4rem]`}
+      >
+        <ChevronRight className="h-[1.2rem] w-[1.2rem]" />
+      </button>
+    </div>
+  )
+}
+
+function Alergenos({ lista }) {
+  if (!lista?.length) return null
+  return (
+    <ul className="mt-[0.45rem] flex flex-wrap gap-[0.3rem]">
+      {lista.map(a => (
+        <li
+          key={a}
+          title={ALERGENOS[a]?.nombre}
+          className="rounded-full border border-demo-text/20 px-[0.45rem] py-[0.05rem] text-[0.68rem] font-semibold text-demo-muted"
+        >
+          {ALERGENOS[a]?.corto}
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+function MenuDia({ menu }) {
+  return (
+    <div className="rounded-[1.1rem] bg-demo-surface px-[1rem] py-[1rem]">
+      <h1 className="font-demo-heading text-[1.5rem] leading-none">{menu.titulo}</h1>
+      <p className="mt-[0.3rem] text-[0.8rem] text-demo-muted">{menu.cuando}</p>
+
+      <div className="mt-[0.8rem] grid gap-[0.7rem]">
+        {menu.grupos.map(g => (
+          <div key={g.nombre} className="border-t border-dashed border-demo-text/20 pt-[0.6rem]">
+            <p className="font-demo-heading text-[1rem] text-demo-accent">{g.nombre}</p>
+            <ul className="mt-[0.25rem] grid gap-[0.1rem] text-[0.88rem]">
+              {g.platos.map(p => <li key={p}>{p}</li>)}
+            </ul>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-[0.8rem] flex items-end justify-between gap-[1rem] border-t border-dashed border-demo-text/20 pt-[0.7rem]">
+        <p className="text-[0.8rem] leading-[1.4] text-demo-muted">{menu.incluye}</p>
+        <p className="shrink-0 font-demo-heading text-[1.5rem] leading-none text-demo-primary">{menu.precio}</p>
+      </div>
+    </div>
+  )
+}
+
+function Seccion({ seccion }) {
+  return (
+    <div>
+      <h2 className="font-demo-heading text-[1.6rem] leading-none">{seccion.nombre}</h2>
+      <ul className="mt-[0.8rem] border-t border-demo-text/10">
+        {seccion.platos.map(p => (
+          <li key={p.nombre} className="border-b border-demo-text/10 py-[0.85rem]">
+            <div className="flex items-baseline justify-between gap-[1rem]">
+              <p className="font-semibold">{p.nombre}</p>
+              <p className="shrink-0 font-semibold text-demo-primary">{p.precio}</p>
+            </div>
+            {p.descripcion && <p className="mt-[0.15rem] text-[0.88rem] leading-[1.45] text-demo-muted">{p.descripcion}</p>}
+            <Alergenos lista={p.alergenos} />
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+// Al pasar de una carta a otra con las flechas, la página empieza de cero (pestañas, sección e idioma)
+export default function CartaPage(props) {
+  const { slug } = useParams()
+  return <Carta key={slug} slug={slug} {...props} />
+}
+
+function Carta({ slug, demo = false }) {
+  const carta = getCarta(slug)
+  const negocio = carta ? marcaDe(carta) : null
+  // Dos niveles: Menú del día o Carta; dentro de Carta, las secciones
+  const [modo, setModo] = useState(carta?.menuDia ? 'menu' : 'carta')
+  const [seccionActiva, setSeccionActiva] = useState(carta?.secciones?.[0]?.nombre)
+  const [idioma, setIdioma] = useState(carta?.idiomas?.[0] ?? 'ES')
+  const [verAlergenos, setVerAlergenos] = useState(false)
+
+  useEffect(() => {
+    if (!negocio) return
+    applyTheme(negocio.theme)
+    document.title = `Carta · ${negocio.nombre}`
+    return resetTheme
+  }, [negocio])
+
+  if (!carta || !negocio || (demo && !carta.demo)) {
+    return (
+      <main className="flex min-h-svh items-center justify-center px-4 text-center">
+        <p>Esta carta no existe.</p>
+      </main>
+    )
+  }
+
+  // En las demos, las mismas flechas y botón de inicio que en las miniwebs, para pasar de una carta a otra
+  const navegacion = demo && (
+    <>
+      <DemoPager negocio={carta} secuencia={cartas.filter(c => c.demo)} rutaDe={rutaCarta} conTransicion={false} />
+      <DemoHomeButton slug={carta.slug} />
+    </>
+  )
+
+  // Diseño inmersiva: foto a pantalla completa y el contenido encima
+  if (carta.diseno === 'inmersiva') {
+    return (
+      <>
+        <CartaInmersiva carta={carta} negocio={negocio} foto={carta.foto ?? fotoDe(negocio)} />
+        {navegacion}
+      </>
+    )
+  }
+  // Diseño historias: un plato por pantalla, deslizando de lado
+  if (carta.diseno === 'historias') {
+    return (
+      <>
+        <CartaHistorias carta={carta} negocio={negocio} />
+        {navegacion}
+      </>
+    )
+  }
+
+  // Pestañas principales: Menú del día (si lo hay) y Carta
+  const principales = [
+    ...(carta.menuDia ? [{ key: 'menu', texto: carta.menuDia.texto }] : []),
+    { key: 'carta', texto: 'Carta' },
+  ]
+  const seccion = modo === 'carta' ? carta.secciones.find(s => s.nombre === seccionActiva) : null
+
+  return (
+    <div className="min-h-svh bg-demo-surface font-demo-body text-demo-text">
+      <main className="mx-auto flex min-h-svh w-full max-w-[30rem] flex-col bg-demo-bg">
+        {/* Foto protagonista, con el idioma arriba y el título ("Carta" y el nombre) abajo */}
+        <div className="relative h-[16rem] overflow-hidden">
+          <Img src={fotoDe(negocio)} alt="" className="absolute inset-0 h-full w-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/25" />
+
+          {/* Idioma y enlace a la miniweb, superpuestos arriba a la derecha */}
+          <div className="absolute right-[1.25rem] top-[0.9rem] flex flex-col items-end gap-[0.5rem]">
+            <div className="flex gap-[0.2rem] rounded-full bg-black/45 p-[0.15rem] backdrop-blur-sm">
+              {carta.idiomas.map(i => (
+                <button
+                  key={i}
+                  type="button"
+                  aria-pressed={idioma === i}
+                  onClick={() => setIdioma(i)}
+                  className={`rounded-full px-[0.6rem] py-[0.2rem] text-[0.72rem] font-semibold transition-colors ${
+                    idioma === i ? 'bg-white text-[#141414]' : 'text-white/80'
+                  }`}
+                >
+                  {i}
+                </button>
+              ))}
+            </div>
+            <a
+              href={rutaNegocio(negocio)}
+              className="inline-flex items-center gap-[0.25rem] rounded-full bg-black/45 px-[0.7rem] py-[0.3rem] text-[0.75rem] font-semibold text-white backdrop-blur-sm"
+            >
+              Conoce {negocio.nombre}
+              <ArrowUpRight className="h-[0.8rem] w-[0.8rem]" aria-hidden="true" />
+            </a>
+          </div>
+
+          <div className="absolute inset-x-0 bottom-0 px-[1.25rem] pb-[1rem] text-white">
+            <p className="text-[0.85rem] text-white/80">Carta</p>
+            <p className="mt-[0.15rem] font-demo-heading text-[2.2rem] leading-none">{negocio.nombre}</p>
+            {negocio.lema && <p className="mt-[0.3rem] text-[0.85rem] text-white/80">{negocio.lema}</p>}
+          </div>
+        </div>
+
+        {/* Barra fija: pestañas principales y, en la carta, sus secciones debajo */}
+        <div className="sticky top-0 z-10 border-b border-demo-text/10 bg-demo-bg/95 backdrop-blur-sm">
+          <div className="flex gap-[0.4rem] px-[1.25rem] pt-[0.8rem]">
+            {principales.map(p => (
+              <button
+                key={p.key}
+                type="button"
+                aria-pressed={modo === p.key}
+                onClick={() => setModo(p.key)}
+                className={`flex-1 rounded-[0.8rem] py-[0.7rem] text-[0.95rem] font-semibold transition-colors ${
+                  modo === p.key ? 'bg-demo-primary text-demo-bg' : 'bg-demo-surface hover:bg-demo-text/10'
+                }`}
+              >
+                {p.texto}
+              </button>
+            ))}
+          </div>
+
+          {modo === 'carta' ? (
+            <FilaPestanas>
+              {carta.secciones.map(sec => (
+                <button
+                  key={sec.nombre}
+                  type="button"
+                  aria-pressed={seccionActiva === sec.nombre}
+                  onClick={() => setSeccionActiva(sec.nombre)}
+                  className={`shrink-0 rounded-full border px-[0.8rem] py-[0.35rem] text-[0.82rem] font-medium transition-colors ${
+                    seccionActiva === sec.nombre ? 'border-demo-text bg-demo-text text-demo-bg' : 'border-demo-text/20 hover:border-demo-text'
+                  }`}
+                >
+                  {sec.nombre}
+                </button>
+              ))}
+            </FilaPestanas>
+          ) : (
+            <div className="h-[0.8rem]" />
+          )}
+        </div>
+
+        {/* Contenido de la pestaña */}
+        <div className="flex-1 px-[1.25rem] py-[1.25rem]">
+          {modo === 'menu' && carta.menuDia && <MenuDia menu={carta.menuDia} />}
+          {seccion && <Seccion seccion={seccion} />}
+
+          {/* Leyenda de alérgenos */}
+          {seccion && (
+            <div className="mt-[1.25rem]">
+              <button
+                type="button"
+                onClick={() => setVerAlergenos(v => !v)}
+                className="text-[0.85rem] font-semibold underline underline-offset-[0.25em]"
+              >
+                {verAlergenos ? 'Ocultar alérgenos' : 'Ver qué significa cada alérgeno'}
+              </button>
+              {verAlergenos && (
+                <ul className="mt-[0.7rem] grid grid-cols-2 gap-x-[1rem] gap-y-[0.35rem] text-[0.82rem] text-demo-muted">
+                  {Object.values(ALERGENOS).map(a => (
+                    <li key={a.corto} className="flex items-center gap-[0.45rem]">
+                      <span className="rounded-full border border-demo-text/20 px-[0.45rem] text-[0.68rem] font-semibold">{a.corto}</span>
+                      {a.nombre}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+        </div>
+
+      </main>
+      {navegacion}
+    </div>
+  )
+}

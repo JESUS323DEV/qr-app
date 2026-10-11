@@ -153,15 +153,22 @@ export const contactoForm = {
 }
 
 // Pestaña Web completa del hero: el siguiente escalón para quien quiere más
+// Enlace del menú hamburguesa a las webs completas (platform)
 export const webCompleta = {
-  pestana: 'Web completa',
-  titulo: '¿Quieres una web completa?',
-  texto: 'También hago webs completas a medida: más secciones, tu carta o tus servicios con precios, y preparada para salir en Google.',
-  boton: 'Pedir información',
-  mensaje: 'Hola, me interesa una web completa para mi negocio.',
-  // Segundo botón: lleva a los ejemplos de webs completas (platform)
-  botonEjemplos: 'Ver ejemplos',
-  urlEjemplos: 'https://landig-demos.netlify.app/',
+  texto: 'Webs completas a medida',
+  url: 'https://landig-demos.netlify.app/',
+}
+
+// Pestaña Cartas y ofertas del hero: carta y menú del día de los restaurantes, promociones de estéticas,
+// ofertas de pastelerías... Mientras no haya capturas, el móvil enseña un texto que lleva a la demo.
+export const cartasOfertas = {
+  pestana: 'Cartas y ofertas',
+  titulo: 'Tu carta y tus ofertas, siempre al día',
+  ejemplos: [
+    { titulo: 'Carta y menú del día', nombre: 'Almendra', sector: 'Restaurante', ruta: '/demo/almendra/carta' },
+    { titulo: 'Carta y menú del día', nombre: "El Pollastre d'Horta", sector: 'Pollería', ruta: '/demo/el-pollastre-d-horta/carta' },
+    { titulo: 'Carta y menú del día', nombre: 'Ají Limón', sector: 'Restaurante peruano', ruta: '/demo/aji-limon/carta' },
+  ],
 }
 
 // Menú hamburguesa de la cabecera: hace de pie de página (qué es, redes, textos legales y firma)
