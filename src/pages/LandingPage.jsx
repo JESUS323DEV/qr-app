@@ -1,9 +1,9 @@
 import { rutaNegocio } from '../negocios'
-import { useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import Movil from '../components/Movil'
-import { tematicasConDemos, secuenciaDemos, tematicaDe, getTematica } from '../lib/tematicas'
 import Placa from '../components/Placa'
+import { tematicasConDemos, secuenciaDemos, tematicaDe, getTematica } from '../lib/tematicas'
 import { enlaceWhatsapp } from '../lib/whatsapp'
 import { marca, hero, porque, pasos, botones, ejemplos, precio, preguntas, cierre, pie } from '../landing/contenido'
 
@@ -15,7 +15,7 @@ function BotonWhatsapp({ children, className = '' }) {
       href={contacto}
       target="_blank"
       rel="noreferrer"
-      className={`inline-flex min-h-[3.25rem] items-center justify-center rounded-full bg-verde px-[1.6rem] text-[1rem] font-semibold text-papel transition-colors hover:bg-verde-oscuro ${className}`}
+      className={`inline-flex min-h-[3.25rem] items-center justify-center rounded-full bg-acento px-[1.6rem] text-[1rem] font-bold text-papel transition-colors hover:bg-acento-oscuro ${className}`}
     >
       {children}
     </a>
@@ -32,18 +32,249 @@ function Seccion({ id, children, className = '' }) {
 
 function Titulo({ children, className = '' }) {
   return (
-    <h2 className={`font-titulo text-[clamp(1.75rem,1.3rem+2vw,2.75rem)] leading-[1.1] text-balance ${className}`}>
+    <h2 className={`font-titulo text-[clamp(1.75rem,1.3rem+2vw,2.75rem)] font-extrabold leading-[1.05] tracking-tight text-balance ${className}`}>
       {children}
     </h2>
   )
 }
 
-// Hueco hasta que exista la miniweb de cada ejemplo.
-function PantallaPendiente({ sector }) {
+const TURNO_DEMOS_MS = 7000
+
+// Formas de los puntos del QR que se pueden elegir en la placa de Inicio
+const FORMAS = [
+  { key: 'cuadrado', texto: 'cuadrados', clase: '' },
+  { key: 'redondo', texto: 'redondeados', clase: 'rounded-[0.15rem]' },
+  { key: 'punto', texto: 'redondos', clase: 'rounded-full' },
+]
+
+// Capturas de las demos a tamaño de móvil (src/assets/capturas/<slug>.jpg), en el orden del catálogo
+const CAPTURAS = import.meta.glob('../assets/capturas/*.jpg', { eager: true, import: 'default' })
+const ESCAPARATE = secuenciaDemos
+  .map(n => ({ foto: CAPTURAS[`../assets/capturas/${n.slug}.jpg`], nombre: n.nombre, sector: n.sector, ruta: rutaNegocio(n) }))
+  .filter(d => d.foto)
+
+/* El hero es una miniweb, con la misma estructura que las de los clientes:
+   escenario con la marca, el texto (cambia con la pestaña) y una fila de móviles con las capturas
+   de las demos (como el catálogo, en pequeño) que se desliza con el dedo y pasa sola hasta que se toca;
+   pestañas y, debajo, el botón destacado de WhatsApp. Todo en una pantalla. Los textos son provisionales. */
+function HeroMiniweb() {
+  const [actual, setActual] = useState(0)
+  const [pestana, setPestana] = useState('inicio')
+  const [tocado, setTocado] = useState(false)
+  // Placa de Inicio: color y forma de los puntos elegidos
+  const [color, setColor] = useState(0)
+  const [forma, setForma] = useState('redondo')
+  const paleta = hero.inicio.colores[color]
+  const fila = useRef(null)
+  const demo = ESCAPARATE[actual]
+
+  // Lleva la fila hasta un móvil concreto
+  const irA = i => {
+    const el = fila.current?.children[i]
+    if (el) fila.current.scrollTo({ left: el.offsetLeft - fila.current.offsetLeft - (fila.current.clientWidth - el.clientWidth) / 2, behavior: 'smooth' })
+  }
+
+  // Pasa sola al siguiente móvil hasta que el visitante toca la fila
+  useEffect(() => {
+    if (tocado || ESCAPARATE.length < 2) return
+    const t = setTimeout(() => irA((actual + 1) % ESCAPARATE.length), TURNO_DEMOS_MS)
+    return () => clearTimeout(t)
+  }, [actual, tocado])
+
+  // El móvil que queda en el centro es el "actual" (nombre, sector y rayitas)
+  const alDeslizar = () => {
+    const f = fila.current
+    if (!f) return
+    const centro = f.scrollLeft + f.clientWidth / 2
+    let cerca = 0
+    let distancia = Infinity
+    Array.from(f.children).forEach((el, i) => {
+      const d = Math.abs(el.offsetLeft - f.offsetLeft + el.clientWidth / 2 - centro)
+      if (d < distancia) { distancia = d; cerca = i }
+    })
+    setActual(cerca)
+  }
+
+  const PESTANAS = [
+    { key: 'inicio', texto: 'Inicio' },
+    { key: 'ejemplos', texto: 'Ejemplos' },
+    { key: 'precio', texto: 'Precio' },
+    { key: 'contacto', texto: 'Contacto' },
+  ]
+
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-[0.4rem] px-[1.2rem] text-center">
-      <p className="font-titulo text-[1.1rem]">{sector}</p>
-      <p className="text-[0.8rem] text-suave">Miniweb de ejemplo en preparación</p>
+    <div className="mx-auto flex w-full max-w-[30rem] flex-1 flex-col">
+      {/* Escenario: fondo liso de la marca; ocupa el alto que sobra */}
+      <div className="relative flex min-h-[20rem] flex-1 flex-col overflow-hidden bg-crema">
+        {/* Marca arriba */}
+        <div className="flex items-center justify-between px-[1.25rem] pt-[1rem]">
+          <p className="font-titulo text-[1.3rem] font-black tracking-tight">{marca.nombre}</p>
+          <p className="text-[0.8rem] text-suave">{marca.ciudad}</p>
+        </div>
+
+        {/* Texto: cambia con la pestaña */}
+        <div className="px-[1.25rem] pt-[0.9rem]">
+          {pestana === 'inicio' && (
+            <>
+              <h1 className="font-titulo text-[clamp(1.9rem,1.5rem+2vw,2.5rem)] font-black leading-[1] tracking-tight">
+                {hero.inicio.titulo}
+              </h1>
+            </>
+          )}
+          {pestana === 'ejemplos' && (
+            <>
+              <p className="text-[0.85rem] text-acento">Para tu {demo?.sector.toLowerCase()}</p>
+              <h2 className="mt-[0.3rem] font-titulo text-[clamp(1.9rem,1.5rem+2vw,2.5rem)] font-black leading-[1] tracking-tight">
+                {hero.titulo}
+              </h2>
+            </>
+          )}
+          {pestana === 'precio' && (
+            <>
+              <h2 className="font-titulo text-[1.8rem] font-black leading-[1.05] tracking-tight">Lorem ipsum 000 €</h2>
+              <p className="mt-[0.4rem] text-[0.9rem] text-suave">Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+            </>
+          )}
+          {pestana === 'contacto' && (
+            <>
+              <h2 className="font-titulo text-[1.8rem] font-black leading-[1.05] tracking-tight">Lorem ipsum dolor.</h2>
+              <p className="mt-[0.4rem] text-[0.9rem] text-suave">Lorem ipsum dolor sit amet, consectetur.</p>
+            </>
+          )}
+
+        </div>
+
+        {/* Pestaña Inicio: la placa del mostrador, personalizable con colores y forma de los puntos del QR */}
+        {pestana === 'inicio' && (
+          <>
+            <div className="flex min-h-[10rem] flex-1 items-center justify-center py-[1rem]">
+              <Placa
+                negocio={marca.nombre}
+                texto={hero.placa.texto}
+                fondo={paleta.fondo}
+                colorTexto={paleta.texto}
+                colorQr={paleta.qr}
+                degradadoQr={paleta.degradado}
+                forma={forma}
+                className="w-[min(52%,13rem)] -rotate-[4deg]"
+              />
+            </div>
+
+            <div className="flex items-center justify-between gap-[1rem] px-[1.25rem] pb-[1rem]">
+              {/* Colores de la placa */}
+              <div className="flex gap-[0.35rem]">
+                {hero.inicio.colores.map((c, i) => (
+                  <button
+                    key={c.nombre}
+                    type="button"
+                    title={c.nombre}
+                    aria-label={`Placa ${c.nombre}`}
+                    aria-pressed={i === color}
+                    onClick={() => setColor(i)}
+                    className={`h-[1.7rem] w-[1.7rem] rounded-full border-2 transition-transform duration-300 ${i === color ? 'scale-110 border-acento' : 'border-white/15 hover:scale-105'}`}
+                    style={{
+                      background: c.degradado
+                        ? `linear-gradient(45deg, ${c.degradado.join(', ')})`
+                        : `linear-gradient(135deg, ${c.fondo} 55%, ${c.qr} 55%)`,
+                    }}
+                  />
+                ))}
+              </div>
+              {/* Forma de los puntos del QR */}
+              <div className="flex gap-[0.3rem] rounded-full bg-papel p-[0.2rem]">
+                {FORMAS.map(f => (
+                  <button
+                    key={f.key}
+                    type="button"
+                    aria-label={`Puntos ${f.texto}`}
+                    aria-pressed={forma === f.key}
+                    onClick={() => setForma(f.key)}
+                    className={`flex h-[1.7rem] w-[1.7rem] items-center justify-center rounded-full transition-colors ${forma === f.key ? 'bg-acento text-papel' : 'text-suave hover:text-tinta'}`}
+                  >
+                    <span className={`block h-[0.6rem] w-[0.6rem] bg-current ${f.clase}`} />
+                  </button>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Pestaña Ejemplos: fila de móviles con las capturas, como el catálogo en pequeño; se ajusta al alto que queda.
+            Se desliza con el dedo; tocar un móvil abre la demo de verdad. */}
+        {pestana === 'ejemplos' && (
+        <>
+        <div className="relative mt-[1rem] min-h-[9rem] flex-1">
+          <ul
+            ref={fila}
+            onScroll={alDeslizar}
+            onTouchStart={() => setTocado(true)}
+            onMouseDown={() => setTocado(true)}
+            className="absolute inset-0 flex snap-x snap-mandatory gap-[0.9rem] overflow-x-auto px-[25%] [scrollbar-width:none]"
+          >
+            {ESCAPARATE.map((d, i) => (
+              <li key={d.nombre} className="h-full shrink-0 snap-center py-[0.2rem]">
+                <a
+                  href={d.ruta}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label={`Abrir la demo de ${d.nombre}`}
+                  className={`block aspect-[390/844] h-full rounded-[1.2rem] border border-white/15 bg-[#1d1d1b] p-[0.3rem] shadow-[0_1rem_2rem_-0.8rem_rgb(0_0_0/0.7)] transition-[opacity,transform] duration-500 ${
+                    i === actual ? 'opacity-100' : 'scale-[0.92] opacity-55'
+                  }`}
+                >
+                  <img src={d.foto} alt={`Ejemplo: ${d.nombre}`} className="h-full w-full rounded-[0.95rem] object-cover object-top" />
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Qué demo se ve y rayitas */}
+        <div className="flex items-center justify-between gap-[0.75rem] px-[1.25rem] py-[0.8rem]">
+          <p className="min-w-0 truncate text-[0.82rem]">
+            <span className="font-semibold">{demo?.nombre}</span> <span className="text-suave">· {demo?.sector}</span>
+          </p>
+          <div className="flex shrink-0 gap-[0.3rem]">
+            {ESCAPARATE.map((d, i) => (
+              <button
+                key={d.nombre}
+                type="button"
+                aria-label={`Ver ${d.nombre}`}
+                onClick={() => { setTocado(true); irA(i) }}
+                className={`h-[0.2rem] rounded-full transition-all duration-500 ${i === actual ? 'w-[1.3rem] bg-acento' : 'w-[0.5rem] bg-tinta/25'}`}
+              />
+            ))}
+          </div>
+        </div>
+        </>
+        )}
+      </div>
+
+      {/* Pestañas */}
+      <nav className="grid grid-cols-4 gap-[0.35rem] px-[1.25rem] pt-[0.9rem]">
+        {PESTANAS.map(p => (
+          <button
+            key={p.key}
+            type="button"
+            aria-pressed={pestana === p.key}
+            onClick={() => {
+              setPestana(p.key)
+              // La fila de Ejemplos empieza siempre por la primera demo
+              if (p.key === 'ejemplos') { setActual(0); setTocado(false) }
+            }}
+            className={`rounded-[0.7rem] py-[0.65rem] text-[0.82rem] font-semibold transition-colors ${
+              pestana === p.key ? 'bg-acento text-papel' : 'bg-crema text-tinta hover:bg-linea'
+            }`}
+          >
+            {p.texto}
+          </button>
+        ))}
+      </nav>
+
+      {/* Cuerpo: botón destacado */}
+      <div className="px-[1.25rem] pb-[1.25rem] pt-[0.9rem]">
+        <BotonWhatsapp className="w-full">{hero.boton}</BotonWhatsapp>
+      </div>
     </div>
   )
 }
@@ -58,46 +289,12 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-svh bg-papel font-texto text-tinta">
-      <header className="mx-auto flex w-full max-w-[68rem] items-center justify-between px-4 py-[1.1rem] sm:px-6">
-        <a href="/" className="font-titulo text-[1.35rem]">
-          {marca.nombre}
-        </a>
-        <a
-          href={contacto}
-          target="_blank"
-          rel="noreferrer"
-          className="text-[0.95rem] font-semibold underline decoration-tinta/30 underline-offset-[0.3em] hover:decoration-tinta"
-        >
-          Pedir la mía
-        </a>
-      </header>
+      {/* Primera pantalla: el hero es una miniweb, exactamente el alto de la pantalla */}
+      <div className="flex min-h-svh flex-col">
+        <HeroMiniweb />
+      </div>
 
       <main>
-        <Seccion className="grid items-center gap-[3rem] pb-[4.5rem] pt-[2rem] md:grid-cols-[1.1fr_1fr] md:pt-[3.5rem]">
-          <div>
-            <h1 className="font-titulo text-[clamp(2.25rem,1.6rem+3.2vw,4rem)] leading-[1.04] text-balance">
-              {hero.titulo}
-            </h1>
-            <p className="mt-[1.25rem] max-w-[34rem] text-[1.07rem] leading-[1.6] text-suave">{hero.texto}</p>
-            <div className="mt-[2rem] flex flex-wrap items-center gap-x-[1.5rem] gap-y-[1rem]">
-              <BotonWhatsapp>{hero.boton}</BotonWhatsapp>
-              <a href="#ejemplos" className="text-[1rem] font-semibold underline decoration-tinta/30 underline-offset-[0.3em] hover:decoration-tinta">
-                {hero.enlace}
-              </a>
-            </div>
-          </div>
-
-          <div className="relative mx-auto w-full max-w-[22rem] pb-[2rem] md:max-w-[24rem]">
-            <Movil className="ml-auto w-[68%]">
-              <PantallaPendiente sector={hero.placa.negocio} />
-            </Movil>
-            <Placa
-              negocio={hero.placa.negocio}
-              texto={hero.placa.texto}
-              className="absolute bottom-0 left-0 w-[46%] -rotate-[4deg]"
-            />
-          </div>
-        </Seccion>
 
         <div className="border-y border-linea bg-crema">
           <Seccion className="py-[4rem] md:py-[5.5rem]">
@@ -106,7 +303,7 @@ export default function LandingPage() {
           </Seccion>
         </div>
 
-        <Seccion className="py-[4rem] md:py-[5.5rem]">
+        <Seccion id="como-funciona" className="scroll-mt-[1rem] py-[4rem] md:py-[5.5rem]">
           <Titulo>{pasos.titulo}</Titulo>
           <ol className="mt-[2.5rem] grid gap-[2.25rem] md:grid-cols-3 md:gap-[2.5rem]">
             {pasos.lista.map((paso, i) => (
@@ -180,7 +377,7 @@ export default function LandingPage() {
           </div>
         </div>
 
-        <Seccion className="py-[4rem] md:py-[5.5rem]">
+        <Seccion id="precio" className="scroll-mt-[1rem] py-[4rem] md:py-[5.5rem]">
           <Titulo>{precio.titulo}</Titulo>
           <div className="mt-[2.25rem] grid gap-[1rem] md:grid-cols-2 md:gap-[1.5rem]">
             {precio.partes.map(p => (
@@ -194,7 +391,7 @@ export default function LandingPage() {
           <p className="mt-[1.5rem] max-w-[38rem] leading-[1.6] text-suave">{precio.nota}</p>
         </Seccion>
 
-        <Seccion className="pb-[4rem] md:pb-[5.5rem]">
+        <Seccion id="preguntas" className="scroll-mt-[1rem] pb-[4rem] pt-[1rem] md:pb-[5.5rem]">
           <Titulo>{preguntas.titulo}</Titulo>
           <div className="mt-[1.75rem] border-t border-linea">
             {preguntas.lista.map(p => (
@@ -209,7 +406,7 @@ export default function LandingPage() {
           </div>
         </Seccion>
 
-        <div className="bg-verde text-papel">
+        <div className="bg-acento text-papel">
           <Seccion className="py-[4rem] text-center md:py-[5.5rem]">
             <Titulo>{cierre.titulo}</Titulo>
             <p className="mx-auto mt-[1rem] max-w-[30rem] text-[1.07rem] leading-[1.6] text-papel/75">{cierre.texto}</p>
@@ -217,7 +414,7 @@ export default function LandingPage() {
               href={contacto}
               target="_blank"
               rel="noreferrer"
-              className="mt-[2rem] inline-flex min-h-[3.25rem] items-center justify-center rounded-full bg-papel px-[1.6rem] font-semibold text-verde transition-colors hover:bg-crema"
+              className="mt-[2rem] inline-flex min-h-[3.25rem] items-center justify-center rounded-full bg-papel px-[1.6rem] font-bold text-acento transition-colors hover:bg-crema"
             >
               {cierre.boton}
             </a>

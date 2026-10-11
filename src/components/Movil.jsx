@@ -20,7 +20,7 @@ export default function Movil({ src, titulo, children, className = '' }) {
 
   return (
     <div
-      className={`relative aspect-[9/17] rounded-[2.4rem] border border-tinta/15 bg-tinta p-[0.45rem] shadow-[0_1.5rem_3rem_-1rem_rgb(26_25_22/0.35)] ${className}`}
+      className={`relative aspect-[9/17] rounded-[2.4rem] border border-white/15 bg-[#1d1d1b] p-[0.45rem] shadow-[0_1.5rem_3rem_-1rem_rgb(0_0_0/0.6)] ${className}`}
     >
       <div ref={pantalla} className="relative h-full w-full overflow-hidden rounded-[2rem] bg-papel text-tinta">
         {src ? (

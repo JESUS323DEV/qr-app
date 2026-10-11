@@ -9,14 +9,37 @@ export const marca = {
 }
 
 export const hero = {
-  titulo: 'Que los clientes que ya entran te dejen reseña y vuelvan.',
+  // Pestaña Inicio del hero: centrada en la placa con el QR
+  inicio: {
+    titulo: 'Los colores de tu negocio, hasta en el QR.',
+    // Colores que se pueden probar en la placa: fondo de la placa, color de sus letras y color del QR
+    colores: [
+      { nombre: 'amarillo', fondo: '#FFD23F', texto: '#141414', qr: '#141414' },
+      { nombre: 'granate',  fondo: '#7A1F2B', texto: '#FBEFEA', qr: '#7A1F2B' },
+      { nombre: 'verde',    fondo: '#1F4D3A', texto: '#F2EEE3', qr: '#1F4D3A' },
+      { nombre: 'rosa',     fondo: '#F2C9CF', texto: '#3B1A20', qr: '#B5656B' },
+      { nombre: 'negro',    fondo: '#141414', texto: '#F4F4F2', qr: '#141414' },
+      // QR con el degradado de Instagram (sin el amarillo claro, que el móvil leería mal sobre blanco)
+      { nombre: 'Instagram', fondo: '#FFFFFF', texto: '#141414', qr: '#C13584', degradado: ['#833AB4', '#C13584', '#E1306C', '#F77737'] },
+    ],
+  },
+  // Pestaña Ejemplos del hero
+  titulo: 'Tu negocio entero, en una pantalla de móvil.',
   texto:
-    'Una placa con un QR en tu mostrador. Al escanearla se abre una página con tu marca: reseña en Google, Instagram, WhatsApp, citas o la carta. Yo la diseño, la instalo y la cambio cuando haga falta.',
-  boton: 'Pídela por WhatsApp',
+    'Una placa en tu mostrador. Tus clientes la escanean y lo tienen todo: reseñas, horario, cómo llegar y reservas. Yo la monto y la mantengo.',
+  boton: 'Escríbeme por WhatsApp',
   enlace: 'Ver ejemplos',
+  // Debajo del móvil, mientras pasan las demos
+  pie: 'Así lo ven tus clientes',
+  // Pestañas del hero: son el menú de la landing (cada una baja a su sección)
+  pestanas: [
+    { texto: 'Ejemplos', ancla: 'ejemplos' },
+    { texto: 'Cómo va', ancla: 'como-funciona' },
+    { texto: 'Precio', ancla: 'precio' },
+    { texto: 'Dudas', ancla: 'preguntas' },
+  ],
   placa: {
-    negocio: 'Peluquería Olivo',
-    texto: 'Reseñas, citas y redes',
+    texto: 'Escanea y déjanos tu reseña',
   },
 }
 

@@ -1,16 +1,18 @@
 @import "tailwindcss";
 
+/* Landing: fondo oscuro, texto claro y un acento amarillo tipo pegatina.
+   papel = fondo, crema = superficies, tinta = texto, suave = texto secundario */
 @theme {
-  --color-papel: #f3efe6;
-  --color-crema: #ebe5d8;
-  --color-tinta: #1a1916;
-  --color-suave: #66625a;
-  --color-linea: #d9d2c3;
-  --color-verde: #1f4d3a;
-  --color-verde-oscuro: #163829;
+  --color-papel: #0f0f0e;
+  --color-crema: #1b1b19;
+  --color-tinta: #f2f0ea;
+  --color-suave: #a3a097;
+  --color-linea: #2f2e2b;
+  --color-acento: #ffd23f;
+  --color-acento-oscuro: #f0c419;
 
-  --font-titulo: "Young Serif", Georgia, serif;
-  --font-texto: "Figtree", system-ui, sans-serif;
+  --font-titulo: "Archivo", system-ui, sans-serif;
+  --font-texto: "Inter", system-ui, sans-serif;
 }
 
 /* Tema de cada negocio: applyTheme cambia estas variables */
