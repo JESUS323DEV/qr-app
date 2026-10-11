@@ -49,9 +49,16 @@ Proyecto de Jesús (desarrollador autodidacta, marca JesúsDev, Barcelona). Es i
 - Se puede reutilizar de `platform/src`: heros (`sections/hero/`), iconos de redes (`components/SocialIcons.jsx`), imagen con respaldo si falla (`components/Img.jsx`), formulario de contacto (`sections/ContactSection.jsx`) y el sistema de tema por variables CSS (`lib/applyTheme.js`, `styles/main.css`).
 - Fotos de Pexels (Unsplash bloquea las búsquedas). Datos de ejemplo inventados y genéricos.
 
+## Features pendientes
+
+- **Generador de QR**: pantalla interna para generar el QR de cada negocio con sus colores (librería `qr-code-styling`): forma de los puntos, ojos, inicial o logo en el centro y marco con texto, descargable en alta calidad para imprenta.
+- **Semántica de las pestañas** (landing y miniwebs): pintar todas las pestañas en el HTML y ocultar solo las inactivas, con roles accesibles (`tablist`, `tab`, `tabpanel`). Ahora solo existe en el HTML la pestaña abierta, así que Google no ve las demás y los lectores de pantalla no entienden la estructura.
+- **Prerenderizar** la landing y las miniwebs (HTML ya pintado al publicar): mejor SEO y vista previa con título e imagen al compartir el enlace por WhatsApp o Instagram.
+- **Secciones ocultas de la landing**: decidir si se quitan o se quedan solo como contenido para buscadores (ahora están en el HTML pero no se pueden ver por el bloqueo de scroll).
+- **Páginas legales**: Política de privacidad y Aviso legal (enlazadas desde el menú; ahora sus enlaces no llevan a ningún sitio).
+
 ## Estado
 
-- Hay una landing del producto en `src/pages/LandingPage.jsx` (textos en `src/landing/contenido.js`; nombre, WhatsApp y precios provisionales). A Jesús no le gusta su diseño: hay que rehacerlo.
+- Landing del producto (`src/pages/LandingPage.jsx`, textos en `src/landing/contenido.js`): es una miniweb de una pantalla, sin scroll vertical. Fondo oscuro, Archivo + Inter y acento amarillo. Pestañas: Inicio (fila de móviles con capturas de las demos), Tu QR (placa con colores de redes), Web completa, Cómo funciona (pasos + ventajas) y Contacto (formulario que abre WhatsApp). Menú hamburguesa que hace de pie de página. Las secciones de debajo siguen en el código pero no se ven. Nombre "Mostrador", WhatsApp y redes provisionales; sin precios (presupuesto a medida).
 - Demos hechas: Almendra (Editorial), El Pollastre d'Horta (Banner, en catalán, para un negocio real), LadySalon (Diagonal), Laca (Fullbleed), Dulce Lima (Mosaico), Navaja & Tijera (Portada) y Marta Soler (Retrato, psicóloga, datos inventados).
-- Pendiente (más adelante): pantalla interna para generar el QR de cada negocio con sus colores (librería `qr-code-styling`): forma de los puntos, ojos, inicial o logo en el centro y marco con texto, descargable en alta calidad para imprenta.
 - Página real de Vanessa (`/vanessa`, diseño Ficha): prima de Jesús, psicóloga, para sustituir su Beacons. Con su branding y sus datos reales; no sale en el catálogo. Completa: pestañas Consulta, YouTube (captura del canal con "Suscribirse") y Sobre mí; galería de sus vídeos; Instagram y YouTube arriba; contacto y "Ver más" a su web (vanessa-psicopedagoga.netlify.app).

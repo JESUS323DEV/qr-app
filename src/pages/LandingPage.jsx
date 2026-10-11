@@ -1,25 +1,142 @@
 import { rutaNegocio } from '../negocios'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { ArrowUpRight } from 'lucide-react'
+import { ArrowUpRight, Menu, X } from 'lucide-react'
 import Movil from '../components/Movil'
 import Placa from '../components/Placa'
+import { SocialIcon } from '../components/SocialIcons'
+import { COLORES_REDES } from '../lib/coloresRedes'
 import { tematicasConDemos, secuenciaDemos, tematicaDe, getTematica } from '../lib/tematicas'
 import { enlaceWhatsapp } from '../lib/whatsapp'
-import { marca, hero, porque, pasos, botones, ejemplos, precio, preguntas, cierre, pie } from '../landing/contenido'
+import { marca, hero, porque, pasos, botones, ejemplos, precio, preguntas, cierre, pie, contactoForm, webCompleta, menu } from '../landing/contenido'
 
 const contacto = enlaceWhatsapp(marca.whatsapp, marca.mensajeWhatsapp)
+// Enlace de WhatsApp con el mensaje de pedir presupuesto
+const pedirPresupuesto = enlaceWhatsapp(marca.whatsapp, precio.mensaje)
+// Enlace de WhatsApp para preguntar por una web completa
+const pedirWeb = enlaceWhatsapp(marca.whatsapp, webCompleta.mensaje)
 
-function BotonWhatsapp({ children, className = '' }) {
+function BotonWhatsapp({ children, className = '', href = contacto }) {
   return (
     <a
-      href={contacto}
+      href={href}
       target="_blank"
       rel="noreferrer"
       className={`inline-flex min-h-[3.25rem] items-center justify-center rounded-full bg-acento px-[1.6rem] text-[1rem] font-bold text-papel transition-colors hover:bg-acento-oscuro ${className}`}
     >
       {children}
     </a>
+  )
+}
+
+/* Formulario de la pestaña Contacto: nombre, teléfono, la idea y aceptar la privacidad.
+   Sin servidor: al enviar, abre WhatsApp con todo ya escrito. Ocupa el alto que queda en el escenario. */
+function FormularioContacto() {
+  const enviar = e => {
+    e.preventDefault()
+    const datos = new FormData(e.currentTarget)
+    const mensaje = `Hola, soy ${datos.get('nombre')} (${datos.get('telefono')}).\n${datos.get('idea')}`
+    window.open(enlaceWhatsapp(marca.whatsapp, mensaje), '_blank', 'noopener')
+  }
+
+  const campo = 'w-full rounded-[0.7rem] border border-linea bg-papel px-[0.85rem] text-[0.92rem] text-tinta placeholder:text-suave/70 focus:border-acento focus:outline-none'
+
+  return (
+    // Más compacto: el título y el texto del presupuesto arriba, y el formulario centrado en el alto que queda
+    <form onSubmit={enviar} className="flex flex-1 flex-col justify-center gap-[0.5rem] px-[1.25rem] pb-[1rem] pt-[0.9rem]">
+      <h2 className="font-titulo text-[clamp(1.9rem,1.5rem+2vw,2.5rem)] font-black leading-[1] tracking-tight">{contactoForm.titulo}</h2>
+      <p className="mb-[0.4rem] text-[0.88rem] leading-[1.45] text-suave">{precio.texto}</p>
+      <input name="nombre" required autoComplete="name" placeholder={contactoForm.nombre} aria-label={contactoForm.nombre} className={`${campo} min-h-[2.5rem]`} />
+      <input name="telefono" type="tel" required autoComplete="tel" placeholder={contactoForm.telefono} aria-label={contactoForm.telefono} className={`${campo} min-h-[2.5rem]`} />
+      <textarea name="idea" required rows={3} placeholder={contactoForm.idea} aria-label={contactoForm.idea} className={`${campo} resize-none py-[0.6rem]`} />
+      <label className="flex items-start gap-[0.55rem] text-[0.78rem] leading-[1.4] text-suave">
+        <input type="checkbox" name="acepto" required className="mt-[0.15rem] h-[1rem] w-[1rem] shrink-0 accent-[var(--color-acento)]" />
+        {contactoForm.acepto}
+      </label>
+      <button type="submit" className="min-h-[2.75rem] rounded-full bg-acento font-bold text-papel transition-colors hover:bg-acento-oscuro">
+        {contactoForm.enviar}
+      </button>
+    </form>
+  )
+}
+
+/* Menú hamburguesa de la cabecera del hero: abre una capa a pantalla completa con los apartados
+   de la landing (bajan a cada sección) y el botón de WhatsApp. */
+function MenuHamburguesa() {
+  const [abierto, setAbierto] = useState(false)
+
+  // Mientras está abierto, la página de detrás no se mueve
+  useEffect(() => {
+    document.body.style.overflow = abierto ? 'hidden' : ''
+    return () => { document.body.style.overflow = '' }
+  }, [abierto])
+
+  return (
+    <>
+      <button
+        type="button"
+        aria-label="Abrir menú"
+        aria-expanded={abierto}
+        onClick={() => setAbierto(true)}
+        className="flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-full bg-papel text-tinta transition-colors hover:text-acento"
+      >
+        <Menu className="h-[1.3rem] w-[1.3rem]" />
+      </button>
+
+      <div
+        className={`fixed inset-0 z-50 bg-papel transition-opacity duration-300 ${abierto ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
+        aria-hidden={!abierto}
+      >
+        <div className="mx-auto flex h-full w-full max-w-[30rem] flex-col px-[1.25rem] pb-[1.5rem] pt-[1rem]">
+          <div className="flex items-center justify-between">
+            <p className="font-titulo text-[1.3rem] font-black tracking-tight">{marca.nombre}</p>
+            <button
+              type="button"
+              aria-label="Cerrar menú"
+              onClick={() => setAbierto(false)}
+              className="flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-full bg-crema text-tinta transition-colors hover:text-acento"
+            >
+              <X className="h-[1.3rem] w-[1.3rem]" />
+            </button>
+          </div>
+
+          {/* El menú hace de pie de página: qué es, redes, textos legales y firma */}
+          <div className="flex flex-1 flex-col justify-center">
+            <p className="max-w-[22rem] text-[1rem] leading-[1.55] text-suave">{menu.texto}</p>
+
+            <p className="mt-[2rem] text-[0.8rem] text-suave">{menu.redesTexto}</p>
+            <div className="mt-[0.6rem] flex gap-[0.6rem]">
+              {menu.redes.map(r => (
+                <a
+                  key={r.platform}
+                  href={r.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label={r.platform}
+                  className="flex h-[2.6rem] w-[2.6rem] items-center justify-center rounded-full text-white transition-transform hover:scale-105"
+                  style={{ background: COLORES_REDES[r.platform] }}
+                >
+                  <SocialIcon platform={r.platform} className="h-[1.1rem] w-[1.1rem]" />
+                </a>
+              ))}
+            </div>
+
+            <ul className="mt-[2rem] border-t border-linea">
+              {menu.legales.map(l => (
+                <li key={l.texto} className="border-b border-linea">
+                  <a href={l.url} className="block py-[0.8rem] text-[0.95rem] transition-colors hover:text-acento">
+                    {l.texto}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <BotonWhatsapp className="w-full">{menu.boton}</BotonWhatsapp>
+          <p className="mt-[1rem] text-center text-[0.78rem] text-suave">{menu.firma}</p>
+        </div>
+      </div>
+    </>
   )
 }
 
@@ -96,16 +213,15 @@ function HeroMiniweb() {
     setActual(cerca)
   }
 
-  // Dos filas de pestañas: cuatro arriba y dos abajo, centradas
+  // Dos filas de pestañas: tres arriba y dos abajo, centradas
   const PESTANAS = [
     { key: 'ejemplos', texto: 'Inicio' },
     { key: 'qr', texto: 'Tu QR' },
-    { key: 'ventajas', texto: 'Ventajas' },
-    { key: 'precio', texto: 'Precio' },
+    { key: 'contacto', texto: 'Contacto' },
   ]
   const PESTANAS_ABAJO = [
     { key: 'como', texto: 'Cómo funciona' },
-    { key: 'contacto', texto: 'Contacto' },
+    { key: 'web', texto: webCompleta.pestana },
   ]
 
   return (
@@ -115,88 +231,76 @@ function HeroMiniweb() {
         {/* Marca arriba */}
         <div className="flex items-center justify-between px-[1.25rem] pt-[1rem]">
           <p className="font-titulo text-[1.3rem] font-black tracking-tight">{marca.nombre}</p>
-          <a
-            href={contacto}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex min-h-[2.2rem] items-center rounded-full bg-acento px-[1rem] text-[0.85rem] font-bold text-papel transition-colors hover:bg-acento-oscuro"
-          >
-            Contacto
-          </a>
+          <MenuHamburguesa />
         </div>
 
         {/* Texto: cambia con la pestaña */}
         <div className="px-[1.25rem] pt-[0.9rem]">
-          {pestana === 'ventajas' && (
-            <>
-              <h2 className="font-titulo text-[clamp(1.9rem,1.5rem+2vw,2.5rem)] font-black leading-[1] tracking-tight">
-                {hero.principal.titulo}
-              </h2>
-            </>
-          )}
           {pestana === 'qr' && (
             <h2 className="font-titulo text-[clamp(1.9rem,1.5rem+2vw,2.5rem)] font-black leading-[1] tracking-tight">
               {hero.inicio.titulo}
             </h2>
           )}
-          {pestana === 'como' && (
-            <h2 className="font-titulo text-[clamp(1.9rem,1.5rem+2vw,2.5rem)] font-black leading-[1] tracking-tight">
-              {pasos.titulo}
-            </h2>
-          )}
           {pestana === 'ejemplos' && (
             <>
-              {/* En la misma fila, para no restar alto a los móviles */}
-              <div className="flex items-baseline justify-between gap-[0.75rem]">
-                <p className="min-w-0 truncate text-[0.85rem] text-acento">{demo ? `Para tu ${demo.sector.toLowerCase()}` : hero.paraTodos}</p>
-              </div>
-              <h1 className="mt-[0.3rem] font-titulo text-[clamp(1.9rem,1.5rem+2vw,2.5rem)] font-black leading-[1] tracking-tight">
+              <h1 className="font-titulo text-[clamp(1.9rem,1.5rem+2vw,2.5rem)] font-black leading-[1] tracking-tight">
                 {hero.titulo}
               </h1>
-            </>
-          )}
-          {pestana === 'precio' && (
-            <>
-              <h2 className="font-titulo text-[1.8rem] font-black leading-[1.05] tracking-tight">Lorem ipsum 000 €</h2>
-              <p className="mt-[0.4rem] text-[0.9rem] text-suave">Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
-            </>
-          )}
-          {pestana === 'contacto' && (
-            <>
-              <h2 className="font-titulo text-[1.8rem] font-black leading-[1.05] tracking-tight">Lorem ipsum dolor.</h2>
-              <p className="mt-[0.4rem] text-[0.9rem] text-suave">Lorem ipsum dolor sit amet, consectetur.</p>
             </>
           )}
 
         </div>
 
-        {/* Pestaña Ventajas: lo que gana el negocio, en cuatro puntos, y el precio de entrada */}
-        {pestana === 'ventajas' && (
-          <div className="flex flex-1 flex-col justify-center px-[1.25rem] py-[0.8rem]">
-            <ul className="border-t border-linea">
-              {hero.principal.puntos.map(p => (
-                <li key={p.clave} className="border-b border-linea py-[0.6rem] text-[0.9rem] leading-[1.4]">
-                  <span className="font-bold">{p.clave}:</span> <span className="text-suave">{p.texto}</span>
-                </li>
-              ))}
-            </ul>
-            <p className="mt-[0.9rem] text-[0.9rem] font-semibold text-acento">{hero.principal.pie}</p>
+        {/* Pestaña Web completa: el siguiente escalón, una web a medida */}
+        {pestana === 'web' && (
+          <div className="flex flex-1 flex-col justify-center px-[1.25rem] py-[1rem]">
+            <h2 className="font-titulo text-[clamp(1.9rem,1.5rem+2vw,2.5rem)] font-black leading-[1] tracking-tight">{webCompleta.titulo}</h2>
+            <p className="mt-[0.8rem] max-w-[24rem] text-[0.95rem] leading-[1.5] text-suave">{webCompleta.texto}</p>
+            <div className="mt-[1.4rem] flex flex-wrap items-center gap-[0.6rem]">
+              <BotonWhatsapp href={pedirWeb}>{webCompleta.boton}</BotonWhatsapp>
+              {/* Ejemplos de webs completas (platform), en otra pestaña */}
+              <a
+                href={webCompleta.urlEjemplos || '#'}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex min-h-[3.25rem] items-center justify-center gap-[0.35rem] rounded-full border border-tinta/30 px-[1.4rem] text-[1rem] font-bold transition-colors hover:border-acento hover:text-acento"
+              >
+                {webCompleta.botonEjemplos}
+                <ArrowUpRight className="h-[1rem] w-[1rem]" aria-hidden="true" />
+              </a>
+            </div>
           </div>
         )}
 
-        {/* Pestaña Cómo funciona: los tres pasos, en grande */}
+        {/* Pestaña Contacto: formulario sencillo que, al enviar, abre WhatsApp con el mensaje ya escrito */}
+        {pestana === 'contacto' && <FormularioContacto />}
+
+        {/* Pestaña Cómo funciona: los tres pasos y, debajo, las ventajas en una o dos líneas.
+            Ocupa todo el alto: título arriba, ventajas abajo y los pasos repartidos en medio */}
         {pestana === 'como' && (
-          <ol className="flex flex-1 flex-col justify-center gap-[1rem] px-[1.25rem] py-[1rem]">
-            {pasos.lista.map((paso, i) => (
-              <li key={paso.titulo} className="flex gap-[0.9rem]">
-                <span className="font-titulo text-[2rem] font-black leading-none text-acento">{i + 1}</span>
-                <div>
-                  <p className="font-titulo text-[1.1rem] font-bold leading-tight">{paso.titulo}</p>
-                  <p className="mt-[0.2rem] text-[0.85rem] leading-[1.45] text-suave">{paso.texto}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
+          <div className="flex flex-1 flex-col px-[1.25rem] pb-[1rem] pt-[0.9rem]">
+            <h2 className="font-titulo text-[clamp(1.9rem,1.5rem+2vw,2.5rem)] font-black leading-[1] tracking-tight">
+              {pasos.titulo}
+            </h2>
+            <ol className="flex flex-1 flex-col justify-evenly gap-[1rem] py-[1rem]">
+              {pasos.lista.map((paso, i) => (
+                <li key={paso.titulo} className="flex gap-[0.9rem]">
+                  <span className="font-titulo text-[2rem] font-black leading-none text-acento">{i + 1}</span>
+                  <div>
+                    <p className="font-titulo text-[1.1rem] font-bold leading-tight">{paso.titulo}</p>
+                    <p className="mt-[0.2rem] text-[0.85rem] leading-[1.45] text-suave">{paso.texto}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+            {/* Ventajas, en pequeño */}
+            <div className="border-t border-linea pt-[0.8rem] text-[0.85rem] leading-[1.45]">
+              <p>
+                <span className="font-bold">{hero.ventajas.titulo}:</span> <span className="text-suave">{hero.ventajas.texto}</span>
+              </p>
+              <p className="mt-[0.3rem] font-semibold text-acento">{hero.ventajas.pie}</p>
+            </div>
+          </div>
         )}
 
         {/* Pestaña Tu QR: la placa del mostrador, personalizable con colores y forma de los puntos del QR */}
@@ -340,7 +444,7 @@ function HeroMiniweb() {
                   if (p.key === 'ejemplos') { setActual(0); setTocado(false) }
                 }}
                 className={`rounded-[0.7rem] py-[0.65rem] text-[0.82rem] font-semibold transition-colors ${
-                  f > 0 ? 'w-[calc((100%-1.05rem)/4*1.5)]' : 'w-[calc((100%-1.05rem)/4)]'
+                  f > 0 ? 'w-[calc((100%-0.7rem)/3*1.3)]' : 'w-[calc((100%-0.7rem)/3)]'
                 } ${pestana === p.key ? 'bg-acento text-papel' : 'bg-crema text-tinta hover:bg-linea'}`}
               >
                 {p.texto}
@@ -364,7 +468,8 @@ export default function LandingPage() {
   }, [hash])
 
   return (
-    <div className="min-h-svh bg-papel font-texto text-tinta">
+    // Sin scroll vertical: solo se ve la miniweb de la primera pantalla. Las secciones de debajo se quedan en el código
+    <div className="h-svh overflow-hidden bg-papel font-texto text-tinta">
       {/* Primera pantalla: el hero es una miniweb, exactamente el alto de la pantalla */}
       <div className="flex min-h-svh flex-col">
         <HeroMiniweb />
@@ -455,15 +560,8 @@ export default function LandingPage() {
 
         <Seccion id="precio" className="scroll-mt-[1rem] py-[4rem] md:py-[5.5rem]">
           <Titulo>{precio.titulo}</Titulo>
-          <div className="mt-[2.25rem] grid gap-[1rem] md:grid-cols-2 md:gap-[1.5rem]">
-            {precio.partes.map(p => (
-              <div key={p.nombre} className="rounded-[1.25rem] border border-linea bg-crema p-[1.5rem] md:p-[2rem]">
-                <p className="text-suave">{p.nombre}</p>
-                <p className="mt-[0.3rem] font-titulo text-[clamp(2rem,1.7rem+1.4vw,2.75rem)] leading-none">{p.cifra}</p>
-                <p className="mt-[1rem] leading-[1.6] text-suave">{p.detalle}</p>
-              </div>
-            ))}
-          </div>
+          <p className="mt-[1rem] max-w-[36rem] text-[1.07rem] leading-[1.6] text-suave">{precio.texto}</p>
+          <BotonWhatsapp href={pedirPresupuesto} className="mt-[1.75rem]">{precio.boton}</BotonWhatsapp>
           <p className="mt-[1.5rem] max-w-[38rem] leading-[1.6] text-suave">{precio.nota}</p>
         </Seccion>
 

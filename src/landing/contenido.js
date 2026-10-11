@@ -9,16 +9,11 @@ export const marca = {
 }
 
 export const hero = {
-  // Pestaña Inicio del hero (provisional)
-  principal: {
-    titulo: 'Una placa en tu mostrador que te trae reseñas y clientes.',
-    puntos: [
-      { clave: 'Más reseñas en Google', texto: 'tus clientes te valoran en dos toques, desde el mostrador.' },
-      { clave: 'Todo en una pantalla', texto: 'horario, cómo llegar, reservas y redes.' },
-      { clave: 'Con tu marca', texto: 'tus colores, tus fotos y tu estilo, no una plantilla.' },
-      { clave: 'Sin complicaciones', texto: 'lo monto yo y lo cambio cuando lo necesites.' },
-    ],
-    pie: 'Desde 149 €, pago único',
+  // Debajo de los pasos, en la pestaña Cómo funciona: lo que gana el negocio, en una o dos líneas
+  ventajas: {
+    titulo: 'Ventajas',
+    texto: 'más reseñas en Google, más visibilidad en Maps y clientes que vuelven.',
+    pie: 'Presupuesto sin compromiso',
   },
   // Pestaña Tu QR del hero: la placa con el QR personalizable
   inicio: {
@@ -39,7 +34,6 @@ export const hero = {
   // Pestaña Inicio del hero (los móviles con las demos)
   titulo: 'Tu negocio entero, en una pantalla de móvil.',
   pista: 'Ver demo',
-  paraTodos: 'Para tu negocio',
   texto:
     'Una placa en tu mostrador. Tus clientes la escanean y lo tienen todo: reseñas, horario, cómo llegar y reservas. Yo la monto y la mantengo.',
   boton: 'Escríbeme por WhatsApp',
@@ -68,16 +62,16 @@ export const pasos = {
   titulo: 'Cómo funciona',
   lista: [
     {
-      titulo: 'Me cuentas qué te importa',
-      texto: 'Más reseñas, más citas, que te pidan por WhatsApp. Lo que más te importe va arriba y en grande.',
+      titulo: 'Tu miniweb',
+      texto: 'Todo tu negocio en la pantalla del móvil: qué haces, dónde estás, cómo reservar, tus reseñas y tus redes. Tus clientes lo ven de un vistazo.',
     },
     {
       titulo: 'Diseño tu página y tu placa',
-      texto: 'Con tus colores, tus fotos y tu logo. Te llevo la placa al local y la dejamos puesta.',
+      texto: 'Con tus colores, tus fotos y tu logo. Hasta el QR va con tu marca.',
     },
     {
       titulo: 'La mantengo al día',
-      texto: 'Si cambias el horario, la carta o cierras en agosto, me escribes y lo cambio. El QR es el mismo y no hay que reimprimir nada.',
+      texto: 'Me encargo de que esté siempre al día. Cualquier cambio, un mensaje y listo, sin reimprimir el QR.',
     },
   ],
 }
@@ -104,21 +98,14 @@ export const ejemplos = {
   verMas: 'Ver más',
 }
 
+// De momento sin precio fijo: se habla con cada cliente
 export const precio = {
-  titulo: 'Precio',
-  partes: [
-    {
-      nombre: 'Para empezar',
-      cifra: '129 €',
-      detalle: 'Diseño de la página, montaje y la placa con tu marca.',
-    },
-    {
-      nombre: 'Después',
-      cifra: '9 € al mes',
-      detalle: 'La página online, los cambios que necesites y un resumen de cuánta gente la usa.',
-    },
-  ],
-  nota: '¿Quieres otra placa para el escaparate o una pegatina para la puerta? Te la hago aparte.',
+  pestana: 'Presupuesto',
+  titulo: 'Un precio a la medida de tu negocio.',
+  texto: 'Cada negocio necesita cosas distintas. Cuéntame qué tienes y te paso un presupuesto sin compromiso.',
+  boton: 'Pedir presupuesto',
+  mensaje: 'Hola, me gustaría un presupuesto para mi negocio.',
+  nota: '¿Quieres otra placa para el escaparate o una pegatina para la puerta? Te la incluyo en el presupuesto.',
 }
 
 export const preguntas = {
@@ -153,4 +140,44 @@ export const cierre = {
 
 export const pie = {
   firma: 'Hecho por JesúsDev',
+}
+
+// Formulario de la pestaña Contacto del hero (al enviar, abre WhatsApp con todo escrito)
+export const contactoForm = {
+  titulo: 'Cuéntame tu idea',
+  nombre: 'Tu nombre',
+  telefono: 'Tu teléfono',
+  idea: 'Qué negocio tienes y qué te gustaría conseguir',
+  acepto: 'Acepto que uses estos datos para contactarme sobre mi consulta.',
+  enviar: 'Enviar',
+}
+
+// Pestaña Web completa del hero: el siguiente escalón para quien quiere más
+export const webCompleta = {
+  pestana: 'Web completa',
+  titulo: '¿Quieres una web completa?',
+  texto: 'También hago webs completas a medida: más secciones, tu carta o tus servicios con precios, y preparada para salir en Google.',
+  boton: 'Pedir información',
+  mensaje: 'Hola, me interesa una web completa para mi negocio.',
+  // Segundo botón: lleva a los ejemplos de webs completas (platform)
+  botonEjemplos: 'Ver ejemplos',
+  urlEjemplos: 'https://landig-demos.netlify.app/',
+}
+
+// Menú hamburguesa de la cabecera: hace de pie de página (qué es, redes, textos legales y firma)
+export const menu = {
+  texto: 'Placas con QR y miniwebs para negocios locales, con la marca de cada uno. Hecho en Barcelona.',
+  redesTexto: 'Sígueme',
+  // Redes de la marca (pendiente: poner los perfiles cuando existan)
+  redes: [
+    { platform: 'instagram', href: 'https://instagram.com' },
+    { platform: 'tiktok', href: 'https://tiktok.com' },
+  ],
+  // Textos legales (pendiente: crear sus páginas y poner aquí sus direcciones)
+  legales: [
+    { texto: 'Política de privacidad', url: '#' },
+    { texto: 'Aviso legal', url: '#' },
+  ],
+  boton: 'Escríbeme por WhatsApp',
+  firma: 'Mostrador · Hecho por JesúsDev',
 }
