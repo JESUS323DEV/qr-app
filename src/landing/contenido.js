@@ -9,22 +9,37 @@ export const marca = {
 }
 
 export const hero = {
-  // Pestaña Inicio del hero: centrada en la placa con el QR
+  // Pestaña Inicio del hero (provisional)
+  principal: {
+    titulo: 'Una placa en tu mostrador que te trae reseñas y clientes.',
+    puntos: [
+      { clave: 'Más reseñas en Google', texto: 'tus clientes te valoran en dos toques, desde el mostrador.' },
+      { clave: 'Todo en una pantalla', texto: 'horario, cómo llegar, reservas y redes.' },
+      { clave: 'Con tu marca', texto: 'tus colores, tus fotos y tu estilo, no una plantilla.' },
+      { clave: 'Sin complicaciones', texto: 'lo monto yo y lo cambio cuando lo necesites.' },
+    ],
+    pie: 'Desde 149 €, pago único',
+  },
+  // Pestaña Tu QR del hero: la placa con el QR personalizable
   inicio: {
     titulo: 'Los colores de tu negocio, hasta en el QR.',
     // Colores que se pueden probar en la placa: fondo de la placa, color de sus letras y color del QR
     colores: [
-      { nombre: 'amarillo', fondo: '#FFD23F', texto: '#141414', qr: '#141414' },
-      { nombre: 'granate',  fondo: '#7A1F2B', texto: '#FBEFEA', qr: '#7A1F2B' },
-      { nombre: 'verde',    fondo: '#1F4D3A', texto: '#F2EEE3', qr: '#1F4D3A' },
-      { nombre: 'rosa',     fondo: '#F2C9CF', texto: '#3B1A20', qr: '#B5656B' },
-      { nombre: 'negro',    fondo: '#141414', texto: '#F4F4F2', qr: '#141414' },
       // QR con el degradado de Instagram (sin el amarillo claro, que el móvil leería mal sobre blanco)
       { nombre: 'Instagram', fondo: '#FFFFFF', texto: '#141414', qr: '#C13584', degradado: ['#833AB4', '#C13584', '#E1306C', '#F77737'] },
+      // QR con un degradado de azules de Facebook (del azul marino al azul de su logo)
+      { nombre: 'Facebook', fondo: '#FFFFFF', texto: '#141414', qr: '#0866FF', degradado: ['#0A2E73', '#0866FF', '#1E8CFF'] },
+      // TikTok: placa negra y QR negro con su efecto de doble imagen en cian y rosa
+      { nombre: 'TikTok', fondo: '#000000', texto: '#FFFFFF', qr: '#000000', glitch: ['#25F4EE', '#FE2C55'] },
+      { nombre: 'rosa',     fondo: '#F2C9CF', texto: '#3B1A20', qr: '#B5656B' },
+      // Celeste: placa azul cielo y QR en degradado de azul marino a azul petróleo (oscuro para que se lea bien)
+      { nombre: 'celeste',  fondo: '#9BD8F2', texto: '#0B2F4A', qr: '#0B3A5B', degradado: ['#0B2F4A', '#0E4F7A', '#0F7A95'] },
     ],
   },
-  // Pestaña Ejemplos del hero
+  // Pestaña Inicio del hero (los móviles con las demos)
   titulo: 'Tu negocio entero, en una pantalla de móvil.',
+  pista: 'Ver demo',
+  paraTodos: 'Para tu negocio',
   texto:
     'Una placa en tu mostrador. Tus clientes la escanean y lo tienen todo: reseñas, horario, cómo llegar y reservas. Yo la monto y la mantengo.',
   boton: 'Escríbeme por WhatsApp',

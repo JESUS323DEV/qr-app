@@ -1,6 +1,7 @@
 import { rutaNegocio } from '../negocios'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import { ArrowUpRight } from 'lucide-react'
 import Movil from '../components/Movil'
 import Placa from '../components/Placa'
 import { tematicasConDemos, secuenciaDemos, tematicaDe, getTematica } from '../lib/tematicas'
@@ -59,7 +60,7 @@ const ESCAPARATE = secuenciaDemos
    pestañas y, debajo, el botón destacado de WhatsApp. Todo en una pantalla. Los textos son provisionales. */
 function HeroMiniweb() {
   const [actual, setActual] = useState(0)
-  const [pestana, setPestana] = useState('inicio')
+  const [pestana, setPestana] = useState('ejemplos')
   const [tocado, setTocado] = useState(false)
   // Placa de Inicio: color y forma de los puntos elegidos
   const [color, setColor] = useState(0)
@@ -69,9 +70,9 @@ function HeroMiniweb() {
   const demo = ESCAPARATE[actual]
 
   // Lleva la fila hasta un móvil concreto
-  const irA = i => {
+  const irA = (i, suave = true) => {
     const el = fila.current?.children[i]
-    if (el) fila.current.scrollTo({ left: el.offsetLeft - fila.current.offsetLeft - (fila.current.clientWidth - el.clientWidth) / 2, behavior: 'smooth' })
+    if (el) fila.current.scrollTo({ left: el.offsetLeft - fila.current.offsetLeft - (fila.current.clientWidth - el.clientWidth) / 2, behavior: suave ? 'smooth' : 'instant' })
   }
 
   // Pasa sola al siguiente móvil hasta que el visitante toca la fila
@@ -95,10 +96,15 @@ function HeroMiniweb() {
     setActual(cerca)
   }
 
+  // Dos filas de pestañas: cuatro arriba y dos abajo, centradas
   const PESTANAS = [
-    { key: 'inicio', texto: 'Inicio' },
-    { key: 'ejemplos', texto: 'Ejemplos' },
+    { key: 'ejemplos', texto: 'Inicio' },
+    { key: 'qr', texto: 'Tu QR' },
+    { key: 'ventajas', texto: 'Ventajas' },
     { key: 'precio', texto: 'Precio' },
+  ]
+  const PESTANAS_ABAJO = [
+    { key: 'como', texto: 'Cómo funciona' },
     { key: 'contacto', texto: 'Contacto' },
   ]
 
@@ -109,24 +115,44 @@ function HeroMiniweb() {
         {/* Marca arriba */}
         <div className="flex items-center justify-between px-[1.25rem] pt-[1rem]">
           <p className="font-titulo text-[1.3rem] font-black tracking-tight">{marca.nombre}</p>
-          <p className="text-[0.8rem] text-suave">{marca.ciudad}</p>
+          <a
+            href={contacto}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex min-h-[2.2rem] items-center rounded-full bg-acento px-[1rem] text-[0.85rem] font-bold text-papel transition-colors hover:bg-acento-oscuro"
+          >
+            Contacto
+          </a>
         </div>
 
         {/* Texto: cambia con la pestaña */}
         <div className="px-[1.25rem] pt-[0.9rem]">
-          {pestana === 'inicio' && (
+          {pestana === 'ventajas' && (
             <>
-              <h1 className="font-titulo text-[clamp(1.9rem,1.5rem+2vw,2.5rem)] font-black leading-[1] tracking-tight">
-                {hero.inicio.titulo}
-              </h1>
+              <h2 className="font-titulo text-[clamp(1.9rem,1.5rem+2vw,2.5rem)] font-black leading-[1] tracking-tight">
+                {hero.principal.titulo}
+              </h2>
             </>
+          )}
+          {pestana === 'qr' && (
+            <h2 className="font-titulo text-[clamp(1.9rem,1.5rem+2vw,2.5rem)] font-black leading-[1] tracking-tight">
+              {hero.inicio.titulo}
+            </h2>
+          )}
+          {pestana === 'como' && (
+            <h2 className="font-titulo text-[clamp(1.9rem,1.5rem+2vw,2.5rem)] font-black leading-[1] tracking-tight">
+              {pasos.titulo}
+            </h2>
           )}
           {pestana === 'ejemplos' && (
             <>
-              <p className="text-[0.85rem] text-acento">Para tu {demo?.sector.toLowerCase()}</p>
-              <h2 className="mt-[0.3rem] font-titulo text-[clamp(1.9rem,1.5rem+2vw,2.5rem)] font-black leading-[1] tracking-tight">
+              {/* En la misma fila, para no restar alto a los móviles */}
+              <div className="flex items-baseline justify-between gap-[0.75rem]">
+                <p className="min-w-0 truncate text-[0.85rem] text-acento">{demo ? `Para tu ${demo.sector.toLowerCase()}` : hero.paraTodos}</p>
+              </div>
+              <h1 className="mt-[0.3rem] font-titulo text-[clamp(1.9rem,1.5rem+2vw,2.5rem)] font-black leading-[1] tracking-tight">
                 {hero.titulo}
-              </h2>
+              </h1>
             </>
           )}
           {pestana === 'precio' && (
@@ -144,8 +170,37 @@ function HeroMiniweb() {
 
         </div>
 
-        {/* Pestaña Inicio: la placa del mostrador, personalizable con colores y forma de los puntos del QR */}
-        {pestana === 'inicio' && (
+        {/* Pestaña Ventajas: lo que gana el negocio, en cuatro puntos, y el precio de entrada */}
+        {pestana === 'ventajas' && (
+          <div className="flex flex-1 flex-col justify-center px-[1.25rem] py-[0.8rem]">
+            <ul className="border-t border-linea">
+              {hero.principal.puntos.map(p => (
+                <li key={p.clave} className="border-b border-linea py-[0.6rem] text-[0.9rem] leading-[1.4]">
+                  <span className="font-bold">{p.clave}:</span> <span className="text-suave">{p.texto}</span>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-[0.9rem] text-[0.9rem] font-semibold text-acento">{hero.principal.pie}</p>
+          </div>
+        )}
+
+        {/* Pestaña Cómo funciona: los tres pasos, en grande */}
+        {pestana === 'como' && (
+          <ol className="flex flex-1 flex-col justify-center gap-[1rem] px-[1.25rem] py-[1rem]">
+            {pasos.lista.map((paso, i) => (
+              <li key={paso.titulo} className="flex gap-[0.9rem]">
+                <span className="font-titulo text-[2rem] font-black leading-none text-acento">{i + 1}</span>
+                <div>
+                  <p className="font-titulo text-[1.1rem] font-bold leading-tight">{paso.titulo}</p>
+                  <p className="mt-[0.2rem] text-[0.85rem] leading-[1.45] text-suave">{paso.texto}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        )}
+
+        {/* Pestaña Tu QR: la placa del mostrador, personalizable con colores y forma de los puntos del QR */}
+        {pestana === 'qr' && (
           <>
             <div className="flex min-h-[10rem] flex-1 items-center justify-center py-[1rem]">
               <Placa
@@ -155,6 +210,7 @@ function HeroMiniweb() {
                 colorTexto={paleta.texto}
                 colorQr={paleta.qr}
                 degradadoQr={paleta.degradado}
+                glitchQr={paleta.glitch}
                 forma={forma}
                 className="w-[min(52%,13rem)] -rotate-[4deg]"
               />
@@ -173,9 +229,13 @@ function HeroMiniweb() {
                     onClick={() => setColor(i)}
                     className={`h-[1.7rem] w-[1.7rem] rounded-full border-2 transition-transform duration-300 ${i === color ? 'scale-110 border-acento' : 'border-white/15 hover:scale-105'}`}
                     style={{
-                      background: c.degradado
+                      // Placa blanca con degradado (Instagram, Facebook): el círculo enseña el degradado entero;
+                      // placa de color: mitad placa y mitad color del QR
+                      background: c.degradado && c.fondo.toUpperCase() === '#FFFFFF'
                         ? `linear-gradient(45deg, ${c.degradado.join(', ')})`
-                        : `linear-gradient(135deg, ${c.fondo} 55%, ${c.qr} 55%)`,
+                        : c.glitch
+                          ? `linear-gradient(135deg, ${c.glitch[0]} 0 24%, ${c.fondo} 24% 76%, ${c.glitch[1]} 76%)`
+                          : `linear-gradient(135deg, ${c.fondo} 55%, ${c.qr} 55%)`,
                     }}
                   />
                 ))}
@@ -199,7 +259,7 @@ function HeroMiniweb() {
           </>
         )}
 
-        {/* Pestaña Ejemplos: fila de móviles con las capturas, como el catálogo en pequeño; se ajusta al alto que queda.
+        {/* Pestaña Inicio (clave ejemplos, la primera): fila de móviles con las capturas, como el catálogo en pequeño; se ajusta al alto que queda.
             Se desliza con el dedo; tocar un móvil abre la demo de verdad. */}
         {pestana === 'ejemplos' && (
         <>
@@ -218,11 +278,20 @@ function HeroMiniweb() {
                   target="_blank"
                   rel="noreferrer"
                   aria-label={`Abrir la demo de ${d.nombre}`}
-                  className={`block aspect-[390/844] h-full rounded-[1.2rem] border border-white/15 bg-[#1d1d1b] p-[0.3rem] shadow-[0_1rem_2rem_-0.8rem_rgb(0_0_0/0.7)] transition-[opacity,transform] duration-500 ${
+                  className={`relative block aspect-[390/844] h-full rounded-[1.2rem] border border-white/15 bg-[#1d1d1b] p-[0.3rem] shadow-[0_1rem_2rem_-0.8rem_rgb(0_0_0/0.7)] transition-[opacity,transform] duration-500 ${
                     i === actual ? 'opacity-100' : 'scale-[0.92] opacity-55'
                   }`}
                 >
                   <img src={d.foto} alt={`Ejemplo: ${d.nombre}`} className="h-full w-full rounded-[0.95rem] object-cover object-top" />
+                  {/* Etiqueta dentro del móvil del centro, abajo, debajo de la card de redes */}
+                  <span
+                    className={`pointer-events-none absolute bottom-[0.7rem] left-1/2 flex -translate-x-1/2 items-center gap-[0.3rem] whitespace-nowrap rounded-full bg-black/75 px-[0.75rem] py-[0.3rem] text-[0.72rem] font-semibold text-white backdrop-blur-sm transition-opacity duration-500 ${
+                      i === actual ? 'opacity-100' : 'opacity-0'
+                    }`}
+                  >
+                    {hero.pista}
+                    <ArrowUpRight className="h-[0.8rem] w-[0.8rem]" aria-hidden="true" />
+                  </span>
                 </a>
               </li>
             ))}
@@ -232,7 +301,13 @@ function HeroMiniweb() {
         {/* Qué demo se ve y rayitas */}
         <div className="flex items-center justify-between gap-[0.75rem] px-[1.25rem] py-[0.8rem]">
           <p className="min-w-0 truncate text-[0.82rem]">
-            <span className="font-semibold">{demo?.nombre}</span> <span className="text-suave">· {demo?.sector}</span>
+            {demo ? (
+              <>
+                <span className="font-semibold">{demo.nombre}</span> <span className="text-suave">· {demo.sector}</span>
+              </>
+            ) : (
+              <span className="text-suave">{ESCAPARATE.length} ejemplos</span>
+            )}
           </p>
           <div className="flex shrink-0 gap-[0.3rem]">
             {ESCAPARATE.map((d, i) => (
@@ -250,31 +325,32 @@ function HeroMiniweb() {
         )}
       </div>
 
-      {/* Pestañas */}
-      <nav className="grid grid-cols-4 gap-[0.35rem] px-[1.25rem] pt-[0.9rem]">
-        {PESTANAS.map(p => (
-          <button
-            key={p.key}
-            type="button"
-            aria-pressed={pestana === p.key}
-            onClick={() => {
-              setPestana(p.key)
-              // La fila de Ejemplos empieza siempre por la primera demo
-              if (p.key === 'ejemplos') { setActual(0); setTocado(false) }
-            }}
-            className={`rounded-[0.7rem] py-[0.65rem] text-[0.82rem] font-semibold transition-colors ${
-              pestana === p.key ? 'bg-acento text-papel' : 'bg-crema text-tinta hover:bg-linea'
-            }`}
-          >
-            {p.texto}
-          </button>
+      {/* Pestañas: dos filas, la de abajo centrada */}
+      <nav className="px-[1.25rem] pt-[0.9rem]">
+        {[PESTANAS, PESTANAS_ABAJO].map((fila, f) => (
+          <div key={f} className={`flex justify-center gap-[0.35rem] ${f > 0 ? 'mt-[0.35rem]' : ''}`}>
+            {fila.map(p => (
+              <button
+                key={p.key}
+                type="button"
+                aria-pressed={pestana === p.key}
+                onClick={() => {
+                  setPestana(p.key)
+                  // La fila de Ejemplos empieza siempre por la primera demo
+                  if (p.key === 'ejemplos') { setActual(0); setTocado(false) }
+                }}
+                className={`rounded-[0.7rem] py-[0.65rem] text-[0.82rem] font-semibold transition-colors ${
+                  f > 0 ? 'w-[calc((100%-1.05rem)/4*1.5)]' : 'w-[calc((100%-1.05rem)/4)]'
+                } ${pestana === p.key ? 'bg-acento text-papel' : 'bg-crema text-tinta hover:bg-linea'}`}
+              >
+                {p.texto}
+              </button>
+            ))}
+          </div>
         ))}
       </nav>
 
-      {/* Cuerpo: botón destacado */}
-      <div className="px-[1.25rem] pb-[1.25rem] pt-[0.9rem]">
-        <BotonWhatsapp className="w-full">{hero.boton}</BotonWhatsapp>
-      </div>
+      <div className="pb-[1.25rem]" />
     </div>
   )
 }

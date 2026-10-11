@@ -40,15 +40,40 @@ function Finder({ x, y, forma, relleno }) {
   )
 }
 
+// Los puntos del QR (sin los ojos de las esquinas), con la forma elegida
+function Puntos({ forma, relleno, transform }) {
+  return (
+    <g fill={relleno} transform={transform}>
+      {LISTA.map(([x, y]) =>
+        forma === 'punto' ? (
+          <circle key={`${x}-${y}`} cx={x + 0.5} cy={y + 0.5} r="0.42" />
+        ) : forma === 'redondo' ? (
+          <rect key={`${x}-${y}`} x={x + 0.04} y={y + 0.04} width="0.92" height="0.92" rx="0.3" />
+        ) : (
+          <rect key={`${x}-${y}`} x={x} y={y} width="1" height="1" />
+        )
+      )}
+    </g>
+  )
+}
+
 /* forma: 'cuadrado' (el de siempre), 'redondo' (esquinas suaves) o 'punto' (puntos redondos).
-   degradado: lista de colores para pintar los puntos con un degradado en diagonal (por ejemplo, el de Instagram);
-   sin degradado, los puntos van del color del texto (currentColor). */
-export default function QrDibujo({ className = '', forma = 'cuadrado', degradado }) {
+   degradado: lista de colores para pintar los puntos con un degradado en diagonal (por ejemplo, el de Instagram).
+   glitch: dos colores para un efecto de doble imagen detrás de los puntos, como el logo de TikTok
+   (el primero desplazado arriba a la izquierda y el segundo abajo a la derecha).
+   Sin degradado, los puntos van del color del texto (currentColor). */
+export default function QrDibujo({ className = '', forma = 'cuadrado', degradado, glitch }) {
   // El id de React lleva signos que no valen dentro de url(#...): se dejan solo letras y números
   const id = `qr-${useId().replace(/[^a-zA-Z0-9]/g, '')}`
   const relleno = degradado ? `url(#${id})` : 'currentColor'
   return (
     <svg viewBox={`0 0 ${N} ${N}`} className={className} shapeRendering={forma === 'cuadrado' ? 'crispEdges' : 'geometricPrecision'} aria-hidden="true">
+      {glitch && (
+        <>
+          <Puntos forma={forma} relleno={glitch[0]} transform="translate(-0.2 -0.2)" />
+          <Puntos forma={forma} relleno={glitch[1]} transform="translate(0.2 0.2)" />
+        </>
+      )}
       {degradado && (
         <defs>
           {/* En coordenadas del QR entero, para que el degradado cruce todo el código y no cada punto */}
@@ -59,17 +84,7 @@ export default function QrDibujo({ className = '', forma = 'cuadrado', degradado
           </linearGradient>
         </defs>
       )}
-      <g fill={relleno}>
-        {LISTA.map(([x, y]) =>
-          forma === 'punto' ? (
-            <circle key={`${x}-${y}`} cx={x + 0.5} cy={y + 0.5} r="0.42" />
-          ) : forma === 'redondo' ? (
-            <rect key={`${x}-${y}`} x={x + 0.04} y={y + 0.04} width="0.92" height="0.92" rx="0.3" />
-          ) : (
-            <rect key={`${x}-${y}`} x={x} y={y} width="1" height="1" />
-          )
-        )}
-      </g>
+      <Puntos forma={forma} relleno={relleno} />
       <Finder x={0} y={0} forma={forma} relleno={relleno} />
       <Finder x={N - 7} y={0} forma={forma} relleno={relleno} />
       <Finder x={0} y={N - 7} forma={forma} relleno={relleno} />
