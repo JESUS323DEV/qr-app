@@ -46,6 +46,12 @@
   100% { opacity: 0; }
 }
 
+/* Rayita de progreso que se llena, como en las historias de Instagram (hero Historias) */
+@keyframes llenar {
+  from { width: 0; }
+  to   { width: 100%; }
+}
+
 /* Flecha que invita a pasar de lado (carta historias) */
 @keyframes empuje {
   0%, 100% { transform: translateX(0); }

@@ -6,6 +6,8 @@ import HeroMosaico from './HeroMosaico'
 import HeroPortada from './HeroPortada'
 import HeroRetrato from './HeroRetrato'
 import HeroFicha from './HeroFicha'
+import HeroHistorias from './HeroHistorias'
+import HeroWeb from './HeroWeb'
 
 // Diseños de hero, cada uno con su nombre. Es vocabulario interno: el cliente nunca lo ve
 // (de cara afuera las demos se clasifican por temática de negocio, lib/tematicas.js).
@@ -19,4 +21,8 @@ export const HEROS = {
   portada:   { Componente: HeroPortada,   nombre: 'Portada',   texto: 'Portada de revista en blanco y negro, con la lista de precios.' },
   retrato:   { Componente: HeroRetrato,   nombre: 'Retrato',   texto: 'Para profesionales que se venden a sí mismos: retrato, bloque oscuro y barra tipo app.' },
   ficha:     { Componente: HeroFicha,     nombre: 'Ficha',     texto: 'Ficha grande con pestañas de carpeta: foto a un lado y contenido al otro, con vídeo.' },
+  historias: { Componente: HeroHistorias, nombre: 'Historias', texto: 'Foto a pantalla y platos que pasan como historias de Instagram, con pestañas en pastillas.' },
+  // Plan premium
+  // paginaCompleta: el diseño ocupa toda la pantalla y decide en qué pestaña va el cuerpo (reseña y redes)
+  web:       { Componente: HeroWeb,       nombre: 'Web',       texto: 'Como una web dentro del móvil: barra de navegación arriba y una página completa por pestaña.', paginaCompleta: true },
 }

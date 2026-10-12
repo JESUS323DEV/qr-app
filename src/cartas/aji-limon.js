@@ -2,38 +2,14 @@ const px = (id, w, h) => `https://images.pexels.com/photos/${id}/pexels-photo-${
 // Fotos en vertical, para llenar la pantalla del móvil
 const foto = id => px(id, 900, 1600)
 
-// Carta digital de Ají Limón, restaurante peruano inventado (demo). No tiene miniweb: lleva su propia marca.
+// Carta digital de Ají Limón, restaurante peruano inventado (demo). Usa la marca de su miniweb (negocios/aji-limon.js).
 // Diseño historias: el menú del día y cada sección de la carta ocupan una pantalla; se pasa deslizando de lado.
 export default {
   slug: 'aji-limon',
+  negocio: 'aji-limon',
   demo: true,
   diseno: 'historias',
   idiomas: ['ES', 'EN'],
-
-  marca: {
-    nombre: 'Ají Limón',
-    lema: 'Cocina peruana',
-    theme: {
-      colors: {
-        bg:      '#14110F',
-        surface: '#221C18',
-        primary: '#E0352B',
-        accent:  '#F4B63E',
-        text:    '#FFFFFF',
-        muted:   '#CFC6BD',
-      },
-      fonts: {
-        heading: {
-          family: '"Fraunces", Georgia, serif',
-          google: 'https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&display=swap',
-        },
-        body: {
-          family: '"Manrope", system-ui, sans-serif',
-          google: 'https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap',
-        },
-      },
-    },
-  },
 
   menuDia: {
     texto: 'Menú del día',

@@ -6,8 +6,10 @@ import dulceLima from './dulce-lima'
 import navajaYTijera from './navaja-y-tijera'
 import martaSoler from './marta-soler'
 import vanessa from './vanessa'
+import ajiLimon from './aji-limon'
+import chalaquita from './chalaquita'
 
-export const negocios = [almendra, pollastreDhorta, ladysalon, laca, dulceLima, navajaYTijera, martaSoler, vanessa]
+export const negocios = [almendra, pollastreDhorta, ajiLimon, ladysalon, laca, dulceLima, navajaYTijera, martaSoler, chalaquita, vanessa]
 
 export function getNegocio(slug) {
   return negocios.find(n => n.slug === slug) ?? null

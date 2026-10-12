@@ -161,9 +161,9 @@ export default function HeroBanner({ hero, nombre, lema }) {
           <div className="leading-tight">
             <p className="font-demo-heading text-[1rem]">{nombre}</p>
             {lema && <p className="text-[0.8rem] text-white/80">{lema}</p>}
-            {/* Compartir, en todas las pestañas menos en la del mapa ("Compartir" es igual en catalán) */}
-            {!enMapa && <BotonCompartir titulo={nombre} className="pointer-events-auto mt-[0.45rem]" />}
           </div>
+          {/* Compartir, arriba a la derecha; en todas las pestañas menos en la del mapa ("Compartir" es igual en catalán) */}
+          {!enMapa && <BotonCompartir titulo={nombre} className="pointer-events-auto ml-auto shrink-0" />}
         </div>
       </div>
 

@@ -54,6 +54,144 @@ function TarjetaDestacada({ tarjeta, compacta }) {
   )
 }
 
+// Cuerpo de la miniweb (debajo del hero): reseña, redes y extras. Los diseños de página completa
+// (paginaCompleta en heros/index.js) lo reciben como prop y deciden en qué pestaña va.
+// soloResena: solo la card de arriba (reseña), sin el carrusel de redes; lo usan los diseños que ponen las redes en otro sitio
+function Cuerpo({ negocio, soloResena = false }) {
+  // Card de Google más pequeña para los diseños que necesitan más alto (resena.compacta en el archivo del negocio)
+  const compacta = Boolean(negocio.resena?.compacta)
+  const Resena = negocio.resena?.url ? 'a' : 'div'
+  // Redes en el hero (hero.redesArriba): entonces no se repiten en el carrusel del cuerpo
+  const redesArriba = Boolean(negocio.hero.redesArriba)
+
+  return (
+    // Cada negocio puede darle su propio fondo (cuerpo.fondo / cuerpo.card)
+    <div
+      className="px-[1.25rem] pb-[1.25rem] pt-[1.25rem]"
+      style={negocio.cuerpo?.fondo ? { background: negocio.cuerpo.fondo } : undefined}
+    >
+      {/* Con galeriaVideos, el cuerpo es la galería de vídeos en lugar de la card destacada y el carrusel */}
+      {negocio.galeriaVideos ? (
+        <GaleriaVideos galeria={negocio.galeriaVideos} />
+      ) : (
+      <>
+      {/* Hueco destacado: la reseña de Google o, si el negocio no la quiere, un mapa (mapaDestacado en su archivo) */}
+      {negocio.mapaDestacado ? (
+        <div className="relative h-[7.5rem] overflow-hidden rounded-[1.5rem] border border-black/10 bg-demo-surface shadow-[0_0.25rem_0.9rem_-0.3rem_rgb(0_0_0/0.18)]">
+          <iframe
+            title="Mapa"
+            src={`https://www.google.com/maps?q=${encodeURIComponent(negocio.mapaDestacado.mapa)}&z=${negocio.mapaDestacado.zoom ?? 13}&output=embed`}
+            className="absolute inset-0 h-full w-full border-0"
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+          />
+          <span className="pointer-events-none absolute bottom-[0.6rem] left-[0.6rem] max-w-[calc(100%-1.2rem)] rounded-full bg-white/90 px-[0.75rem] py-[0.25rem] text-[0.78rem] font-semibold text-demo-text">
+            {negocio.mapaDestacado.texto}
+          </span>
+        </div>
+      ) : negocio.destacada ? (
+        /* Con tarjeta destacada (destacada en su archivo): la card de Google pasa a ser un carrusel con flechas
+           que no cambia solo. Primero la reseña y después algo propio del negocio (la carta, una promoción...) */
+        <Carrusel
+          automatico={false}
+          rayitas={false}
+          flechasOcultas
+          className="shadow-[0_0.25rem_0.9rem_-0.3rem_rgb(0_0_0/0.18)]"
+          style={{
+            background: '#FFFFFF',
+            borderColor: 'rgb(0 0 0 / 0.1)',
+            color: '#1F1F1F',
+            paddingTop: compacta ? '0.7rem' : '1rem',
+            paddingBottom: compacta ? '0.7rem' : '1rem',
+          }}
+          tarjetas={[
+            <Resena
+              key="resena"
+              {...(negocio.resena.url ? { href: negocio.resena.url, target: '_blank', rel: 'noreferrer' } : {})}
+              className={`flex flex-col items-center justify-center font-semibold ${compacta ? 'gap-[0.3rem] text-[1.1rem]' : 'gap-[0.45rem] text-[1.3rem]'}`}
+            >
+              <LogoGoogle compacta={compacta} />
+              <Estrellas compacta={compacta} />
+              {negocio.resena.texto}
+            </Resena>,
+            <TarjetaDestacada key="destacada" tarjeta={negocio.destacada} compacta={compacta} />,
+          ]}
+        />
+      ) : (
+        /* Sin url (las demos) la card no lleva enlace; con la url real de la ficha de Google, abre la reseña */
+        <Resena
+          {...(negocio.resena.url ? { href: negocio.resena.url, target: '_blank', rel: 'noreferrer' } : {})}
+          className={`flex w-full flex-col items-center justify-center rounded-[1.5rem] border border-black/10 bg-white px-[1rem] font-semibold text-[#1F1F1F] shadow-[0_0.25rem_0.9rem_-0.3rem_rgb(0_0_0/0.18)] transition-shadow hover:shadow-[0_0.4rem_1.2rem_-0.3rem_rgb(0_0_0/0.25)] ${
+            compacta ? 'gap-[0.3rem] py-[0.7rem] text-[1.1rem]' : 'gap-[0.45rem] py-[1rem] text-[1.3rem]'
+          }`}
+        >
+          <LogoGoogle compacta={compacta} />
+          <Estrellas compacta={compacta} />
+          {negocio.resena.texto}
+        </Resena>
+      )}
+
+      {/* Carrusel: primero las redes y después las tarjetas de texto del negocio (carrusel[{ titulo, texto }]) */}
+      {!soloResena && ((!redesArriba && negocio.redes?.length > 0) || negocio.carrusel?.length > 0) && (
+        <Carrusel
+          className="mt-[0.9rem]"
+          style={negocio.cuerpo?.card ? { background: negocio.cuerpo.card } : undefined}
+          tarjetas={[
+            ...(!redesArriba && negocio.redes?.length > 0
+              ? [
+                  <>
+                    <p className="text-[1.1rem] font-semibold">{negocio.redesTexto ?? 'Síguenos en redes'}</p>
+                    <div className="mt-[0.75rem] flex justify-center gap-[0.75rem]">
+                      {negocio.redes.map(r => (
+                        <a
+                          key={r.platform}
+                          href={r.href}
+                          target="_blank"
+                          rel="noreferrer"
+                          aria-label={r.platform}
+                          className="flex h-[3rem] w-[3rem] items-center justify-center rounded-full text-white transition-transform hover:scale-105"
+                          style={{ background: COLORES_REDES[r.platform] ?? 'var(--demo-primary)' }}
+                        >
+                          <SocialIcon platform={r.platform} className="h-[1.3rem] w-[1.3rem]" />
+                        </a>
+                      ))}
+                    </div>
+                  </>,
+                ]
+              : []),
+            ...(negocio.carrusel ?? []).map(t => (
+              <>
+                <p className="text-[1.1rem] font-semibold">{t.titulo}</p>
+                <p className="mt-[0.4rem] max-w-[18rem] text-[0.9rem] leading-[1.45] text-demo-muted">{t.texto}</p>
+              </>
+            )),
+          ]}
+        />
+      )}
+      </>
+      )}
+
+      {negocio.extras?.length > 0 && (
+        <ul className="mt-[1.5rem] border-t border-demo-text/10">
+          {negocio.extras.map(e => (
+            <li key={e.texto} className="border-b border-demo-text/10">
+              <a
+                href={e.url}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center justify-between py-[0.95rem] text-[0.98rem] font-medium"
+              >
+                {e.texto}
+                <ChevronRight className="h-[1.1rem] w-[1.1rem] text-demo-muted" aria-hidden="true" />
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
+
 export default function MiniwebPage({ demo = false }) {
   const { slug } = useParams()
   const negocio = getNegocio(slug)
@@ -78,11 +216,8 @@ export default function MiniwebPage({ demo = false }) {
   }
 
   const Hero = HEROS[negocio.hero.diseno].Componente
-  // Card de Google más pequeña para los diseños que necesitan más alto (resena.compacta en el archivo del negocio)
-  const compacta = Boolean(negocio.resena?.compacta)
-  const Resena = negocio.resena?.url ? 'a' : 'div'
-  // Redes en el hero (hero.redesArriba): entonces no se repiten en el carrusel del cuerpo
-  const redesArriba = Boolean(negocio.hero.redesArriba)
+  // Diseños de página completa: el propio hero decide dónde va el cuerpo (lo recibe como prop)
+  const paginaCompleta = Boolean(HEROS[negocio.hero.diseno].paginaCompleta)
 
   return (
     <div className="min-h-svh bg-demo-surface font-demo-body text-demo-text">
@@ -94,132 +229,8 @@ export default function MiniwebPage({ demo = false }) {
       )}
       {/* key: al pasar a otra demo el hero empieza de cero */}
       <main key={negocio.slug} className="mx-auto flex min-h-svh w-full max-w-[30rem] flex-col bg-demo-bg">
-        <Hero hero={negocio.hero} nombre={negocio.nombre} lema={negocio.lema} redes={negocio.redes} redesTexto={negocio.redesTexto} />
-
-        {/* Cuerpo de la miniweb: reseña y redes. Cada negocio puede darle su propio fondo (cuerpo.fondo / cuerpo.card) */}
-        <div
-          className="px-[1.25rem] pb-[1.25rem] pt-[1.25rem]"
-          style={negocio.cuerpo?.fondo ? { background: negocio.cuerpo.fondo } : undefined}
-        >
-          {/* Con galeriaVideos, el cuerpo es la galería de vídeos en lugar de la card destacada y el carrusel */}
-          {negocio.galeriaVideos ? (
-            <GaleriaVideos galeria={negocio.galeriaVideos} />
-          ) : (
-          <>
-          {/* Hueco destacado: la reseña de Google o, si el negocio no la quiere, un mapa (mapaDestacado en su archivo) */}
-          {negocio.mapaDestacado ? (
-            <div className="relative h-[7.5rem] overflow-hidden rounded-[1.5rem] border border-black/10 bg-demo-surface shadow-[0_0.25rem_0.9rem_-0.3rem_rgb(0_0_0/0.18)]">
-              <iframe
-                title="Mapa"
-                src={`https://www.google.com/maps?q=${encodeURIComponent(negocio.mapaDestacado.mapa)}&z=${negocio.mapaDestacado.zoom ?? 13}&output=embed`}
-                className="absolute inset-0 h-full w-full border-0"
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-              />
-              <span className="pointer-events-none absolute bottom-[0.6rem] left-[0.6rem] max-w-[calc(100%-1.2rem)] rounded-full bg-white/90 px-[0.75rem] py-[0.25rem] text-[0.78rem] font-semibold text-demo-text">
-                {negocio.mapaDestacado.texto}
-              </span>
-            </div>
-          ) : negocio.destacada ? (
-            /* Con tarjeta destacada (destacada en su archivo): la card de Google pasa a ser un carrusel con flechas
-               que no cambia solo. Primero la reseña y después algo propio del negocio (la carta, una promoción...) */
-            <Carrusel
-              automatico={false}
-              rayitas={false}
-              flechasOcultas
-              className="shadow-[0_0.25rem_0.9rem_-0.3rem_rgb(0_0_0/0.18)]"
-              style={{
-                background: '#FFFFFF',
-                borderColor: 'rgb(0 0 0 / 0.1)',
-                color: '#1F1F1F',
-                paddingTop: compacta ? '0.7rem' : '1rem',
-                paddingBottom: compacta ? '0.7rem' : '1rem',
-              }}
-              tarjetas={[
-                <Resena
-                  key="resena"
-                  {...(negocio.resena.url ? { href: negocio.resena.url, target: '_blank', rel: 'noreferrer' } : {})}
-                  className={`flex flex-col items-center justify-center font-semibold ${compacta ? 'gap-[0.3rem] text-[1.1rem]' : 'gap-[0.45rem] text-[1.3rem]'}`}
-                >
-                  <LogoGoogle compacta={compacta} />
-                  <Estrellas compacta={compacta} />
-                  {negocio.resena.texto}
-                </Resena>,
-                <TarjetaDestacada key="destacada" tarjeta={negocio.destacada} compacta={compacta} />,
-              ]}
-            />
-          ) : (
-            /* Sin url (las demos) la card no lleva enlace; con la url real de la ficha de Google, abre la reseña */
-            <Resena
-              {...(negocio.resena.url ? { href: negocio.resena.url, target: '_blank', rel: 'noreferrer' } : {})}
-              className={`flex w-full flex-col items-center justify-center rounded-[1.5rem] border border-black/10 bg-white px-[1rem] font-semibold text-[#1F1F1F] shadow-[0_0.25rem_0.9rem_-0.3rem_rgb(0_0_0/0.18)] transition-shadow hover:shadow-[0_0.4rem_1.2rem_-0.3rem_rgb(0_0_0/0.25)] ${
-                compacta ? 'gap-[0.3rem] py-[0.7rem] text-[1.1rem]' : 'gap-[0.45rem] py-[1rem] text-[1.3rem]'
-              }`}
-            >
-              <LogoGoogle compacta={compacta} />
-              <Estrellas compacta={compacta} />
-              {negocio.resena.texto}
-            </Resena>
-          )}
-
-          {/* Carrusel: primero las redes y después las tarjetas de texto del negocio (carrusel[{ titulo, texto }]) */}
-          {((!redesArriba && negocio.redes?.length > 0) || negocio.carrusel?.length > 0) && (
-            <Carrusel
-              className="mt-[0.9rem]"
-              style={negocio.cuerpo?.card ? { background: negocio.cuerpo.card } : undefined}
-              tarjetas={[
-                ...(!redesArriba && negocio.redes?.length > 0
-                  ? [
-                      <>
-                        <p className="text-[1.1rem] font-semibold">{negocio.redesTexto ?? 'Síguenos en redes'}</p>
-                        <div className="mt-[0.75rem] flex justify-center gap-[0.75rem]">
-                          {negocio.redes.map(r => (
-                            <a
-                              key={r.platform}
-                              href={r.href}
-                              target="_blank"
-                              rel="noreferrer"
-                              aria-label={r.platform}
-                              className="flex h-[3rem] w-[3rem] items-center justify-center rounded-full text-white transition-transform hover:scale-105"
-                              style={{ background: COLORES_REDES[r.platform] ?? 'var(--demo-primary)' }}
-                            >
-                              <SocialIcon platform={r.platform} className="h-[1.3rem] w-[1.3rem]" />
-                            </a>
-                          ))}
-                        </div>
-                      </>,
-                    ]
-                  : []),
-                ...(negocio.carrusel ?? []).map(t => (
-                  <>
-                    <p className="text-[1.1rem] font-semibold">{t.titulo}</p>
-                    <p className="mt-[0.4rem] max-w-[18rem] text-[0.9rem] leading-[1.45] text-demo-muted">{t.texto}</p>
-                  </>
-                )),
-              ]}
-            />
-          )}
-          </>
-          )}
-
-          {negocio.extras?.length > 0 && (
-            <ul className="mt-[1.5rem] border-t border-demo-text/10">
-              {negocio.extras.map(e => (
-                <li key={e.texto} className="border-b border-demo-text/10">
-                  <a
-                    href={e.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center justify-between py-[0.95rem] text-[0.98rem] font-medium"
-                  >
-                    {e.texto}
-                    <ChevronRight className="h-[1.1rem] w-[1.1rem] text-demo-muted" aria-hidden="true" />
-                  </a>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+        <Hero hero={negocio.hero} nombre={negocio.nombre} lema={negocio.lema} redes={negocio.redes} redesTexto={negocio.redesTexto} cuerpo={<Cuerpo negocio={negocio} soloResena={Boolean(negocio.hero.redesArriba)} />} />
+        {!paginaCompleta && <Cuerpo negocio={negocio} />}
       </main>
     </div>
   )

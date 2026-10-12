@@ -178,8 +178,8 @@ const FORMAS = [
 // Capturas de las demos a tamaño de móvil (src/assets/capturas/<slug>.jpg), en el orden del catálogo
 const CAPTURAS = import.meta.glob('../assets/capturas/*.jpg', { eager: true, import: 'default' })
 const ESCAPARATE = secuenciaDemos
+  // Las demos sin captura salen igual, con el móvil en negro y su nombre dentro (como en Cartas y ofertas)
   .map(n => ({ foto: CAPTURAS[`../assets/capturas/${n.slug}.jpg`], nombre: n.nombre, sector: n.sector, ruta: rutaNegocio(n) }))
-  .filter(d => d.foto)
 
 /* El hero es una miniweb, con la misma estructura que las de los clientes:
    escenario con la marca, el texto (cambia con la pestaña) y una fila de móviles con las capturas
@@ -448,7 +448,14 @@ function HeroMiniweb() {
                     i === actual ? 'opacity-100' : 'scale-[0.92] opacity-55'
                   }`}
                 >
-                  <img src={d.foto} alt={`Ejemplo: ${d.nombre}`} className="h-full w-full rounded-[0.95rem] object-cover object-top" />
+                  {d.foto ? (
+                    <img src={d.foto} alt={`Ejemplo: ${d.nombre}`} className="h-full w-full rounded-[0.95rem] object-cover object-top" />
+                  ) : (
+                    <span className="flex h-full w-full flex-col items-center justify-center rounded-[0.95rem] bg-papel px-[0.8rem] text-center">
+                      <span className="font-titulo text-[1.05rem] font-black leading-[1.1]">{d.nombre}</span>
+                      <span className="mt-[0.4rem] text-[0.78rem] text-suave">{d.sector}</span>
+                    </span>
+                  )}
                   {/* Etiqueta dentro del móvil del centro, abajo, debajo de la card de redes */}
                   <span
                     className={`pointer-events-none absolute bottom-[0.7rem] left-1/2 flex -translate-x-1/2 items-center gap-[0.3rem] whitespace-nowrap rounded-full bg-black/75 px-[0.75rem] py-[0.3rem] text-[0.72rem] font-semibold text-white backdrop-blur-sm transition-opacity duration-500 ${
