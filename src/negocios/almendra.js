@@ -45,13 +45,6 @@ export default {
         ],
       },
       {
-        tipo: 'ubicacion',
-        texto: 'Ubicación',
-        mapa: 'Carrer de Verdi 12, Barcelona',
-        direccion: 'Carrer de Verdi, 12 · Barcelona',
-        telefono: '600 000 000',
-      },
-      {
         tipo: 'horario',
         texto: 'Horario',
         titulo: 'Horario',
@@ -70,12 +63,27 @@ export default {
         url: enlaceWhatsapp('34600000000', 'Hola, quiero reservar mesa en Almendra.'),
         telefono: '600 000 000',
       },
+      {
+        tipo: 'ubicacion',
+        texto: 'Ubicación',
+        mapa: 'Carrer de Verdi 12, Barcelona',
+        direccion: 'Carrer de Verdi, 12 · Barcelona',
+        telefono: '600 000 000',
+      },
     ],
   },
 
   // Reseña de Google. Con un cliente real se añade url: el enlace de "escribir reseña" de su ficha (en las demos va sin enlace).
   resena: {
     texto: 'Valóranos en Google',
+  },
+
+  // Segunda tarjeta de la card de arriba (se pasa con flechas, después de la reseña)
+  destacada: {
+    titulo: 'Nuestra carta',
+    texto: 'Platos, menú del día y alérgenos, en tu móvil.',
+    boton: 'Ver la carta',
+    url: '/demo/almendra/carta',
   },
 
   redes: [

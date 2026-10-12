@@ -76,6 +76,12 @@ export default {
     compacta: true, // card de Google más pequeña para que todo quepa en una pantalla
   },
 
+  // Segunda tarjeta de la card de arriba (se pasa con flechas, después de la reseña)
+  destacada: {
+    titulo: 'Primera llamada sin coste',
+    texto: '20 minutos para contarme qué os preocupa y ver si puedo ayudaros.',
+  },
+
   redesTexto: 'Sígueme en redes',
   redes: [
     { platform: 'instagram', href: 'https://instagram.com' },

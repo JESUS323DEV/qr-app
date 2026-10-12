@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Phone } from 'lucide-react'
 import Img from '../components/Img'
+import useVueltaPestanas from '../lib/useVueltaPestanas'
+import BotonCompartir from '../components/BotonCompartir'
 
 /* Mosaico (inspirado en el Split de Dulce Lima en platform). Fondo claro: arriba la marca y el titular,
    con un brillo suave en la segunda línea; en el centro un mosaico de tres fotos (una grande y dos pequeñas)
@@ -135,15 +137,19 @@ function Onda({ visible }) {
 export default function HeroMosaico({ hero, nombre, lema }) {
   const pestanas = hero.pestanas ?? []
   const [activa, setActiva] = useState(0)
-  const [mapaPedido, setMapaPedido] = useState(false)
+  // El mapa se carga desde el principio, en segundo plano, para que esté listo cuando la vuelta llegue a él
+  const [mapaPedido, setMapaPedido] = useState(true)
+  const { enVuelta, parar } = useVueltaPestanas(pestanas, setActiva)
 
   const tocar = i => {
+    parar()
     setActiva(i)
     if (pestanas[i].tipo === 'ubicacion') setMapaPedido(true)
   }
 
   return (
-    <div className="flex flex-1 flex-col">
+    // Cualquier toque en el hero para la vuelta de presentación
+    <div className="flex flex-1 flex-col" onPointerDown={parar}>
       <div className="px-[1.25rem] pt-[1rem]">
         <div className="flex items-baseline justify-between gap-[1rem]">
           <p className="font-demo-heading text-[1.05rem] font-semibold text-demo-primary">{nombre}</p>
@@ -168,10 +174,15 @@ export default function HeroMosaico({ hero, nombre, lema }) {
             >
               {p.tipo === 'ubicacion'
                 ? <EscenaUbicacion pestana={p} cargar={mapaPedido} />
-                : <Escena pestana={p} activa={i === activa} />}
+                : <Escena pestana={p} activa={i === activa && !enVuelta} />}
             </div>
           )
         })}
+
+        {/* Compartir, arriba a la izquierda dentro de la foto grande; en todas las pestañas menos en la del mapa */}
+        {pestanas[activa]?.tipo !== 'ubicacion' && (
+          <BotonCompartir titulo={nombre} className="absolute left-[0.6rem] top-[0.6rem]" />
+        )}
       </div>
 
       {/* Pestañas con subrayado ondulado, propias de este diseño */}

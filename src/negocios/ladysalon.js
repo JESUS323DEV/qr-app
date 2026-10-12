@@ -46,13 +46,6 @@ export default {
         ],
       },
       {
-        tipo: 'ubicacion',
-        texto: 'Ubicación',
-        mapa: 'Carrer de Provença 200, Barcelona',
-        direccion: 'Carrer de Provença, 200 · Barcelona',
-        telefono: '600 000 000',
-      },
-      {
         tipo: 'horario',
         texto: 'Horario',
         titulo: 'Horario',
@@ -72,12 +65,25 @@ export default {
         url: enlaceWhatsapp('34600000000', 'Hola, quiero pedir cita en LadySalon.'),
         telefono: '600 000 000',
       },
+      {
+        tipo: 'ubicacion',
+        texto: 'Ubicación',
+        mapa: 'Carrer de Provença 200, Barcelona',
+        direccion: 'Carrer de Provença, 200 · Barcelona',
+        telefono: '600 000 000',
+      },
     ],
   },
 
   // Reseña de Google. Con un cliente real se añade url: el enlace de "escribir reseña" de su ficha (en las demos va sin enlace).
   resena: {
     texto: 'Valóranos en Google',
+  },
+
+  // Segunda tarjeta de la card de arriba (se pasa con flechas, después de la reseña)
+  destacada: {
+    titulo: 'Tu primera visita',
+    texto: 'Diagnóstico capilar gratis antes de tu primer color.',
   },
 
   redes: [

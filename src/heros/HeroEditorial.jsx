@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { Phone } from 'lucide-react'
 import Img from '../components/Img'
+import useVueltaPestanas from '../lib/useVueltaPestanas'
+import BotonCompartir from '../components/BotonCompartir'
 
 /* Editorial (adaptado del Apetece de platform). La foto grande cambia según la pestaña:
    - platos: las fotos van pasando solas con una cortina de tiras.
@@ -210,15 +212,19 @@ const ESCENAS = {
 export default function HeroEditorial({ hero, nombre, lema }) {
   const pestanas = hero.pestanas ?? []
   const [activa, setActiva] = useState(0)
-  const [mapaPedido, setMapaPedido] = useState(false)
+  // El mapa se carga desde el principio, en segundo plano, para que esté listo cuando la vuelta llegue a él
+  const [mapaPedido, setMapaPedido] = useState(true)
+  const { enVuelta, parar } = useVueltaPestanas(pestanas, setActiva)
 
   const tocar = i => {
+    parar()
     setActiva(i)
     if (pestanas[i].tipo === 'ubicacion') setMapaPedido(true)
   }
 
   return (
-    <div className="flex flex-1 flex-col">
+    // Cualquier toque en el hero para la vuelta de presentación
+    <div className="flex flex-1 flex-col" onPointerDown={parar}>
       {/* La foto ocupa el alto que sobra, para que todo quepa en una pantalla */}
       <div className="relative min-h-[12.5rem] flex-1 overflow-hidden bg-demo-surface">
         {pestanas.map((p, i) => {
@@ -231,7 +237,7 @@ export default function HeroEditorial({ hero, nombre, lema }) {
             >
               {p.tipo === 'ubicacion'
                 ? <EscenaUbicacion pestana={p} cargar={mapaPedido} />
-                : <Escena pestana={p} activa={i === activa} />}
+                : <Escena pestana={p} activa={i === activa && !enVuelta} />}
             </div>
           )
         })}
@@ -244,6 +250,8 @@ export default function HeroEditorial({ hero, nombre, lema }) {
         >
           <p className="font-demo-heading text-[1.6rem] leading-none">{nombre}</p>
           {lema && <p className="mt-[0.3rem] text-[0.85rem] text-white/80">{lema}</p>}
+          {/* Compartir, en todas las pestañas menos en la del mapa (ahí la marca se oculta) */}
+          {pestanas[activa]?.tipo !== 'ubicacion' && <BotonCompartir titulo={nombre} className="pointer-events-auto mt-[0.6rem]" />}
         </div>
       </div>
 

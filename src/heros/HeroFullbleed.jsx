@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Phone } from 'lucide-react'
 import Img from '../components/Img'
+import useVueltaPestanas from '../lib/useVueltaPestanas'
+import BotonCompartir from '../components/BotonCompartir'
 
 /* Fullbleed (adaptado de platform). Foto a todo el ancho con velo oscuro y la marca arriba.
    Pestañas en una barra segmentada (solo cambian al tocarlas):
@@ -162,12 +164,15 @@ const ESCENAS = {
   cita: EscenaCita,
 }
 
-export default function HeroFullbleed({ hero, nombre, lema }) {
+export default function HeroFullbleed({ hero, nombre }) {
   const pestanas = hero.pestanas ?? []
   const [activa, setActiva] = useState(0)
-  const [mapaPedido, setMapaPedido] = useState(false)
+  // El mapa se carga desde el principio, en segundo plano, para que esté listo cuando la vuelta llegue a él
+  const [mapaPedido, setMapaPedido] = useState(true)
+  const { enVuelta, parar } = useVueltaPestanas(pestanas, setActiva)
 
   const tocar = i => {
+    parar()
     setActiva(i)
     if (pestanas[i].tipo === 'ubicacion') setMapaPedido(true)
   }
@@ -175,7 +180,8 @@ export default function HeroFullbleed({ hero, nombre, lema }) {
   const enMapa = pestanas[activa]?.tipo === 'ubicacion'
 
   return (
-    <div className="flex flex-1 flex-col">
+    // Cualquier toque en el hero para la vuelta de presentación
+    <div className="flex flex-1 flex-col" onPointerDown={parar}>
       {/* La foto ocupa el alto que sobra, para que todo quepa en una pantalla */}
       <div className="relative min-h-[14rem] flex-1 overflow-hidden bg-demo-text">
         {pestanas.map((p, i) => {
@@ -188,15 +194,15 @@ export default function HeroFullbleed({ hero, nombre, lema }) {
             >
               {p.tipo === 'ubicacion'
                 ? <EscenaUbicacion pestana={p} cargar={mapaPedido} />
-                : <Escena pestana={p} activa={i === activa} />}
+                : <Escena pestana={p} activa={i === activa && !enVuelta} />}
             </div>
           )
         })}
 
-        {/* Marca arriba (en el mapa se desvanece) */}
-        <div className={`pointer-events-none absolute inset-x-0 top-0 flex items-baseline justify-between px-[1.25rem] pt-[1rem] text-white transition-opacity duration-700 ${enMapa ? 'opacity-0' : 'opacity-100'}`}>
+        {/* Marca arriba y, a la derecha, compartir (en el mapa se desvanecen) */}
+        <div className={`pointer-events-none absolute inset-x-0 top-0 flex items-center justify-between px-[1.25rem] pt-[1rem] text-white transition-opacity duration-700 ${enMapa ? 'opacity-0' : 'opacity-100'}`}>
           <p className="font-demo-heading text-[1.5rem] leading-none">{nombre}</p>
-          {lema && <p className="text-[0.82rem] text-white/75">{lema}</p>}
+          {!enMapa && <BotonCompartir titulo={nombre} className="pointer-events-auto" />}
         </div>
       </div>
 

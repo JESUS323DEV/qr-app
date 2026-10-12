@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Phone } from 'lucide-react'
 import Img from '../components/Img'
+import useVueltaPestanas from '../lib/useVueltaPestanas'
+import BotonCompartir from '../components/BotonCompartir'
 
 /* Portada (adaptado del Cover de Navaja & Tijera en platform). Portada de revista en blanco y negro:
    una franja arriba (lema y horario, siempre a la vista), el nombre enorme y una foto en blanco y negro
@@ -123,9 +125,12 @@ const ESCENAS = {
 export default function HeroPortada({ hero, nombre }) {
   const pestanas = hero.pestanas ?? []
   const [activa, setActiva] = useState(0)
-  const [mapaPedido, setMapaPedido] = useState(false)
+  // El mapa se carga desde el principio, en segundo plano, para que esté listo cuando la vuelta llegue a él
+  const [mapaPedido, setMapaPedido] = useState(true)
+  const { enVuelta, parar } = useVueltaPestanas(pestanas, setActiva)
 
   const tocar = i => {
+    parar()
     setActiva(i)
     if (pestanas[i].tipo === 'ubicacion') setMapaPedido(true)
   }
@@ -134,11 +139,12 @@ export default function HeroPortada({ hero, nombre }) {
   const partes = nombre.split(' & ')
 
   return (
-    <div className="flex flex-1 flex-col">
+    // Cualquier toque en el hero para la vuelta de presentación
+    <div className="flex flex-1 flex-col" onPointerDown={parar}>
       <div className="px-[1.25rem] pt-[0.9rem]">
-        {/* Franja de revista: lema y horario */}
+        {/* Franja de revista: compartir y horario */}
         <div className="flex items-center justify-between gap-[1rem] border-b border-demo-text/20 pb-[0.5rem] text-[0.75rem] text-demo-muted">
-          <span>{hero.franja}</span>
+          <BotonCompartir titulo={nombre} estilo="suave" />
           {hero.horario && <span className="text-right">{hero.horario}</span>}
         </div>
 
@@ -161,7 +167,7 @@ export default function HeroPortada({ hero, nombre }) {
             >
               {p.tipo === 'ubicacion'
                 ? <EscenaUbicacion pestana={p} cargar={mapaPedido} />
-                : <Escena pestana={p} activa={i === activa} />}
+                : <Escena pestana={p} activa={i === activa && !enVuelta} />}
             </div>
           )
         })}

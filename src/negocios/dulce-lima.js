@@ -47,12 +47,6 @@ export default {
         ],
       },
       {
-        tipo: 'ubicacion',
-        texto: 'Ubicación',
-        mapa: 'Carrer de Sants 120, Barcelona',
-        direccion: 'Carrer de Sants, 120 · Barcelona',
-      },
-      {
         tipo: 'horario',
         texto: 'Horario',
         titulo: 'Horario',
@@ -71,6 +65,12 @@ export default {
         url: enlaceWhatsapp('34600000000', 'Hola, quiero encargar una torta en Dulce Lima.'),
         telefono: '600 000 000',
       },
+      {
+        tipo: 'ubicacion',
+        texto: 'Ubicación',
+        mapa: 'Carrer de Sants 120, Barcelona',
+        direccion: 'Carrer de Sants, 120 · Barcelona',
+      },
     ],
   },
 
@@ -78,6 +78,12 @@ export default {
   resena: {
     texto: 'Valóranos en Google',
     compacta: true, // card de Google más pequeña para que todo quepa en una pantalla
+  },
+
+  // Segunda tarjeta de la card de arriba (se pasa con flechas, después de la reseña)
+  destacada: {
+    titulo: 'Alfajores de los viernes',
+    texto: 'Recién hechos cada viernes, hasta que se acaban.',
   },
 
   redes: [

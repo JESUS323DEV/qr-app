@@ -46,12 +46,6 @@ export default {
         ],
       },
       {
-        tipo: 'onsom',
-        texto: 'On som',
-        titular: ['Av. Mare de Déu', 'de Montserrat, 148'],
-        mapa: 'Av. Mare de Déu de Montserrat 148, Barcelona',
-      },
-      {
         tipo: 'horari',
         texto: 'Horari',
         titular: ['Obert de dimarts', 'a diumenge.'],
@@ -72,12 +66,26 @@ export default {
         whatsapp: enlaceWhatsapp('34695078648', "Hola, voldria fer una comanda a El Pollastre d'Horta."),
         texto_whatsapp: 'o per WhatsApp',
       },
+      {
+        tipo: 'onsom',
+        texto: 'On som',
+        titular: ['Av. Mare de Déu', 'de Montserrat, 148'],
+        mapa: 'Av. Mare de Déu de Montserrat 148, Barcelona',
+      },
     ],
   },
 
   // Reseña de Google. Con un cliente real se añade url: el enlace de "escribir reseña" de su ficha (en las demos va sin enlace).
   resena: {
     texto: "Valora'ns a Google",
+  },
+
+  // Segunda tarjeta de la card de arriba (se pasa con flechas, después de la reseña)
+  destacada: {
+    titulo: 'La nostra carta',
+    texto: "Pollastres, menú del dia i al·lèrgens, al teu mòbil.",
+    boton: 'Veure la carta',
+    url: '/demo/el-pollastre-d-horta/carta',
   },
 
   // Cuerpo de la miniweb (reseña y redes) con un verde muy suave

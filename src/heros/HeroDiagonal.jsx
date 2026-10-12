@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Phone } from 'lucide-react'
 import Img from '../components/Img'
+import useVueltaPestanas from '../lib/useVueltaPestanas'
+import BotonCompartir from '../components/BotonCompartir'
 
 /* Diagonal (adaptado del Editorial de platform). La foto, con el corte diagonal abajo, cambia según la pestaña
    y lleva encima, abajo a la izquierda, el nombre en dos líneas y una frase. Las pestañas van debajo.
@@ -117,12 +119,15 @@ const ESCENAS = {
   cita: EscenaCita,
 }
 
-export default function HeroDiagonal({ hero }) {
+export default function HeroDiagonal({ hero, nombre }) {
   const pestanas = hero.pestanas ?? []
   const [activa, setActiva] = useState(0)
-  const [mapaPedido, setMapaPedido] = useState(false)
+  // El mapa se carga desde el principio, en segundo plano, para que esté listo cuando la vuelta llegue a él
+  const [mapaPedido, setMapaPedido] = useState(true)
+  const { enVuelta, parar } = useVueltaPestanas(pestanas, setActiva)
 
   const tocar = i => {
+    parar()
     setActiva(i)
     if (pestanas[i].tipo === 'ubicacion') setMapaPedido(true)
   }
@@ -130,7 +135,8 @@ export default function HeroDiagonal({ hero }) {
   const enMapa = pestanas[activa]?.tipo === 'ubicacion'
 
   return (
-    <div className="flex flex-1 flex-col">
+    // Cualquier toque en el hero para la vuelta de presentación
+    <div className="flex flex-1 flex-col" onPointerDown={parar}>
       {/* La foto ocupa el alto que sobra, para que todo quepa en una pantalla */}
       <div className="relative min-h-[15rem] flex-1">
         {/* El corte diagonal solo recorta la foto; el texto va fuera para que no lo corte */}
@@ -148,7 +154,7 @@ export default function HeroDiagonal({ hero }) {
               >
                 {p.tipo === 'ubicacion'
                   ? <EscenaUbicacion pestana={p} cargar={mapaPedido} />
-                  : <Escena pestana={p} activa={i === activa} />}
+                  : <Escena pestana={p} activa={i === activa && !enVuelta} />}
               </div>
             )
           })}
@@ -157,6 +163,8 @@ export default function HeroDiagonal({ hero }) {
 
         {/* Nombre y frase encima de la foto, abajo a la izquierda (en el mapa se desvanecen) */}
         <div className={`pointer-events-none absolute inset-x-0 bottom-0 px-[1.25rem] pb-[1rem] text-demo-text transition-opacity duration-700 ${enMapa ? 'opacity-0' : 'opacity-100'}`}>
+          {/* Compartir, encima del título; en todas las pestañas menos en la del mapa */}
+          {!enMapa && <BotonCompartir titulo={nombre} className="pointer-events-auto mb-[0.6rem]" />}
           <h1 className="font-demo-heading text-[clamp(2.9rem,2.3rem+2.8vw,3.6rem)] font-semibold leading-[1.02] [text-shadow:0_0_1.25rem_color-mix(in_srgb,var(--demo-bg)_70%,transparent)]">
             {hero.titulo}
             {hero.destacado && (

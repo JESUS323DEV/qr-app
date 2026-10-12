@@ -55,13 +55,6 @@ export default {
         ],
       },
       {
-        tipo: 'ubicacion',
-        texto: 'Ubicación',
-        mapa: 'Carrer del Consell de Cent 300, Barcelona',
-        direccion: 'Carrer del Consell de Cent, 300 · Barcelona',
-        telefono: '600 000 000',
-      },
-      {
         tipo: 'horario',
         texto: 'Horario',
         titulo: 'Horario',
@@ -81,12 +74,25 @@ export default {
         url: enlaceWhatsapp('34600000000', 'Hola, quiero pedir cita en Laca.'),
         telefono: '600 000 000',
       },
+      {
+        tipo: 'ubicacion',
+        texto: 'Ubicación',
+        mapa: 'Carrer del Consell de Cent 300, Barcelona',
+        direccion: 'Carrer del Consell de Cent, 300 · Barcelona',
+        telefono: '600 000 000',
+      },
     ],
   },
 
   // Reseña de Google. Con un cliente real se añade url: el enlace de "escribir reseña" de su ficha (en las demos va sin enlace).
   resena: {
     texto: 'Valóranos en Google',
+  },
+
+  // Segunda tarjeta de la card de arriba (se pasa con flechas, después de la reseña)
+  destacada: {
+    titulo: 'El color del mes',
+    texto: 'Azul noche cromado. Pídelo en tu próxima cita.',
   },
 
   redes: [

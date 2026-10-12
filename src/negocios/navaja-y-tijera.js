@@ -59,12 +59,6 @@ export default {
         ],
       },
       {
-        tipo: 'ubicacion',
-        texto: 'Ubicación',
-        mapa: 'Carrer de Pelai 20, Barcelona',
-        direccion: 'Carrer de Pelai, 20 · Barcelona',
-      },
-      {
         tipo: 'cita',
         texto: 'Cita',
         titulo: 'Reserva tu hora',
@@ -73,6 +67,12 @@ export default {
         url: enlaceWhatsapp('34600000000', 'Hola, quiero pedir cita en Navaja & Tijera.'),
         telefono: '600 000 000',
       },
+      {
+        tipo: 'ubicacion',
+        texto: 'Ubicación',
+        mapa: 'Carrer de Pelai 20, Barcelona',
+        direccion: 'Carrer de Pelai, 20 · Barcelona',
+      },
     ],
   },
 
@@ -80,6 +80,12 @@ export default {
   resena: {
     texto: 'Valóranos en Google',
     compacta: true, // card de Google más pequeña para que todo quepa en una pantalla
+  },
+
+  // Segunda tarjeta de la card de arriba (se pasa con flechas, después de la reseña)
+  destacada: {
+    titulo: 'Tarjeta de cliente',
+    texto: 'Al décimo corte, el siguiente te sale gratis.',
   },
 
   redes: [

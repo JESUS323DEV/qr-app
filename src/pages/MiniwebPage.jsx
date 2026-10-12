@@ -34,6 +34,26 @@ function Estrellas({ compacta }) {
   )
 }
 
+// Segunda tarjeta de la card de arriba, propia de cada negocio: titulo, texto y, si hay, un botón (boton, url)
+function TarjetaDestacada({ tarjeta, compacta }) {
+  return (
+    <>
+      <p className={`font-semibold leading-tight ${compacta ? 'text-[1.05rem]' : 'text-[1.2rem]'}`}>{tarjeta.titulo}</p>
+      <p className={`mt-[0.3rem] max-w-[17rem] leading-[1.4] text-[#5F5F5F] ${compacta ? 'text-[0.8rem]' : 'text-[0.88rem]'}`}>{tarjeta.texto}</p>
+      {tarjeta.boton && (
+        <a
+          href={tarjeta.url}
+          className={`inline-flex items-center rounded-full bg-demo-primary px-[1rem] font-semibold text-white transition-opacity hover:opacity-90 ${
+            compacta ? 'mt-[0.45rem] min-h-[1.9rem] text-[0.8rem]' : 'mt-[0.65rem] min-h-[2.2rem] text-[0.88rem]'
+          }`}
+        >
+          {tarjeta.boton}
+        </a>
+      )}
+    </>
+  )
+}
+
 export default function MiniwebPage({ demo = false }) {
   const { slug } = useParams()
   const negocio = getNegocio(slug)
@@ -100,6 +120,34 @@ export default function MiniwebPage({ demo = false }) {
                 {negocio.mapaDestacado.texto}
               </span>
             </div>
+          ) : negocio.destacada ? (
+            /* Con tarjeta destacada (destacada en su archivo): la card de Google pasa a ser un carrusel con flechas
+               que no cambia solo. Primero la reseña y después algo propio del negocio (la carta, una promoción...) */
+            <Carrusel
+              automatico={false}
+              rayitas={false}
+              flechasOcultas
+              className="shadow-[0_0.25rem_0.9rem_-0.3rem_rgb(0_0_0/0.18)]"
+              style={{
+                background: '#FFFFFF',
+                borderColor: 'rgb(0 0 0 / 0.1)',
+                color: '#1F1F1F',
+                paddingTop: compacta ? '0.7rem' : '1rem',
+                paddingBottom: compacta ? '0.7rem' : '1rem',
+              }}
+              tarjetas={[
+                <Resena
+                  key="resena"
+                  {...(negocio.resena.url ? { href: negocio.resena.url, target: '_blank', rel: 'noreferrer' } : {})}
+                  className={`flex flex-col items-center justify-center font-semibold ${compacta ? 'gap-[0.3rem] text-[1.1rem]' : 'gap-[0.45rem] text-[1.3rem]'}`}
+                >
+                  <LogoGoogle compacta={compacta} />
+                  <Estrellas compacta={compacta} />
+                  {negocio.resena.texto}
+                </Resena>,
+                <TarjetaDestacada key="destacada" tarjeta={negocio.destacada} compacta={compacta} />,
+              ]}
+            />
           ) : (
             /* Sin url (las demos) la card no lleva enlace; con la url real de la ficha de Google, abre la reseña */
             <Resena

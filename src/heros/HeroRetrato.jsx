@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { House, ListChecks, MessageCircle, Phone, UserRound } from 'lucide-react'
 import Img from '../components/Img'
+import BotonCompartir from '../components/BotonCompartir'
+import useVueltaPestanas from '../lib/useVueltaPestanas'
 
 /* Retrato (pensado para profesionales que se venden a sí mismos: psicología, terapias...).
    Todo el hero es un bloque oscuro sobre una foto con velo: arriba el retrato redondo con el nombre
@@ -14,9 +16,11 @@ import Img from '../components/Img'
 
 const ICONOS = { inicio: House, servicios: ListChecks, sobremi: UserRound, contacto: MessageCircle }
 
-function EscenaInicio({ pestana }) {
+function EscenaInicio({ pestana, nombre }) {
   return (
     <div className="flex h-full flex-col justify-end">
+      {/* Compartir, encima del titular */}
+      <BotonCompartir titulo={nombre} className="mb-[0.7rem] self-start" />
       <h1 className="font-demo-heading text-[clamp(2.1rem,1.6rem+2.4vw,2.7rem)] font-bold leading-[1.05] text-demo-primary">
         {pestana.titular.map((l, i) => (
           <span key={i} className="block">{l}</span>
@@ -93,9 +97,11 @@ const ESCENAS = {
 export default function HeroRetrato({ hero, nombre }) {
   const pestanas = hero.pestanas ?? []
   const [activa, setActiva] = useState(0)
+  const { parar } = useVueltaPestanas(pestanas, setActiva)
 
   return (
-    <div className="relative flex flex-1 flex-col overflow-hidden bg-neutral-900 text-white">
+    // Cualquier toque en el hero para la vuelta de presentación
+    <div className="relative flex flex-1 flex-col overflow-hidden bg-neutral-900 text-white" onPointerDown={parar}>
       <Img src={hero.fondo} alt="" className="absolute inset-0 h-full w-full object-cover object-[center_65%]" />
       <div className="pointer-events-none absolute inset-0 bg-black/70" />
 
@@ -122,7 +128,7 @@ export default function HeroRetrato({ hero, nombre }) {
               aria-hidden={i !== activa}
               className={`absolute inset-0 transition-all duration-500 ${i === activa ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-[0.5rem] opacity-0'}`}
             >
-              <Escena pestana={p} />
+              <Escena pestana={p} nombre={nombre} />
             </div>
           )
         })}

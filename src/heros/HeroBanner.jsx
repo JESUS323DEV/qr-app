@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Phone } from 'lucide-react'
 import Img from '../components/Img'
+import useVueltaPestanas from '../lib/useVueltaPestanas'
+import BotonCompartir from '../components/BotonCompartir'
 
 /* Banner (adaptado del de Señorío en platform). Arriba la foto, con la marca encima;
    debajo un bloque del color principal con el titular en mayúsculas y las pestañas.
@@ -119,9 +121,12 @@ const ESCENAS = {
 export default function HeroBanner({ hero, nombre, lema }) {
   const pestanas = hero.pestanas ?? []
   const [activa, setActiva] = useState(0)
-  const [mapaPedido, setMapaPedido] = useState(false)
+  // El mapa se carga desde el principio, en segundo plano, para que esté listo cuando la vuelta llegue a él
+  const [mapaPedido, setMapaPedido] = useState(true)
+  const { enVuelta, parar } = useVueltaPestanas(pestanas, setActiva)
 
   const tocar = i => {
+    parar()
     setActiva(i)
     if (pestanas[i].tipo === 'onsom') setMapaPedido(true)
   }
@@ -129,7 +134,8 @@ export default function HeroBanner({ hero, nombre, lema }) {
   const enMapa = pestanas[activa]?.tipo === 'onsom'
 
   return (
-    <div className="flex flex-1 flex-col">
+    // Cualquier toque en el hero para la vuelta de presentación
+    <div className="flex flex-1 flex-col" onPointerDown={parar}>
       {/* La foto ocupa el alto que sobra, para que todo quepa en una pantalla */}
       <div className="relative min-h-[9rem] flex-1 overflow-hidden bg-demo-primary">
         {pestanas.map((p, i) => {
@@ -142,7 +148,7 @@ export default function HeroBanner({ hero, nombre, lema }) {
             >
               {p.tipo === 'onsom'
                 ? <EscenaOnSom pestana={p} cargar={mapaPedido} />
-                : <Escena pestana={p} activa={i === activa} />}
+                : <Escena pestana={p} activa={i === activa && !enVuelta} />}
             </div>
           )
         })}
@@ -155,6 +161,8 @@ export default function HeroBanner({ hero, nombre, lema }) {
           <div className="leading-tight">
             <p className="font-demo-heading text-[1rem]">{nombre}</p>
             {lema && <p className="text-[0.8rem] text-white/80">{lema}</p>}
+            {/* Compartir, en todas las pestañas menos en la del mapa ("Compartir" es igual en catalán) */}
+            {!enMapa && <BotonCompartir titulo={nombre} className="pointer-events-auto mt-[0.45rem]" />}
           </div>
         </div>
       </div>
