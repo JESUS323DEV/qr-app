@@ -4,3 +4,5 @@ dist
 .env.*
 *.log
 .DS_Store
+# Datos de la gestión interna (costes, compras y clientes): solo en este ordenador
+gestion/

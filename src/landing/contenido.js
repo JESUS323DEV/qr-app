@@ -9,12 +9,6 @@ export const marca = {
 }
 
 export const hero = {
-  // Debajo de los pasos, en la pestaña Cómo funciona: lo que gana el negocio, en una o dos líneas
-  ventajas: {
-    titulo: 'Ventajas',
-    texto: 'más reseñas en Google, más visibilidad en Maps y clientes que vuelven.',
-    pie: 'Presupuesto sin compromiso',
-  },
   // Pestaña Tu QR del hero: la placa con el QR personalizable
   inicio: {
     titulo: 'Los colores de tu negocio, hasta en el QR.',
@@ -56,6 +50,69 @@ export const porque = {
   titulo: 'Cada día entra gente que te dejaría cinco estrellas.',
   texto:
     'Pero nadie busca tu ficha de Google para escribir una reseña, ni apunta tu Instagram de memoria. Con la placa basta con sacar el móvil y apuntar con la cámara. En dos toques están dentro.',
+}
+
+// Pestaña Ventajas (antes Cómo funciona): cuatro subpestañas arriba (Ventajas, Pasos, SEO y Planes)
+export const comoFunciona = {
+  pestana: 'Ventajas',
+  subpestanas: [
+    { key: 'ventajas', texto: 'Ventajas' },
+    { key: 'pasos', texto: 'Pasos' },
+    { key: 'seo', texto: 'SEO' },
+    { key: 'planes', texto: 'Planes' },
+  ],
+}
+
+// Subpestaña Ventajas: lo que gana el negocio, cada ventaja con su explicación
+export const ventajas = {
+  titulo: 'Lo que ganas',
+  lista: [
+    { titulo: 'Más reseñas en Google', texto: 'Tus clientes te valoran desde la mesa, en dos toques.' },
+    { titulo: 'Clientes que vuelven', texto: 'Te siguen en redes sin tener que buscarte.' },
+    { titulo: 'Reservas ordenadas', texto: 'Te llegan por WhatsApp con día, hora y personas, sin mensajes sueltos.' },
+    { titulo: 'Con tu marca', texto: 'Tus colores y tus fotos, no una plantilla igual para todos.' },
+  ],
+}
+
+// Subpestaña SEO: qué va incluido y qué es un servicio aparte
+export const seo = {
+  titulo: 'Que te encuentren',
+  lista: [
+    {
+      titulo: 'Tu nombre al compartir',
+      texto: 'Cuando alguien comparte tu página por WhatsApp o Instagram, sale tu nombre y tu foto. Va incluido siempre.',
+    },
+    {
+      titulo: 'En Google',
+      texto: 'Tu página con un título y una descripción pensados para lo que busca tu cliente, y tus datos para que Google te entienda.',
+    },
+    {
+      titulo: 'Tu ficha de Google Maps',
+      texto: 'Te la creo o la pongo al día: categoría, horario, fotos y el enlace a tu página. Y si quieres, me encargo de mantenerla.',
+    },
+  ],
+}
+
+// Subpestaña Planes: tres planes (precios orientativos, provisionales)
+export const planes = {
+  lista: [
+    {
+      titulo: 'Plan Base',
+      texto: 'Tu miniweb con tu marca y la placa con QR.',
+      precio: 'Desde 120 €',
+    },
+    {
+      titulo: 'Plan Premium',
+      texto: 'Como una web en el móvil: menú, horario y reservas.',
+      precio: 'Desde 150 €',
+    },
+    {
+      titulo: 'Plan Personalizado',
+      texto: 'Un diseño hecho solo para tu negocio.',
+      precio: 'Desde 250 €',
+    },
+  ],
+  boton: 'Pedir presupuesto',
 }
 
 export const pasos = {

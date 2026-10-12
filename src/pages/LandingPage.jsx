@@ -1,5 +1,5 @@
 import { rutaNegocio } from '../negocios'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { ArrowUpRight, Menu, X } from 'lucide-react'
 import Movil from '../components/Movil'
@@ -8,7 +8,8 @@ import { SocialIcon } from '../components/SocialIcons'
 import { COLORES_REDES } from '../lib/coloresRedes'
 import { tematicasConDemos, secuenciaDemos, tematicaDe, getTematica } from '../lib/tematicas'
 import { enlaceWhatsapp } from '../lib/whatsapp'
-import { marca, hero, porque, pasos, botones, ejemplos, precio, preguntas, cierre, pie, contactoForm, webCompleta, cartasOfertas, menu } from '../landing/contenido'
+import { marca, hero, porque, pasos, comoFunciona, ventajas, seo, planes, botones, ejemplos, precio, preguntas, cierre, pie, contactoForm, webCompleta, cartasOfertas, menu } from '../landing/contenido'
+import useVueltaPestanas from '../lib/useVueltaPestanas'
 
 const contacto = enlaceWhatsapp(marca.whatsapp, marca.mensajeWhatsapp)
 // Enlace de WhatsApp con el mensaje de pedir presupuesto
@@ -167,6 +168,10 @@ function Titulo({ children, className = '' }) {
 }
 
 const TURNO_DEMOS_MS = 7000
+// Cada cuánto cambia sola la placa de Tu QR (color y forma de los puntos)
+const CAMBIO_PLACA_MS = 2500
+// Cada cuánto cambian solas las subpestañas de Ventajas
+const CAMBIO_SUBPESTANA_MS = 5000
 
 // Formas de los puntos del QR que se pueden elegir en la placa de Inicio
 const FORMAS = [
@@ -185,14 +190,66 @@ const ESCAPARATE = secuenciaDemos
    escenario con la marca, el texto (cambia con la pestaña) y una fila de móviles con las capturas
    de las demos (como el catálogo, en pequeño) que se desliza con el dedo y pasa sola hasta que se toca;
    pestañas y, debajo, el botón destacado de WhatsApp. Todo en una pantalla. Los textos son provisionales. */
+// Dos filas de pestañas: tres arriba y dos abajo, centradas
+const PESTANAS = [
+  { key: 'ejemplos', texto: 'Inicio' },
+  { key: 'qr', texto: 'Tu QR' },
+  { key: 'como', texto: comoFunciona.pestana },
+]
+const PESTANAS_ABAJO = [
+  { key: 'contacto', texto: 'Contacto' },
+  { key: 'cartas', texto: cartasOfertas.pestana },
+]
+// Orden de la vuelta de presentación al entrar: todas las pestañas, de arriba abajo y de izquierda a derecha
+const ORDEN_PESTANAS = [...PESTANAS, ...PESTANAS_ABAJO]
+
 function HeroMiniweb() {
   const [actual, setActual] = useState(0)
   const [pestana, setPestana] = useState('ejemplos')
+  // Al entrar, las pestañas dan una vuelta solas cada 4 s y vuelven a Inicio; cualquier toque la para
+  const ponerPestana = useCallback(i => setPestana(ORDEN_PESTANAS[i].key), [])
+  const { enVuelta, parar } = useVueltaPestanas(ORDEN_PESTANAS, ponerPestana)
+  // Subpestaña de la pestaña Ventajas: Ventajas, Pasos, SEO o Planes
+  const [subComo, setSubComo] = useState('ventajas')
+  // Igual que la placa de Tu QR: al tocar la pestaña Ventajas (no en la vuelta inicial), las subpestañas
+  // van cambiando solas cada 4 s, hasta que el usuario toca algo dentro. Si ya eligió una, no vuelven a moverse.
+  const [subSola, setSubSola] = useState(false)
+  const [subElegida, setSubElegida] = useState(false)
+  const pararSub = () => {
+    setSubSola(false)
+    setSubElegida(true)
+  }
+
+  useEffect(() => {
+    if (pestana !== 'como' || !subSola) return
+    const subs = comoFunciona.subpestanas
+    const id = setInterval(() => {
+      setSubComo(s => subs[(subs.findIndex(x => x.key === s) + 1) % subs.length].key)
+    }, CAMBIO_SUBPESTANA_MS)
+    return () => clearInterval(id)
+  }, [pestana, subSola])
   const [tocado, setTocado] = useState(false)
   // Placa de Inicio: color y forma de los puntos elegidos
   const [color, setColor] = useState(0)
   const [forma, setForma] = useState('redondo')
   const paleta = hero.inicio.colores[color]
+  // Placa que se prueba diseños sola: empieza cuando el usuario toca la pestaña Tu QR (no en la vuelta inicial)
+  // y se para en cuanto toca la placa o sus botones. Si ya eligió algo, no vuelve a moverse.
+  const [placaSola, setPlacaSola] = useState(false)
+  const [placaElegida, setPlacaElegida] = useState(false)
+  const pararPlaca = () => {
+    setPlacaSola(false)
+    setPlacaElegida(true)
+  }
+
+  useEffect(() => {
+    if (pestana !== 'qr' || !placaSola) return
+    const id = setInterval(() => {
+      setColor(c => (c + 1) % hero.inicio.colores.length)
+      setForma(f => FORMAS[(FORMAS.findIndex(x => x.key === f) + 1) % FORMAS.length].key)
+    }, CAMBIO_PLACA_MS)
+    return () => clearInterval(id)
+  }, [pestana, placaSola])
   const fila = useRef(null)
   const demo = ESCAPARATE[actual]
 
@@ -202,17 +259,33 @@ function HeroMiniweb() {
     if (el) fila.current.scrollTo({ left: el.offsetLeft - fila.current.offsetLeft - (fila.current.clientWidth - el.clientWidth) / 2, behavior: suave ? 'smooth' : 'instant' })
   }
 
-  // Pasa sola al siguiente móvil hasta que el visitante toca la fila
+  // Pasa sola al siguiente móvil hasta que el visitante toca la fila (no empieza hasta que acaba la vuelta de pestañas).
+  // Solo cuenta estando en Inicio: si no, se gastaría el turno con la fila fuera de pantalla y se quedaría parada
   useEffect(() => {
-    if (tocado || ESCAPARATE.length < 2) return
+    if (pestana !== 'ejemplos' || enVuelta || tocado || ESCAPARATE.length < 2) return
     const t = setTimeout(() => irA((actual + 1) % ESCAPARATE.length), TURNO_DEMOS_MS)
     return () => clearTimeout(t)
-  }, [actual, tocado])
+  }, [pestana, actual, tocado, enVuelta])
 
   // Fila de Cartas y ofertas: el móvil del centro es el que se nombra debajo
   const [actualCarta, setActualCarta] = useState(0)
   const filaCartas = useRef(null)
   const ejemploCarta = cartasOfertas.ejemplos[actualCarta]
+  const [tocadoCarta, setTocadoCarta] = useState(false)
+
+  const irACarta = i => {
+    const f = filaCartas.current
+    const el = f?.children[i]
+    if (el) f.scrollTo({ left: el.offsetLeft - f.offsetLeft - (f.clientWidth - el.clientWidth) / 2, behavior: 'smooth' })
+  }
+
+  // Como en Inicio: pasa sola al siguiente móvil mientras se está en Cartas y ofertas, hasta que se toca la fila.
+  // Al volver a la pestaña empieza otra vez desde el primero
+  useEffect(() => {
+    if (pestana !== 'cartas' || enVuelta || tocadoCarta || cartasOfertas.ejemplos.length < 2) return
+    const t = setTimeout(() => irACarta((actualCarta + 1) % cartasOfertas.ejemplos.length), TURNO_DEMOS_MS)
+    return () => clearTimeout(t)
+  }, [pestana, actualCarta, tocadoCarta, enVuelta])
 
   // El móvil que queda en el centro de la fila f es el "actual" (nombre, sector y rayitas)
   const alDeslizar = (f, fijar) => {
@@ -227,19 +300,10 @@ function HeroMiniweb() {
     fijar(cerca)
   }
 
-  // Dos filas de pestañas: tres arriba y dos abajo, centradas
-  const PESTANAS = [
-    { key: 'ejemplos', texto: 'Inicio' },
-    { key: 'qr', texto: 'Tu QR' },
-    { key: 'contacto', texto: 'Contacto' },
-  ]
-  const PESTANAS_ABAJO = [
-    { key: 'como', texto: 'Cómo funciona' },
-    { key: 'cartas', texto: cartasOfertas.pestana },
-  ]
-
   return (
-    <div className="mx-auto flex w-full max-w-[30rem] flex-1 flex-col">
+    // min-h-0: sin él, el contenido largo de una pestaña estira el hero por encima del alto de la pantalla
+    // y empuja las pestañas de abajo fuera de la vista
+    <div className="mx-auto flex min-h-0 w-full max-w-[30rem] flex-1 flex-col" onPointerDown={parar}>
       {/* Escenario: fondo liso de la marca; ocupa el alto que sobra */}
       <div className="relative flex min-h-[20rem] flex-1 flex-col overflow-hidden bg-crema">
         {/* Marca arriba */}
@@ -248,7 +312,8 @@ function HeroMiniweb() {
           <MenuHamburguesa />
         </div>
 
-        {/* Texto: cambia con la pestaña */}
+        {/* Texto: cambia con la pestaña. Solo se pinta en las que tienen titular, para no dejar hueco en las demás */}
+        {['qr', 'ejemplos', 'cartas'].includes(pestana) && (
         <div className="px-[1.25rem] pt-[0.9rem]">
           {pestana === 'qr' && (
             <h2 className="font-titulo text-[clamp(1.9rem,1.5rem+2vw,2.5rem)] font-black leading-[1] tracking-tight">
@@ -267,8 +332,8 @@ function HeroMiniweb() {
               {cartasOfertas.titulo}
             </h2>
           )}
-
         </div>
+        )}
 
         {/* Pestaña Cartas y ofertas: como Inicio, pero con móviles que de momento enseñan un texto
             en vez de captura; tocarlos abre la demo */}
@@ -278,6 +343,8 @@ function HeroMiniweb() {
               <ul
                 ref={filaCartas}
                 onScroll={() => alDeslizar(filaCartas.current, setActualCarta)}
+                onTouchStart={() => setTocadoCarta(true)}
+                onMouseDown={() => setTocadoCarta(true)}
                 className="absolute inset-0 flex snap-x snap-mandatory gap-[0.9rem] overflow-x-auto px-[25%] [scrollbar-width:none]"
               >
                 {cartasOfertas.ejemplos.map((d, i) => (
@@ -321,11 +388,7 @@ function HeroMiniweb() {
                     key={d.ruta}
                     type="button"
                     aria-label={`Ver ${d.nombre}`}
-                    onClick={() => {
-                      const f = filaCartas.current
-                      const el = f?.children[i]
-                      if (el) f.scrollTo({ left: el.offsetLeft - f.offsetLeft - (f.clientWidth - el.clientWidth) / 2, behavior: 'smooth' })
-                    }}
+                    onClick={() => { setTocadoCarta(true); irACarta(i) }}
                     className={`h-[0.2rem] rounded-full transition-all duration-500 ${i === actualCarta ? 'w-[1.3rem] bg-acento' : 'w-[0.5rem] bg-tinta/25'}`}
                   />
                 ))}
@@ -337,9 +400,42 @@ function HeroMiniweb() {
         {/* Pestaña Contacto: formulario sencillo que, al enviar, abre WhatsApp con el mensaje ya escrito */}
         {pestana === 'contacto' && <FormularioContacto />}
 
-        {/* Pestaña Cómo funciona: los tres pasos y, debajo, las ventajas en una o dos líneas.
-            Ocupa todo el alto: título arriba, ventajas abajo y los pasos repartidos en medio */}
+        {/* Pestaña Ventajas (clave como): arriba cuatro subpestañas (Ventajas, Pasos, SEO y Planes). Ocupa todo el alto;
+            si el contenido de una subpestaña no cabe, se desliza por dentro y el resto de la pantalla no se mueve */}
         {pestana === 'como' && (
+          // Tocar algo dentro (una subpestaña, el texto, el botón) para los cambios solos
+          <div onPointerDown={pararSub} className="flex min-h-0 flex-1 flex-col">
+            <nav className="flex gap-[1.4rem] border-b border-linea px-[1.25rem] pt-[0.9rem]">
+              {comoFunciona.subpestanas.map(s => (
+                <button
+                  key={s.key}
+                  type="button"
+                  aria-pressed={subComo === s.key}
+                  onClick={() => setSubComo(s.key)}
+                  className={`relative pb-[0.5rem] text-[0.92rem] font-semibold transition-colors ${subComo === s.key ? 'text-tinta' : 'text-suave hover:text-tinta'}`}
+                >
+                  {s.texto}
+                  <span className={`absolute inset-x-0 bottom-0 h-[0.15rem] rounded-full bg-acento transition-transform duration-300 ${subComo === s.key ? 'scale-x-100' : 'scale-x-0'}`} />
+                </button>
+              ))}
+            </nav>
+
+            {/* Ventajas: cada una con su explicación */}
+            {subComo === 'ventajas' && (
+              <div className="min-h-0 flex-1 overflow-y-auto px-[1.25rem] pb-[1rem] pt-[0.9rem]">
+                <h2 className="font-titulo text-[clamp(1.9rem,1.5rem+2vw,2.5rem)] font-black leading-[1] tracking-tight">{ventajas.titulo}</h2>
+                <ul className="mt-[0.6rem]">
+                  {ventajas.lista.map(v => (
+                    <li key={v.titulo} className="border-b border-linea py-[0.7rem] last:border-b-0">
+                      <p className="font-titulo text-[1.05rem] font-bold leading-tight">{v.titulo}</p>
+                      <p className="mt-[0.2rem] text-[0.85rem] leading-[1.45] text-suave">{v.texto}</p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {subComo === 'pasos' && (
           <div className="flex flex-1 flex-col px-[1.25rem] pb-[1rem] pt-[0.9rem]">
             <h2 className="font-titulo text-[clamp(1.9rem,1.5rem+2vw,2.5rem)] font-black leading-[1] tracking-tight">
               {pasos.titulo}
@@ -355,20 +451,51 @@ function HeroMiniweb() {
                 </li>
               ))}
             </ol>
-            {/* Ventajas, en pequeño */}
-            <div className="border-t border-linea pt-[0.8rem] text-[0.85rem] leading-[1.45]">
-              <p>
-                <span className="font-bold">{hero.ventajas.titulo}:</span> <span className="text-suave">{hero.ventajas.texto}</span>
-              </p>
-              <p className="mt-[0.3rem] font-semibold text-acento">{hero.ventajas.pie}</p>
-            </div>
+          </div>
+            )}
+
+            {/* SEO: qué va incluido y qué es servicio aparte */}
+            {subComo === 'seo' && (
+              <div className="min-h-0 flex-1 overflow-y-auto px-[1.25rem] pb-[1rem] pt-[0.9rem]">
+                <h2 className="font-titulo text-[clamp(1.9rem,1.5rem+2vw,2.5rem)] font-black leading-[1] tracking-tight">{seo.titulo}</h2>
+                <ul className="mt-[0.8rem]">
+                  {seo.lista.map(s => (
+                    <li key={s.titulo} className="border-b border-linea py-[0.8rem] last:border-b-0">
+                      <p className="font-titulo text-[1.05rem] font-bold leading-tight">{s.titulo}</p>
+                      <p className="mt-[0.25rem] text-[0.85rem] leading-[1.45] text-suave">{s.texto}</p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Planes: Base, Premium y Personalizado. Cabe en una pantalla con el botón, sin deslizar por dentro */}
+            {subComo === 'planes' && (
+              <div className="flex min-h-0 flex-1 flex-col gap-[0.8rem] overflow-hidden px-[1.25rem] pb-[1rem] pt-[0.9rem]">
+                {/* Las tres tarjetas se reparten el alto que queda encima del botón */}
+                <div className="grid min-h-0 flex-1 auto-rows-fr gap-[0.7rem]">
+                  {planes.lista.map(p => (
+                    <div key={p.titulo} className="flex flex-col justify-center rounded-[1rem] bg-papel px-[1rem] py-[0.8rem]">
+                      <div className="flex items-baseline justify-between gap-[1rem]">
+                        <p className="font-titulo text-[1.35rem] font-black leading-none">{p.titulo}</p>
+                        <p className="shrink-0 font-titulo text-[1.05rem] font-bold text-acento">{p.precio}</p>
+                      </div>
+                      <p className="mt-[0.4rem] text-[0.88rem] leading-[1.4] text-suave">{p.texto}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <BotonWhatsapp href={pedirPresupuesto} className="w-full">{planes.boton}</BotonWhatsapp>
+              </div>
+            )}
           </div>
         )}
 
         {/* Pestaña Tu QR: la placa del mostrador, personalizable con colores y forma de los puntos del QR */}
         {pestana === 'qr' && (
           <>
-            <div className="flex min-h-[10rem] flex-1 items-center justify-center py-[1rem]">
+            {/* Tocar la placa o sus botones para los cambios solos */}
+            <div onPointerDown={pararPlaca} className="flex min-h-[10rem] flex-1 items-center justify-center py-[1rem]">
               <Placa
                 negocio={marca.nombre}
                 texto={hero.placa.texto}
@@ -382,7 +509,7 @@ function HeroMiniweb() {
               />
             </div>
 
-            <div className="flex items-center justify-between gap-[1rem] px-[1.25rem] pb-[1rem]">
+            <div onPointerDown={pararPlaca} className="flex items-center justify-between gap-[1rem] px-[1.25rem] pb-[1rem]">
               {/* Colores de la placa */}
               <div className="flex gap-[0.35rem]">
                 {hero.inicio.colores.map((c, i) => (
@@ -509,9 +636,15 @@ function HeroMiniweb() {
                 aria-pressed={pestana === p.key}
                 onClick={() => {
                   setPestana(p.key)
+                  // Al tocar Tu QR (también en mitad de la vuelta inicial), la placa empieza a probarse diseños sola,
+                  // salvo que el usuario ya haya elegido uno
+                  setPlacaSola(p.key === 'qr' && !placaElegida)
+                  // Al tocar Ventajas, sus subpestañas empiezan a cambiar solas desde la primera (salvo que ya eligiera una)
+                  setSubSola(p.key === 'como' && !subElegida)
+                  if (p.key === 'como' && !subElegida) setSubComo(comoFunciona.subpestanas[0].key)
                   // La fila de Ejemplos empieza siempre por la primera demo
                   if (p.key === 'ejemplos') { setActual(0); setTocado(false) }
-                  if (p.key === 'cartas') setActualCarta(0)
+                  if (p.key === 'cartas') { setActualCarta(0); setTocadoCarta(false) }
                 }}
                 className={`rounded-[0.7rem] py-[0.65rem] text-[0.82rem] font-semibold transition-colors ${
                   f > 0 ? 'w-[calc((100%-0.7rem)/3*1.3)]' : 'w-[calc((100%-0.7rem)/3)]'
@@ -540,8 +673,10 @@ export default function LandingPage() {
   return (
     // Sin scroll vertical: solo se ve la miniweb de la primera pantalla. Las secciones de debajo se quedan en el código
     <div className="h-svh overflow-hidden bg-papel font-texto text-tinta">
-      {/* Primera pantalla: el hero es una miniweb, exactamente el alto de la pantalla */}
-      <div className="flex min-h-svh flex-col">
+      {/* Primera pantalla: el hero es una miniweb, exactamente el alto de la pantalla.
+          Alto fijo (h-svh, no min-h): así una pestaña con mucho contenido se desliza por dentro
+          en vez de estirar la pantalla y empujar las pestañas de abajo fuera de la vista */}
+      <div className="flex h-svh flex-col">
         <HeroMiniweb />
       </div>
 
