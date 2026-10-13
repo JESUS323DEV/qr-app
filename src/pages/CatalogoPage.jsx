@@ -104,14 +104,12 @@ export default function CatalogoPage() {
                   <p className="font-semibold">{d.nombre}</p>
                   {d.sector && <p className="text-[0.92rem] text-suave">{d.sector}</p>}
                 </div>
-                <a
-                  href={d.ruta}
-                  target="_blank"
-                  rel="noreferrer"
+                <Link
+                  to={d.ruta}
                   className="shrink-0 text-[0.95rem] font-semibold underline decoration-tinta/30 underline-offset-[0.3em] hover:decoration-tinta"
                 >
                   Abrir
-                </a>
+                </Link>
               </div>
             </li>
           ))}

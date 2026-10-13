@@ -25,8 +25,9 @@ export default function DemoPager({ negocio, secuencia = secuenciaDemos, rutaDe 
   const anterior = secuencia[i - 1]
   const siguiente = secuencia[i + 1]
 
+  // replace: pasar de demo en demo no llena el historial, así "Volver" lleva a donde estabas antes de la primera demo
   const ir = destino => {
-    navigate(rutaDe(destino))
+    navigate(rutaDe(destino), { replace: true })
     window.scrollTo(0, 0)
   }
 

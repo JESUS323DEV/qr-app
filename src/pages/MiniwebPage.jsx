@@ -10,6 +10,7 @@ import DemoHomeButton from '../components/DemoHomeButton'
 import Carrusel from '../components/Carrusel'
 import GaleriaVideos from '../components/GaleriaVideos'
 import { COLORES_REDES } from '../lib/coloresRedes'
+import { secuenciaDemos, tipoDe } from '../lib/tematicas'
 
 function LogoGoogle({ compacta }) {
   return (
@@ -223,7 +224,8 @@ export default function MiniwebPage({ demo = false }) {
     <div className="min-h-svh bg-demo-surface font-demo-body text-demo-text">
       {negocio.demo && (
         <>
-          <DemoPager negocio={negocio} />
+          {/* Las flechas solo recorren demos del mismo tipo: las fichas entre fichas y las miniwebs entre miniwebs */}
+          <DemoPager negocio={negocio} secuencia={secuenciaDemos.filter(n => tipoDe(n) === tipoDe(negocio))} />
           <DemoHomeButton slug={negocio.slug} />
         </>
       )}

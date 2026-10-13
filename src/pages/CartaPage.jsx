@@ -7,6 +7,7 @@ import DemoHomeButton from '../components/DemoHomeButton'
 import { rutaNegocio } from '../negocios'
 import { applyTheme, resetTheme } from '../lib/applyTheme'
 import Img from '../components/Img'
+import { supabase } from '../lib/supabase'
 import CartaInmersiva from '../components/carta/CartaInmersiva'
 import CartaHistorias from '../components/carta/CartaHistorias'
 
@@ -151,14 +152,69 @@ function Seccion({ seccion }) {
   )
 }
 
+/* Lo que el dueño cambia desde el panel vive en Supabase (tabla cartas): el menú del día, si hoy hay menú
+   y, más adelante, la carta por secciones. Se junta con el archivo de la carta (diseño, marca, fotos...).
+   Si la carta no está en Supabase, o Supabase no responde, se usa tal cual el archivo. */
+function useCartaRemota(slug) {
+  // Se guarda de qué carta es lo leído: al pasar a otra con las flechas, se espera a la nueva (no se usa la anterior)
+  const [leido, setLeido] = useState({ slug: null, fila: null })
+
+  useEffect(() => {
+    if (!supabase) return
+    let vivo = true
+
+    const leer = () =>
+      supabase
+        .from('cartas')
+        .select('menu_dia, hay_menu, secciones')
+        .eq('slug', slug)
+        .maybeSingle()
+        .then(({ data }) => vivo && setLeido({ slug, fila: data ?? null }))
+        .catch(() => vivo && setLeido({ slug, fila: null }))
+    leer()
+
+    // En directo: cuando el dueño publica desde el panel, la carta abierta se actualiza sola, sin recargar
+    const canal = supabase
+      .channel(`carta-${slug}`)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'cartas', filter: `slug=eq.${slug}` }, ({ new: fila }) => {
+        if (vivo) setLeido({ slug, fila })
+      })
+      .subscribe()
+
+    // Al volver a la pestaña (móvil bloqueado, otra app...) se vuelve a leer, por si se cortó la conexión en directo
+    const alVolver = () => document.visibilityState === 'visible' && leer()
+    document.addEventListener('visibilitychange', alVolver)
+
+    return () => {
+      vivo = false
+      supabase.removeChannel(canal)
+      document.removeEventListener('visibilitychange', alVolver)
+    }
+  }, [slug])
+
+  return { cargando: Boolean(supabase) && leido.slug !== slug, fila: leido.slug === slug ? leido.fila : null }
+}
+
+const juntar = (carta, fila) => {
+  if (!carta || !fila) return carta
+  return {
+    ...carta,
+    // Del archivo se quedan las cosas fijas del menú (su texto de pestaña, su foto); lo editable viene de Supabase
+    menuDia: fila.hay_menu === false ? null : fila.menu_dia ? { ...carta.menuDia, ...fila.menu_dia } : carta.menuDia,
+    secciones: fila.secciones ?? carta.secciones,
+  }
+}
+
 // Al pasar de una carta a otra con las flechas, la página empieza de cero (pestañas, sección e idioma)
 export default function CartaPage(props) {
   const { slug } = useParams()
-  return <Carta key={slug} slug={slug} {...props} />
+  const { cargando, fila } = useCartaRemota(slug)
+  // Mientras llega lo de Supabase no se pinta nada, para no enseñar un momento el menú antiguo
+  if (cargando) return null
+  return <Carta key={slug} carta={juntar(getCarta(slug), fila)} {...props} />
 }
 
-function Carta({ slug, demo = false }) {
-  const carta = getCarta(slug)
+function Carta({ carta, demo = false }) {
   const negocio = carta ? marcaDe(carta) : null
   // Dos niveles: Menú del día o Carta; dentro de Carta, las secciones
   const [modo, setModo] = useState(carta?.menuDia ? 'menu' : 'carta')

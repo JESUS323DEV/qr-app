@@ -37,7 +37,7 @@ export default {
     pestanas: [
       {
         tipo: 'plats',
-        texto: 'Plats',
+        texto: 'Inici',
         titular: ['El pollastre', 'que fa olor a casa.'],
         fotos: [
           { src: px(25391590, 1000, 800), alt: "Pollastres a l'ast" },
@@ -88,10 +88,10 @@ export default {
     url: '/demo/el-pollastre-d-horta/carta',
   },
 
-  // Cuerpo de la miniweb (reseña y redes) con un verde muy suave
+  // Cuerpo de la miniweb (reseña y redes) con un tono propio de la marca: dorado muy claro, de su acento
   cuerpo: {
-    fondo: '#EEF3EC',
-    card: '#E1EADF',
+    fondo: '#F8F1DE',
+    card: '#EFE2BF',
   },
 
   redesTexto: 'Segueix-nos a les xarxes',

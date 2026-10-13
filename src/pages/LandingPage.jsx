@@ -229,10 +229,27 @@ const PESTANAS_ABAJO = [
 ]
 // Orden de la vuelta de presentación al entrar: todas las pestañas, de arriba abajo y de izquierda a derecha
 const ORDEN_PESTANAS = [...PESTANAS, ...PESTANAS_ABAJO]
+const CLAVE_PESTANA = 'landing-pestana'
 
 function HeroMiniweb() {
   const [actual, setActual] = useState(0)
-  const [pestana, setPestana] = useState('ejemplos')
+  // Al volver de una demo (se abren en la misma pestaña), la landing se abre en la pestaña de donde venías.
+  // Se guarda solo durante la visita (sessionStorage); al cerrar el navegador se olvida
+  const [pestana, setPestana] = useState(() => {
+    try {
+      const guardada = sessionStorage.getItem(CLAVE_PESTANA)
+      return ORDEN_PESTANAS.some(p => p.key === guardada) ? guardada : 'ejemplos'
+    } catch {
+      return 'ejemplos'
+    }
+  })
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(CLAVE_PESTANA, pestana)
+    } catch {
+      // Sin acceso al almacenamiento: al volver se empieza en Inicio, sin más
+    }
+  }, [pestana])
   // Al entrar, las pestañas dan una vuelta solas cada 4 s y vuelven a Inicio; cualquier toque la para.
   // Solo la primera vez en cada navegador: luego queda apuntado y la landing empieza directamente en Inicio
   const ponerPestana = useCallback(i => setPestana(ORDEN_PESTANAS[i].key), [])
@@ -380,10 +397,8 @@ function HeroMiniweb() {
               >
                 {WEBS_Y_CARTAS.map((d, i) => (
                   <li key={d.ruta} className="h-full shrink-0 snap-center py-[0.2rem]">
-                    <a
-                      href={d.ruta}
-                      target="_blank"
-                      rel="noreferrer"
+                    <Link
+                      to={d.ruta}
                       aria-label={`Abrir la demo de ${d.nombre}`}
                       className={`relative block aspect-[390/844] h-full rounded-[1.2rem] border border-white/15 bg-[#1d1d1b] p-[0.3rem] shadow-[0_1rem_2rem_-0.8rem_rgb(0_0_0/0.7)] transition-[opacity,transform] duration-500 ${
                         i === actualCarta ? 'opacity-100' : 'scale-[0.92] opacity-55'
@@ -405,7 +420,7 @@ function HeroMiniweb() {
                         {hero.pista}
                         <ArrowUpRight className="h-[0.8rem] w-[0.8rem]" aria-hidden="true" />
                       </span>
-                    </a>
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -637,10 +652,8 @@ function HeroMiniweb() {
           >
             {ESCAPARATE.map((d, i) => (
               <li key={d.nombre} className="h-full shrink-0 snap-center py-[0.2rem]">
-                <a
-                  href={d.ruta}
-                  target="_blank"
-                  rel="noreferrer"
+                <Link
+                  to={d.ruta}
                   aria-label={`Abrir la demo de ${d.nombre}`}
                   className={`relative block aspect-[390/844] h-full rounded-[1.2rem] border border-white/15 bg-[#1d1d1b] p-[0.3rem] shadow-[0_1rem_2rem_-0.8rem_rgb(0_0_0/0.7)] transition-[opacity,transform] duration-500 ${
                     i === actual ? 'opacity-100' : 'scale-[0.92] opacity-55'
@@ -663,7 +676,7 @@ function HeroMiniweb() {
                     {hero.pista}
                     <ArrowUpRight className="h-[0.8rem] w-[0.8rem]" aria-hidden="true" />
                   </span>
-                </a>
+                </Link>
               </li>
             ))}
           </ul>
@@ -803,14 +816,12 @@ export default function LandingPage() {
                   <p className="mt-[1rem] font-semibold">{n.nombre}</p>
                   <p className="mt-[0.2rem] text-[0.92rem] text-papel/65">{n.sector}</p>
                   <div className="mt-[0.6rem] flex gap-[1rem] text-[0.92rem]">
-                    <a
-                      href={rutaNegocio(n)}
-                      target="_blank"
-                      rel="noreferrer"
+                    <Link
+                      to={rutaNegocio(n)}
                       className="font-semibold underline decoration-papel/30 underline-offset-[0.3em] hover:decoration-papel"
                     >
                       Abrir
-                    </a>
+                    </Link>
                     <Link to={`/tematicas/${t.key}`} className="text-papel/65 hover:text-papel">
                       {t.nombre}
                     </Link>

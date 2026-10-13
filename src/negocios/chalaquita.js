@@ -151,6 +151,12 @@ export default {
     texto: 'Todos los martes, la segunda ración de anticuchos a mitad de precio.',
   },
 
+  // Cuerpo de la miniweb (reseña y redes) con un tono propio de la marca: lila muy claro, de su morado
+  cuerpo: {
+    fondo: '#F4EFF9',
+    card: '#E5DCF0',
+  },
+
   redes: [
     { platform: 'instagram', href: 'https://instagram.com' },
     { platform: 'tiktok',    href: 'https://tiktok.com' },

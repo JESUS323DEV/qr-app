@@ -35,7 +35,7 @@ export default {
     pestanas: [
       {
         tipo: 'platos',
-        texto: 'Platos',
+        texto: 'Inicio',
         titulo: '¿Qué te apetece?',
         opciones: [
           { plato: 'Menú del día',         foto: px(14009279, 1000, 800) },
@@ -84,6 +84,12 @@ export default {
     texto: 'Platos, menú del día y alérgenos, en tu móvil.',
     boton: 'Ver la carta',
     url: '/demo/almendra/carta',
+  },
+
+  // Cuerpo de la miniweb (reseña y redes) con un tono propio de la marca: terracota muy claro
+  cuerpo: {
+    fondo: '#F8EDE5',
+    card: '#F0DACB',
   },
 
   redes: [

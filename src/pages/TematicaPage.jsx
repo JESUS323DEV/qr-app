@@ -54,14 +54,12 @@ export default function TematicaPage() {
                   <p className="font-semibold">{n.nombre}</p>
                   {n.sector && <p className="text-[0.92rem] text-suave">{n.sector}</p>}
                 </div>
-                <a
-                  href={n.ruta}
-                  target="_blank"
-                  rel="noreferrer"
+                <Link
+                  to={n.ruta}
                   className="shrink-0 text-[0.95rem] font-semibold underline decoration-tinta/30 underline-offset-[0.3em] hover:decoration-tinta"
                 >
                   Abrir
-                </a>
+                </Link>
               </div>
             </li>
           ))}

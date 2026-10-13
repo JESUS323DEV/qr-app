@@ -38,7 +38,7 @@ export default {
     pestanas: [
       {
         tipo: 'platos',
-        texto: 'Platos',
+        texto: 'Inicio',
         // Platos estrella: pasan solos como historias de Instagram
         fotos: [
           { src: foto(26586571), plato: 'Ceviche clásico', frase: 'Corvina en leche de tigre, como en Lima.' },

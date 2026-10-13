@@ -38,7 +38,7 @@ export default {
     pestanas: [
       {
         tipo: 'trabajos',
-        texto: 'Trabajos',
+        texto: 'Inicio',
         fotos: [
           { src: px(10999291, 900, 1000), alt: 'Cuidado facial' },
           { src: px(16120490, 900, 1000), alt: 'Tratamiento en cabina' },

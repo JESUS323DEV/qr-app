@@ -6,6 +6,7 @@ import TematicaPage from './pages/TematicaPage'
 import CartaPage from './pages/CartaPage'
 import CatalogoPage from './pages/CatalogoPage'
 import PlanesPage from './pages/PlanesPage'
+import PanelPage from './pages/PanelPage'
 
 // Gestión interna: solo con el servidor de desarrollo. En el build de Netlify import.meta.env.DEV es false,
 // así que ni la página ni su código se publican
@@ -21,6 +22,8 @@ export default function App() {
         <Route path="/catalogo" element={<CatalogoPage />} />
         {/* Planes en detalle */}
         <Route path="/planes" element={<PlanesPage />} />
+        {/* Panel del dueño: cambiar su menú del día (Supabase) */}
+        <Route path="/panel" element={<PanelPage />} />
         {GestionPage && (
           <Route path="/gestion" element={<Suspense fallback={null}><GestionPage /></Suspense>} />
         )}

@@ -37,7 +37,7 @@ export default {
     pestanas: [
       {
         tipo: 'cortes',
-        texto: 'Cortes',
+        texto: 'Inicio',
         titulo: 'El corte,',
         destacado: 'bien hecho.',
         fotos: [

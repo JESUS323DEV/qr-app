@@ -236,7 +236,7 @@ export const escaparate = {
 
 export const cartasMiniwebs = {
   pestana: 'Cartas y miniwebs',
-  titulo: 'Tu web y tu carta, en el móvil de tus clientes',
+  titulo: 'Tu web y tu carta, en la palma de la mano.',
   // Lo que pone debajo de cada móvil y dentro, si no hay captura
   tipos: {
     miniweb: { etiqueta: 'Miniweb', titulo: 'Miniweb' },

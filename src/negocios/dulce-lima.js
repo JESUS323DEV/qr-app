@@ -37,7 +37,7 @@ export default {
     pestanas: [
       {
         tipo: 'dulces',
-        texto: 'Dulces',
+        texto: 'Inicio',
         fotos: [
           { src: us('1606890737304-57a1ca8a5b62', 600, 800), etiqueta: 'Tortas' },
           { src: us('1517400847543-fd27a32c8d12', 500, 500), etiqueta: 'Alfajores' },

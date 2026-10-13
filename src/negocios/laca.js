@@ -35,7 +35,7 @@ export default {
     pestanas: [
       {
         tipo: 'disenos',
-        texto: 'Diseños',
+        texto: 'Inicio',
         titulo: 'Tu color,',
         destacado: 'tu momento.',
         fotos: [
@@ -93,6 +93,12 @@ export default {
   destacada: {
     titulo: 'El color del mes',
     texto: 'Azul noche cromado. Pídelo en tu próxima cita.',
+  },
+
+  // Cuerpo de la miniweb (reseña y redes) con un tono propio de la marca: malva muy claro, de su burdeos
+  cuerpo: {
+    fondo: '#F6ECEF',
+    card: '#EAD3DA',
   },
 
   redes: [
