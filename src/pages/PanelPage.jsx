@@ -180,7 +180,8 @@ function EditorMenu({ fila, alGuardar }) {
         incluye: leido.incluye || m.incluye,
         grupos: leido.grupos?.length ? leido.grupos : m.grupos,
       }))
-      setFoto({ ok: true, dudas: leido.dudas ?? [] })
+      // Sale abierto; el dueño lo puede ocultar y volver a leer
+      setFoto({ ok: true, abierto: true, dudas: leido.dudas ?? [] })
     } catch {
       setFoto({ error: 'No se ha podido leer la foto. Prueba otra vez.' })
     } finally {
@@ -290,10 +291,26 @@ function EditorMenu({ fila, alGuardar }) {
             <p className="text-center text-[0.8rem] text-zinc-500">Haz una foto a tu pizarra, de frente y sin reflejos. El menú se rellena solo y lo revisas antes de publicar.</p>
           )}
           {foto?.error && <p className="rounded-[0.6rem] bg-red-50 px-[0.9rem] py-[0.6rem] text-[0.88rem] font-semibold text-red-700">{foto.error}</p>}
+          {/* Resultado de la foto: se puede ocultar (se contrae a una línea) y volver a leer */}
           {foto?.ok && (
             <div className="rounded-[0.6rem] bg-emerald-50 px-[0.9rem] py-[0.6rem] text-[0.88rem] text-emerald-800">
-              <p className="font-semibold">Menú rellenado. Revísalo y pulsa Publicar.</p>
-              {foto.dudas?.length > 0 && (
+              <div className="flex items-start justify-between gap-[0.75rem]">
+                <p className="font-semibold">
+                  Menú rellenado. Revísalo y pulsa Publicar.
+                  {!foto.abierto && foto.dudas?.length > 0 && (
+                    <span className="font-normal text-amber-800"> {foto.dudas.length} {foto.dudas.length === 1 ? 'cosa' : 'cosas'} para revisar.</span>
+                  )}
+                </p>
+                <button
+                  type="button"
+                  aria-expanded={foto.abierto}
+                  onClick={() => setFoto(f => ({ ...f, abierto: !f.abierto }))}
+                  className="shrink-0 font-semibold underline underline-offset-[0.2em]"
+                >
+                  {foto.abierto ? 'Leer menos' : 'Leer más'}
+                </button>
+              </div>
+              {foto.abierto && foto.dudas?.length > 0 && (
                 <>
                   <p className="mt-[0.4rem] font-semibold text-amber-800">Mira bien esto, no se leía claro:</p>
                   <ul className="mt-[0.2rem] list-disc pl-[1.1rem] text-amber-900">
@@ -488,17 +505,28 @@ export default function PanelPage() {
 
   useEffect(() => {
     document.title = 'Tu panel'
+    // Sin "tirar hacia abajo para recargar" en el móvil: recargar sin querer borraría lo que se está editando
+    const html = document.documentElement
+    const antes = { html: html.style.overscrollBehaviorY, body: document.body.style.overscrollBehaviorY }
+    html.style.overscrollBehaviorY = 'none'
+    document.body.style.overscrollBehaviorY = 'none'
     // Que ningún buscador la guarde
     const meta = document.createElement('meta')
     meta.name = 'robots'
     meta.content = 'noindex, nofollow'
     document.head.appendChild(meta)
 
-    if (!supabase) return () => meta.remove()
+    const restaurar = () => {
+      meta.remove()
+      html.style.overscrollBehaviorY = antes.html
+      document.body.style.overscrollBehaviorY = antes.body
+    }
+
+    if (!supabase) return restaurar
     supabase.auth.getSession().then(({ data }) => setSesion(data.session))
     const { data } = supabase.auth.onAuthStateChange((_evento, s) => setSesion(s))
     return () => {
-      meta.remove()
+      restaurar()
       data.subscription.unsubscribe()
     }
   }, [])
