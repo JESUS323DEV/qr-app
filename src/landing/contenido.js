@@ -68,29 +68,36 @@ export const ventajas = {
   titulo: 'Lo que ganas',
   lista: [
     { titulo: 'Más reseñas en Google', texto: 'Tus clientes te valoran desde la mesa, en dos toques.' },
-    { titulo: 'Clientes que vuelven', texto: 'Te siguen en redes sin tener que buscarte.' },
+    { titulo: 'Clientes que vuelven y te recomiendan', texto: 'Te siguen en redes y comparten tu página por WhatsApp en un toque.' },
     { titulo: 'Reservas ordenadas', texto: 'Te llegan por WhatsApp con día, hora y personas, sin mensajes sueltos.' },
     { titulo: 'Con tu marca', texto: 'Tus colores y tus fotos, no una plantilla igual para todos.' },
   ],
 }
 
-// Subpestaña SEO: qué va incluido y qué es un servicio aparte
+// Subpestaña SEO: como Planes, en tarjetas sin precio. La primera va incluida en todos los planes;
+// las otras dos, separadas debajo, se piden con el botón de presupuesto
 export const seo = {
   titulo: 'Que te encuentren',
+  texto: 'Y si quieres llegar a más gente, salimos en Google.',
+  incluido: {
+    titulo: 'Al compartirla',
+    etiqueta: 'Incluido',
+    texto: 'Tu página sale con tu nombre y tu foto.',
+  },
   lista: [
     {
-      titulo: 'Tu nombre al compartir',
-      texto: 'Cuando alguien comparte tu página por WhatsApp o Instagram, sale tu nombre y tu foto. Va incluido siempre.',
-    },
-    {
-      titulo: 'En Google',
-      texto: 'Tu página con un título y una descripción pensados para lo que busca tu cliente, y tus datos para que Google te entienda.',
+      titulo: 'Tu página en Google',
+      texto: 'Pensada para lo que busca tu cliente.',
     },
     {
       titulo: 'Tu ficha de Google Maps',
-      texto: 'Te la creo o la pongo al día: categoría, horario, fotos y el enlace a tu página. Y si quieres, me encargo de mantenerla.',
+      texto: 'Horario, fotos y enlace a tu página.',
     },
   ],
+  // Dos botones en fila, como en Planes: "Ver más" lleva a la sección SEO de /planes, con todo mejor explicado
+  verMas: 'Ver más',
+  boton: 'Presupuesto',
+  mensaje: 'Hola, me interesa salir en Google con mi negocio: la página y la ficha de Google Maps.',
 }
 
 // Subpestaña Planes: las fichas y las cartas, que es lo que se vende primero (precios orientativos, provisionales).
@@ -284,8 +291,39 @@ export const planesDetalle = {
     lista: [
       'NFC en las placas: tus clientes acercan el móvil y se abre tu página',
       'Más placas o pegatinas, para las mesas, el escaparate o la puerta',
-      'SEO y ficha de Google, para que te encuentren cuando te buscan',
     ],
+  },
+  // Sección SEO (/planes#seo): lo que va incluido y, aparte, lo de salir en Google, bien explicado
+  seo: {
+    titulo: 'Que te encuentren',
+    texto: 'Tu página ya luce cuando alguien la comparte. Y si quieres llegar a gente que todavía no te conoce, te ayudo a salir en Google.',
+    incluido: {
+      titulo: 'Incluido en todos los planes',
+      lista: [
+        {
+          titulo: 'Tu página, bonita al compartirla',
+          texto: 'Cuando alguien la manda por WhatsApp o la pone en Instagram, sale con tu nombre, tu foto y una frase sobre tu negocio, no como un enlace sin más.',
+        },
+      ],
+    },
+    aparte: {
+      titulo: 'Para salir en Google, bajo presupuesto',
+      lista: [
+        {
+          titulo: 'Tu página en Google',
+          texto: 'Escribo el título y la descripción de tu página pensando en lo que busca tu cliente ("peluquería en Sants", "menú del día en Horta"), preparo tus datos para que Google los entienda y la doy de alta para que aparezca antes.',
+        },
+        {
+          titulo: 'Tu ficha de Google Maps',
+          texto: 'Te la creo o la reviso: categoría, horario, fotos, servicios y el enlace a tu página. Te acompaño en la verificación, que la tiene que hacer el dueño del negocio.',
+        },
+        {
+          titulo: 'Mantenimiento de tu ficha',
+          texto: 'Si quieres, me encargo cada mes: responder a las reseñas, subir fotos nuevas y cambiar el horario en festivos y vacaciones.',
+        },
+      ],
+    },
+    boton: 'Pedir presupuesto para salir en Google',
   },
   nota: 'Los cambios que me pidas más adelante (fotos, textos, carta...) se presupuestan aparte.',
   boton: 'Pedir presupuesto',

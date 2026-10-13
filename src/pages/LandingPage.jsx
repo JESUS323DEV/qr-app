@@ -489,18 +489,45 @@ function HeroMiniweb() {
           </div>
             )}
 
-            {/* SEO: qué va incluido y qué es servicio aparte */}
+            {/* SEO: como Planes, en tarjetas sin precio. Arriba lo incluido; separado debajo, lo de salir en Google,
+                que se pide con el botón de presupuesto. Cabe en una pantalla con el botón */}
             {subComo === 'seo' && (
-              <div className="min-h-0 flex-1 overflow-y-auto px-[1.25rem] pb-[1rem] pt-[0.9rem]">
-                <h2 className="font-titulo text-[clamp(1.9rem,1.5rem+2vw,2.5rem)] font-black leading-[1] tracking-tight">{seo.titulo}</h2>
-                <ul className="mt-[0.8rem]">
+              <div className="flex min-h-0 flex-1 flex-col gap-[0.8rem] overflow-hidden px-[1.25rem] pb-[1rem] pt-[0.9rem]">
+                <div>
+                  <h2 className="font-titulo text-[clamp(1.6rem,1.3rem+1.6vw,2.1rem)] font-black leading-[1] tracking-tight">{seo.titulo}</h2>
+                  <p className="mt-[0.4rem] text-[0.85rem] leading-[1.4] text-suave">{seo.texto}</p>
+                </div>
+
+                {/* justify-center-safe: si falta alto (móviles pequeños), no se sale por arriba tapando el subtítulo */}
+                <div className="flex min-h-0 flex-1 flex-col justify-center-safe gap-[0.7rem]">
+                  {/* Lo incluido, con el borde amarillo para separarlo de lo demás */}
+                  <div className="mb-[0.3rem] rounded-[1rem] bg-papel px-[1rem] py-[0.8rem] ring-1 ring-acento/60">
+                    <div className="flex items-baseline justify-between gap-[1rem]">
+                      <p className="font-titulo text-[1.2rem] font-black leading-none">{seo.incluido.titulo}</p>
+                      <p className="shrink-0 font-titulo text-[0.95rem] font-bold text-acento">{seo.incluido.etiqueta}</p>
+                    </div>
+                    <p className="mt-[0.4rem] text-[0.88rem] leading-[1.4] text-suave">{seo.incluido.texto}</p>
+                  </div>
+
+                  {/* Para salir en Google: aparte, se piden con el botón de presupuesto */}
                   {seo.lista.map(s => (
-                    <li key={s.titulo} className="border-b border-linea py-[0.8rem] last:border-b-0">
-                      <p className="font-titulo text-[1.05rem] font-bold leading-tight">{s.titulo}</p>
-                      <p className="mt-[0.25rem] text-[0.85rem] leading-[1.45] text-suave">{s.texto}</p>
-                    </li>
+                    <div key={s.titulo} className="rounded-[1rem] bg-papel px-[1rem] py-[0.8rem]">
+                      <p className="font-titulo text-[1.2rem] font-black leading-none">{s.titulo}</p>
+                      <p className="mt-[0.4rem] text-[0.88rem] leading-[1.4] text-suave">{s.texto}</p>
+                    </div>
                   ))}
-                </ul>
+                </div>
+
+                {/* Dos botones en fila: la sección SEO de /planes y pedir presupuesto por WhatsApp */}
+                <div className="grid grid-cols-2 gap-[0.6rem]">
+                  <Link
+                    to="/planes#seo"
+                    className="inline-flex min-h-[3.25rem] items-center justify-center rounded-full border border-tinta/30 text-[1rem] font-bold transition-colors hover:border-acento hover:text-acento"
+                  >
+                    {seo.verMas}
+                  </Link>
+                  <BotonWhatsapp href={enlaceWhatsapp(marca.whatsapp, seo.mensaje)} className="w-full">{seo.boton}</BotonWhatsapp>
+                </div>
               </div>
             )}
 
