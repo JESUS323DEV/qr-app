@@ -8,6 +8,7 @@ import { rutaNegocio } from '../negocios'
 import { applyTheme, resetTheme } from '../lib/applyTheme'
 import Img from '../components/Img'
 import { supabase } from '../lib/supabase'
+import { menuActivo, textoHorario } from '../lib/horarioMenu'
 import CartaInmersiva from '../components/carta/CartaInmersiva'
 import CartaHistorias from '../components/carta/CartaHistorias'
 
@@ -205,13 +206,36 @@ const juntar = (carta, fila) => {
   }
 }
 
+/* Horario del menú del día: fuera de él, la carta no lo enseña; dentro, el "cuándo se sirve" se escribe solo
+   a partir del horario ("De lunes a viernes, de 12 a 17 h"), para que nunca diga una cosa y haga otra */
+const conHorario = (carta, ahora) => {
+  const menu = carta?.menuDia
+  if (!menu?.horario?.dias?.length) return carta
+  if (!menuActivo(menu.horario, ahora)) return { ...carta, menuDia: null }
+  return { ...carta, menuDia: { ...menu, cuando: textoHorario(menu.horario) } }
+}
+
+// La hora actual, que se renueva cada minuto: así, a la hora en que acaba el menú, la carta abierta lo quita sola
+function useAhora() {
+  const [ahora, setAhora] = useState(() => new Date())
+  useEffect(() => {
+    const id = setInterval(() => setAhora(new Date()), 60000)
+    return () => clearInterval(id)
+  }, [])
+  return ahora
+}
+
 // Al pasar de una carta a otra con las flechas, la página empieza de cero (pestañas, sección e idioma)
 export default function CartaPage(props) {
   const { slug } = useParams()
   const { cargando, fila } = useCartaRemota(slug)
+  const ahora = useAhora()
   // Mientras llega lo de Supabase no se pinta nada, para no enseñar un momento el menú antiguo
   if (cargando) return null
-  return <Carta key={slug} carta={juntar(getCarta(slug), fila)} {...props} />
+  const carta = conHorario(juntar(getCarta(slug), fila), ahora)
+  // La clave cambia si el menú del día aparece o desaparece (horario, interruptor): la carta empieza de cero
+  // en lo que toca, y no se queda en blanco en la pestaña del menú que ya no existe
+  return <Carta key={`${slug}-${Boolean(carta?.menuDia)}`} carta={carta} {...props} />
 }
 
 function Carta({ carta, demo = false }) {

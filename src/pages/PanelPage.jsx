@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from 'react'
-import { ArrowUpRight, ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { ArrowUpRight, Camera, ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { getCarta, marcaDe, rutaCarta } from '../cartas'
+import { INICIALES, SEMANA, textoHorario } from '../lib/horarioMenu'
 
 /* Panel del dueño (/panel): entra con su email y contraseña (las cuentas las crea Jesús en Supabase)
    y cambia el menú del día de su carta desde el móvil. Al publicar, la carta de las mesas cambia al momento.
@@ -9,6 +10,31 @@ import { getCarta, marcaDe, rutaCarta } from '../cartas'
 
 const CAMPO = 'w-full min-w-0 rounded-[0.6rem] border border-zinc-300 bg-white px-[0.75rem] py-[0.6rem] text-[1rem] focus:border-zinc-900 focus:outline-none'
 const BOTON = 'rounded-[0.6rem] bg-zinc-900 px-[1rem] py-[0.75rem] text-[1rem] font-semibold text-white disabled:opacity-40'
+
+// Reduce la foto en el propio móvil antes de enviarla (lado largo de 1600 px, JPEG): se envía rápido
+// y basta para leer la pizarra. Devuelve la imagen en base64, sin el prefijo "data:..."
+const reducirFoto = archivo =>
+  new Promise((resolver, rechazar) => {
+    const img = new Image()
+    const url = URL.createObjectURL(archivo)
+    img.onload = () => {
+      const escala = Math.min(1, 1600 / Math.max(img.width, img.height))
+      const lienzo = document.createElement('canvas')
+      lienzo.width = Math.round(img.width * escala)
+      lienzo.height = Math.round(img.height * escala)
+      lienzo.getContext('2d').drawImage(img, 0, 0, lienzo.width, lienzo.height)
+      URL.revokeObjectURL(url)
+      resolver(lienzo.toDataURL('image/jpeg', 0.85).split(',')[1])
+    }
+    img.onerror = () => {
+      URL.revokeObjectURL(url)
+      rechazar(new Error('No se ha podido abrir la foto'))
+    }
+    img.src = url
+  })
+
+// Al activar el horario: de lunes a viernes, de 12 a 17 h
+const HORARIO_INICIAL = { dias: [1, 2, 3, 4, 5], desde: '12:00', hasta: '17:00' }
 
 const MENU_VACIO = { titulo: 'Menú del día', cuando: '', precio: '', incluye: '', grupos: [{ nombre: 'Primeros', platos: [''] }] }
 
@@ -101,7 +127,11 @@ function Entrar() {
 
 // Editor del menú del día de una carta: datos, grupos con sus platos e interruptor "Hoy no hay menú"
 function EditorMenu({ fila, alGuardar }) {
-  const [menu, setMenu] = useState(fila.menu_dia ?? MENU_VACIO)
+  // El horario empieza activado (de lunes a viernes, de 12 a 17 h) si el menú aún no tiene: si el dueño lo apagó y publicó, se respeta
+  const [menu, setMenu] = useState(() => {
+    const base = fila.menu_dia ?? MENU_VACIO
+    return { ...base, horario: base.horario === undefined ? HORARIO_INICIAL : base.horario }
+  })
   const [hayMenu, setHayMenu] = useState(fila.hay_menu !== false)
   const [estado, setEstado] = useState('')
   // Aviso de confirmación abierto (publicar o borrar grupo), o null
@@ -115,6 +145,48 @@ function EditorMenu({ fila, alGuardar }) {
     setEstado('')
   }
   const cambiarGrupo = (i, f) => cambiar('grupos', menu.grupos.map((g, j) => (j === i ? f(g) : g)))
+
+  // Foto de la pizarra: se reduce en el móvil, la lee la función leer-pizarra (Claude) y se rellena el editor
+  const entradaFoto = useRef(null)
+  const [leyendo, setLeyendo] = useState(false)
+  const [foto, setFoto] = useState(null)
+
+  const leerFoto = async e => {
+    const archivo = e.target.files?.[0]
+    e.target.value = ''
+    if (!archivo) return
+    setLeyendo(true)
+    setFoto(null)
+    setEstado('')
+    try {
+      const imagen = await reducirFoto(archivo)
+      const { data, error } = await supabase.functions.invoke('leer-pizarra', { body: { slug: fila.slug, imagen, tipo: 'image/jpeg' } })
+      if (error) {
+        // El mensaje de error de la función, si lo hay (límite diario, foto ilegible...)
+        let mensaje = 'No se ha podido leer la foto. Prueba otra vez.'
+        try {
+          mensaje = (await error.context?.json())?.error ?? mensaje
+        } catch {
+          // Sin mensaje propio: se queda el genérico
+        }
+        setFoto({ error: mensaje })
+        return
+      }
+      const leido = data.menu
+      setMenu(m => ({
+        ...m,
+        titulo: leido.titulo || m.titulo,
+        precio: leido.precio || m.precio,
+        incluye: leido.incluye || m.incluye,
+        grupos: leido.grupos?.length ? leido.grupos : m.grupos,
+      }))
+      setFoto({ ok: true, dudas: leido.dudas ?? [] })
+    } catch {
+      setFoto({ error: 'No se ha podido leer la foto. Prueba otra vez.' })
+    } finally {
+      setLeyendo(false)
+    }
+  }
 
   // Intercambia el grupo con el de arriba (-1) o el de abajo (+1)
   const moverGrupo = (i, paso) => {
@@ -136,9 +208,11 @@ function EditorMenu({ fila, alGuardar }) {
     })
   }
 
-  // Confirmación antes de publicar, para no hacerlo sin querer
+  // Confirmación antes de publicar, para no hacerlo sin querer (con horario, tiene que haber algún día marcado)
   const pedirPublicar = () =>
-    setPregunta(
+    hayMenu && menu.horario && !menu.horario.dias.length
+      ? setEstado('sinDias')
+      : setPregunta(
       hayMenu
         ? { titulo: '¿Publicar este menú del día?', texto: 'Tus clientes lo verán al momento en tu carta.', boton: 'Publicar', accion: publicar }
         : { titulo: '¿Publicar sin menú del día?', texto: 'Tu carta dejará de enseñarlo hasta que lo vuelvas a activar.', boton: 'Publicar', accion: publicar },
@@ -149,6 +223,8 @@ function EditorMenu({ fila, alGuardar }) {
     // Fuera platos y grupos vacíos antes de guardar
     const limpio = {
       ...menu,
+      // Con horario, el "cuándo se sirve" es el del horario, para que nunca diga una cosa y haga otra
+      cuando: menu.horario ? textoHorario(menu.horario) : menu.cuando,
       grupos: menu.grupos
         .map(g => ({ nombre: g.nombre.trim(), platos: g.platos.map(p => p.trim()).filter(Boolean) }))
         .filter(g => g.nombre || g.platos.length),
@@ -181,9 +257,9 @@ function EditorMenu({ fila, alGuardar }) {
       {/* Hoy hay menú o no */}
       <label className="flex items-center justify-between gap-[1rem] rounded-[0.8rem] bg-white px-[1rem] py-[0.85rem] ring-1 ring-zinc-200">
         <span>
-          <span className="block font-semibold">Hoy hay menú del día</span>
+          <span className="block font-semibold">Menú del día</span>
           <span className="text-[0.85rem] text-zinc-500">
-            {hayMenu ? 'Tus clientes verán este menú en tu carta.' : 'Hoy tu carta no enseñará ningún menú del día.'}
+            {hayMenu ? 'Activado: aparece en tu carta.' : 'Desactivado: no aparece en tu carta.'}
           </span>
         </span>
         <input
@@ -198,13 +274,47 @@ function EditorMenu({ fila, alGuardar }) {
       </label>
 
       <div className={`grid gap-[1rem] ${hayMenu ? '' : 'pointer-events-none opacity-40'}`}>
+        {/* Rellenar con una foto de la pizarra: la IA lee el menú y lo pone en el editor (no publica) */}
+        <div className="grid gap-[0.6rem]">
+          <input ref={entradaFoto} type="file" accept="image/*" capture="environment" onChange={leerFoto} className="hidden" />
+          <button
+            type="button"
+            disabled={leyendo}
+            onClick={() => entradaFoto.current?.click()}
+            className="flex items-center justify-center gap-[0.5rem] rounded-[0.8rem] bg-white px-[1rem] py-[0.9rem] font-semibold ring-1 ring-zinc-300 disabled:opacity-60"
+          >
+            <Camera className="h-[1.15rem] w-[1.15rem]" aria-hidden="true" />
+            {leyendo ? 'Leyendo tu menú...' : 'Rellenar con una foto'}
+          </button>
+          {!leyendo && !foto && (
+            <p className="text-center text-[0.8rem] text-zinc-500">Haz una foto a tu pizarra, de frente y sin reflejos. El menú se rellena solo y lo revisas antes de publicar.</p>
+          )}
+          {foto?.error && <p className="rounded-[0.6rem] bg-red-50 px-[0.9rem] py-[0.6rem] text-[0.88rem] font-semibold text-red-700">{foto.error}</p>}
+          {foto?.ok && (
+            <div className="rounded-[0.6rem] bg-emerald-50 px-[0.9rem] py-[0.6rem] text-[0.88rem] text-emerald-800">
+              <p className="font-semibold">Menú rellenado. Revísalo y pulsa Publicar.</p>
+              {foto.dudas?.length > 0 && (
+                <>
+                  <p className="mt-[0.4rem] font-semibold text-amber-800">Mira bien esto, no se leía claro:</p>
+                  <ul className="mt-[0.2rem] list-disc pl-[1.1rem] text-amber-900">
+                    {foto.dudas.map(d => <li key={d}>{d}</li>)}
+                  </ul>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+
         <div className="grid gap-[0.8rem] rounded-[0.8rem] bg-white p-[1rem] ring-1 ring-zinc-200">
           <Etiqueta texto="Título">
             <input value={menu.titulo} onChange={e => cambiar('titulo', e.target.value)} className={CAMPO} />
           </Etiqueta>
-          <Etiqueta texto="Cuándo se sirve">
-            <input value={menu.cuando} onChange={e => cambiar('cuando', e.target.value)} className={CAMPO} placeholder="De lunes a viernes, a mediodía" />
-          </Etiqueta>
+          {/* Sin horario, el "cuándo se sirve" se escribe a mano; con horario, se escribe solo (abajo) */}
+          {!menu.horario && (
+            <Etiqueta texto="Cuándo se sirve">
+              <input value={menu.cuando} onChange={e => cambiar('cuando', e.target.value)} className={CAMPO} placeholder="De lunes a viernes, a mediodía" />
+            </Etiqueta>
+          )}
           <div className="grid grid-cols-2 gap-[0.6rem]">
             <Etiqueta texto="Precio">
               <input value={menu.precio} onChange={e => cambiar('precio', e.target.value)} className={CAMPO} placeholder="14,90 €" />
@@ -213,6 +323,69 @@ function EditorMenu({ fila, alGuardar }) {
               <input value={menu.incluye} onChange={e => cambiar('incluye', e.target.value)} className={CAMPO} placeholder="Bebida y postre" />
             </Etiqueta>
           </div>
+        </div>
+
+        {/* Horario del menú: fuera de él, la carta no lo enseña, y el "cuándo se sirve" se escribe solo */}
+        <div className="grid gap-[0.8rem] rounded-[0.8rem] bg-white p-[1rem] ring-1 ring-zinc-200">
+          <label className="flex items-center justify-between gap-[1rem]">
+            <span>
+              <span className="block font-semibold">Horario del menú</span>
+              <span className="text-[0.85rem] text-zinc-500">
+                {menu.horario ? 'Activado: el menú solo sale los días y horas que marques.' : 'Desactivado: el menú sale todos los días, a todas horas.'}
+              </span>
+            </span>
+            <input
+              type="checkbox"
+              checked={Boolean(menu.horario)}
+              onChange={e => cambiar('horario', e.target.checked ? HORARIO_INICIAL : null)}
+              className="h-[1.4rem] w-[1.4rem] shrink-0 accent-zinc-900"
+            />
+          </label>
+
+          {menu.horario && (
+            <>
+              {/* Días de la semana */}
+              <div className="grid grid-cols-7 gap-[0.3rem]">
+                {SEMANA.map(d => {
+                  const marcado = menu.horario.dias.includes(d)
+                  return (
+                    <button
+                      key={d}
+                      type="button"
+                      aria-pressed={marcado}
+                      onClick={() =>
+                        cambiar('horario', { ...menu.horario, dias: marcado ? menu.horario.dias.filter(x => x !== d) : [...menu.horario.dias, d] })
+                      }
+                      className={`rounded-[0.5rem] py-[0.55rem] text-[0.95rem] font-semibold ring-1 transition-colors ${
+                        marcado ? 'bg-zinc-900 text-white ring-zinc-900' : 'text-zinc-500 ring-zinc-300'
+                      }`}
+                    >
+                      {INICIALES[d]}
+                    </button>
+                  )
+                })}
+              </div>
+
+              {/* Horas */}
+              <div className="grid grid-cols-2 gap-[0.6rem]">
+                <Etiqueta texto="Desde">
+                  <input type="time" value={menu.horario.desde} onChange={e => cambiar('horario', { ...menu.horario, desde: e.target.value })} className={CAMPO} />
+                </Etiqueta>
+                <Etiqueta texto="Hasta">
+                  <input type="time" value={menu.horario.hasta} onChange={e => cambiar('horario', { ...menu.horario, hasta: e.target.value })} className={CAMPO} />
+                </Etiqueta>
+              </div>
+
+              {/* Lo que pondrá en la carta */}
+              <p className="rounded-[0.5rem] bg-zinc-100 px-[0.75rem] py-[0.55rem] text-[0.88rem] text-zinc-600">
+                {menu.horario.dias.length ? (
+                  <>En tu carta: <strong className="text-zinc-900">{textoHorario(menu.horario)}</strong></>
+                ) : (
+                  'Marca al menos un día.'
+                )}
+              </p>
+            </>
+          )}
         </div>
 
         {/* Grupos (Primeros, Segundos, Postres...) con sus platos */}
@@ -297,6 +470,7 @@ function EditorMenu({ fila, alGuardar }) {
       <div className="sticky bottom-0 -mx-[1rem] border-t border-zinc-200 bg-zinc-100/95 px-[1rem] pb-[1rem] pt-[0.75rem] backdrop-blur-sm">
         {estado === 'publicado' && <p className="mb-[0.5rem] text-center text-[0.9rem] font-semibold text-emerald-700">Publicado. Tu carta ya enseña este menú.</p>}
         {estado === 'error' && <p className="mb-[0.5rem] text-center text-[0.9rem] font-semibold text-red-600">No se ha podido publicar. Prueba otra vez.</p>}
+        {estado === 'sinDias' && <p className="mb-[0.5rem] text-center text-[0.9rem] font-semibold text-red-600">Marca al menos un día en el horario del menú.</p>}
         <button type="button" onClick={pedirPublicar} disabled={estado === 'guardando'} className={`${BOTON} w-full`}>
           {estado === 'guardando' ? 'Publicando...' : 'Publicar'}
         </button>
