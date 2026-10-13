@@ -52,14 +52,14 @@ export const porque = {
     'Pero nadie busca tu ficha de Google para escribir una reseña, ni apunta tu Instagram de memoria. Con la placa basta con sacar el móvil y apuntar con la cámara. En dos toques están dentro.',
 }
 
-// Pestaña Ventajas (antes Cómo funciona): cuatro subpestañas arriba (Ventajas, Pasos, SEO y Planes)
+// Pestaña Planes (antes Cómo funciona y Ventajas): cuatro subpestañas arriba (Planes, Ventajas, Pasos y SEO)
 export const comoFunciona = {
-  pestana: 'Ventajas',
+  pestana: 'Planes',
   subpestanas: [
+    { key: 'planes', texto: 'Planes' },
     { key: 'ventajas', texto: 'Ventajas' },
     { key: 'pasos', texto: 'Pasos' },
     { key: 'seo', texto: 'SEO' },
-    { key: 'planes', texto: 'Planes' },
   ],
 }
 
@@ -93,26 +93,29 @@ export const seo = {
   ],
 }
 
-// Subpestaña Planes: tres planes (precios orientativos, provisionales)
+// Subpestaña Planes: las fichas y las cartas, que es lo que se vende primero (precios orientativos, provisionales).
+// El detalle (qué incluye cada plan, lo que va bajo presupuesto y los extras) está en /planes
 export const planes = {
   lista: [
     {
-      titulo: 'Plan Base',
-      texto: 'Tu miniweb con tu marca y la placa con QR.',
+      titulo: 'Ficha digital',
+      texto: 'Tu ficha con tu marca y 2 placas con QR para el mostrador.',
       precio: 'Desde 120 €',
     },
     {
-      titulo: 'Plan Premium',
-      texto: 'Como una web en el móvil: menú, horario y reservas.',
+      titulo: 'Carta digital',
+      texto: 'Tu carta y tu menú del día, con QR para las mesas.',
       precio: 'Desde 150 €',
     },
     {
-      titulo: 'Plan Personalizado',
-      texto: 'Un diseño hecho solo para tu negocio.',
-      precio: 'Desde 250 €',
+      titulo: 'Ficha + carta',
+      texto: 'Las dos juntas, con la misma marca.',
+      precio: 'Desde 230 €',
     },
   ],
-  boton: 'Pedir presupuesto',
+  // Dos botones en fila, con texto corto para que quepan en un móvil pequeño
+  verDetalle: 'Ver planes',
+  boton: 'Presupuesto',
 }
 
 export const pasos = {
@@ -232,6 +235,61 @@ export const cartasMiniwebs = {
     miniweb: { etiqueta: 'Miniweb', titulo: 'Miniweb' },
     carta: { etiqueta: 'Carta digital', titulo: 'Carta y menú del día' },
   },
+}
+
+// Página de planes en detalle (/planes): lo que incluye cada plan, lo que va bajo presupuesto y los extras
+// (precios orientativos, provisionales)
+export const planesDetalle = {
+  titulo: 'Planes',
+  texto: 'Lo que incluye cada plan. Los precios son orientativos: te paso el presupuesto exacto según tu negocio.',
+  lista: [
+    {
+      titulo: 'Ficha digital',
+      precio: 'Desde 120 €',
+      texto: 'Una pantalla con lo esencial de tu negocio, para cualquier tipo de local.',
+      incluye: [
+        'Tu ficha con tu marca: tus colores, tus fotos y tus textos',
+        'Reseña de Google, horario, ubicación y redes, y los botones que necesites',
+        '2 placas con QR para el mostrador',
+        '2 pegatinas para el escaparate o la puerta, si las quieres',
+      ],
+    },
+    {
+      titulo: 'Carta digital',
+      precio: 'Desde 150 €',
+      texto: 'Para bares y restaurantes que quieren su carta en el móvil del cliente.',
+      incluye: [
+        'Tu carta por secciones, con precios y alérgenos',
+        'Tu menú del día',
+        'En varios idiomas si lo necesitas',
+        'QR para las mesas',
+      ],
+    },
+    {
+      titulo: 'Ficha + carta',
+      precio: 'Desde 230 €',
+      texto: 'Las dos juntas, con la misma marca. Te ahorras 40 €.',
+      incluye: ['Todo lo de la ficha digital', 'Todo lo de la carta digital'],
+    },
+  ],
+  aMedida: {
+    titulo: 'Bajo presupuesto',
+    lista: [
+      { titulo: 'Miniweb completa', texto: 'Como una web en el móvil: varias páginas, menú, horario con mapa y reservas por WhatsApp.' },
+      { titulo: 'Diseño a medida', texto: 'Tu ficha, tu carta o tu miniweb, diseñada solo para tu negocio.' },
+    ],
+  },
+  extras: {
+    titulo: 'Extras',
+    lista: [
+      'NFC en las placas: tus clientes acercan el móvil y se abre tu página',
+      'Más placas o pegatinas, para las mesas, el escaparate o la puerta',
+      'SEO y ficha de Google, para que te encuentren cuando te buscan',
+    ],
+  },
+  nota: 'Los cambios que me pidas más adelante (fotos, textos, carta...) se presupuestan aparte.',
+  boton: 'Pedir presupuesto',
+  volver: 'Volver al inicio',
 }
 
 // Catálogo completo (/catalogo): todas las demos, separadas por tipo y filtrables por temática

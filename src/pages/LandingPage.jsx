@@ -237,8 +237,8 @@ function HeroMiniweb() {
   // Solo la primera vez en cada navegador: luego queda apuntado y la landing empieza directamente en Inicio
   const ponerPestana = useCallback(i => setPestana(ORDEN_PESTANAS[i].key), [])
   const { enVuelta, parar } = useVueltaPestanas(ORDEN_PESTANAS, ponerPestana, 'landing-vuelta-vista')
-  // Subpestaña de la pestaña Ventajas: Ventajas, Pasos, SEO o Planes
-  const [subComo, setSubComo] = useState('ventajas')
+  // Subpestaña de la pestaña Planes: Planes, Ventajas, Pasos o SEO
+  const [subComo, setSubComo] = useState(comoFunciona.subpestanas[0].key)
   // Igual que la placa de Tu QR: al tocar la pestaña Ventajas (no en la vuelta inicial), las subpestañas
   // van cambiando solas cada 4 s, hasta que el usuario toca algo dentro. Si ya eligió una, no vuelven a moverse.
   const [subSola, setSubSola] = useState(false)
@@ -435,7 +435,7 @@ function HeroMiniweb() {
         {/* Pestaña Contacto: formulario sencillo que, al enviar, abre WhatsApp con el mensaje ya escrito */}
         {pestana === 'contacto' && <FormularioContacto />}
 
-        {/* Pestaña Ventajas (clave como): arriba cuatro subpestañas (Ventajas, Pasos, SEO y Planes). Ocupa todo el alto;
+        {/* Pestaña Planes (clave como): arriba cuatro subpestañas (Planes, Ventajas, Pasos y SEO). Ocupa todo el alto;
             si el contenido de una subpestaña no cabe, se desliza por dentro y el resto de la pantalla no se mueve */}
         {pestana === 'como' && (
           // Tocar algo dentro (una subpestaña, el texto, el botón) para los cambios solos
@@ -504,11 +504,11 @@ function HeroMiniweb() {
               </div>
             )}
 
-            {/* Planes: Base, Premium y Personalizado. Cabe en una pantalla con el botón, sin deslizar por dentro */}
+            {/* Planes: Ficha, Carta y Ficha + carta; debajo, lo que va bajo presupuesto. Cabe en una pantalla con el botón */}
             {subComo === 'planes' && (
               <div className="flex min-h-0 flex-1 flex-col gap-[0.8rem] overflow-hidden px-[1.25rem] pb-[1rem] pt-[0.9rem]">
-                {/* Las tres tarjetas se reparten el alto que queda encima del botón */}
-                <div className="grid min-h-0 flex-1 auto-rows-fr gap-[0.7rem]">
+                {/* Cada tarjeta mide lo que necesita su texto (en móviles pequeños no se aprietan); el espacio que sobra queda alrededor del grupo */}
+                <div className="flex min-h-0 flex-1 flex-col justify-center gap-[0.7rem]">
                   {planes.lista.map(p => (
                     <div key={p.titulo} className="flex flex-col justify-center rounded-[1rem] bg-papel px-[1rem] py-[0.8rem]">
                       <div className="flex items-baseline justify-between gap-[1rem]">
@@ -520,7 +520,16 @@ function HeroMiniweb() {
                   ))}
                 </div>
 
-                <BotonWhatsapp href={pedirPresupuesto} className="w-full">{planes.boton}</BotonWhatsapp>
+                {/* Dos botones en fila: los planes en detalle (/planes) y pedir presupuesto por WhatsApp */}
+                <div className="grid grid-cols-2 gap-[0.6rem]">
+                  <Link
+                    to="/planes"
+                    className="inline-flex min-h-[3.25rem] items-center justify-center rounded-full border border-tinta/30 text-[1rem] font-bold transition-colors hover:border-acento hover:text-acento"
+                  >
+                    {planes.verDetalle}
+                  </Link>
+                  <BotonWhatsapp href={pedirPresupuesto} className="w-full">{planes.boton}</BotonWhatsapp>
+                </div>
               </div>
             )}
           </div>
