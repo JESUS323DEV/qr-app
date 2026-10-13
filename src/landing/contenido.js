@@ -216,16 +216,35 @@ export const webCompleta = {
   url: 'https://landig-demos.netlify.app/',
 }
 
-// Pestaña Cartas y ofertas del hero: carta y menú del día de los restaurantes, promociones de estéticas,
-// ofertas de pastelerías... Mientras no haya capturas, el móvil enseña un texto que lleva a la demo.
-export const cartasOfertas = {
-  pestana: 'Cartas y ofertas',
-  titulo: 'Tu carta y tus ofertas, siempre al día',
-  ejemplos: [
-    { titulo: 'Carta y menú del día', nombre: 'Almendra', sector: 'Restaurante', ruta: '/demo/almendra/carta' },
-    { titulo: 'Carta y menú del día', nombre: "El Pollastre d'Horta", sector: 'Pollería', ruta: '/demo/el-pollastre-d-horta/carta' },
-    { titulo: 'Carta y menú del día', nombre: 'Ají Limón', sector: 'Restaurante peruano', ruta: '/demo/aji-limon/carta' },
+// Escaparate de la landing: Inicio enseña las fichas; la pestaña Cartas y miniwebs, primero las miniwebs y después las cartas.
+// Las demos salen solas de sus archivos (con destacada: false se quitan del escaparate, pero siguen en el catálogo).
+// Sin captura, el móvil enseña un texto que lleva a la demo.
+export const escaparate = {
+  verFichas: 'Ver todas las fichas',
+  verCartasMiniwebs: 'Ver todas las miniwebs y cartas',
+}
+
+export const cartasMiniwebs = {
+  pestana: 'Cartas y miniwebs',
+  titulo: 'Tu web y tu carta, en el móvil de tus clientes',
+  // Lo que pone debajo de cada móvil y dentro, si no hay captura
+  tipos: {
+    miniweb: { etiqueta: 'Miniweb', titulo: 'Miniweb' },
+    carta: { etiqueta: 'Carta digital', titulo: 'Carta y menú del día' },
+  },
+}
+
+// Catálogo completo (/catalogo): todas las demos, separadas por tipo y filtrables por temática
+export const catalogo = {
+  titulo: 'Catálogo',
+  texto: 'Todas las demos. Ábrelas en tu móvil y tócalas como lo haría tu cliente.',
+  tipos: [
+    { key: 'ficha', texto: 'Fichas', descripcion: 'Una pantalla con lo esencial de tu negocio.' },
+    { key: 'miniweb', texto: 'Miniwebs', descripcion: 'Como una web en el móvil: varias páginas, menú y reservas.' },
+    { key: 'carta', texto: 'Cartas', descripcion: 'Tu carta y tu menú del día, con QR para las mesas.' },
   ],
+  todas: 'Todas',
+  volver: 'Volver al inicio',
 }
 
 // Menú hamburguesa de la cabecera: hace de pie de página (qué es, redes, textos legales y firma)

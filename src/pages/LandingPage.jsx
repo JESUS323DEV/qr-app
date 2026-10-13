@@ -1,14 +1,15 @@
 import { rutaNegocio } from '../negocios'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { ArrowUpRight, Menu, X } from 'lucide-react'
+import { ArrowRight, ArrowUpRight, Menu, X } from 'lucide-react'
 import Movil from '../components/Movil'
 import Placa from '../components/Placa'
 import { SocialIcon } from '../components/SocialIcons'
 import { COLORES_REDES } from '../lib/coloresRedes'
-import { tematicasConDemos, secuenciaDemos, tematicaDe, getTematica } from '../lib/tematicas'
+import { tematicasConDemos, secuenciaDemos, tematicaDe, getTematica, tipoDe } from '../lib/tematicas'
+import { cartas, marcaDe, rutaCarta } from '../cartas'
 import { enlaceWhatsapp } from '../lib/whatsapp'
-import { marca, hero, porque, pasos, comoFunciona, ventajas, seo, planes, botones, ejemplos, precio, preguntas, cierre, pie, contactoForm, webCompleta, cartasOfertas, menu } from '../landing/contenido'
+import { marca, hero, porque, pasos, comoFunciona, ventajas, seo, planes, botones, ejemplos, precio, preguntas, cierre, pie, contactoForm, webCompleta, cartasMiniwebs, escaparate, menu } from '../landing/contenido'
 import useVueltaPestanas from '../lib/useVueltaPestanas'
 
 const contacto = enlaceWhatsapp(marca.whatsapp, marca.mensajeWhatsapp)
@@ -180,11 +181,37 @@ const FORMAS = [
   { key: 'punto', texto: 'redondos', clase: 'rounded-full' },
 ]
 
-// Capturas de las demos a tamaño de móvil (src/assets/capturas/<slug>.jpg), en el orden del catálogo
+// Capturas de las demos a tamaño de móvil (src/assets/capturas/<slug>.jpg; las cartas, <slug>-carta.jpg).
+// Las demos sin captura salen igual, con el móvil en negro y su nombre dentro.
 const CAPTURAS = import.meta.glob('../assets/capturas/*.jpg', { eager: true, import: 'default' })
+const captura = archivo => CAPTURAS[`../assets/capturas/${archivo}.jpg`]
+// Solo las destacadas (con destacada: false se quitan del escaparate; en el catálogo salen todas)
+const enEscaparate = d => d.destacada !== false
+
+// Enlace pequeño bajo el titular de Inicio y de Cartas y miniwebs, al catálogo completo
+function VerTodas({ to, children }) {
+  return (
+    <Link to={to} className="mt-[0.45rem] inline-flex items-center gap-[0.2rem] text-[0.85rem] font-semibold text-suave underline decoration-suave/40 underline-offset-[0.25em] hover:text-tinta">
+      {children}
+      <ArrowRight className="h-[0.8rem] w-[0.8rem]" aria-hidden="true" />
+    </Link>
+  )
+}
+
+// Inicio: las fichas
 const ESCAPARATE = secuenciaDemos
-  // Las demos sin captura salen igual, con el móvil en negro y su nombre dentro (como en Cartas y ofertas)
-  .map(n => ({ foto: CAPTURAS[`../assets/capturas/${n.slug}.jpg`], nombre: n.nombre, sector: n.sector, ruta: rutaNegocio(n) }))
+  .filter(n => tipoDe(n) === 'ficha' && enEscaparate(n))
+  .map(n => ({ foto: captura(n.slug), nombre: n.nombre, sector: n.sector, ruta: rutaNegocio(n) }))
+
+// Cartas y miniwebs: primero las miniwebs y después las cartas
+const WEBS_Y_CARTAS = [
+  ...secuenciaDemos
+    .filter(n => tipoDe(n) === 'miniweb' && enEscaparate(n))
+    .map(n => ({ foto: captura(n.slug), nombre: n.nombre, ...cartasMiniwebs.tipos.miniweb, ruta: rutaNegocio(n) })),
+  ...cartas
+    .filter(c => c.demo && enEscaparate(c))
+    .map(c => ({ foto: captura(`${c.slug}-carta`), nombre: marcaDe(c)?.nombre, ...cartasMiniwebs.tipos.carta, ruta: rutaCarta(c) })),
+]
 
 /* El hero es una miniweb, con la misma estructura que las de los clientes:
    escenario con la marca, el texto (cambia con la pestaña) y una fila de móviles con las capturas
@@ -198,7 +225,7 @@ const PESTANAS = [
 ]
 const PESTANAS_ABAJO = [
   { key: 'contacto', texto: 'Contacto' },
-  { key: 'cartas', texto: cartasOfertas.pestana },
+  { key: 'cartas', texto: cartasMiniwebs.pestana },
 ]
 // Orden de la vuelta de presentación al entrar: todas las pestañas, de arriba abajo y de izquierda a derecha
 const ORDEN_PESTANAS = [...PESTANAS, ...PESTANAS_ABAJO]
@@ -271,7 +298,7 @@ function HeroMiniweb() {
   // Fila de Cartas y ofertas: el móvil del centro es el que se nombra debajo
   const [actualCarta, setActualCarta] = useState(0)
   const filaCartas = useRef(null)
-  const ejemploCarta = cartasOfertas.ejemplos[actualCarta]
+  const ejemploCarta = WEBS_Y_CARTAS[actualCarta]
   const [tocadoCarta, setTocadoCarta] = useState(false)
 
   const irACarta = i => {
@@ -283,8 +310,8 @@ function HeroMiniweb() {
   // Como en Inicio: pasa sola al siguiente móvil mientras se está en Cartas y ofertas, hasta que se toca la fila.
   // Al volver a la pestaña empieza otra vez desde el primero
   useEffect(() => {
-    if (pestana !== 'cartas' || enVuelta || tocadoCarta || cartasOfertas.ejemplos.length < 2) return
-    const t = setTimeout(() => irACarta((actualCarta + 1) % cartasOfertas.ejemplos.length), TURNO_DEMOS_MS)
+    if (pestana !== 'cartas' || enVuelta || tocadoCarta || WEBS_Y_CARTAS.length < 2) return
+    const t = setTimeout(() => irACarta((actualCarta + 1) % WEBS_Y_CARTAS.length), TURNO_DEMOS_MS)
     return () => clearTimeout(t)
   }, [pestana, actualCarta, tocadoCarta, enVuelta])
 
@@ -326,18 +353,21 @@ function HeroMiniweb() {
               <h1 className="font-titulo text-[clamp(1.9rem,1.5rem+2vw,2.5rem)] font-black leading-[1] tracking-tight">
                 {hero.titulo}
               </h1>
+              <VerTodas to="/catalogo?tipo=ficha">{escaparate.verFichas}</VerTodas>
             </>
           )}
           {pestana === 'cartas' && (
-            <h2 className="font-titulo text-[clamp(1.9rem,1.5rem+2vw,2.5rem)] font-black leading-[1] tracking-tight">
-              {cartasOfertas.titulo}
-            </h2>
+            <>
+              <h2 className="font-titulo text-[clamp(1.9rem,1.5rem+2vw,2.5rem)] font-black leading-[1] tracking-tight">
+                {cartasMiniwebs.titulo}
+              </h2>
+              <VerTodas to="/catalogo?tipo=miniweb">{escaparate.verCartasMiniwebs}</VerTodas>
+            </>
           )}
         </div>
         )}
 
-        {/* Pestaña Cartas y ofertas: como Inicio, pero con móviles que de momento enseñan un texto
-            en vez de captura; tocarlos abre la demo */}
+        {/* Pestaña Cartas y miniwebs: como Inicio, primero las miniwebs y después las cartas; tocarlos abre la demo */}
         {pestana === 'cartas' && (
           <>
             <div className="relative mt-[1rem] min-h-[9rem] flex-1">
@@ -348,7 +378,7 @@ function HeroMiniweb() {
                 onMouseDown={() => setTocadoCarta(true)}
                 className="absolute inset-0 flex snap-x snap-mandatory gap-[0.9rem] overflow-x-auto px-[25%] [scrollbar-width:none]"
               >
-                {cartasOfertas.ejemplos.map((d, i) => (
+                {WEBS_Y_CARTAS.map((d, i) => (
                   <li key={d.ruta} className="h-full shrink-0 snap-center py-[0.2rem]">
                     <a
                       href={d.ruta}
@@ -359,10 +389,14 @@ function HeroMiniweb() {
                         i === actualCarta ? 'opacity-100' : 'scale-[0.92] opacity-55'
                       }`}
                     >
-                      <span className="flex h-full w-full flex-col items-center justify-center rounded-[0.95rem] bg-papel px-[0.8rem] text-center">
-                        <span className="font-titulo text-[1.05rem] font-black leading-[1.1]">{d.titulo}</span>
-                        <span className="mt-[0.4rem] text-[0.78rem] text-suave">{d.nombre}</span>
-                      </span>
+                      {d.foto ? (
+                        <img src={d.foto} alt={`Ejemplo: ${d.nombre}`} className="h-full w-full rounded-[0.95rem] object-cover object-top" />
+                      ) : (
+                        <span className="flex h-full w-full flex-col items-center justify-center rounded-[0.95rem] bg-papel px-[0.8rem] text-center">
+                          <span className="font-titulo text-[1.05rem] font-black leading-[1.1]">{d.titulo}</span>
+                          <span className="mt-[0.4rem] text-[0.78rem] text-suave">{d.nombre}</span>
+                        </span>
+                      )}
                       <span
                         className={`pointer-events-none absolute bottom-[0.7rem] left-1/2 flex -translate-x-1/2 items-center gap-[0.3rem] whitespace-nowrap rounded-full bg-black/75 px-[0.75rem] py-[0.3rem] text-[0.72rem] font-semibold text-white backdrop-blur-sm transition-opacity duration-500 ${
                           i === actualCarta ? 'opacity-100' : 'opacity-0'
@@ -381,10 +415,10 @@ function HeroMiniweb() {
             <div className="flex items-center justify-between gap-[0.75rem] px-[1.25rem] py-[0.8rem]">
               <p className="min-w-0 truncate text-[0.82rem]">
                 <span className="font-semibold">{ejemploCarta.nombre}</span>{' '}
-                <span className="text-suave">· {ejemploCarta.sector}</span>
+                <span className="text-suave">· {ejemploCarta.etiqueta}</span>
               </p>
               <div className="flex shrink-0 gap-[0.3rem]">
-                {cartasOfertas.ejemplos.map((d, i) => (
+                {WEBS_Y_CARTAS.map((d, i) => (
                   <button
                     key={d.ruta}
                     type="button"

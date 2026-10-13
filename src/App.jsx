@@ -4,6 +4,7 @@ import LandingPage from './pages/LandingPage'
 import MiniwebPage from './pages/MiniwebPage'
 import TematicaPage from './pages/TematicaPage'
 import CartaPage from './pages/CartaPage'
+import CatalogoPage from './pages/CatalogoPage'
 
 // Gestión interna: solo con el servidor de desarrollo. En el build de Netlify import.meta.env.DEV es false,
 // así que ni la página ni su código se publican
@@ -15,6 +16,8 @@ export default function App() {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/tematicas/:key" element={<TematicaPage />} />
+        {/* Catálogo completo: todas las demos por tipo (fichas, miniwebs, cartas) y temática */}
+        <Route path="/catalogo" element={<CatalogoPage />} />
         {GestionPage && (
           <Route path="/gestion" element={<Suspense fallback={null}><GestionPage /></Suspense>} />
         )}

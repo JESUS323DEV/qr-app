@@ -18,12 +18,16 @@ export const tematicasConDemos = () => TEMATICAS.filter(t => negociosDe(t.key).l
 
 export const getTematica = key => TEMATICAS.find(t => t.key === key) ?? null
 
-// Orden en que se recorren las demos (flechas e Inicio de la landing): primero las del plan base,
-// temática a temática, y después las premium (plan: 'premium'), también por temática.
+// Tipo de página de cada negocio: 'ficha' (una pantalla con lo esencial, por defecto) o 'miniweb'
+// (varias páginas con navegación, menú y reservas). Las cartas digitales van aparte (cartas/).
+export const tipoDe = negocio => negocio.tipo ?? 'ficha'
+
+// Orden en que se recorren las demos (flechas y landing): primero las fichas, temática a temática,
+// y después las miniwebs, también por temática.
 // Solo entran los negocios marcados con demo: true (los de clientes reales no llevan flechas).
-const porTematica = lista => TEMATICAS.flatMap(t => lista.filter(n => tematicaDe(n) === t.key))
+export const porTematica = lista => TEMATICAS.flatMap(t => lista.filter(n => tematicaDe(n) === t.key))
 const demos = negocios.filter(n => n.demo)
 export const secuenciaDemos = [
-  ...porTematica(demos.filter(n => n.plan !== 'premium')),
-  ...porTematica(demos.filter(n => n.plan === 'premium')),
+  ...porTematica(demos.filter(n => tipoDe(n) === 'ficha')),
+  ...porTematica(demos.filter(n => tipoDe(n) === 'miniweb')),
 ]

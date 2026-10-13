@@ -5,7 +5,7 @@ export default {
   slug: 'chalaquita',
   sector: 'Restaurante peruano',
   tematica: 'comida',
-  plan: 'premium', // en el Inicio de la landing y en las flechas sale después de las demos base
+  tipo: 'miniweb', // miniweb (varias páginas), no ficha: sale en la pestaña Cartas y miniwebs de la landing
   demo: true, // demo del catálogo: lleva las flechas para pasar a otras demos
   nombre: 'Chalaquita',
   lema: 'Cocina peruana en Sants',
