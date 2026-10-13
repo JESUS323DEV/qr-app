@@ -206,9 +206,10 @@ const ORDEN_PESTANAS = [...PESTANAS, ...PESTANAS_ABAJO]
 function HeroMiniweb() {
   const [actual, setActual] = useState(0)
   const [pestana, setPestana] = useState('ejemplos')
-  // Al entrar, las pestañas dan una vuelta solas cada 4 s y vuelven a Inicio; cualquier toque la para
+  // Al entrar, las pestañas dan una vuelta solas cada 4 s y vuelven a Inicio; cualquier toque la para.
+  // Solo la primera vez en cada navegador: luego queda apuntado y la landing empieza directamente en Inicio
   const ponerPestana = useCallback(i => setPestana(ORDEN_PESTANAS[i].key), [])
-  const { enVuelta, parar } = useVueltaPestanas(ORDEN_PESTANAS, ponerPestana)
+  const { enVuelta, parar } = useVueltaPestanas(ORDEN_PESTANAS, ponerPestana, 'landing-vuelta-vista')
   // Subpestaña de la pestaña Ventajas: Ventajas, Pasos, SEO o Planes
   const [subComo, setSubComo] = useState('ventajas')
   // Igual que la placa de Tu QR: al tocar la pestaña Ventajas (no en la vuelta inicial), las subpestañas

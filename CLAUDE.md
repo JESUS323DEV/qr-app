@@ -57,6 +57,7 @@ Proyecto de Jesús (desarrollador autodidacta, marca JesúsDev, Barcelona). Es i
 - **Secciones ocultas de la landing**: decidir si se quitan o se quedan solo como contenido para buscadores (ahora están en el HTML pero no se pueden ver por el bloqueo de scroll).
 - **Páginas legales**: Política de privacidad y Aviso legal (enlazadas desde el menú; ahora sus enlaces no llevan a ningún sitio).
 - **Botón de compartir**: abre el menú de compartir del móvil (WhatsApp, Instagram...) con el enlace de la página; en ordenador, copia el enlace.
+- **Vuelta automática de pestañas solo la primera vez en las páginas de clientes**: en la landing ya se ve una sola vez por navegador (se recuerda en localStorage). Cuando una demo pase a ser la página de un cliente real, su vuelta también debe verse solo la primera vez (tercer parámetro `recordar` de `useVueltaPestanas`, con una clave por negocio). Las demos del catálogo la siguen haciendo siempre.
 
 ## Estado
 
