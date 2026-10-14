@@ -9,10 +9,10 @@
 // Cartas digitales (QR de la mesa): las tres demos de carta, una por diseño. La clave es el slug de la carta.
 export const DISENOS_CARTA = {
   almendra: {
-    para: 'Cualquier restaurante o bar. La opción segura y la más fácil de leer, también con cartas largas.',
-    estilo: 'Clara y ordenada: franja con foto arriba, pestañas Menú del día y Carta, y la carta por secciones en lista.',
-    pestanas: 'Menú del día y Carta (con sus secciones en una fila de pestañas).',
-    notas: 'Elegirla si la carta es larga, si la marca es clara o si no hay buenas fotos de cada sección.',
+    para: 'Restaurantes cuidados: cocina de mercado, mediterránea, bistrós, restaurantes de producto.',
+    estilo: 'Revista de cocina: nombre grande, mucho aire y rayas finas. En cada sección, el primer plato es el destacado, con la foto de la sección y su nombre en cursiva grande; los demás, en lista.',
+    pestanas: 'Menú del día (con foto, título grande y precio) y Carta (una sección cada vez).',
+    notas: 'Necesita una buena foto por sección (la del primer plato) y pocos platos por sección (hasta 5). Elegirla para restaurantes que quieren verse elegantes.',
   },
   'el-pollastre-d-horta': {
     para: 'Comida para llevar, asadores, bares de tapas, sitios con carta corta.',

@@ -14,6 +14,7 @@ import CartaInmersiva from '../components/carta/CartaInmersiva'
 import CartaHistorias from '../components/carta/CartaHistorias'
 import CartaPizarra from '../components/carta/CartaPizarra'
 import CartaTicket from '../components/carta/CartaTicket'
+import CartaRevista from '../components/carta/CartaRevista'
 
 /* Carta digital (QR de la mesa), con la marca del negocio.
    Arriba una franja con foto y el nombre; debajo, fija al hacer scroll, la barra con el idioma y las pestañas
@@ -292,6 +293,15 @@ function Carta({ carta, negocio, demo = false }) {
     return (
       <>
         <CartaPizarra carta={carta} negocio={negocio} />
+        {navegacion}
+      </>
+    )
+  }
+  // Diseño revista: como una página de revista de cocina, con un plato destacado con foto por sección
+  if (carta.diseno === 'revista') {
+    return (
+      <>
+        <CartaRevista carta={carta} negocio={negocio} />
         {navegacion}
       </>
     )
