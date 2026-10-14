@@ -1,7 +1,7 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { Navigate, useParams } from 'react-router-dom'
 import { ChevronRight } from 'lucide-react'
-import { getNegocio } from '../negocios'
+import { conEdicion, useEdicion } from '../lib/ediciones'
 import { HEROS } from '../heros'
 import { applyTheme, resetTheme } from '../lib/applyTheme'
 import { SocialIcon } from '../components/SocialIcons'
@@ -195,7 +195,9 @@ function Cuerpo({ negocio, soloResena = false }) {
 
 export default function MiniwebPage({ demo = false }) {
   const { slug } = useParams()
-  const negocio = getNegocio(slug)
+  // El archivo del negocio con los cambios de /admin encima (o una copia de una demo, que solo vive en Supabase)
+  const { cargando, fila } = useEdicion('negocio', slug)
+  const negocio = useMemo(() => conEdicion('negocio', slug, fila), [slug, fila])
 
   useEffect(() => {
     if (!negocio) return
@@ -203,6 +205,9 @@ export default function MiniwebPage({ demo = false }) {
     document.title = negocio.nombre
     return resetTheme
   }, [negocio])
+
+  // Mientras llegan los cambios no se pinta nada, para no enseñar un momento la versión del archivo
+  if (cargando) return null
 
   // Una demo abierta en la raíz (enlaces antiguos) se lleva a /demo/slug
   if (negocio?.demo && !demo) return <Navigate to={`/demo/${negocio.slug}`} replace />
@@ -225,7 +230,8 @@ export default function MiniwebPage({ demo = false }) {
       {negocio.demo && (
         <>
           {/* Las flechas solo recorren demos del mismo tipo: las fichas entre fichas y las miniwebs entre miniwebs */}
-          <DemoPager negocio={negocio} secuencia={secuenciaDemos.filter(n => tipoDe(n) === tipoDe(negocio))} />
+          {/* Las copias para enseñar a un negocio no llevan flechas: no están en el catálogo */}
+          {!negocio.copia && <DemoPager negocio={negocio} secuencia={secuenciaDemos.filter(n => tipoDe(n) === tipoDe(negocio))} />}
           <DemoHomeButton slug={negocio.slug} />
         </>
       )}

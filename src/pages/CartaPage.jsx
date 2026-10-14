@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { ArrowUpRight, ChevronLeft, ChevronRight } from 'lucide-react'
 import { cartas, getCarta, marcaDe, rutaCarta, ALERGENOS } from '../cartas'
@@ -9,6 +9,7 @@ import { applyTheme, resetTheme } from '../lib/applyTheme'
 import Img from '../components/Img'
 import { supabase } from '../lib/supabase'
 import { menuActivo, textoHorario } from '../lib/horarioMenu'
+import { conEdicion, useEdicion } from '../lib/ediciones'
 import CartaInmersiva from '../components/carta/CartaInmersiva'
 import CartaHistorias from '../components/carta/CartaHistorias'
 
@@ -230,16 +231,23 @@ export default function CartaPage(props) {
   const { slug } = useParams()
   const { cargando, fila } = useCartaRemota(slug)
   const ahora = useAhora()
+  // Cambios de /admin: los de la carta (textos, fotos, platos) y los de la marca de su negocio (nombre, colores)
+  const edicionCarta = useEdicion('carta', slug)
+  const deArchivo = getCarta(slug)
+  const edicionMarca = useEdicion('negocio', deArchivo?.negocio)
+  const negocio = useMemo(() => {
+    if (!deArchivo) return null
+    return deArchivo.negocio ? conEdicion('negocio', deArchivo.negocio, edicionMarca.fila) : marcaDe(deArchivo)
+  }, [deArchivo, edicionMarca.fila])
   // Mientras llega lo de Supabase no se pinta nada, para no enseñar un momento el menú antiguo
-  if (cargando) return null
-  const carta = conHorario(juntar(getCarta(slug), fila), ahora)
+  if (cargando || edicionCarta.cargando || edicionMarca.cargando) return null
+  const carta = conHorario(juntar(conEdicion('carta', slug, edicionCarta.fila), fila), ahora)
   // La clave cambia si el menú del día aparece o desaparece (horario, interruptor): la carta empieza de cero
   // en lo que toca, y no se queda en blanco en la pestaña del menú que ya no existe
-  return <Carta key={`${slug}-${Boolean(carta?.menuDia)}`} carta={carta} {...props} />
+  return <Carta key={`${slug}-${Boolean(carta?.menuDia)}`} carta={carta} negocio={negocio} {...props} />
 }
 
-function Carta({ carta, demo = false }) {
-  const negocio = carta ? marcaDe(carta) : null
+function Carta({ carta, negocio, demo = false }) {
   // Dos niveles: Menú del día o Carta; dentro de Carta, las secciones
   const [modo, setModo] = useState(carta?.menuDia ? 'menu' : 'carta')
   const [seccionActiva, setSeccionActiva] = useState(carta?.secciones?.[0]?.nombre)

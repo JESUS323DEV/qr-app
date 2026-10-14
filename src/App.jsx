@@ -10,7 +10,10 @@ import PanelPage from './pages/PanelPage'
 
 // Gestión interna: solo con el servidor de desarrollo. En el build de Netlify import.meta.env.DEV es false,
 // así que ni la página ni su código se publican
-const GestionPage = import.meta.env.DEV ? lazy(() => import('./pages/GestionPage')) : null
+// El panel de Jesús se carga aparte: los visitantes de las páginas no descargan su código
+const AdminPage = lazy(() => import('./pages/AdminPage'))
+
+const GestionPage =import.meta.env.DEV ? lazy(() => import('./pages/GestionPage')) : null
 
 export default function App() {
   return (
@@ -24,6 +27,8 @@ export default function App() {
         <Route path="/planes" element={<PlanesPage />} />
         {/* Panel del dueño: cambiar su menú del día (Supabase) */}
         <Route path="/panel" element={<PanelPage />} />
+        {/* Panel de Jesús: textos, fotos y colores de cualquier página, y copias de demos (Supabase) */}
+        <Route path="/admin" element={<Suspense fallback={null}><AdminPage /></Suspense>} />
         {GestionPage && (
           <Route path="/gestion" element={<Suspense fallback={null}><GestionPage /></Suspense>} />
         )}
