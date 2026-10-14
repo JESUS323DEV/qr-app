@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { ArrowUpRight, Camera, ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
-import { getCarta, marcaDe, rutaCarta } from '../cartas'
+import { marcaDe, rutaCarta } from '../cartas'
+import { conEdicion } from '../lib/ediciones'
 import { BOTON, CAMPO, Confirmar, Entrar, Etiqueta, usePaginaPrivada } from '../components/panel'
 import { INICIALES, SEMANA, textoHorario } from '../lib/horarioMenu'
 
@@ -58,8 +59,8 @@ function EditorMenu({ fila, alGuardar }) {
   // Aviso de confirmación abierto (publicar o borrar grupo), o null
   const [pregunta, setPregunta] = useState(null)
   const cerrarPregunta = useCallback(() => setPregunta(null), [])
-  const carta = getCarta(fila.slug)
-  const nombre = carta ? marcaDe(carta)?.nombre : fila.slug
+  const carta = fila.carta
+  const nombre = (carta && marcaDe(carta)?.nombre) || fila.slug
 
   const cambiar = (campo, valor) => {
     setMenu(m => ({ ...m, [campo]: valor }))
@@ -436,15 +437,18 @@ export default function PanelPage() {
       setCartasDueno(null)
       return
     }
-    supabase
-      .from('cartas')
-      .select('slug, menu_dia, hay_menu')
-      .eq('dueno', sesion.user.id)
-      .order('slug')
-      .then(({ data }) => {
-        setCartasDueno(data ?? [])
-        if (data?.length === 1) setElegida(data[0].slug)
-      })
+    const cargar = async () => {
+      const { data } = await supabase.from('cartas').select('slug, menu_dia, hay_menu').eq('dueno', sesion.user.id).order('slug')
+      const filas = data ?? []
+      // Cada carta con sus datos: su archivo o, si se creó desde /admin, su copia (tabla ediciones)
+      const { data: ediciones } = filas.length
+        ? await supabase.from('ediciones').select('slug, base, cambios').eq('tipo', 'carta').in('slug', filas.map(f => f.slug))
+        : { data: [] }
+      const conCarta = filas.map(f => ({ ...f, carta: conEdicion('carta', f.slug, ediciones?.find(e => e.slug === f.slug) ?? null) }))
+      setCartasDueno(conCarta)
+      if (conCarta.length === 1) setElegida(conCarta[0].slug)
+    }
+    cargar()
   }, [sesion])
 
   const fila = cartasDueno?.find(c => c.slug === elegida)
@@ -473,14 +477,11 @@ export default function PanelPage() {
               // Varias cartas: elegir cuál editar
               <div className="grid gap-[0.6rem]">
                 <h1 className="text-[1.5rem] font-bold">Tus cartas</h1>
-                {cartasDueno.map(c => {
-                  const carta = getCarta(c.slug)
-                  return (
-                    <button key={c.slug} type="button" onClick={() => setElegida(c.slug)} className="rounded-[0.8rem] bg-white px-[1rem] py-[0.9rem] text-left font-semibold ring-1 ring-zinc-200">
-                      {carta ? marcaDe(carta)?.nombre : c.slug}
-                    </button>
-                  )
-                })}
+                {cartasDueno.map(c => (
+                  <button key={c.slug} type="button" onClick={() => setElegida(c.slug)} className="rounded-[0.8rem] bg-white px-[1rem] py-[0.9rem] text-left font-semibold ring-1 ring-zinc-200">
+                    {(c.carta && marcaDe(c.carta)?.nombre) || c.slug}
+                  </button>
+                ))}
               </div>
             ) : (
               <>

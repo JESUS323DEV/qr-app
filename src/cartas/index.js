@@ -15,6 +15,12 @@ export function getCarta(slug) {
 // Marca de la carta: la de su miniweb (negocio) o, si el negocio no tiene miniweb, la suya propia (marca)
 export const marcaDe = carta => (carta.negocio ? getNegocio(carta.negocio) : carta.marca) ?? null
 
+// Primera foto de un negocio, para la franja de arriba de la carta cuando la carta no trae la suya (foto)
+export const fotoDe = n => {
+  const p = n?.hero?.pestanas?.[0]
+  return p?.fotos?.[0]?.src ?? p?.opciones?.[0]?.foto ?? p?.foto ?? n?.hero?.fondo ?? null
+}
+
 // Dirección de cada carta: las demos en /demo/slug/carta y los clientes en /slug/carta
 export const rutaCarta = carta => (carta.demo ? `/demo/${carta.slug}/carta` : `/${carta.slug}/carta`)
 

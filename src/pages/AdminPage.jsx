@@ -1,11 +1,15 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { ArrowLeft, ArrowUpRight, Camera, Copy, Search, Trash2 } from 'lucide-react'
+import { ArrowLeft, ArrowUpRight, Camera, Copy, Search, Sparkles, Trash2 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { aplicar } from '../lib/ediciones'
 import { getNegocio, negocios, rutaNegocio } from '../negocios'
-import { cartas, getCarta, marcaDe, rutaCarta } from '../cartas'
+import { ALERGENOS, cartas, fotoDe, getCarta, marcaDe, rutaCarta } from '../cartas'
 import { BOTON, CAMPO, Confirmar, Entrar, Etiqueta, usePaginaPrivada } from '../components/panel'
+import { loadFont } from '../lib/applyTheme'
+import { TIPOGRAFIAS, parejaDe } from '../asistente/tipografias'
+import { DISENOS_ASISTENTE, DISENOS_CARTA } from '../asistente/disenos'
+import { tipoDe } from '../lib/tematicas'
 
 /* Panel de Jesús (/admin): cambiar textos, fotos y colores de cualquier ficha, miniweb o carta desde el móvil,
    sin tocar código, y duplicar una demo para adaptarla en segundos al negocio que tiene delante.
@@ -53,7 +57,7 @@ const SALTAR = new Set(['slug', 'demo', 'copia', 'diseno', 'tipo', 'platform', '
 const CLAVES_FOTO = new Set(['src', 'foto', 'fotos', 'imagen', 'img', 'logo', 'poster', 'captura'])
 const esColor = v => /^#([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(v)
 const esFoto = (clave, v) =>
-  CLAVES_FOTO.has(clave) || /\.(jpe?g|png|webp|avif|gif)(\?|$)/i.test(v) || v.includes('images.pexels.com') || v.startsWith('data:image')
+  CLAVES_FOTO.has(clave) || /\.(jpe?g|png|webp|avif|gif)(\?|$)/i.test(v) || v.includes('images.pexels.com') || v.includes('images.unsplash.com') || v.startsWith('data:image')
 
 // Nombres en castellano de los datos más habituales
 const NOMBRES = {
@@ -85,7 +89,7 @@ function camposDe(datos) {
   const visitar = (valor, ruta, etiqueta) => {
     const clave = ruta.at(-1)
     if (SALTAR.has(clave)) return
-    // Del menú del día solo la foto: lo demás lo cambia el dueño desde su panel
+    // Del menú del día solo la foto: lo demás lo cambia el dueño desde su panel (/panel)
     if (ruta[0] === 'menuDia' && typeof valor === 'string' && clave !== 'foto') return
     if (typeof valor === 'string') {
       // La clave del dato es la de la lista si está dentro de una (fotos: ['...'])
@@ -116,6 +120,354 @@ function camposDe(datos) {
 
 const leerRuta = (datos, ruta) => ruta.split('.').reduce((n, p) => n?.[p], datos)
 
+/* ---------- Asistente con IA ---------- */
+
+// Llama a una función de Supabase y, si falla, lanza su mensaje de error (o uno genérico)
+async function llamar(funcion, cuerpo) {
+  const { data, error } = await supabase.functions.invoke(funcion, { body: cuerpo })
+  if (error) {
+    let mensaje = 'No ha funcionado. Prueba otra vez.'
+    try {
+      mensaje = (await error.context.json()).error ?? mensaje
+    } catch {
+      // Sin mensaje propio: se queda el genérico
+    }
+    throw new Error(mensaje)
+  }
+  return data
+}
+
+// Los campos editables con su valor actual, como se los pasa el panel a la IA (las fotos sin su enlace)
+const camposParaIA = datos => camposDe(datos).map(c => ({ ...c, valor: c.clase === 'foto' ? '' : leerRuta(datos, c.ruta) }))
+
+// Por si acaso: ningún guion largo llega a la página, aunque la IA se lo salte
+const sinGuionLargo = texto => texto.replace(/\s*—\s*/g, ', ')
+
+// Primera foto de Unsplash para una búsqueda (o null). Se avisa a Unsplash de que se ha elegido.
+const primeraFoto = (busqueda, orientacion) =>
+  llamar('buscar-fotos', { texto: busqueda, orientacion })
+    .then(d => {
+      const foto = d.fotos?.[0]
+      if (foto) avisarElegida(foto)
+      return foto?.url ?? null
+    })
+    .catch(() => null)
+
+/* Junta cambios nuevos con los que ya había. Si un cambio nuevo sustituye un bloque entero (las secciones de la
+   carta, el menú del día, la marca), los cambios sueltos de dentro de ese bloque ya no valen y se quitan.
+   Cada cambio nuevo va al final, para que se aplique después de los anteriores. */
+const fusionar = (cambios, nuevos) => {
+  const r = { ...cambios }
+  for (const k of Object.keys(nuevos)) {
+    for (const k2 of Object.keys(r)) if (k2.startsWith(`${k}.`)) delete r[k2]
+    delete r[k]
+  }
+  return { ...r, ...nuevos }
+}
+
+// Una carta con marca propia (las copias de cartas) guarda la tipografía dentro de la marca
+const rutaTipografia = datos => (datos?.marca ? 'marca.theme.fonts' : 'theme.fonts')
+
+/* Convierte la respuesta de la IA en cambios del editor, comprobando cada uno: solo rutas que existen en la
+   página, colores bien escritos, tipografías de la lista, alérgenos de los 14 oficiales. Las fotos se buscan en
+   Unsplash y se pone la primera. actual: los datos de la página tal como están ahora. */
+async function cambiosDeIA(resultado, campos, actual) {
+  const porRuta = new Map(campos.map(c => [c.ruta, c]))
+  const esCarta = Array.isArray(actual?.secciones)
+  const orientacion = esCarta ? 'portrait' : undefined
+  const cambios = {}
+
+  // Carta: secciones y menú del día enteros, cuando la IA los rehace (crear la carta, añadir o quitar platos)
+  const secciones = esCarta && resultado.secciones?.length ? resultado.secciones.slice(0, 10) : null
+  const menu = esCarta && resultado.menu?.grupos?.length ? resultado.menu : null
+  if (secciones) {
+    const fotos = await Promise.all(secciones.map(s => (s.busquedaFoto?.trim() ? primeraFoto(s.busquedaFoto, orientacion) : null)))
+    cambios.secciones = secciones.map((s, i) => {
+      // Si no hay foto nueva, la que tenía esa sección (por nombre o por posición)
+      const previa = actual.secciones.find(p => p.nombre === s.nombre) ?? actual.secciones[i] ?? actual.secciones[0]
+      return {
+        nombre: sinGuionLargo(s.nombre),
+        foto: fotos[i] ?? previa?.foto,
+        platos: (s.platos ?? []).slice(0, 20).map(p => ({
+          nombre: sinGuionLargo(p.nombre),
+          descripcion: sinGuionLargo(p.descripcion ?? ''),
+          precio: p.precio,
+          alergenos: (p.alergenos ?? []).filter(a => ALERGENOS[a]),
+        })),
+      }
+    })
+  }
+  if (menu) {
+    const foto = menu.busquedaFoto?.trim() ? await primeraFoto(menu.busquedaFoto, orientacion) : null
+    cambios.menuDia = {
+      ...actual.menuDia,
+      titulo: sinGuionLargo(menu.titulo || actual.menuDia?.titulo || 'Menú del día'),
+      cuando: sinGuionLargo(menu.cuando ?? ''),
+      precio: menu.precio,
+      incluye: sinGuionLargo(menu.incluye ?? ''),
+      grupos: menu.grupos.map(g => ({ nombre: sinGuionLargo(g.nombre), platos: g.platos.slice(0, 6).map(sinGuionLargo) })),
+      ...(foto ? { foto } : {}),
+    }
+  }
+
+  for (const { ruta, valor } of resultado.cambios ?? []) {
+    const campo = porRuta.get(ruta)
+    if (!campo || campo.clase === 'foto' || typeof valor !== 'string') continue
+    // Si la IA ha rehecho el bloque entero, sus cambios sueltos de dentro no valen
+    if ((secciones && ruta.startsWith('secciones.')) || (menu && ruta.startsWith('menuDia.'))) continue
+    if (campo.clase === 'color') {
+      if (esColor(valor.trim())) cambios[ruta] = valor.trim().toUpperCase()
+      continue
+    }
+    cambios[ruta] = sinGuionLargo(valor)
+  }
+
+  const tipografia = TIPOGRAFIAS.find(t => t.id === resultado.tipografia)
+  if (tipografia) cambios[rutaTipografia(actual)] = tipografia.fonts
+
+  const fotos = (resultado.fotos ?? []).filter(
+    f => porRuta.get(f.ruta)?.clase === 'foto' && f.busqueda?.trim() && !(secciones && f.ruta.startsWith('secciones.')),
+  )
+  const encontradas = await Promise.all(fotos.map(f => primeraFoto(f.busqueda, orientacion)))
+  fotos.forEach((f, i) => {
+    if (encontradas[i]) cambios[f.ruta] = encontradas[i]
+  })
+  return cambios
+}
+
+// Lo que la IA necesita ver de una carta para rehacerla: sus secciones y su menú del día, sin fotos
+const estructuraCarta = carta =>
+  Array.isArray(carta?.secciones)
+    ? {
+        menu: carta.menuDia ? { titulo: carta.menuDia.titulo, cuando: carta.menuDia.cuando, precio: carta.menuDia.precio, incluye: carta.menuDia.incluye, grupos: carta.menuDia.grupos } : null,
+        secciones: carta.secciones.map(s => ({ nombre: s.nombre, platos: s.platos })),
+      }
+    : null
+
+// Marca propia de una copia de carta, sacada de la marca de la carta de la que sale
+const marcaInicial = carta => {
+  const m = marcaDe(carta)
+  return { nombre: m?.nombre ?? '', lema: m?.lema ?? '', sector: m?.sector ?? '', theme: structuredClone(m?.theme ?? {}) }
+}
+
+// Cambios con los que nace una copia de carta: sin negocio (lleva su marca) y con su propia foto de arriba
+const inicioCopiaCarta = carta => ({ negocio: null, marca: marcaInicial(carta), foto: carta.foto ?? fotoDe(marcaDe(carta)) })
+
+// El menú del día tal como lo guarda el panel del dueño (tabla cartas): sin la foto ni el texto de la pestaña
+const menuDelPanel = m => (m ? { titulo: m.titulo, cuando: m.cuando ?? '', precio: m.precio ?? '', incluye: m.incluye ?? '', grupos: m.grupos ?? [] } : null)
+
+/* Una carta nueva nace como la de Ají Limón: con su fila en la tabla cartas y un dueño (de momento, quien la crea;
+   al venderla se pasa a la cuenta del restaurante). Así el dueño cambia su menú del día desde /panel. */
+async function crearCartaConDueno(slug, menuDia) {
+  const { data } = await supabase.auth.getUser()
+  const { error } = await supabase.from('cartas').insert({ slug, dueno: data.user.id, menu_dia: menuDelPanel(menuDia), hay_menu: true })
+  // Si ya existe (por ejemplo, de una copia anterior con la misma dirección), se deja como está
+  if (error && error.code !== '23505') throw new Error('Se ha creado la carta, pero no su panel del menú del día.')
+}
+
+// Perfiles del asistente: qué tipo de página crea. La IA solo elige entre los diseños de ese tipo.
+const PERFILES = [
+  { id: 'ficha', texto: 'Ficha', ejemplo: 'Una ficha para una peluquería en Gràcia que se llama Ranita. Colores rosa palo y negro. Cita por WhatsApp al 612 345 678.' },
+  { id: 'miniweb', texto: 'Miniweb', ejemplo: 'Una miniweb para un restaurante mexicano en Sants que se llama Nopal. Colores verde y rosa. Menú del día a 13,50 € y reservas por WhatsApp al 612 345 678.' },
+  {
+    id: 'carta',
+    texto: 'Carta',
+    ejemplo:
+      'Carta para una taberna gallega en Poblenou que se llama O Lar. Colores verde oscuro y crema. Pulpo a feira 16 €, zamburiñas 14 €, raxo con patatas 12 €, tarta de Santiago 5,50 €. Menú del día a 14,90 € con pan, bebida y postre.',
+  },
+]
+
+// Pantalla para crear una ficha o miniweb nueva con el asistente: se elige el tipo, se escribe qué negocio es y lo monta
+function CrearConAsistente({ filas, volver, recargar, abrir }) {
+  const [perfil, setPerfil] = useState('ficha')
+  const [peticion, setPeticion] = useState('')
+  const [paso, setPaso] = useState(null)
+  const [motivo, setMotivo] = useState('')
+  const [error, setError] = useState('')
+
+  const crear = async e => {
+    e.preventDefault()
+    if (!peticion.trim() || paso) return
+    setError('')
+    setMotivo('')
+    try {
+      const esCarta = perfil === 'carta'
+      const tipoFila = esCarta ? 'carta' : 'negocio'
+      const fichas = esCarta ? DISENOS_CARTA : DISENOS_ASISTENTE
+
+      // 1. Elegir la demo de la que parte, solo entre las de este tipo (si solo hay una, esa, sin preguntar a la IA)
+      setPaso('Eligiendo el diseño...')
+      const disenos = esCarta
+        ? Object.entries(DISENOS_CARTA)
+            .filter(([s]) => getCarta(s))
+            .map(([s, ficha]) => ({ slug: s, nombre: marcaDe(getCarta(s))?.nombre ?? s, sector: `carta ${getCarta(s).diseno}`, ...ficha }))
+        : Object.entries(DISENOS_ASISTENTE)
+            .filter(([s]) => getNegocio(s) && tipoDe(getNegocio(s)) === perfil)
+            .map(([s, ficha]) => ({ slug: s, nombre: getNegocio(s).nombre, sector: getNegocio(s).sector, ...ficha }))
+      if (disenos.length === 0) throw new Error('Todavía no hay diseños de este tipo.')
+      const eleccion =
+        disenos.length === 1
+          ? { base: disenos[0].slug, motivo: '' }
+          : (await llamar('asistente', { paso: 'elegir', peticion, perfil, disenos })).resultado
+      const elegido = disenos.find(d => d.slug === eleccion.base)
+      if (!elegido) throw new Error('El asistente no ha elegido un diseño válido. Prueba otra vez.')
+      setMotivo(`Parte de ${elegido.nombre}.${eleccion.motivo ? ` ${eleccion.motivo}` : ''}`)
+
+      // 2. Textos, colores, tipografía, búsquedas de fotos y, en las cartas, secciones, platos y menú del día.
+      // Una carta nueva nace con su propia marca (copia de la de la demo), que la IA adapta
+      setPaso(esCarta ? 'Escribiendo la carta...' : 'Escribiendo textos y eligiendo colores...')
+      const plantilla = esCarta ? getCarta(eleccion.base) : getNegocio(eleccion.base)
+      const inicio = esCarta ? inicioCopiaCarta(plantilla) : {}
+      const preparada = aplicar(plantilla, inicio)
+      const campos = camposParaIA(preparada)
+      const { resultado } = await llamar('asistente', {
+        paso: 'rellenar',
+        peticion,
+        perfil,
+        demo: { slug: eleccion.base, nombre: elegido.nombre, sector: elegido.sector, estilo: fichas[eleccion.base].estilo },
+        campos,
+        carta: estructuraCarta(preparada),
+        alergenos: Object.keys(ALERGENOS),
+        tipografias: TIPOGRAFIAS.map(({ id, nombre, estilo }) => ({ id, nombre, estilo })),
+      })
+
+      // 3. Fotos de Unsplash
+      setPaso('Buscando fotos...')
+      const cambios = fusionar(inicio, await cambiosDeIA(resultado, campos, preparada))
+
+      // 4. La copia, en una dirección libre (si ya existe, se le añade un número)
+      setPaso('Creando...')
+      const ocupadas = new Set([
+        ...(filas ?? []).filter(f => f.tipo === tipoFila).map(f => f.slug),
+        ...(esCarta ? cartas : negocios).map(n => n.slug),
+        ...RESERVADAS,
+      ])
+      const nombre = esCarta ? cambios['marca.nombre'] ?? cambios.marca?.nombre : cambios.nombre
+      const raiz = aSlug(resultado.slug || nombre || 'nueva') || 'nueva'
+      let slug = raiz
+      for (let n = 2; ocupadas.has(slug); n++) slug = `${raiz}-${n}`
+      const { error } = await supabase
+        .from('ediciones')
+        .insert({ tipo: tipoFila, slug, base: eleccion.base, cambios, historial: [{ peticion, resumen: sinGuionLargo(resultado.resumen ?? '') }] })
+      if (error) throw new Error('No se ha podido guardar.')
+      if (esCarta) await crearCartaConDueno(slug, aplicar(plantilla, cambios).menuDia)
+      await recargar()
+      abrir(`${tipoFila}:${slug}`)
+    } catch (e) {
+      setError(e.message)
+      setPaso(null)
+    }
+  }
+
+  return (
+    <div className="grid gap-[1rem]">
+      <button type="button" onClick={volver} className="inline-flex items-center gap-[0.3rem] justify-self-start text-[0.9rem] font-semibold">
+        <ArrowLeft className="h-[1rem] w-[1rem]" aria-hidden="true" />
+        Todas
+      </button>
+      <div>
+        <h1 className="text-[1.5rem] font-bold leading-tight">Crear con el asistente</h1>
+        <p className="mt-[0.3rem] text-[0.92rem] leading-[1.45] text-zinc-600">
+          Cuéntale qué negocio es. Elige uno de tus diseños, escribe los textos, pone colores, tipografía y fotos, y crea una copia que luego puedes retocar.
+        </p>
+      </div>
+      <form onSubmit={crear} className="grid gap-[0.75rem]">
+        {/* Qué tipo de página crea: la IA solo elige entre los diseños de ese tipo */}
+        <div role="tablist" aria-label="Tipo de página" className="grid grid-cols-3 gap-[0.3rem] rounded-[0.75rem] bg-zinc-200 p-[0.25rem]">
+          {PERFILES.map(p => (
+            <button
+              key={p.id}
+              type="button"
+              role="tab"
+              aria-selected={perfil === p.id}
+              disabled={p.desactivado || Boolean(paso)}
+              onClick={() => setPerfil(p.id)}
+              className={`rounded-[0.55rem] py-[0.55rem] text-[0.95rem] font-semibold transition-colors disabled:cursor-not-allowed ${
+                perfil === p.id ? 'bg-white text-zinc-900 shadow-[0_0.05rem_0.2rem_rgb(0_0_0/0.15)]' : 'text-zinc-600'
+              } ${p.desactivado ? 'opacity-40' : ''}`}
+            >
+              {p.texto}
+            </button>
+          ))}
+        </div>
+        <p className="text-[0.82rem] text-zinc-500">
+          {perfil === 'miniweb'
+            ? 'Varias páginas, como una web: inicio, menú, horario y reservas.'
+            : perfil === 'carta'
+              ? 'Carta digital para el QR de la mesa: menú del día y carta por secciones, con su propia marca. Pásale los platos y precios que tengas.'
+              : 'Una pantalla con lo esencial: pestañas, reseña de Google y redes.'}
+        </p>
+        <textarea
+          autoFocus
+          value={peticion}
+          onChange={e => setPeticion(e.target.value)}
+          disabled={Boolean(paso)}
+          rows={5}
+          placeholder={PERFILES.find(p => p.id === perfil).ejemplo}
+          className={`${CAMPO} resize-y`}
+        />
+        <button type="submit" disabled={!peticion.trim() || Boolean(paso)} className={BOTON}>
+          {paso ?? (perfil === 'miniweb' ? 'Crear miniweb' : perfil === 'carta' ? 'Crear carta' : 'Crear ficha')}
+        </button>
+      </form>
+      {motivo && <p className="text-[0.9rem] leading-[1.45] text-zinc-600">{motivo}</p>}
+      {error && <p className="text-[0.9rem] font-semibold text-red-600">{error}</p>}
+    </div>
+  )
+}
+
+// Chat del editor de una copia: lo pedido antes (con lo que hizo el asistente) y el cuadro para pedir un retoque
+function Retocar({ historial, enviar }) {
+  const [peticion, setPeticion] = useState('')
+  const [enviando, setEnviando] = useState(false)
+  const [error, setError] = useState('')
+
+  const mandar = async e => {
+    e.preventDefault()
+    if (!peticion.trim() || enviando) return
+    setEnviando(true)
+    setError('')
+    try {
+      await enviar(peticion.trim())
+      setPeticion('')
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setEnviando(false)
+    }
+  }
+
+  return (
+    <section className="rounded-[1rem] bg-white p-[1rem] ring-1 ring-zinc-200">
+      <h2 className="text-[1rem] font-bold">Asistente</h2>
+      {historial.length > 0 && (
+        <ol className="mt-[0.6rem] grid max-h-[14rem] gap-[0.6rem] overflow-y-auto">
+          {historial.map((h, i) => (
+            <li key={i} className="text-[0.88rem] leading-[1.45]">
+              <p className="font-semibold">{h.peticion}</p>
+              {h.resumen && <p className="text-zinc-600">{h.resumen}</p>}
+            </li>
+          ))}
+        </ol>
+      )}
+      <form onSubmit={mandar} className="mt-[0.75rem] flex gap-[0.5rem]">
+        <input
+          value={peticion}
+          onChange={e => setPeticion(e.target.value)}
+          disabled={enviando}
+          placeholder="Más oscuro, lema más corto, otra foto..."
+          className={CAMPO}
+          enterKeyHint="send"
+        />
+        <button type="submit" disabled={!peticion.trim() || enviando} className={`${BOTON} shrink-0`}>
+          {enviando ? 'Pensando...' : 'Pedir'}
+        </button>
+      </form>
+      {error && <p className="mt-[0.5rem] text-[0.85rem] font-semibold text-red-600">{error}</p>}
+    </section>
+  )
+}
+
 /* ---------- Campos del editor ---------- */
 
 function CampoColor({ valor, cambiar }) {
@@ -129,7 +481,12 @@ function CampoColor({ valor, cambiar }) {
   )
 }
 
-// Hoja para buscar fotos en Pexels (función buscar-fotos de Supabase) y elegir una tocándola
+// Las normas de Unsplash piden avisarles cuando se elige una foto; si falla, no pasa nada
+const avisarElegida = foto => {
+  if (foto?.descarga) llamar('buscar-fotos', { accion: 'elegida', descarga: foto.descarga }).catch(() => {})
+}
+
+// Hoja para buscar fotos en Unsplash (función buscar-fotos de Supabase) y elegir una tocándola
 function BuscarFoto({ sugerencia, orientacion, elegir, cerrar }) {
   const [texto, setTexto] = useState(sugerencia)
   const [fotos, setFotos] = useState([])
@@ -194,9 +551,18 @@ function BuscarFoto({ sugerencia, orientacion, elegir, cerrar }) {
               <ul className="grid grid-cols-3 gap-[0.4rem]">
                 {fotos.map(f => (
                   <li key={f.id}>
-                    <button type="button" onClick={() => elegir(f.url)} className="block w-full overflow-hidden rounded-[0.5rem] bg-zinc-200" title={f.autor ? `Foto de ${f.autor}` : undefined}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        avisarElegida(f)
+                        elegir(f.url)
+                      }}
+                      className="block w-full overflow-hidden rounded-[0.5rem] bg-zinc-200"
+                    >
                       <img src={f.miniatura} alt={f.alt} loading="lazy" className={`w-full object-cover ${orientacion === 'portrait' ? 'aspect-[3/4]' : 'aspect-square'}`} />
                     </button>
+                    {/* Unsplash pide nombrar al fotógrafo */}
+                    {f.autor && <p className="mt-[0.15rem] truncate text-[0.68rem] text-zinc-500">{f.autor}</p>}
                   </li>
                 ))}
               </ul>
@@ -205,7 +571,7 @@ function BuscarFoto({ sugerencia, orientacion, elegir, cerrar }) {
                   {buscando ? 'Buscando...' : 'Ver más'}
                 </button>
               )}
-              <p className="mt-[0.75rem] text-[0.78rem] text-zinc-400">Fotos de Pexels, gratis para usar.</p>
+              <p className="mt-[0.75rem] text-[0.78rem] text-zinc-400">Fotos de Unsplash, gratis para usar.</p>
             </>
           )}
         </div>
@@ -277,6 +643,42 @@ function CampoFoto({ valor, cambiar, carpeta, sugerencia, orientacion }) {
   )
 }
 
+// Tipografía de una copia: una de las parejas de la lista cerrada, o la que trae la demo.
+// Cada opción se ve con su propia letra.
+function ElegirTipografia({ actual, original, elegir }) {
+  useEffect(() => {
+    for (const t of TIPOGRAFIAS) {
+      loadFont(t.fonts.heading.google)
+      loadFont(t.fonts.body.google)
+    }
+    if (original?.heading?.google) loadFont(original.heading.google)
+  }, [original])
+
+  const elegida = parejaDe(actual)?.id ?? 'demo'
+  const opciones = [
+    // La de la demo, si no es ya una de la lista
+    ...(parejaDe(original) ? [] : [{ id: 'demo', nombre: 'La de la demo', estilo: original?.heading?.family?.split(',')[0].replaceAll('"', '') ?? '', fonts: original }]),
+    ...TIPOGRAFIAS,
+  ]
+
+  return (
+    <div className="grid gap-[0.5rem]">
+      {opciones.map(t => (
+        <button
+          key={t.id}
+          type="button"
+          aria-pressed={elegida === t.id}
+          onClick={() => elegir(t.id === 'demo' || t.fonts === original ? null : t.fonts)}
+          className={`rounded-[0.75rem] px-[0.9rem] py-[0.7rem] text-left ring-1 ${elegida === t.id ? 'bg-zinc-900 text-white ring-zinc-900' : 'ring-zinc-300'}`}
+        >
+          <span className="block text-[1.35rem] leading-tight" style={{ fontFamily: t.fonts?.heading?.family }}>{t.nombre}</span>
+          <span className="mt-[0.15rem] block text-[0.85rem] opacity-75" style={{ fontFamily: t.fonts?.body?.family }}>{t.estilo}</span>
+        </button>
+      ))}
+    </div>
+  )
+}
+
 /* ---------- Editor de una ficha, miniweb o carta ---------- */
 
 function Editor({ tipo, slug, fila, volver, recargar, abrir }) {
@@ -288,6 +690,9 @@ function Editor({ tipo, slug, fila, volver, recargar, abrir }) {
   const [estado, setEstado] = useState(null)
   const [pregunta, setPregunta] = useState(null)
   const [duplicando, setDuplicando] = useState(null)
+  const [historial, setHistorial] = useState(fila?.historial ?? [])
+  // Sube cada vez que se guarda: la vista previa se recarga con lo nuevo
+  const [version, setVersion] = useState(0)
   const cerrarPregunta = useCallback(() => setPregunta(null), [])
 
   const vista = useMemo(() => aplicar(original, cambios), [original, cambios])
@@ -300,9 +705,13 @@ function Editor({ tipo, slug, fila, volver, recargar, abrir }) {
 
   if (!original) return <p className="text-zinc-500">No se encuentra esta página.</p>
 
+  // Las demos originales no se editan: son las plantillas. Para adaptarlas a un negocio se duplican.
+  // Las páginas de clientes y las copias sí se editan.
+  const soloLectura = !esCopia && Boolean(original.demo)
   const sinGuardar = JSON.stringify(cambios) !== JSON.stringify(guardados)
   const nombre = tipo === 'negocio' ? vista.nombre : marcaDe(vista)?.nombre ?? slug
-  const ruta = tipo === 'negocio' ? (esCopia ? `/demo/${slug}` : rutaNegocio(original)) : rutaCarta(original)
+  const ruta =
+    tipo === 'negocio' ? (esCopia ? `/demo/${slug}` : rutaNegocio(original)) : esCopia ? `/demo/${slug}/carta` : rutaCarta(original)
 
   // Un cambio que deja el dato como en el archivo se quita (así el archivo manda si luego se corrige allí)
   const cambiar = (r, valor) =>
@@ -319,18 +728,57 @@ function Editor({ tipo, slug, fila, volver, recargar, abrir }) {
     if (error) return setEstado('error')
     setGuardados(cambios)
     setEstado('guardado')
+    setVersion(v => v + 1)
+    recargar()
+  }
+
+  // Retoque con el asistente: le pasa los campos con su valor actual y lo pedido antes; sus cambios se suman
+  // a los del editor y se guardan al momento, para verlos ya en la vista previa
+  const retocar = async peticion => {
+    const fonts = leerRuta(vista, rutaTipografia(vista))
+    const { resultado } = await llamar('asistente', {
+      paso: 'retocar',
+      peticion,
+      perfil: tipo === 'carta' ? 'carta' : tipoDe(vista),
+      historial: historial.map(h => h.peticion),
+      campos: camposParaIA(vista),
+      // En las cartas, también sus secciones y su menú, por si piden añadir, quitar o mover platos
+      carta: estructuraCarta(vista),
+      alergenos: Object.keys(ALERGENOS),
+      tipografias: TIPOGRAFIAS.map(({ id, nombre, estilo }) => ({ id, nombre, estilo })),
+      tipografiaActual: parejaDe(fonts)?.id ?? '',
+    })
+    const deLaIA = await cambiosDeIA(resultado, campos, vista)
+    // El menú del día de una carta vive en su panel (tabla cartas): si la IA lo cambia, se cambia allí
+    if (tipo === 'carta' && deLaIA.menuDia) {
+      const { error } = await supabase.from('cartas').update({ menu_dia: menuDelPanel(deLaIA.menuDia) }).eq('slug', slug)
+      if (error) throw new Error('No se ha podido cambiar el menú del día.')
+    }
+    const nuevos = fusionar(cambios, deLaIA)
+    const nuevoHistorial = [...historial, { peticion, resumen: sinGuionLargo(resultado.resumen ?? '') }]
+    const { error } = await supabase.from('ediciones').upsert({ tipo, slug, base: fila?.base ?? null, cambios: nuevos, historial: nuevoHistorial })
+    if (error) throw new Error('No se han podido guardar los cambios del asistente.')
+    setCambios(nuevos)
+    setGuardados(nuevos)
+    setHistorial(nuevoHistorial)
+    setEstado('guardado')
+    setVersion(v => v + 1)
     recargar()
   }
 
   const borrarCopia = async () => {
     const { error } = await supabase.from('ediciones').delete().eq('tipo', tipo).eq('slug', slug)
     if (error) return setEstado('error')
+    // Una copia de carta se lleva también su fila del panel del dueño (menú del día)
+    if (tipo === 'carta') await supabase.from('cartas').delete().eq('slug', slug)
     recargar()
     volver()
   }
 
   return (
-    <div className="grid gap-[1rem] pb-[6rem]">
+    // En el ordenador, el editor a la izquierda y la vista previa a la derecha; en el móvil, "Ver página"
+    <div className="pb-[6rem] lg:grid lg:grid-cols-[minmax(0,1fr)_23rem] lg:items-start lg:gap-[2rem]">
+    <div className="grid gap-[1rem]">
       <button type="button" onClick={volver} className="inline-flex items-center gap-[0.3rem] justify-self-start text-[0.9rem] font-semibold">
         <ArrowLeft className="h-[1rem] w-[1rem]" aria-hidden="true" />
         Todas
@@ -338,7 +786,11 @@ function Editor({ tipo, slug, fila, volver, recargar, abrir }) {
 
       <div>
         <p className="text-[0.8rem] text-zinc-500">
-          {tipo === 'carta' ? 'Carta de' : esCopia ? `Copia de ${getNegocio(fila.base)?.nombre ?? fila.base}` : 'Ficha de'}
+          {esCopia
+            ? `${tipo === 'carta' ? 'Carta, copia de' : 'Copia de'} ${(tipo === 'carta' ? marcaDe(getCarta(fila.base) ?? {}) : getNegocio(fila.base))?.nombre ?? fila.base}`
+            : tipo === 'carta'
+              ? 'Carta de'
+              : 'Ficha de'}
         </p>
         <h1 className="text-[1.5rem] font-bold leading-tight">{nombre}</h1>
         <div className="mt-[0.6rem] flex flex-wrap gap-x-[1.1rem] gap-y-[0.4rem] text-[0.9rem] font-semibold">
@@ -346,7 +798,7 @@ function Editor({ tipo, slug, fila, volver, recargar, abrir }) {
             Ver página
             <ArrowUpRight className="h-[0.95rem] w-[0.95rem]" aria-hidden="true" />
           </a>
-          {tipo === 'negocio' && (
+          {!soloLectura && (
             <button type="button" onClick={() => setDuplicando({ nombre: '', slug: '', error: '' })} className="inline-flex items-center gap-[0.3rem] underline underline-offset-[0.2em]">
               <Copy className="h-[0.95rem] w-[0.95rem]" aria-hidden="true" />
               Duplicar
@@ -365,7 +817,59 @@ function Editor({ tipo, slug, fila, volver, recargar, abrir }) {
         </div>
       </div>
 
+      {/* Chat con el asistente: en las copias (fichas, miniwebs y cartas) */}
+      {esCopia && <Retocar historial={historial} enviar={retocar} />}
+
+      {/* En las cartas, el menú del día no se edita aquí: es del dueño */}
+      {tipo === 'carta' && (
+        <p className="text-[0.88rem] leading-[1.45] text-zinc-600">
+          El menú del día se cambia desde el panel del dueño,{' '}
+          <a href="/panel" target="_blank" rel="noreferrer" className="font-semibold text-zinc-900 underline underline-offset-[0.2em]">
+            /panel
+          </a>
+          , con la foto de la pizarra incluida. El asistente también puede cambiarlo.
+        </p>
+      )}
+
+      {soloLectura && (
+        <div className="rounded-[1rem] bg-white p-[1rem] ring-1 ring-zinc-200">
+          <p className="text-[0.95rem] leading-[1.45] text-zinc-700">
+            {tipo === 'negocio'
+              ? 'Es una demo original: aquí solo se puede ver. Para adaptarla a un negocio, duplícala y edita la copia.'
+              : 'Es una carta de demo: aquí solo se puede ver. Para adaptarla a un restaurante, duplícala y edita la copia.'}
+          </p>
+          <button type="button" onClick={() => setDuplicando({ nombre: '', slug: '', error: '' })} className={`${BOTON} mt-[0.75rem] inline-flex items-center gap-[0.4rem]`}>
+            <Copy className="h-[1rem] w-[1rem]" aria-hidden="true" />
+            Duplicar
+          </button>
+        </div>
+      )}
+
+      {/* En una demo original, todos los campos y botones quedan desactivados (fieldset disabled) */}
+      <fieldset disabled={soloLectura} className="contents">
       {grupos.map(([grupo, lista], i) => (
+        <Fragment key={grupo}>
+        {/* Tipografía: en las fichas, entre los datos y los colores de la marca; en las copias de cartas
+            (con marca propia), la primera. Las cartas de una ficha usan la de su ficha */}
+        {((tipo === 'negocio' && i === 1) || (tipo === 'carta' && vista.marca && i === 0)) && (
+          <details className="rounded-[1rem] bg-white ring-1 ring-zinc-200 [&[open]>summary]:border-b [&[open]>summary]:border-zinc-200">
+            <summary className="cursor-pointer px-[1rem] py-[0.85rem] text-[1rem] font-bold">Tipografía</summary>
+            <div className="px-[1rem] py-[1rem]">
+              <ElegirTipografia
+                actual={leerRuta(vista, rutaTipografia(vista))}
+                original={(tipo === 'carta' ? marcaDe(original) : original)?.theme?.fonts}
+                elegir={fonts =>
+                  setCambios(c => {
+                    const nuevo = { ...c }
+                    delete nuevo[rutaTipografia(vista)]
+                    if (fonts) nuevo[rutaTipografia(vista)] = fonts
+                    return nuevo
+                  })
+                }
+              />
+            </div>
+          </details>
+        )}
         <details key={grupo} open={i === 0} className="rounded-[1rem] bg-white ring-1 ring-zinc-200 [&[open]>summary]:border-b [&[open]>summary]:border-zinc-200">
           <summary className="cursor-pointer px-[1rem] py-[0.85rem] text-[1rem] font-bold">{grupo}</summary>
           <div className="grid gap-[1rem] px-[1rem] py-[1rem]">
@@ -404,9 +908,24 @@ function Editor({ tipo, slug, fila, volver, recargar, abrir }) {
             })}
           </div>
         </details>
+        </Fragment>
       ))}
+      </fieldset>
+    </div>
 
-      {/* Guardar, siempre a mano abajo */}
+      {/* Vista previa: la página tal cual está guardada, del tamaño de un móvil; se recarga al guardar */}
+      <aside className="sticky top-[1rem] hidden lg:block">
+        <iframe
+          key={version}
+          title="Vista previa"
+          src={ruta}
+          className="h-[min(48rem,calc(100svh-6rem))] w-full rounded-[1.5rem] border-[0.4rem] border-zinc-900 bg-white"
+        />
+        <p className="mt-[0.5rem] text-center text-[0.8rem] text-zinc-500">Vista previa de lo guardado</p>
+      </aside>
+
+      {/* Guardar, siempre a mano abajo (no en las demos originales, que no se guardan) */}
+      {!soloLectura && (
       <div className="fixed inset-x-0 bottom-0 border-t border-zinc-200 bg-white/95 px-[1rem] py-[0.75rem] backdrop-blur">
         <div className="mx-auto flex w-full max-w-[32rem] items-center gap-[0.75rem]">
           <p className="min-w-0 flex-1 text-[0.85rem] text-zinc-500">
@@ -425,22 +944,38 @@ function Editor({ tipo, slug, fila, volver, recargar, abrir }) {
           </button>
         </div>
       </div>
+      )}
 
       {duplicando && (
         <Duplicar
+          tipo={tipo}
           datos={duplicando}
           setDatos={setDuplicando}
           crear={async ({ nombre: nuevoNombre, slug: nuevoSlug }) => {
+            // Una copia de carta lleva su propia marca (si aún no la tiene, la de la carta de la que sale)
+            const deLaCopia =
+              tipo === 'carta'
+                ? fusionar(vista.marca ? cambios : fusionar(cambios, inicioCopiaCarta(original)), { 'marca.nombre': nuevoNombre })
+                : fusionar(cambios, { nombre: nuevoNombre })
             const { error } = await supabase
               .from('ediciones')
-              .insert({ tipo: 'negocio', slug: nuevoSlug, base: fila?.base ?? slug, cambios: { ...cambios, nombre: nuevoNombre } })
+              .insert({ tipo, slug: nuevoSlug, base: fila?.base ?? slug, cambios: deLaCopia })
             if (error) {
               setDuplicando(d => ({ ...d, error: error.code === '23505' ? 'Ya hay una copia con esa dirección.' : 'No se ha podido crear la copia.' }))
               return
             }
+            // La carta nueva, con su dueño y el menú del día que tenía la que se duplica
+            if (tipo === 'carta') {
+              try {
+                await crearCartaConDueno(nuevoSlug, vista.menuDia)
+              } catch (e) {
+                setDuplicando(d => ({ ...d, error: e.message }))
+                return
+              }
+            }
             setDuplicando(null)
-            recargar()
-            abrir(`negocio:${nuevoSlug}`)
+            await recargar()
+            abrir(`${tipo}:${nuevoSlug}`)
           }}
         />
       )}
@@ -451,10 +986,11 @@ function Editor({ tipo, slug, fila, volver, recargar, abrir }) {
 }
 
 // Hoja para duplicar: el nombre del negocio nuevo y su dirección (se rellena sola a partir del nombre)
-function Duplicar({ datos, setDatos, crear }) {
+function Duplicar({ tipo, datos, setDatos, crear }) {
   const [enviando, setEnviando] = useState(false)
   const slug = datos.slug || aSlug(datos.nombre)
-  const ocupada = RESERVADAS.has(slug) || Boolean(getNegocio(slug)) || Boolean(getCarta(slug))
+  // Una ficha y su carta pueden compartir dirección (/demo/casa-pepe y /demo/casa-pepe/carta)
+  const ocupada = RESERVADAS.has(slug) || Boolean(tipo === 'carta' ? getCarta(slug) : getNegocio(slug))
   const valida = /^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug) && !ocupada
 
   const enviar = async e => {
@@ -488,7 +1024,9 @@ function Duplicar({ datos, setDatos, crear }) {
               className={CAMPO}
               spellCheck={false}
               autoCapitalize="none"
+              aria-label={tipo === 'carta' ? 'Dirección (termina en /carta)' : 'Dirección'}
             />
+            {tipo === 'carta' && <span className="shrink-0 text-[0.92rem] text-zinc-500">/carta</span>}
           </div>
         </Etiqueta>
         {(ocupada || datos.error) && (
@@ -511,7 +1049,19 @@ function Duplicar({ datos, setDatos, crear }) {
 
 function Lista({ filas, abrir }) {
   const editadas = new Set((filas ?? []).map(f => `${f.tipo}:${f.slug}`))
-  const copias = (filas ?? []).filter(f => f.tipo === 'negocio' && f.base)
+  // Copias de fichas, miniwebs y cartas, con el nombre que les has puesto
+  const copias = (filas ?? [])
+    .filter(f => f.base)
+    .map(f =>
+      f.tipo === 'carta'
+        ? {
+            ...f,
+            nombre: f.cambios?.['marca.nombre'] ?? f.cambios?.marca?.nombre ?? f.slug,
+            detalle: `Carta, copia de ${marcaDe(getCarta(f.base) ?? {})?.nombre ?? f.base}`,
+            ruta: `/demo/${f.slug}/carta`,
+          }
+        : { ...f, nombre: f.cambios?.nombre ?? f.slug, detalle: `Copia de ${getNegocio(f.base)?.nombre ?? f.base}`, ruta: `/demo/${f.slug}` },
+    )
 
   const Fila = ({ clave, nombre, detalle, ruta }) => (
     <li className="flex items-center gap-[0.75rem] border-b border-zinc-200 last:border-b-0">
@@ -534,12 +1084,17 @@ function Lista({ filas, abrir }) {
     <div className="grid gap-[1.25rem]">
       <h1 className="text-[1.5rem] font-bold">Panel</h1>
 
+      <button type="button" onClick={() => abrir('asistente')} className={`${BOTON} inline-flex items-center justify-center gap-[0.4rem]`}>
+        <Sparkles className="h-[1.1rem] w-[1.1rem]" aria-hidden="true" />
+        Crear con el asistente
+      </button>
+
       {copias.length > 0 && (
         <section>
           <h2 className="mb-[0.5rem] text-[0.9rem] font-bold text-zinc-500">Copias para enseñar</h2>
           <ul className={bloque}>
             {copias.map(f => (
-              <Fila key={f.slug} clave={`negocio:${f.slug}`} nombre={f.cambios?.nombre ?? f.slug} detalle={`Copia de ${getNegocio(f.base)?.nombre ?? f.base}`} ruta={`/demo/${f.slug}`} />
+              <Fila key={`${f.tipo}:${f.slug}`} clave={`${f.tipo}:${f.slug}`} nombre={f.nombre} detalle={f.detalle} ruta={f.ruta} />
             ))}
           </ul>
         </section>
@@ -588,10 +1143,11 @@ export default function AdminPage() {
       .then(({ data }) => setEsAdmin(Boolean(data)))
   }, [sesion])
 
+  // Devuelve la promesa: al crear una copia se espera a tenerla antes de abrirla
   const recargar = useCallback(() => {
-    supabase
+    return supabase
       .from('ediciones')
-      .select('tipo, slug, base, cambios')
+      .select('tipo, slug, base, cambios, historial')
       .order('actualizado', { ascending: false })
       .then(({ data }) => setFilas(data ?? []))
   }, [])
@@ -610,7 +1166,7 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-svh bg-zinc-100 font-sans text-zinc-900">
-      <div className="mx-auto w-full max-w-[32rem] px-[1rem] pb-[2rem] pt-[1rem]">
+      <div className={`mx-auto w-full max-w-[32rem] px-[1rem] pb-[2rem] pt-[1rem] ${editar?.includes(':') ? 'lg:max-w-[64rem]' : ''}`}>
         {!supabase ? (
           <p className="mt-[3rem] text-center text-zinc-500">El panel no está disponible ahora mismo.</p>
         ) : sesion === undefined ? null : !sesion ? (
@@ -628,9 +1184,11 @@ export default function AdminPage() {
               <p className="text-zinc-500">Cargando...</p>
             ) : !esAdmin ? (
               <p className="text-zinc-500">Esta cuenta no tiene acceso a este panel.</p>
+            ) : editar === 'asistente' ? (
+              <CrearConAsistente filas={filas} volver={() => abrir(null)} recargar={recargar} abrir={abrir} />
             ) : editar && (tipo === 'negocio' || tipo === 'carta') ? (
               // key: al abrir otra (por ejemplo, la copia recién creada) el editor empieza de cero
-              <Editor key={editar} tipo={tipo} slug={slug} fila={fila} volver={() => abrir(null)} recargar={recargar} abrir={abrir} />
+              <Editor key={`${editar}-${Boolean(fila)}`}tipo={tipo} slug={slug} fila={fila} volver={() => abrir(null)} recargar={recargar} abrir={abrir} />
             ) : (
               <Lista filas={filas} abrir={abrir} />
             )}

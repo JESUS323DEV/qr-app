@@ -1,6 +1,6 @@
 const loadedFonts = new Set()
 
-function loadFont(url) {
+export function loadFont(url) {
   if (loadedFonts.has(url)) return
   loadedFonts.add(url)
   const link = document.createElement('link')

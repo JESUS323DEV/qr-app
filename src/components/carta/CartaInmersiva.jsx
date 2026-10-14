@@ -145,13 +145,16 @@ export default function CartaInmersiva({ carta, negocio, foto }) {
                 </button>
               ))}
             </div>
-            <a
-              href={rutaNegocio(negocio)}
-              className="inline-flex items-center gap-[0.25rem] rounded-full bg-black/45 px-[0.7rem] py-[0.3rem] text-[0.75rem] font-semibold text-white backdrop-blur-sm"
-            >
-              {carta.conoce ?? `Conoce ${negocio.nombre}`}
-              <ArrowUpRight className="h-[0.8rem] w-[0.8rem]" aria-hidden="true" />
-            </a>
+            {/* Enlace a la miniweb, solo si la carta es de un negocio con ficha */}
+            {carta.negocio && (
+              <a
+                href={rutaNegocio(negocio)}
+                className="inline-flex items-center gap-[0.25rem] rounded-full bg-black/45 px-[0.7rem] py-[0.3rem] text-[0.75rem] font-semibold text-white backdrop-blur-sm"
+              >
+                {carta.conoce ?? `Conoce ${negocio.nombre}`}
+                <ArrowUpRight className="h-[0.8rem] w-[0.8rem]" aria-hidden="true" />
+              </a>
+            )}
           </div>
         </div>
 

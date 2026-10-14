@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { ArrowUpRight, ChevronLeft, ChevronRight } from 'lucide-react'
-import { cartas, getCarta, marcaDe, rutaCarta, ALERGENOS } from '../cartas'
+import { cartas, fotoDe, rutaCarta, ALERGENOS } from '../cartas'
 import DemoPager from '../components/DemoPager'
 import DemoHomeButton from '../components/DemoHomeButton'
 import { rutaNegocio } from '../negocios'
@@ -16,12 +16,6 @@ import CartaHistorias from '../components/carta/CartaHistorias'
 /* Carta digital (QR de la mesa), con la marca del negocio.
    Arriba una franja con foto y el nombre; debajo, fija al hacer scroll, la barra con el idioma y las pestañas
    (Menú del día y las secciones de la carta). Aquí sí hay scroll dentro de cada pestaña: una carta no cabe en una pantalla. */
-
-// Primera foto del negocio, para la franja de arriba
-const fotoDe = n => {
-  const p = n?.hero?.pestanas?.[0]
-  return p?.fotos?.[0]?.src ?? p?.opciones?.[0]?.foto ?? p?.foto ?? n?.hero?.fondo ?? null
-}
 
 const OCULTAR_FLECHAS_MS = 2500
 
@@ -231,17 +225,21 @@ export default function CartaPage(props) {
   const { slug } = useParams()
   const { cargando, fila } = useCartaRemota(slug)
   const ahora = useAhora()
-  // Cambios de /admin: los de la carta (textos, fotos, platos) y los de la marca de su negocio (nombre, colores)
+  // Cambios de /admin: los de la carta (textos, fotos, platos; o una copia, que solo vive en Supabase)
+  // y los de la marca de su negocio (nombre, colores). Una carta sin negocio lleva su propia marca (marca).
   const edicionCarta = useEdicion('carta', slug)
-  const deArchivo = getCarta(slug)
-  const edicionMarca = useEdicion('negocio', deArchivo?.negocio)
+  const conCambios = useMemo(
+    () => (edicionCarta.cargando ? null : conEdicion('carta', slug, edicionCarta.fila)),
+    [slug, edicionCarta.cargando, edicionCarta.fila],
+  )
+  const edicionMarca = useEdicion('negocio', conCambios?.negocio)
   const negocio = useMemo(() => {
-    if (!deArchivo) return null
-    return deArchivo.negocio ? conEdicion('negocio', deArchivo.negocio, edicionMarca.fila) : marcaDe(deArchivo)
-  }, [deArchivo, edicionMarca.fila])
+    if (!conCambios) return null
+    return conCambios.negocio ? conEdicion('negocio', conCambios.negocio, edicionMarca.fila) : conCambios.marca ?? null
+  }, [conCambios, edicionMarca.fila])
   // Mientras llega lo de Supabase no se pinta nada, para no enseñar un momento el menú antiguo
   if (cargando || edicionCarta.cargando || edicionMarca.cargando) return null
-  const carta = conHorario(juntar(conEdicion('carta', slug, edicionCarta.fila), fila), ahora)
+  const carta = conHorario(juntar(conCambios, fila), ahora)
   // La clave cambia si el menú del día aparece o desaparece (horario, interruptor): la carta empieza de cero
   // en lo que toca, y no se queda en blanco en la pestaña del menú que ya no existe
   return <Carta key={`${slug}-${Boolean(carta?.menuDia)}`} carta={carta} negocio={negocio} {...props} />
@@ -272,7 +270,8 @@ function Carta({ carta, negocio, demo = false }) {
   // En las demos, las mismas flechas y botón de inicio que en las miniwebs, para pasar de una carta a otra
   const navegacion = demo && (
     <>
-      <DemoPager negocio={carta} secuencia={cartas.filter(c => c.demo)} rutaDe={rutaCarta} conTransicion={false} />
+      {/* Las copias para enseñar a un negocio no llevan flechas: no están en el catálogo */}
+      {!carta.copia && <DemoPager negocio={carta} secuencia={cartas.filter(c => c.demo)} rutaDe={rutaCarta} conTransicion={false} />}
       <DemoHomeButton slug={carta.slug} />
     </>
   )
@@ -308,7 +307,7 @@ function Carta({ carta, negocio, demo = false }) {
       <main className="mx-auto flex min-h-svh w-full max-w-[30rem] flex-col bg-demo-bg">
         {/* Foto protagonista, con el idioma arriba y el título ("Carta" y el nombre) abajo */}
         <div className="relative h-[16rem] overflow-hidden">
-          <Img src={fotoDe(negocio)} alt="" className="absolute inset-0 h-full w-full object-cover" />
+          <Img src={carta.foto ?? fotoDe(negocio)} alt="" className="absolute inset-0 h-full w-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/25" />
 
           {/* Idioma y enlace a la miniweb, superpuestos arriba a la derecha */}
@@ -328,13 +327,16 @@ function Carta({ carta, negocio, demo = false }) {
                 </button>
               ))}
             </div>
-            <a
-              href={rutaNegocio(negocio)}
-              className="inline-flex items-center gap-[0.25rem] rounded-full bg-black/45 px-[0.7rem] py-[0.3rem] text-[0.75rem] font-semibold text-white backdrop-blur-sm"
-            >
-              Conoce {negocio.nombre}
-              <ArrowUpRight className="h-[0.8rem] w-[0.8rem]" aria-hidden="true" />
-            </a>
+            {/* Enlace a la miniweb, solo si la carta es de un negocio con ficha */}
+            {carta.negocio && (
+              <a
+                href={rutaNegocio(negocio)}
+                className="inline-flex items-center gap-[0.25rem] rounded-full bg-black/45 px-[0.7rem] py-[0.3rem] text-[0.75rem] font-semibold text-white backdrop-blur-sm"
+              >
+                Conoce {negocio.nombre}
+                <ArrowUpRight className="h-[0.8rem] w-[0.8rem]" aria-hidden="true" />
+              </a>
+            )}
           </div>
 
           <div className="absolute inset-x-0 bottom-0 px-[1.25rem] pb-[1rem] text-white">
