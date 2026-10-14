@@ -1,5 +1,5 @@
-import { useLayoutEffect, useRef, useState } from 'react'
-import { ChevronRight } from 'lucide-react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { ChevronRight, X } from 'lucide-react'
 import { ALERGENOS } from '../../cartas'
 import Img from '../Img'
 
@@ -58,7 +58,7 @@ function MenuDia({ menu }) {
 
 // Sección de la carta (Ceviches, Arroces...): título y lista de platos con precio; descripción y alérgenos en una línea.
 // Como el menú del día, crece un poco en móviles altos.
-function Seccion({ seccion }) {
+function Seccion({ seccion, verAlergenos }) {
   return (
     <div>
       <h2 className="font-demo-heading text-[2rem] leading-none [@media(min-height:50rem)]:text-[2.6rem]">{seccion.nombre}</h2>
@@ -84,6 +84,48 @@ function Seccion({ seccion }) {
           </li>
         ))}
       </ul>
+      {verAlergenos && (
+        <button type="button" onClick={verAlergenos} className="mt-[0.8rem] text-[0.8rem] font-semibold text-white/75 underline underline-offset-[0.2em] hover:text-white">
+          Ver alérgenos
+        </button>
+      )}
+    </div>
+  )
+}
+
+// Hoja que sube desde abajo con lo que significa cada abreviatura; solo los alérgenos que salen en la carta
+function HojaAlergenos({ claves, cerrar }) {
+  useEffect(() => {
+    const alPulsar = e => e.key === 'Escape' && cerrar()
+    window.addEventListener('keydown', alPulsar)
+    return () => window.removeEventListener('keydown', alPulsar)
+  }, [cerrar])
+
+  return (
+    <div className="absolute inset-0 z-20 flex flex-col justify-end bg-black/60" onClick={cerrar}>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="titulo-alergenos"
+        onClick={e => e.stopPropagation()}
+        className="rounded-t-[1.25rem] bg-[#161616] px-[1.25rem] pb-[1.75rem] pt-[1.1rem]"
+      >
+        <div className="flex items-center justify-between gap-[1rem]">
+          <h2 id="titulo-alergenos" className="font-demo-heading text-[1.5rem] leading-none">Alérgenos</h2>
+          <button type="button" onClick={cerrar} aria-label="Cerrar" className="-mr-[0.4rem] p-[0.4rem] text-white/75 hover:text-white">
+            <X className="h-[1.3rem] w-[1.3rem]" />
+          </button>
+        </div>
+        <ul className="mt-[1rem] grid grid-cols-2 gap-x-[1rem] gap-y-[0.6rem]">
+          {claves.map(a => (
+            <li key={a} className="flex items-center gap-[0.5rem] text-[0.9rem]">
+              <span className="w-[1.9rem] shrink-0 rounded-full border border-white/30 text-center text-[0.68rem] font-semibold text-white/75">{ALERGENOS[a].corto}</span>
+              {ALERGENOS[a].nombre}
+            </li>
+          ))}
+        </ul>
+        <p className="mt-[1.1rem] text-[0.8rem] leading-[1.4] text-white/60">Si tienes alguna alergia o intolerancia, pregúntanos antes de pedir.</p>
+      </div>
     </div>
   )
 }
@@ -107,6 +149,11 @@ export default function CartaHistorias({ carta, negocio }) {
     ...(primeraSeccion !== -1 ? [{ key: 'seccion', texto: 'Carta', i: primeraSeccion }] : []),
   ]
   const secciones = pantallas.flatMap((p, i) => (p.tipo === 'seccion' ? [{ texto: p.seccion.nombre, i }] : []))
+
+  // Alérgenos que salen en algún plato de la carta, en el orden oficial; la hoja solo enseña esos
+  const usados = new Set(carta.secciones.flatMap(s => s.platos.flatMap(p => p.alergenos ?? [])))
+  const alergenos = Object.keys(ALERGENOS).filter(a => usados.has(a))
+  const [verAlergenos, setVerAlergenos] = useState(false)
 
   const pastilla = activa =>
     `shrink-0 rounded-full font-semibold backdrop-blur-sm transition-colors ${
@@ -163,7 +210,12 @@ export default function CartaHistorias({ carta, negocio }) {
             <section key={i} className="relative h-full w-full shrink-0 snap-start snap-always overflow-hidden">
               <Img src={p.foto} alt="" className="absolute inset-0 h-full w-full object-cover" />
               {/* Degradado de arriba, donde la foto se ve bien, a abajo, oscuro bajo el texto */}
-              <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-black/60 via-45% to-black/90" />
+              {/* En la carta, más oscuro: la lista de platos es más larga y la foto se mezclaba con el texto */}
+              <div
+                className={`absolute inset-0 bg-gradient-to-b via-45% ${
+                  p.tipo === 'seccion' ? 'from-black/50 via-black/75 to-black/90' : 'from-black/25 via-black/60 to-black/90'
+                }`}
+              />
               {/* El contenido empieza bajo la cabecera y, si no cabe, se desliza hacia abajo; al subir se difumina
                   en ese borde en vez de pasar por debajo del nombre. En el menú, mt-auto lo pega abajo cuando cabe
                   (con justify-end no se podría deslizar hasta su principio). */}
@@ -205,7 +257,7 @@ export default function CartaHistorias({ carta, negocio }) {
                     </div>
                   )}
                 </nav>
-                {p.tipo === 'menu' ? <MenuDia menu={carta.menuDia} /> : <Seccion seccion={p.seccion} />}
+                {p.tipo === 'menu' ? <MenuDia menu={carta.menuDia} /> : <Seccion seccion={p.seccion} verAlergenos={alergenos.length > 0 ? () => setVerAlergenos(true) : undefined} />}
               </div>
               </div>
 
@@ -251,6 +303,8 @@ export default function CartaHistorias({ carta, negocio }) {
             </div>
           </div>
         </div>
+
+        {verAlergenos && <HojaAlergenos claves={alergenos} cerrar={() => setVerAlergenos(false)} />}
       </div>
     </div>
   )
