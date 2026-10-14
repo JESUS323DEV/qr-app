@@ -38,6 +38,18 @@ export const DISENOS_CARTA = {
     pestanas: 'Menú del día (o el brunch, con el precio como el Total del ticket) y Carta (una sección cada vez).',
     notas: 'Sin fotos. Colores: primary es el fondo de la pantalla (el color fuerte de la marca), surface el papel (siempre claro), text la tinta oscura y accent la tinta de color. Las tipografías son de máquina de escribir: no cambiarlas.',
   },
+  'forno-nonna': {
+    para: 'Pizzerías, panaderías, heladerías, hamburgueserías, brunch, tapas: sitios cuyos platos entran por los ojos.',
+    estilo: 'Cada plato es una polaroid con su foto y su nombre y precio escritos a mano, pegadas un poco torcidas sobre el color de la marca, de dos en dos. Al tocar una, se abre grande con la descripción.',
+    pestanas: 'Menú del día (polaroid grande con la foto del día y una nota con los platos) y Carta (una sección cada vez, hasta 6 platos).',
+    notas: 'Necesita una foto por plato (los que no tienen salen escritos a mano) y como mucho 6 platos por sección. Colores: primary es el fondo (un color fuerte de la marca), surface el papel de las polaroids (claro), accent los precios. El título va con letra a mano: no cambiar la tipografía.',
+  },
+  tumi: {
+    para: 'Restaurantes con platos muy fotogénicos que quieren que la foto venda: peruano, japonés, mexicano, fusión, marisquerías.',
+    estilo: 'Galería: cada sección es un mosaico de fotos a sangre, sin marcos, con el primer plato en grande y el nombre y el precio encima. Al tocar una foto se abre a pantalla completa y se pasa de lado al siguiente plato.',
+    pestanas: 'Menú del día (foto grande con título y precio encima, y los platos debajo) y Carta (las secciones, una cada vez, hasta 7 platos). Sin menú del día, solo la carta.',
+    notas: 'Necesita una foto por plato, buena y del mismo estilo (los que no tienen salen como una pieza de color). Colores: fondo oscuro (bg), accent para los precios.',
+  },
 }
 
 export const DISENOS_ASISTENTE = {

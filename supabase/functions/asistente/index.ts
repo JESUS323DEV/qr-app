@@ -71,8 +71,9 @@ const ESQUEMA_CAMBIOS = {
                 descripcion: { type: 'string' },
                 precio: { type: 'string' },
                 alergenos: { type: 'array', items: { type: 'string' } },
+                busquedaFoto: { type: 'string' },
               },
-              required: ['nombre', 'descripcion', 'precio', 'alergenos'],
+              required: ['nombre', 'descripcion', 'precio', 'alergenos', 'busquedaFoto'],
               additionalProperties: false,
             },
           },
@@ -140,7 +141,7 @@ Tipografía: elige una de la lista por su id, o deja tipografia vacía para no c
 secciones y menu (solo en cartas; en fichas y miniwebs, secciones vacía y menu con todo vacío y grupos vacía):
 - Si la carta cambia (al crearla, o si piden añadir, quitar, mover o cambiar platos o secciones), devuelve secciones con la carta COMPLETA, también lo que no cambia. Si no cambia, secciones vacía.
 - Cada sección: nombre (Entrantes, Carnes, Postres, Bebidas...), busquedaFoto (búsqueda para una foto vertical de esa sección en Unsplash, en inglés; vacía si la foto que tiene ya vale) y platos.
-- Cada plato: nombre, descripcion (una línea corta con lo que lleva; vacía si no hace falta), precio con formato "14,50 €" y alergenos (solo ids de la lista de alérgenos que te paso, los que lleve el plato con seguridad por sus ingredientes).
+- Cada plato: nombre, descripcion (una línea corta con lo que lleva; vacía si no hace falta), precio con formato "14,50 €", alergenos (solo ids de la lista de alérgenos que te paso, los que lleve el plato con seguridad por sus ingredientes) y busquedaFoto: solo en los diseños polaroid y galeria (una foto por plato), una búsqueda en inglés para la foto cuadrada de ese plato (vacía si la que tiene ya vale o si es una bebida sin foto); en los demás diseños, vacía.
 - Usa los platos y precios que te den, tal cual. Si no te dan carta, haz una creíble para ese tipo de cocina, con precios normales de Barcelona.
 - menu: el menú del día. Si cambia, titulo, cuando ("De lunes a viernes, a mediodía"), precio, incluye, busquedaFoto y grupos (Primeros, Segundos, Postres...; como mucho 5 grupos) con 3 a 5 platos cada uno. Si no cambia, grupos vacía.
 - En una carta, los cambios sueltos son para la marca (marca.nombre, marca.lema, colores) y la foto de arriba.

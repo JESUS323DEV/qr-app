@@ -15,6 +15,8 @@ import CartaHistorias from '../components/carta/CartaHistorias'
 import CartaPizarra from '../components/carta/CartaPizarra'
 import CartaTicket from '../components/carta/CartaTicket'
 import CartaRevista from '../components/carta/CartaRevista'
+import CartaPolaroid from '../components/carta/CartaPolaroid'
+import CartaGaleria from '../components/carta/CartaGaleria'
 
 /* Carta digital (QR de la mesa), con la marca del negocio.
    Arriba una franja con foto y el nombre; debajo, fija al hacer scroll, la barra con el idioma y las pestañas
@@ -293,6 +295,24 @@ function Carta({ carta, negocio, demo = false }) {
     return (
       <>
         <CartaPizarra carta={carta} negocio={negocio} />
+        {navegacion}
+      </>
+    )
+  }
+  // Diseño galería: mosaico de fotos a sangre; al tocar una, los platos a pantalla completa
+  if (carta.diseno === 'galeria') {
+    return (
+      <>
+        <CartaGaleria carta={carta} negocio={negocio} />
+        {navegacion}
+      </>
+    )
+  }
+  // Diseño polaroid: cada plato es una polaroid con su foto, pegada un poco torcida
+  if (carta.diseno === 'polaroid') {
+    return (
+      <>
+        <CartaPolaroid carta={carta} negocio={negocio} />
         {navegacion}
       </>
     )

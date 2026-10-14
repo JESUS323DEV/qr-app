@@ -17,7 +17,7 @@ import { tipoDe } from '../lib/tematicas'
    hacen que solo un administrador (tabla admins) pueda guardarlos. El diseño y la estructura siguen en el código. */
 
 // Direcciones que no puede usar una copia: las de las páginas de la web
-const RESERVADAS = new Set(['demo', 'tematicas', 'gestion', 'catalogo', 'planes', 'panel', 'admin'])
+const RESERVADAS = new Set(['demo', 'tematicas', 'gestion', 'catalogo', 'planes', 'panel', 'admin', 'miniweb'])
 
 // "Peluquería Ranita" → "peluqueria-ranita"
 const aSlug = texto =>
@@ -181,19 +181,30 @@ async function cambiosDeIA(resultado, campos, actual) {
   const secciones = esCarta && resultado.secciones?.length ? resultado.secciones.slice(0, 10) : null
   const menu = esCarta && resultado.menu?.grupos?.length ? resultado.menu : null
   if (secciones) {
-    const fotos = await Promise.all(secciones.map(s => (s.busquedaFoto?.trim() ? primeraFoto(s.busquedaFoto, orientacion) : null)))
+    // Diseños polaroid y galería: una foto por plato, cuadrada; en los demás, una por sección (en vertical)
+    const porPlato = ['polaroid', 'galeria'].includes(actual.diseno)
+    const fotos = await Promise.all(secciones.map(s => (!porPlato && s.busquedaFoto?.trim() ? primeraFoto(s.busquedaFoto, orientacion) : null)))
+    const fotosPlatos = porPlato
+      ? await Promise.all(secciones.map(s => Promise.all((s.platos ?? []).slice(0, 20).map(p => (p.busquedaFoto?.trim() ? primeraFoto(p.busquedaFoto, 'square') : null)))))
+      : []
+    const todosLosPlatos = actual.secciones.flatMap(s => s.platos)
     cambios.secciones = secciones.map((s, i) => {
       // Si no hay foto nueva, la que tenía esa sección (por nombre o por posición)
       const previa = actual.secciones.find(p => p.nombre === s.nombre) ?? actual.secciones[i] ?? actual.secciones[0]
       return {
         nombre: sinGuionLargo(s.nombre),
         foto: fotos[i] ?? previa?.foto,
-        platos: (s.platos ?? []).slice(0, 20).map(p => ({
-          nombre: sinGuionLargo(p.nombre),
-          descripcion: sinGuionLargo(p.descripcion ?? ''),
-          precio: p.precio,
-          alergenos: (p.alergenos ?? []).filter(a => ALERGENOS[a]),
-        })),
+        platos: (s.platos ?? []).slice(0, 20).map((p, j) => {
+          // La foto del plato: la nueva o la que tenía un plato con el mismo nombre
+          const fotoPlato = fotosPlatos[i]?.[j] ?? todosLosPlatos.find(x => x.nombre === p.nombre)?.foto
+          return {
+            nombre: sinGuionLargo(p.nombre),
+            descripcion: sinGuionLargo(p.descripcion ?? ''),
+            precio: p.precio,
+            alergenos: (p.alergenos ?? []).filter(a => ALERGENOS[a]),
+            ...(fotoPlato ? { foto: fotoPlato } : {}),
+          }
+        }),
       }
     })
   }
@@ -241,7 +252,9 @@ const estructuraCarta = carta =>
   Array.isArray(carta?.secciones)
     ? {
         menu: carta.menuDia ? { titulo: carta.menuDia.titulo, cuando: carta.menuDia.cuando, precio: carta.menuDia.precio, incluye: carta.menuDia.incluye, grupos: carta.menuDia.grupos } : null,
-        secciones: carta.secciones.map(s => ({ nombre: s.nombre, platos: s.platos })),
+        // El diseño, para que la IA sepa si van fotos por plato (polaroid); los platos, sin los enlaces de sus fotos
+        diseno: carta.diseno,
+        secciones: carta.secciones.map(s => ({ nombre: s.nombre, platos: s.platos.map(({ foto, ...p }) => ({ ...p, conFoto: Boolean(foto) })) })),
       }
     : null
 

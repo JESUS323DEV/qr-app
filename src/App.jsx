@@ -23,6 +23,8 @@ export default function App() {
         <Route path="/tematicas/:key" element={<TematicaPage />} />
         {/* Catálogo completo: todas las demos por tipo (fichas, miniwebs, cartas) y temática */}
         <Route path="/catalogo" element={<CatalogoPage />} />
+        {/* Miniwebs: no salen en la landing ni en el catálogo; se enseñan solo con esta dirección */}
+        <Route path="/miniweb" element={<CatalogoPage soloMiniwebs />} />
         {/* Planes en detalle */}
         <Route path="/planes" element={<PlanesPage />} />
         {/* Panel del dueño: cambiar su menú del día (Supabase) */}

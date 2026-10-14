@@ -203,11 +203,8 @@ const ESCAPARATE = secuenciaDemos
   .filter(n => tipoDe(n) === 'ficha' && enEscaparate(n))
   .map(n => ({ foto: captura(n.slug), nombre: n.nombre, sector: n.sector, ruta: rutaNegocio(n) }))
 
-// Cartas y miniwebs: primero las miniwebs y después las cartas
+// Pestaña Cartas: las cartas de demo. Las miniwebs no salen en la landing (se enseñan en /miniweb)
 const WEBS_Y_CARTAS = [
-  ...secuenciaDemos
-    .filter(n => tipoDe(n) === 'miniweb' && enEscaparate(n))
-    .map(n => ({ foto: captura(n.slug), nombre: n.nombre, ...cartasMiniwebs.tipos.miniweb, ruta: rutaNegocio(n) })),
   ...cartas
     .filter(c => c.demo && enEscaparate(c))
     .map(c => ({ foto: captura(`${c.slug}-carta`), nombre: marcaDe(c)?.nombre, ...cartasMiniwebs.tipos.carta, ruta: rutaCarta(c) })),
@@ -378,7 +375,7 @@ function HeroMiniweb() {
               <h2 className="font-titulo text-[clamp(1.9rem,1.5rem+2vw,2.5rem)] font-black leading-[1] tracking-tight">
                 {cartasMiniwebs.titulo}
               </h2>
-              <VerTodas to="/catalogo?tipo=miniweb">{escaparate.verCartasMiniwebs}</VerTodas>
+              <VerTodas to="/catalogo?tipo=carta">{escaparate.verCartasMiniwebs}</VerTodas>
             </>
           )}
         </div>

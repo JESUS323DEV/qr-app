@@ -6,7 +6,7 @@ import { cartas, marcaDe, rutaCarta } from '../cartas'
 import { TEMATICAS, porTematica, secuenciaDemos, tematicaDe, tipoDe } from '../lib/tematicas'
 import { catalogo, marca } from '../landing/contenido'
 
-/* Catálogo completo (/catalogo): todas las demos, separadas por tipo (Fichas, Miniwebs, Cartas)
+/* Catálogo completo (/catalogo): todas las demos, separadas por tipo (Fichas y Cartas; las Miniwebs, en /miniweb)
    y filtrables por temática. El tipo y la temática van en la dirección (?tipo=ficha&tematica=comida),
    así los enlaces "Ver todas" de la landing abren directamente lo que toca.
    En la landing solo salen las destacadas; aquí salen todas. */
@@ -40,16 +40,19 @@ function Filtro({ activo, onClick, children }) {
   )
 }
 
-export default function CatalogoPage() {
+// soloMiniwebs: la página escondida /miniweb, con las miniwebs, que no salen en el catálogo público
+export default function CatalogoPage({ soloMiniwebs = false }) {
   const [params, setParams] = useSearchParams()
-  const tipo = DEMOS[params.get('tipo')] ? params.get('tipo') : 'ficha'
+  const tipos = soloMiniwebs ? [catalogo.miniwebs] : catalogo.tipos
+  const pedido = params.get('tipo')
+  const tipo = soloMiniwebs ? 'miniweb' : tipos.some(t => t.key === pedido) ? pedido : 'ficha'
   const tematica = params.get('tematica') ?? ''
 
   const delTipo = DEMOS[tipo]
   // Solo las temáticas que tienen alguna demo de este tipo
   const tematicas = TEMATICAS.filter(t => delTipo.some(d => d.tematica === t.key))
   const lista = tematica ? delTipo.filter(d => d.tematica === tematica) : delTipo
-  const infoTipo = catalogo.tipos.find(t => t.key === tipo)
+  const infoTipo = tipos.find(t => t.key === tipo)
 
   useEffect(() => {
     document.title = `${catalogo.titulo} · ${marca.nombre}`
@@ -74,9 +77,9 @@ export default function CatalogoPage() {
         <h1 className="font-titulo text-[clamp(2rem,1.5rem+2.4vw,3.25rem)] font-black leading-[1.05] tracking-tight">{catalogo.titulo}</h1>
         <p className="mt-[0.6rem] max-w-[34rem] text-[1rem] leading-[1.6] text-suave">{catalogo.texto}</p>
 
-        {/* Tipo: Fichas, Miniwebs, Cartas */}
+        {/* Tipo: Fichas y Cartas (en /miniweb, solo Miniwebs) */}
         <nav className="mt-[1.75rem] flex gap-[1.5rem] overflow-x-auto border-b border-linea text-[1.05rem] [scrollbar-width:none]">
-          {catalogo.tipos.map(t => (
+          {tipos.map(t => (
             <Filtro key={t.key} activo={tipo === t.key} onClick={() => elegirTipo(t.key)}>
               {t.texto} <span className="font-normal text-suave">{DEMOS[t.key].length}</span>
             </Filtro>

@@ -226,17 +226,17 @@ export const webCompleta = {
   url: 'https://landig-demos.netlify.app/',
 }
 
-// Escaparate de la landing: Inicio enseña las fichas; la pestaña Cartas y miniwebs, primero las miniwebs y después las cartas.
+// Escaparate de la landing: Inicio enseña las fichas; la pestaña Cartas, las cartas. Las miniwebs no salen (se enseñan en /miniweb).
 // Las demos salen solas de sus archivos (con destacada: false se quitan del escaparate, pero siguen en el catálogo).
 // Sin captura, el móvil enseña un texto que lleva a la demo.
 export const escaparate = {
   verFichas: 'Ver todas las fichas',
-  verCartasMiniwebs: 'Ver todas las miniwebs y cartas',
+  verCartasMiniwebs: 'Ver todas las cartas',
 }
 
 export const cartasMiniwebs = {
-  pestana: 'Cartas y miniwebs',
-  titulo: 'Tu web y tu carta, en la palma de la mano.',
+  pestana: 'Cartas',
+  titulo: 'Tu carta, en la palma de la mano.',
   // Lo que pone debajo de cada móvil y dentro, si no hay captura
   tipos: {
     miniweb: { etiqueta: 'Miniweb', titulo: 'Miniweb' },
@@ -282,8 +282,7 @@ export const planesDetalle = {
   aMedida: {
     titulo: 'Bajo presupuesto',
     lista: [
-      { titulo: 'Miniweb completa', texto: 'Como una web en el móvil: varias páginas, menú, horario con mapa y reservas por WhatsApp.' },
-      { titulo: 'Diseño a medida', texto: 'Tu ficha, tu carta o tu miniweb, diseñada solo para tu negocio.' },
+      { titulo: 'Diseño a medida', texto: 'Tu ficha o tu carta, diseñada solo para tu negocio.' },
     ],
   },
   extras: {
@@ -336,16 +335,17 @@ export const catalogo = {
   texto: 'Todas las demos. Ábrelas en tu móvil y tócalas como lo haría tu cliente.',
   tipos: [
     { key: 'ficha', texto: 'Fichas', descripcion: 'Una pantalla con lo esencial de tu negocio.' },
-    { key: 'miniweb', texto: 'Miniwebs', descripcion: 'Como una web en el móvil: varias páginas, menú y reservas.' },
     { key: 'carta', texto: 'Cartas', descripcion: 'Tu carta y tu menú del día, con QR para las mesas.' },
   ],
+  // Página escondida /miniweb: las miniwebs no salen en el catálogo público, solo aquí
+  miniwebs: { key: 'miniweb', texto: 'Miniwebs', descripcion: 'Como una web en el móvil: varias páginas, menú y reservas.' },
   todas: 'Todas',
   volver: 'Volver al inicio',
 }
 
 // Menú hamburguesa de la cabecera: hace de pie de página (qué es, redes, textos legales y firma)
 export const menu = {
-  texto: 'Placas con QR y miniwebs para negocios locales, con la marca de cada uno. Hecho en Barcelona.',
+  texto: 'Placas con QR, fichas y cartas digitales para negocios locales, con la marca de cada uno. Hecho en Barcelona.',
   redesTexto: 'Sígueme',
   // Redes de la marca (pendiente: poner los perfiles cuando existan)
   redes: [
