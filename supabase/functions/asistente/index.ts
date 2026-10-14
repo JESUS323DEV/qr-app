@@ -142,7 +142,7 @@ secciones y menu (solo en cartas; en fichas y miniwebs, secciones vacía y menu 
 - Cada sección: nombre (Entrantes, Carnes, Postres, Bebidas...), busquedaFoto (búsqueda para una foto vertical de esa sección en Unsplash, en inglés; vacía si la foto que tiene ya vale) y platos.
 - Cada plato: nombre, descripcion (una línea corta con lo que lleva; vacía si no hace falta), precio con formato "14,50 €" y alergenos (solo ids de la lista de alérgenos que te paso, los que lleve el plato con seguridad por sus ingredientes).
 - Usa los platos y precios que te den, tal cual. Si no te dan carta, haz una creíble para ese tipo de cocina, con precios normales de Barcelona.
-- menu: el menú del día. Si cambia, titulo, cuando ("De lunes a viernes, a mediodía"), precio, incluye, busquedaFoto y grupos (Primeros, Segundos, Postres...) con 3 a 5 platos cada uno. Si no cambia, grupos vacía.
+- menu: el menú del día. Si cambia, titulo, cuando ("De lunes a viernes, a mediodía"), precio, incluye, busquedaFoto y grupos (Primeros, Segundos, Postres...; como mucho 5 grupos) con 3 a 5 platos cada uno. Si no cambia, grupos vacía.
 - En una carta, los cambios sueltos son para la marca (marca.nombre, marca.lema, colores) y la foto de arriba.
 
 resumen: una o dos frases en castellano diciendo qué has hecho, sin guiones largos. Si te piden algo que este tipo de página no tiene (por ejemplo, una carta en una ficha), dilo aquí en una frase.`

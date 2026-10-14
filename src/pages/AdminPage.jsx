@@ -205,7 +205,8 @@ async function cambiosDeIA(resultado, campos, actual) {
       cuando: sinGuionLargo(menu.cuando ?? ''),
       precio: menu.precio,
       incluye: sinGuionLargo(menu.incluye ?? ''),
-      grupos: menu.grupos.map(g => ({ nombre: sinGuionLargo(g.nombre), platos: g.platos.slice(0, 6).map(sinGuionLargo) })),
+      // Como en el panel del dueño: como mucho 5 grupos de 6 platos
+      grupos: menu.grupos.slice(0, 5).map(g => ({ nombre: sinGuionLargo(g.nombre), platos: g.platos.slice(0, 6).map(sinGuionLargo) })),
       ...(foto ? { foto } : {}),
     }
   }

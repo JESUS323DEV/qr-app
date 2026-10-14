@@ -37,6 +37,8 @@ const HORARIO_INICIAL = { dias: [1, 2, 3, 4, 5], desde: '12:00', hasta: '17:00' 
 
 // Un menú del día real trae de 3 a 5 platos por grupo; con este tope la carta siempre cabe en una pantalla
 const MAX_PLATOS = 6
+// Y como mucho 5 grupos (Primeros, Segundos, Postres...)
+const MAX_GRUPOS = 5
 
 // Precio en euros escrito a mano ("15", "15E", "14.9 euros") con el formato de la carta: "14,90 €".
 // Si no es un precio en euros (otra moneda, un texto), se deja tal cual.
@@ -100,7 +102,7 @@ function EditorMenu({ fila, alGuardar }) {
         titulo: leido.titulo || m.titulo,
         precio: leido.precio || m.precio,
         incluye: leido.incluye || m.incluye,
-        grupos: leido.grupos?.length ? leido.grupos.map(g => ({ ...g, platos: g.platos.slice(0, MAX_PLATOS) })) : m.grupos,
+        grupos: leido.grupos?.length ? leido.grupos.slice(0, MAX_GRUPOS).map(g => ({ ...g, platos: g.platos.slice(0, MAX_PLATOS) })) : m.grupos,
       }))
       // Sale abierto; el dueño lo puede ocultar y volver a leer
       setFoto({ ok: true, abierto: true, dudas: leido.dudas ?? [] })
@@ -400,14 +402,18 @@ function EditorMenu({ fila, alGuardar }) {
             )}
           </div>
         ))}
-        <button
-          type="button"
-          onClick={() => cambiar('grupos', [...menu.grupos, { nombre: '', platos: [''] }])}
-          className="flex items-center justify-center gap-[0.3rem] rounded-[0.8rem] border border-dashed border-zinc-400 py-[0.8rem] text-[0.95rem] font-semibold text-zinc-700"
-        >
-          <Plus className="h-[1rem] w-[1rem]" aria-hidden="true" />
-          Añadir grupo
-        </button>
+        {menu.grupos.length < MAX_GRUPOS ? (
+          <button
+            type="button"
+            onClick={() => cambiar('grupos', [...menu.grupos, { nombre: '', platos: [''] }])}
+            className="flex items-center justify-center gap-[0.3rem] rounded-[0.8rem] border border-dashed border-zinc-400 py-[0.8rem] text-[0.95rem] font-semibold text-zinc-700"
+          >
+            <Plus className="h-[1rem] w-[1rem]" aria-hidden="true" />
+            Añadir grupo
+          </button>
+        ) : (
+          <p className="text-center text-[0.85rem] text-zinc-500">Máximo {MAX_GRUPOS} grupos.</p>
+        )}
       </div>
 
       {/* Publicar: fijo abajo para tenerlo siempre a mano en el móvil */}

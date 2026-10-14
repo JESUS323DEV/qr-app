@@ -12,6 +12,8 @@ import { menuActivo, textoHorario } from '../lib/horarioMenu'
 import { conEdicion, useEdicion } from '../lib/ediciones'
 import CartaInmersiva from '../components/carta/CartaInmersiva'
 import CartaHistorias from '../components/carta/CartaHistorias'
+import CartaPizarra from '../components/carta/CartaPizarra'
+import CartaTicket from '../components/carta/CartaTicket'
 
 /* Carta digital (QR de la mesa), con la marca del negocio.
    Arriba una franja con foto y el nombre; debajo, fija al hacer scroll, la barra con el idioma y las pestañas
@@ -281,6 +283,24 @@ function Carta({ carta, negocio, demo = false }) {
     return (
       <>
         <CartaInmersiva carta={carta} negocio={negocio} foto={carta.foto ?? fotoDe(negocio)} />
+        {navegacion}
+      </>
+    )
+  }
+  // Diseño pizarra: la carta escrita con tiza en la pizarra del bar
+  if (carta.diseno === 'pizarra') {
+    return (
+      <>
+        <CartaPizarra carta={carta} negocio={negocio} />
+        {navegacion}
+      </>
+    )
+  }
+  // Diseño ticket: la carta como un ticket de papel, con letra de máquina de escribir
+  if (carta.diseno === 'ticket') {
+    return (
+      <>
+        <CartaTicket carta={carta} negocio={negocio} />
         {navegacion}
       </>
     )

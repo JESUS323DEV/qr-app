@@ -26,6 +26,18 @@ export const DISENOS_CARTA = {
     pestanas: 'Menú del día y Carta (cada sección es una pantalla).',
     notas: 'Necesita una buena foto por sección y pocas secciones (de 3 a 6) con pocos platos cada una (hasta 6).',
   },
+  'bar-fermin': {
+    para: 'Bares de menú, tabernas, bodegas, bares de tapas y vermut, restaurantes de cocina de casa.',
+    estilo: 'La pizarra del bar: fondo de pizarra con marco de madera, letra de tiza y precios alineados con puntitos. Sin fotos.',
+    pestanas: 'Menú del día (con el precio rodeado a mano) y Carta (todas las secciones seguidas, con atajos).',
+    notas: 'La mejor para el menú del día. No necesita fotos. Colores: bg es la pizarra (verde muy oscuro o negro), primary la madera del marco, text la tiza blanca y accent la tiza de color. Las tipografías son de tiza: no cambiarlas.',
+  },
+  'grano-lento': {
+    para: 'Cafeterías, brunch, panaderías, bocadillerías, heladerías, sitios de desayunos.',
+    estilo: 'Un ticket de papel crema con bordes en zigzag que flota sobre el color de la marca, con letra de máquina de escribir, precios con puntitos y código de barras de adorno.',
+    pestanas: 'Menú del día (o el brunch, con el precio como el Total del ticket) y Carta (una sección cada vez).',
+    notas: 'Sin fotos. Colores: primary es el fondo de la pantalla (el color fuerte de la marca), surface el papel (siempre claro), text la tinta oscura y accent la tinta de color. Las tipografías son de máquina de escribir: no cambiarlas.',
+  },
 }
 
 export const DISENOS_ASISTENTE = {

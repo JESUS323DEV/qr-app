@@ -1,12 +1,15 @@
 import almendra from './almendra'
 import pollastreDhorta from './pollastre-dhorta'
 import ajiLimon from './aji-limon'
+import barFermin from './bar-fermin'
+import granoLento from './grano-lento'
 import { getNegocio } from '../negocios'
 
-// Cartas digitales (QR de la mesa). Cada carta va con la marca de su negocio (negocios/<slug>.js)
-// y con su diseño (diseno): 'base' (franja con foto arriba), 'inmersiva' (foto a pantalla completa)
-// o 'historias' (un plato por pantalla, deslizando de lado, como las historias de Instagram).
-export const cartas = [almendra, pollastreDhorta, ajiLimon]
+// Cartas digitales (QR de la mesa). Cada carta va con la marca de su negocio (negocios/<slug>.js) o con la suya
+// propia (marca), y con su diseño (diseno): 'base' (franja con foto arriba), 'inmersiva' (foto a pantalla completa),
+// 'historias' (un plato por pantalla, deslizando de lado, como las historias de Instagram), 'pizarra'
+// (escrita con tiza en la pizarra del bar) o 'ticket' (un ticket de papel con letra de máquina de escribir).
+export const cartas = [almendra, pollastreDhorta, ajiLimon, barFermin, granoLento]
 
 export function getCarta(slug) {
   return cartas.find(c => c.slug === slug) ?? null
