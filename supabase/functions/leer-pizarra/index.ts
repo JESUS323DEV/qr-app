@@ -48,6 +48,7 @@ const INSTRUCCIONES = `Lees la foto de la pizarra o el cartel del menú del día
 - precio: el precio del menú con este formato: "14,90 €". Si no aparece, cadena vacía.
 - incluye: lo que incluye el menú si aparece (pan, bebida, postre o café...), en una frase corta. Si no aparece, cadena vacía.
 - grupos: los grupos en el orden de la pizarra (Primeros, Segundos, Postres, Entrantes...), cada uno con sus platos en el mismo orden. Si la pizarra no separa en grupos, un solo grupo llamado "Platos".
+- Un menú del día normal tiene 2 o 3 grupos con 3 a 5 platos cada uno (nunca más de 6). Muchos carteles mezclan el menú con la carta: coge solo lo que es claramente el menú del día. No metas platos con precio propio, platos "a la carta", combos ni raciones sueltas. Si has dejado platos fuera por eso, añade en dudas una sola línea: "Había más platos en el cartel que parecen de la carta; no los he puesto."
 - Escribe cada plato como está, pero con mayúscula inicial, tildes y ortografía correctas. No traduzcas ni cambies el plato.
 - No inventes platos, precios ni grupos que no estén en la foto.
 - dudas: si alguna palabra o precio no se lee con seguridad, escribe tu mejor lectura en su sitio y añade aquí una línea corta diciendo cuál es, para que el dueño lo revise. Si todo se lee bien, lista vacía.

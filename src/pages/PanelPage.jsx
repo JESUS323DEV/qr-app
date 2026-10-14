@@ -36,6 +36,16 @@ const reducirFoto = archivo =>
 // Al activar el horario: de lunes a viernes, de 12 a 17 h
 const HORARIO_INICIAL = { dias: [1, 2, 3, 4, 5], desde: '12:00', hasta: '17:00' }
 
+// Un menú del día real trae de 3 a 5 platos por grupo; con este tope la carta siempre cabe en una pantalla
+const MAX_PLATOS = 6
+
+// Precio en euros escrito a mano ("15", "15E", "14.9 euros") con el formato de la carta: "14,90 €".
+// Si no es un precio en euros (otra moneda, un texto), se deja tal cual.
+function precioOrdenado(texto = '') {
+  const m = texto.trim().match(/^(\d+)(?:[.,](\d{1,2}))?\s*(?:€|e|eur|euros?)?$/i)
+  return m ? `${m[1]},${(m[2] ?? '').padEnd(2, '0')} €` : texto.trim()
+}
+
 const MENU_VACIO = { titulo: 'Menú del día', cuando: '', precio: '', incluye: '', grupos: [{ nombre: 'Primeros', platos: [''] }] }
 
 function Etiqueta({ texto, children }) {
@@ -178,7 +188,7 @@ function EditorMenu({ fila, alGuardar }) {
         titulo: leido.titulo || m.titulo,
         precio: leido.precio || m.precio,
         incluye: leido.incluye || m.incluye,
-        grupos: leido.grupos?.length ? leido.grupos : m.grupos,
+        grupos: leido.grupos?.length ? leido.grupos.map(g => ({ ...g, platos: g.platos.slice(0, MAX_PLATOS) })) : m.grupos,
       }))
       // Sale abierto; el dueño lo puede ocultar y volver a leer
       setFoto({ ok: true, abierto: true, dudas: leido.dudas ?? [] })
@@ -226,6 +236,7 @@ function EditorMenu({ fila, alGuardar }) {
       ...menu,
       // Con horario, el "cuándo se sirve" es el del horario, para que nunca diga una cosa y haga otra
       cuando: menu.horario ? textoHorario(menu.horario) : menu.cuando,
+      precio: precioOrdenado(menu.precio),
       grupos: menu.grupos
         .map(g => ({ nombre: g.nombre.trim(), platos: g.platos.map(p => p.trim()).filter(Boolean) }))
         .filter(g => g.nombre || g.platos.length),
@@ -463,14 +474,18 @@ function EditorMenu({ fila, alGuardar }) {
                 </button>
               </div>
             ))}
-            <button
-              type="button"
-              onClick={() => cambiarGrupo(i, x => ({ ...x, platos: [...x.platos, ''] }))}
-              className="flex items-center gap-[0.3rem] justify-self-start text-[0.9rem] font-semibold text-zinc-700"
-            >
-              <Plus className="h-[1rem] w-[1rem]" aria-hidden="true" />
-              Añadir plato
-            </button>
+            {g.platos.length < MAX_PLATOS ? (
+              <button
+                type="button"
+                onClick={() => cambiarGrupo(i, x => ({ ...x, platos: [...x.platos, ''] }))}
+                className="flex items-center gap-[0.3rem] justify-self-start text-[0.9rem] font-semibold text-zinc-700"
+              >
+                <Plus className="h-[1rem] w-[1rem]" aria-hidden="true" />
+                Añadir plato
+              </button>
+            ) : (
+              <p className="text-[0.85rem] text-zinc-500">Máximo {MAX_PLATOS} platos por grupo.</p>
+            )}
           </div>
         ))}
         <button

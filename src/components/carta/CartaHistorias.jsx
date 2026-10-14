@@ -1,7 +1,6 @@
 import { useLayoutEffect, useRef, useState } from 'react'
-import { ArrowUpRight, ChevronRight } from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
 import { ALERGENOS } from '../../cartas'
-import { rutaNegocio } from '../../negocios'
 import Img from '../Img'
 
 /* Diseño de carta "historias": como las historias de Instagram, se pasa de lado.
@@ -9,12 +8,34 @@ import Img from '../Img'
    pantalla con su foto de fondo y su lista de platos. Arriba, fijos: rayitas de progreso, nombre e idioma.
    En cada pantalla, justo encima de su título, Menú del día y Carta y, en la carta, sus secciones. */
 
+// Precio del menú como en las cartas de toda la vida: los euros grandes y los céntimos pequeños y en alto.
+// Si no es un precio en euros (otra moneda, un texto), se pinta tal cual.
+function Precio({ texto = '' }) {
+  const m = texto.trim().match(/^(\d+)(?:[.,](\d{1,2}))?\s*(?:€|e|eur|euros?)?$/i)
+  return (
+    // Amarillo más vivo que el de la marca, solo aquí, y una sombra oscura suave que lo separa de la foto
+    <p className="flex shrink-0 items-start border-b-[0.07em] border-current pb-[0.08em] font-demo-heading text-[2.6rem] font-bold leading-none text-[#FFC72C] [text-shadow:0_0.05em_0.4em_rgb(0_0_0/0.45)] [@media(min-height:50rem)]:text-[3.2rem]">
+      {m ? (
+        <>
+          <span>{m[1]}</span>
+          <span className="ml-[0.08em] mt-[0.1em] text-[0.45em]">,{(m[2] ?? '').padEnd(2, '0')} €</span>
+        </>
+      ) : (
+        texto
+      )}
+    </p>
+  )
+}
+
 // Menú del día: en móviles altos (50rem de alto o más) el texto y las separaciones crecen,
 // para llenar la pantalla en vez de dejar un hueco vacío entre las pestañas y el menú
 function MenuDia({ menu }) {
   return (
     <div>
-      <h1 className="font-demo-heading text-[2rem] leading-none [@media(min-height:50rem)]:text-[2.6rem]">{menu.titulo}</h1>
+      <div className="flex items-baseline justify-between gap-[1rem]">
+        <h1 className="font-demo-heading text-[2rem] leading-none [@media(min-height:50rem)]:text-[2.6rem]">{menu.titulo}</h1>
+        <Precio texto={menu.precio} />
+      </div>
       <p className="mt-[0.3rem] text-[0.82rem] text-white/75 [@media(min-height:50rem)]:mt-[0.45rem] [@media(min-height:50rem)]:text-[0.95rem]">{menu.cuando}</p>
 
       <div className="mt-[0.9rem] grid gap-[0.75rem] [@media(min-height:50rem)]:mt-[1.3rem] [@media(min-height:50rem)]:gap-[1.1rem]">
@@ -28,10 +49,9 @@ function MenuDia({ menu }) {
         ))}
       </div>
 
-      <div className="mt-[0.9rem] flex items-end justify-between gap-[1rem] border-t border-white/20 pt-[0.7rem] [@media(min-height:50rem)]:mt-[1.3rem] [@media(min-height:50rem)]:pt-[0.9rem]">
-        <p className="text-[0.82rem] leading-[1.4] text-white/75 [@media(min-height:50rem)]:text-[0.95rem]">{menu.incluye}</p>
-        <p className="shrink-0 font-demo-heading text-[2rem] leading-none text-demo-accent [@media(min-height:50rem)]:text-[2.6rem]">{menu.precio}</p>
-      </div>
+      {menu.incluye && (
+        <p className="mt-[0.9rem] border-t border-white/20 pt-[0.7rem] text-[0.82rem] leading-[1.4] text-white/75 [@media(min-height:50rem)]:mt-[1.3rem] [@media(min-height:50rem)]:pt-[0.9rem] [@media(min-height:50rem)]:text-[0.95rem]">{menu.incluye}</p>
+      )}
     </div>
   )
 }
@@ -93,7 +113,21 @@ export default function CartaHistorias({ carta, negocio }) {
       activa ? 'bg-white text-[#141414]' : 'bg-black/40 text-white hover:bg-black/55'
     }`
 
-  // Altura a la que quedan las pestañas en el menú del día (va pegado abajo y su alto cambia con el móvil).
+  // Alto de la cabecera fija (rayitas, nombre e idioma): ningún contenido empieza por encima de ella
+  const cabecera = useRef(null)
+  const [altoCabecera, setAltoCabecera] = useState(0)
+  useLayoutEffect(() => {
+    const el = cabecera.current
+    if (!el) return
+    const medir = () => setAltoCabecera(el.offsetHeight)
+    medir()
+    const observador = new ResizeObserver(medir)
+    observador.observe(el)
+    return () => observador.disconnect()
+  }, [])
+
+  // Altura a la que quedan las pestañas en el menú del día (va pegado abajo y su alto cambia con el móvil;
+  // si es tan largo que no cabe, empieza bajo la cabecera y se desliza hacia abajo).
   // En las secciones, pestañas y título se colocan a esa misma altura para que no salten al pasar de lado.
   const bloqueMenu = useRef(null)
   const [arriba, setArriba] = useState(null)
@@ -106,7 +140,7 @@ export default function CartaHistorias({ carta, negocio }) {
     observador.observe(el)
     observador.observe(el.parentElement)
     return () => observador.disconnect()
-  }, [])
+  }, [altoCabecera])
 
   const alDeslizar = () => {
     const el = scroller.current
@@ -126,15 +160,18 @@ export default function CartaHistorias({ carta, negocio }) {
             // Sección alineada con el menú: pestañas y título a la misma altura que en el menú del día
             const alineado = p.tipo === 'seccion' && arriba !== null
             return (
-            <section
-              key={i}
-              className={`relative flex h-full w-full shrink-0 snap-start snap-always flex-col overflow-hidden px-[1.25rem] pb-[2.75rem] ${alineado ? 'justify-start' : 'justify-end'}`}
-              style={alineado ? { paddingTop: arriba } : undefined}
-            >
+            <section key={i} className="relative h-full w-full shrink-0 snap-start snap-always overflow-hidden">
               <Img src={p.foto} alt="" className="absolute inset-0 h-full w-full object-cover" />
               {/* Degradado de arriba, donde la foto se ve bien, a abajo, oscuro bajo el texto */}
               <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-black/60 via-45% to-black/90" />
-              <div ref={p.tipo === 'menu' ? bloqueMenu : undefined} className="relative">
+              {/* El contenido empieza bajo la cabecera y, si no cabe, se desliza hacia abajo; al subir se difumina
+                  en ese borde en vez de pasar por debajo del nombre. En el menú, mt-auto lo pega abajo cuando cabe
+                  (con justify-end no se podría deslizar hasta su principio). */}
+              <div
+                className="absolute inset-x-0 bottom-0 flex flex-col overflow-y-auto overscroll-contain px-[1.25rem] pb-[2.75rem] [scrollbar-width:none] [mask-image:linear-gradient(to_bottom,transparent,black_1rem)]"
+                style={{ top: altoCabecera, paddingTop: alineado ? `max(${arriba}px, 1rem)` : '1rem' }}
+              >
+              <div ref={p.tipo === 'menu' ? bloqueMenu : undefined} className={`relative ${p.tipo === 'menu' ? 'mt-auto' : ''}`}>
                 {/* Atajos justo encima del título: Menú del día y Carta y, en los platos, las secciones de la carta debajo */}
                 <nav className="mb-[1rem]">
                   <div className="flex gap-[0.35rem]">
@@ -170,6 +207,7 @@ export default function CartaHistorias({ carta, negocio }) {
                 </nav>
                 {p.tipo === 'menu' ? <MenuDia menu={carta.menuDia} /> : <Seccion seccion={p.seccion} />}
               </div>
+              </div>
 
               {/* En la primera pantalla, una flecha que invita a pasar de lado */}
               {i === 0 && pantallas.length > 1 && (
@@ -181,7 +219,7 @@ export default function CartaHistorias({ carta, negocio }) {
         </div>
 
         {/* Cabecera fija encima de las pantallas */}
-        <div className="pointer-events-none absolute inset-x-0 top-0 px-[1.25rem] pt-[0.6rem]">
+        <div ref={cabecera} className="pointer-events-none absolute inset-x-0 top-0 px-[1.25rem] pt-[0.6rem]">
           {/* Rayitas de progreso */}
           <div className="flex gap-[0.25rem]">
             {pantallas.map((_, i) => (
@@ -210,16 +248,6 @@ export default function CartaHistorias({ carta, negocio }) {
                   </button>
                 ))}
               </div>
-              {/* Enlace a la miniweb, solo si el negocio la tiene */}
-              {carta.negocio && (
-                <a
-                  href={rutaNegocio(negocio)}
-                  className="inline-flex items-center gap-[0.25rem] rounded-full bg-black/45 px-[0.7rem] py-[0.3rem] text-[0.75rem] font-semibold text-white backdrop-blur-sm"
-                >
-                  {carta.conoce ?? `Conoce ${negocio.nombre}`}
-                  <ArrowUpRight className="h-[0.8rem] w-[0.8rem]" aria-hidden="true" />
-                </a>
-              )}
             </div>
           </div>
         </div>
