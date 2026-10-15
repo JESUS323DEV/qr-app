@@ -9,6 +9,8 @@
 // - elegir:   { peticion, disenos }               → { base, motivo }
 // - rellenar: { peticion, demo, campos, tipografias } → { slug, tipografia, cambios, fotos, resumen }
 // - retocar:  { peticion, historial, campos, tipografias, tipografiaActual } → igual que rellenar
+// - copy:     { peticion, perfil, nombre, campos, carta? } → igual que rellenar. Desde Nuevo perfil: el diseño ya lo
+//             ha montado Jesús; solo se inventa el copy y busca las fotos (colores, solo si se piden)
 import Anthropic from 'npm:@anthropic-ai/sdk'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
@@ -126,7 +128,8 @@ Textos:
 - Español de España correcto, con tildes, eñes, ¿ y ¡. Si la demo está en catalán y no te piden catalán, todos los textos pasan a castellano.
 - Nunca uses guiones largos (—). Usa punto, coma o reescribe la frase.
 - Frases cortas, concretas y propias de ese negocio. Nada de frases de relleno del sector ("tu mejor versión", "calidad y profesionalidad", "una experiencia única", "pasión por...", "el lugar perfecto"...). Sin emojis ni palabras enteras en mayúsculas.
-- Respeta más o menos la longitud del texto de la demo en cada sitio: el diseño está pensado para ella. Un titular corto sigue siendo corto.
+- Escribe todos los textos de nuevo, pensados para este negocio (lo que hace, su barrio, su ambiente, su forma de hablar). No reutilices ni parafrasees los textos de la demo: solo te dicen qué va en cada sitio y cuánto cabe.
+- Cada texto tiene un máximo de caracteres (máx N en la lista de campos): nunca lo pases, o el diseño se rompe. Mejor quedarse corto que pasarse. Un titular corto sigue siendo corto.
 - Los textos de las pestañas (Inicio, Horario, Cita...) son una o dos palabras.
 
 Datos del negocio:
@@ -141,6 +144,7 @@ Colores (formato #RRGGBB):
 
 Fotos:
 - Para cada foto que haya que cambiar, una búsqueda para Unsplash en inglés, concreta y visual, de 3 a 6 palabras (por ejemplo "barber cutting hair warm light" o "peruvian ceviche plate top view"). Las fotos de una ficha tienen que verse del mismo negocio: misma luz y estilo.
+- Cada búsqueda lleva SIEMPRE el tipo de negocio o lo que se ve en él, en inglés ("barbershop", "barber trimming beard", "nail salon", "bakery pastries"...), más el estilo que piden ("bright", "minimal", "natural light", "dark moody"...). Nunca búsquedas genéricas como "bright interior" o "warm light", que devuelven locales de cualquier cosa.
 
 Tipografía: elige una de la lista por su id, o deja tipografia vacía para no cambiarla.
 
@@ -162,7 +166,7 @@ resumen: una o dos frases en castellano diciendo qué has hecho, sin guiones lar
 const INSTRUCCIONES = {
   elegir: `${REGLAS}
 
-Ahora te piden una página nueva del tipo indicado. Elige la demo de la que partir. Mira para qué negocios va bien cada una, su estilo, sus pestañas y sus notas, y elige la que mejor encaje con el negocio y con lo que piden. Si piden una demo concreta, esa.
+Ahora te piden una página nueva del tipo indicado. Elige la demo de la que partir, SOLO por el tipo de negocio y sus pestañas (por ejemplo: una barbería parte de la de barbería, con sus precios y su cita; una pastelería, de la de encargos). La demo solo aporta el contenido: el aspecto (diseño de arriba, colores, claro u oscuro, tipografía) se cambia después, así que nunca elijas ni descartes una demo por sus colores o su estilo. Si piden una demo concreta, esa.
 - base: el slug de la demo elegida, exactamente como está en la lista.
 - motivo: una frase corta en castellano de por qué, sin guiones largos.`,
 
@@ -172,6 +176,18 @@ Ahora creas la página nueva a partir de la demo elegida. Te paso sus campos con
 - slug: la dirección de la página, a partir del nombre del negocio, en minúsculas, sin tildes y con guiones (por ejemplo "peluqueria-ranita").
 - cambios: solo campos de la lista que no sean fotos, con su ruta exacta y el valor nuevo.
 - fotos: solo campos de foto de la lista, con su ruta exacta y la búsqueda.`,
+
+  copy: `${REGLAS}
+
+Ahora Jesús ya ha montado el diseño de la página nueva (diseño de arriba, pestañas, colores y tipografía) y te cuenta cómo es el negocio. Tú solo te inventas el copy y buscas las fotos, con lo que te cuenta. Te paso los campos con su valor actual (y, si es una carta, su carta y su menú del día).
+- El nombre del negocio es el que te paso, exactamente igual: no lo cambies ni lo traduzcas. Los datos que te dé (teléfono, dirección, horario, precios, platos, servicios) van tal cual.
+- Escribe de nuevo todos los textos (lema, titulares, textos de las pestañas, servicios, botones...) para este negocio, con el tono que te pida.
+- Colores: no los toques, salvo que la petición pida cambiarlos de forma explícita ("más oscuro", "pon tonos verdes"...). Entonces, solo los que pide.
+- tipografia, diseno y barra: siempre vacíos (eso ya lo ha elegido Jesús).
+- Si es una carta, rehaz también la carta entera (secciones) y el menú del día (menu).
+- slug: vacío.
+- cambios: solo campos de la lista que no sean fotos, con su ruta exacta y el valor nuevo.
+- fotos: todas las fotos de la lista, salvo las que ya encajen con el negocio, con su ruta exacta y la búsqueda.`,
 
   retocar: `${REGLAS}
 
@@ -184,7 +200,7 @@ Ahora retocas una página que ya existe. Te paso lo que se ha pedido antes, la p
 // Texto que se manda a Claude en cada paso, con los datos que manda el panel
 function mensaje(paso: string, d: any): string {
   const lista = (campos: any[]) =>
-    campos.map(c => `${c.ruta} | ${c.etiqueta} | ${c.clase}${c.clase === 'foto' ? '' : ` | ${c.valor}`}`).join('\n')
+    campos.map(c => `${c.ruta} | ${c.etiqueta} | ${c.clase}${c.max ? ` | máx ${c.max}` : ''}${c.clase === 'foto' ? '' : ` | ${c.valor}`}`).join('\n')
   const tipografias = (t: any[]) => t.map(x => `${x.id}: ${x.nombre}. ${x.estilo}`).join('\n')
   // En las cartas: su carta y su menú del día ahora mismo, y los ids de alérgenos que se pueden usar
   // En las fichas: los diseños de arriba y los estilos de pestañas que puede elegir, y los que tiene ahora
@@ -202,15 +218,21 @@ function mensaje(paso: string, d: any): string {
       .join('\n')
     return `Tipo de página: ${d.perfil ?? 'ficha'}\n\nPetición:\n${d.peticion}\n\nDemos:\n${disenos}`
   }
+  if (paso === 'copy') {
+    const extra = d.perfil === 'miniweb'
+      ? '\n\nEs una miniweb: adapta también las páginas de menú (menú del día y carta, con platos y precios de ese tipo de negocio si no te los dan), horario y reservas.'
+      : ''
+    return `Tipo de página: ${d.perfil ?? 'ficha'}${extra}\n\nNombre del negocio: ${d.nombre}\n\nLo que cuenta Jesús del negocio:\n${d.peticion}\n\nCampos (ruta | qué es | tipo | máx caracteres | texto de ejemplo):\n${lista(d.campos)}${carta}`
+  }
   if (paso === 'rellenar') {
     // En una miniweb también se rellenan el menú del día y la carta con lo que den (o platos creíbles del tipo de cocina)
     const extra = d.perfil === 'miniweb'
       ? '\n\nEs una miniweb: adapta también las páginas de menú (menú del día y carta, con platos y precios de ese tipo de cocina si no te los dan), horario y reservas.'
       : ''
-    return `Tipo de página: ${d.perfil ?? 'ficha'}${extra}\n\nPetición:\n${d.peticion}\n\nDemo elegida: ${d.demo.slug} (${d.demo.nombre}, ${d.demo.sector}). ${d.demo.estilo}\n\nCampos (ruta | qué es | tipo | valor actual):\n${lista(d.campos)}${carta}${piezas}\n\nTipografías:\n${tipografias(d.tipografias)}`
+    return `Tipo de página: ${d.perfil ?? 'ficha'}${extra}\n\nPetición:\n${d.peticion}\n\nDemo elegida: ${d.demo.slug} (${d.demo.nombre}, ${d.demo.sector}). ${d.demo.estilo}\n\nCampos (ruta | qué es | tipo | máx caracteres | texto de la demo):\n${lista(d.campos)}${carta}${piezas}\n\nTipografías:\n${tipografias(d.tipografias)}`
   }
   const antes = d.historial?.length ? d.historial.map((h: string) => `- ${h}`).join('\n') : '(nada)'
-  return `Tipo de página: ${d.perfil ?? 'ficha'}\n\nPedido antes:\n${antes}\n\nPetición nueva:\n${d.peticion}\n\nTipografía actual: ${d.tipografiaActual || 'la de la demo'}\n\nCampos (ruta | qué es | tipo | valor actual):\n${lista(d.campos)}${carta}${piezas}\n\nTipografías:\n${tipografias(d.tipografias)}`
+  return `Tipo de página: ${d.perfil ?? 'ficha'}\n\nPedido antes:\n${antes}\n\nPetición nueva:\n${d.peticion}\n\nTipografía actual: ${d.tipografiaActual || 'la de la demo'}\n\nCampos (ruta | qué es | tipo | máx caracteres | texto de la demo):\n${lista(d.campos)}${carta}${piezas}\n\nTipografías:\n${tipografias(d.tipografias)}`
 }
 
 Deno.serve(async req => {

@@ -1,8 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Phone } from 'lucide-react'
 import Img from '../components/Img'
 import useVueltaPestanas from '../lib/useVueltaPestanas'
 import BotonCompartir from '../components/BotonCompartir'
+import Escena, { fotoDeRespaldo, fotosDe, tipoComun } from '../fichas/escenas'
+import BarraPestanas from '../fichas/barras'
 
 /* Editorial (adaptado del Apetece de platform). La foto grande cambia según la pestaña:
    - platos: las fotos van pasando solas con una cortina de tiras.
@@ -10,7 +12,10 @@ import BotonCompartir from '../components/BotonCompartir'
    - horario: foto fija con el horario encima.
    - reservar: foto fija con un botón para reservar.
    Las pestañas solo cambian al tocarlas.
-   hero: pestanas[{ tipo, texto, ... }] */
+   Hero por piezas: conserva sus escenas propias (la cortina de tiras, el texto abajo con degradado) para las
+   pestañas comunes (fotos, horario, contacto, ubicación) y usa la pieza común para precios; la barra es una
+   pieza (hero.barra; la suya, el índice de revista).
+   hero: barra?, pestanas[{ tipo, texto, ... }] */
 
 const TIRAS = 6
 const ANCHO_TIRA = 100 / TIRAS + 0.3 // un pelín de solape para que no se vean costuras
@@ -39,7 +44,8 @@ function Pie({ children }) {
 }
 
 function EscenaPlatos({ pestana, activa }) {
-  const opciones = pestana.opciones ?? []
+  // Las fotos de la pestaña: las de Almendra (opciones, con su plato) o las de cualquier otra demo
+  const opciones = pestana.opciones?.length ? pestana.opciones : fotosDe(pestana).map(f => ({ foto: f.src, plato: f.etiqueta }))
   const [actual, setActual] = useState(0)
   const [entrante, setEntrante] = useState(null)
   const [play, setPlay] = useState(false)
@@ -155,14 +161,14 @@ function EscenaUbicacion({ pestana, cargar }) {
   )
 }
 
-function EscenaHorario({ pestana }) {
+function EscenaHorario({ pestana, respaldo }) {
   return (
     <>
-      <FotoConVelo src={pestana.foto} alt="" />
+      <FotoConVelo src={pestana.foto ?? respaldo} alt="" />
       <Pie>
         <h2 className={TITULO}>{pestana.titulo}</h2>
         <dl className="mt-[0.4rem] grid gap-[0.15rem] text-[0.9rem]">
-          {pestana.lineas.map(l => (
+          {(pestana.lineas ?? []).map(l => (
             <div key={l.dias} className="flex flex-wrap gap-x-[0.5rem]">
               <dt className="whitespace-nowrap font-semibold">{l.dias}</dt>
               <dd className="whitespace-nowrap text-white/85">{l.horas}</dd>
@@ -174,12 +180,13 @@ function EscenaHorario({ pestana }) {
   )
 }
 
-function EscenaReservar({ pestana }) {
+function EscenaReservar({ pestana, respaldo }) {
   return (
     <>
-      <FotoConVelo src={pestana.foto} alt="" />
+      <FotoConVelo src={pestana.foto ?? respaldo} alt="" />
       <Pie>
         <h2 className={TITULO}>{pestana.titulo}</h2>
+        {pestana.texto_encargo && <p className="mt-[0.3rem] max-w-[18rem] text-[0.85rem] leading-[1.35] text-white/85">{pestana.texto_encargo}</p>}
         <a
           href={pestana.url}
           target="_blank"
@@ -203,14 +210,18 @@ function EscenaReservar({ pestana }) {
   )
 }
 
+// Sus escenas propias, por tipo común (las demás, como precios, salen con la pieza común)
 const ESCENAS = {
-  platos: EscenaPlatos,
+  fotos: EscenaPlatos,
   horario: EscenaHorario,
-  reservar: EscenaReservar,
+  contacto: EscenaReservar,
 }
 
-export default function HeroEditorial({ hero, nombre, lema }) {
-  const pestanas = hero.pestanas ?? []
+// sinBarra: sin barra de pestañas, cuando hace de portada de una miniweb (la miniweb lleva su propio menú)
+export default function HeroEditorial({ hero, nombre, lema, sinBarra = false }) {
+  // Solo las pestañas que sabe pintar (las comunes)
+  const pestanas = useMemo(() => (hero.pestanas ?? []).filter(p => tipoComun(p.tipo)), [hero.pestanas])
+  const respaldo = fotoDeRespaldo(pestanas)
   const [activa, setActiva] = useState(0)
   // El mapa se carga desde el principio, en segundo plano, para que esté listo cuando la vuelta llegue a él
   const [mapaPedido, setMapaPedido] = useState(true)
@@ -219,7 +230,7 @@ export default function HeroEditorial({ hero, nombre, lema }) {
   const tocar = i => {
     parar()
     setActiva(i)
-    if (pestanas[i].tipo === 'ubicacion') setMapaPedido(true)
+    if (tipoComun(pestanas[i].tipo) === 'ubicacion') setMapaPedido(true)
   }
 
   return (
@@ -228,16 +239,21 @@ export default function HeroEditorial({ hero, nombre, lema }) {
       {/* La foto ocupa el alto que sobra, para que todo quepa en una pantalla */}
       <div className="relative min-h-[12.5rem] flex-1 overflow-hidden bg-demo-surface">
         {pestanas.map((p, i) => {
-          const Escena = ESCENAS[p.tipo]
+          const tipo = tipoComun(p.tipo)
+          const Propia = ESCENAS[tipo]
           return (
             <div
-              key={p.tipo}
+              key={`${p.tipo}-${i}`}
               aria-hidden={i !== activa}
               className={`absolute inset-0 transition-opacity duration-500 ${i === activa ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
             >
-              {p.tipo === 'ubicacion'
-                ? <EscenaUbicacion pestana={p} cargar={mapaPedido} />
-                : <Escena pestana={p} activa={i === activa && !enVuelta} />}
+              {tipo === 'ubicacion' ? (
+                <EscenaUbicacion pestana={p} cargar={mapaPedido} />
+              ) : Propia ? (
+                <Propia pestana={p} activa={i === activa && !enVuelta} respaldo={respaldo} />
+              ) : (
+                <Escena pestana={p} forma="foto" info="abajo" activa={i === activa && !enVuelta} cargar={mapaPedido} respaldo={respaldo} />
+              )}
             </div>
           )
         })}
@@ -245,40 +261,21 @@ export default function HeroEditorial({ hero, nombre, lema }) {
         {/* Marca del negocio arriba (en el mapa se oculta para no pisarlo) */}
         <div
           className={`pointer-events-none absolute inset-x-0 top-0 bg-gradient-to-b from-black/55 to-transparent px-[1.25rem] pb-[2.5rem] pt-[1.1rem] text-white transition-opacity duration-500 ${
-            pestanas[activa]?.tipo === 'ubicacion' ? 'opacity-0' : 'opacity-100'
+            tipoComun(pestanas[activa]?.tipo) === 'ubicacion' ? 'opacity-0' : 'opacity-100'
           }`}
         >
           <p className="font-demo-heading text-[1.6rem] leading-none">{nombre}</p>
           {lema && <p className="mt-[0.3rem] text-[0.85rem] text-white/80">{lema}</p>}
           {/* Compartir, en todas las pestañas menos en la del mapa (ahí la marca se oculta) */}
-          {pestanas[activa]?.tipo !== 'ubicacion' && <BotonCompartir titulo={nombre} className="pointer-events-auto mt-[0.6rem]" />}
+          {tipoComun(pestanas[activa]?.tipo) !== 'ubicacion' && <BotonCompartir titulo={nombre} className="pointer-events-auto mt-[0.6rem]" />}
         </div>
       </div>
 
-      <div className="px-[1.25rem] pt-[1.1rem]">
-        {/* Pestañas como el índice de una revista: la activa en negrita con una raya encima, del ancho justo de la palabra */}
-        <div className="grid border-t border-demo-text/15" style={{ gridTemplateColumns: `repeat(${pestanas.length}, minmax(0, 1fr))` }}>
-          {pestanas.map((p, i) => (
-            <button
-              key={p.tipo}
-              type="button"
-              aria-pressed={i === activa}
-              onClick={() => tocar(i)}
-              className={`-mt-px pb-[0.3rem] text-center text-[0.85rem] transition-colors duration-300 ${
-                i === activa ? 'font-bold text-demo-text' : 'font-medium text-demo-muted hover:text-demo-text'
-              }`}
-            >
-              <span
-                className={`inline-block border-t-[0.15rem] pt-[0.6rem] transition-colors duration-300 ${
-                  i === activa ? 'border-demo-text' : 'border-transparent'
-                }`}
-              >
-                {p.texto}
-              </span>
-            </button>
-          ))}
+      {!sinBarra && (
+        <div className="px-[1.25rem] pt-[1.1rem]">
+          <BarraPestanas estilo={hero.barra ?? 'revista'} pestanas={pestanas} activa={activa} tocar={tocar} />
         </div>
-      </div>
+      )}
     </div>
   )
 }

@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Phone } from 'lucide-react'
 import Img from '../components/Img'
 import useVueltaPestanas from '../lib/useVueltaPestanas'
 import BotonCompartir from '../components/BotonCompartir'
+import Escena, { fotoDeRespaldo, fotosDe, tipoComun } from '../fichas/escenas'
+import BarraPestanas from '../fichas/barras'
 
 /* Fullbleed (adaptado de platform). Foto a todo el ancho con velo oscuro y la marca arriba.
    Pestañas en una barra segmentada (solo cambian al tocarlas):
@@ -11,7 +13,10 @@ import BotonCompartir from '../components/BotonCompartir'
    - ubicacion: el mapa (se carga la primera vez que se toca) con el contacto encima.
    - horario: foto fija con el horario encima.
    - cita: foto fija con un botón para pedir cita.
-   hero: pestanas[{ tipo, texto, ... }] */
+   Hero por piezas: conserva sus escenas propias para las pestañas comunes (fotos, horario, contacto, ubicación)
+   y usa la pieza común para precios; la barra es una pieza (hero.barra; la suya, la segmentada). Los esmaltes
+   solo salen si la pestaña de fotos los trae (Laca).
+   hero: barra?, titulo?, destacado?, pestanas[{ tipo, texto, ... }] */
 
 const TURNO_MS = 4500
 
@@ -23,8 +28,9 @@ function Abajo({ children }) {
   return <div className="absolute inset-x-0 bottom-0 px-[1.25rem] pb-[1rem] text-white">{children}</div>
 }
 
-function EscenaDisenos({ pestana, activa }) {
-  const fotos = pestana.fotos ?? []
+function EscenaDisenos({ pestana, activa, titular }) {
+  // Las fotos de cualquier demo (fotos u opciones)
+  const fotos = fotosDe(pestana)
   const esmaltes = pestana.esmaltes ?? []
   const [actual, setActual] = useState(0)
   // El primer esmalte sale elegido al abrir
@@ -51,11 +57,11 @@ function EscenaDisenos({ pestana, activa }) {
       <Velo />
       <Abajo>
         <h1 className="font-demo-heading text-[clamp(2.5rem,2rem+2.4vw,3.2rem)] leading-[0.98] tracking-tight">
-          <span className="transition-colors duration-500" style={{ color: tinte }}>{pestana.titulo}</span>
-          {pestana.destacado && (
+          <span className="transition-colors duration-500" style={{ color: tinte }}>{titular.titulo}</span>
+          {titular.destacado && (
             <>
               <br />
-              <em className="font-normal italic">{pestana.destacado}</em>
+              <em className="font-normal italic">{titular.destacado}</em>
             </>
           )}
         </h1>
@@ -106,15 +112,15 @@ function EscenaUbicacion({ pestana, cargar }) {
   )
 }
 
-function EscenaHorario({ pestana }) {
+function EscenaHorario({ pestana, respaldo }) {
   return (
     <>
-      <Img src={pestana.foto} alt="" className="absolute inset-0 h-full w-full object-cover" />
+      <Img src={pestana.foto ?? respaldo} alt="" className="absolute inset-0 h-full w-full object-cover" />
       <Velo />
       <Abajo>
         <p className="font-demo-heading text-[2rem] italic leading-none">{pestana.titulo}</p>
         <dl className="mt-[0.5rem] grid gap-[0.15rem] text-[0.9rem]">
-          {pestana.lineas.map(l => (
+          {(pestana.lineas ?? []).map(l => (
             <div key={l.dias} className="flex flex-wrap gap-x-[0.5rem]">
               <dt className="whitespace-nowrap font-semibold">{l.dias}</dt>
               <dd className="whitespace-nowrap text-white/80">{l.horas}</dd>
@@ -126,15 +132,16 @@ function EscenaHorario({ pestana }) {
   )
 }
 
-function EscenaCita({ pestana }) {
+function EscenaCita({ pestana, respaldo }) {
   return (
     <>
-      <Img src={pestana.foto} alt="" className="absolute inset-0 h-full w-full object-cover" />
+      <Img src={pestana.foto ?? respaldo} alt="" className="absolute inset-0 h-full w-full object-cover" />
       <Velo />
       {/* La foto de cita es clara: un velo más para que se lean el botón y el teléfono */}
       <div className="pointer-events-none absolute inset-0 bg-demo-text/35" />
       <Abajo>
         <p className="font-demo-heading text-[2rem] italic leading-none">{pestana.titulo}</p>
+        {pestana.texto_encargo && <p className="mt-[0.35rem] max-w-[18rem] text-[0.85rem] leading-[1.35] text-white/85">{pestana.texto_encargo}</p>}
         <a
           href={pestana.url}
           target="_blank"
@@ -148,7 +155,7 @@ function EscenaCita({ pestana }) {
             href={`tel:${pestana.telefono.replace(/\s/g, '')}`}
             className="mt-[0.55rem] flex items-center gap-[0.35rem] text-[0.78rem] text-white/80"
           >
-            o por teléfono
+            {pestana.texto_telefono ?? 'o por teléfono'}
             <Phone className="h-[0.8rem] w-[0.8rem]" aria-hidden="true" />
             <span className="underline underline-offset-[0.2em]">{pestana.telefono}</span>
           </a>
@@ -158,14 +165,21 @@ function EscenaCita({ pestana }) {
   )
 }
 
+// Sus escenas propias, por tipo común (las demás, como precios, salen con la pieza común)
 const ESCENAS = {
-  disenos: EscenaDisenos,
+  fotos: EscenaDisenos,
   horario: EscenaHorario,
-  cita: EscenaCita,
+  contacto: EscenaCita,
 }
 
-export default function HeroFullbleed({ hero, nombre }) {
-  const pestanas = hero.pestanas ?? []
+// sinBarra: sin barra de pestañas, cuando hace de portada de una miniweb (la miniweb lleva su propio menú)
+export default function HeroFullbleed({ hero, nombre, sinBarra = false }) {
+  // Solo las pestañas que sabe pintar (las comunes)
+  const pestanas = useMemo(() => (hero.pestanas ?? []).filter(p => tipoComun(p.tipo)), [hero.pestanas])
+  const respaldo = fotoDeRespaldo(pestanas)
+  // Titular: el de la pestaña de fotos (Laca) o el del hero (otras demos)
+  const deFotos = pestanas.find(p => tipoComun(p.tipo) === 'fotos')
+  const titular = { titulo: deFotos?.titulo ?? hero.titulo, destacado: deFotos?.destacado ?? hero.destacado ?? hero.brillo }
   const [activa, setActiva] = useState(0)
   // El mapa se carga desde el principio, en segundo plano, para que esté listo cuando la vuelta llegue a él
   const [mapaPedido, setMapaPedido] = useState(true)
@@ -174,10 +188,10 @@ export default function HeroFullbleed({ hero, nombre }) {
   const tocar = i => {
     parar()
     setActiva(i)
-    if (pestanas[i].tipo === 'ubicacion') setMapaPedido(true)
+    if (tipoComun(pestanas[i].tipo) === 'ubicacion') setMapaPedido(true)
   }
 
-  const enMapa = pestanas[activa]?.tipo === 'ubicacion'
+  const enMapa = tipoComun(pestanas[activa]?.tipo) === 'ubicacion'
 
   return (
     // Cualquier toque en el hero para la vuelta de presentación
@@ -185,16 +199,21 @@ export default function HeroFullbleed({ hero, nombre }) {
       {/* La foto ocupa el alto que sobra, para que todo quepa en una pantalla */}
       <div className="relative min-h-[14rem] flex-1 overflow-hidden bg-demo-text">
         {pestanas.map((p, i) => {
-          const Escena = ESCENAS[p.tipo]
+          const tipo = tipoComun(p.tipo)
+          const Propia = ESCENAS[tipo]
           return (
             <div
-              key={p.tipo}
+              key={`${p.tipo}-${i}`}
               aria-hidden={i !== activa}
               className={`absolute inset-0 transition-opacity duration-700 ${i === activa ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
             >
-              {p.tipo === 'ubicacion'
-                ? <EscenaUbicacion pestana={p} cargar={mapaPedido} />
-                : <Escena pestana={p} activa={i === activa && !enVuelta} />}
+              {tipo === 'ubicacion' ? (
+                <EscenaUbicacion pestana={p} cargar={mapaPedido} />
+              ) : Propia ? (
+                <Propia pestana={p} activa={i === activa && !enVuelta} respaldo={respaldo} titular={titular} />
+              ) : (
+                <Escena pestana={p} forma="foto" info="abajo" activa={i === activa && !enVuelta} cargar={mapaPedido} respaldo={respaldo} />
+              )}
             </div>
           )
         })}
@@ -206,24 +225,11 @@ export default function HeroFullbleed({ hero, nombre }) {
         </div>
       </div>
 
-      {/* Pestañas en barra segmentada, propias de este diseño */}
-      <div className="px-[1.25rem] pt-[0.9rem]">
-        <div className="flex rounded-full bg-demo-surface p-[0.25rem]">
-          {pestanas.map((p, i) => (
-            <button
-              key={p.tipo}
-              type="button"
-              aria-pressed={i === activa}
-              onClick={() => tocar(i)}
-              className={`flex-1 rounded-full py-[0.55rem] text-[0.8rem] font-semibold transition-colors duration-300 ${
-                i === activa ? 'bg-demo-text text-white' : 'text-demo-muted hover:text-demo-text'
-              }`}
-            >
-              {p.texto}
-            </button>
-          ))}
+      {!sinBarra && (
+        <div className="px-[1.25rem] pt-[0.9rem]">
+          <BarraPestanas estilo={hero.barra ?? 'segmentada'} pestanas={pestanas} activa={activa} tocar={tocar} />
         </div>
-      </div>
+      )}
     </div>
   )
 }

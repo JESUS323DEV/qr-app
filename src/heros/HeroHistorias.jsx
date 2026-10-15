@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Phone } from 'lucide-react'
 import Img from '../components/Img'
 import BotonCompartir from '../components/BotonCompartir'
 import useVueltaPestanas from '../lib/useVueltaPestanas'
+import { fotoDeRespaldo, fotosDe, tipoComun } from '../fichas/escenas'
+import BarraPestanas from '../fichas/barras'
 
 /* Historias (de la carta de Ají Limón). Todo el hero es una foto a pantalla, como las historias de Instagram:
    arriba la marca y compartir; abajo, sobre la foto oscurecida, lo que cuenta cada pestaña y las pestañas en pastillas.
@@ -12,7 +14,10 @@ import useVueltaPestanas from '../lib/useVueltaPestanas'
    - horario: foto fija con el horario.
    - reservar: foto fija con el botón de reservar y, si hay, el teléfono.
    - ubicacion: el mapa con la dirección.
-   hero: pestanas[{ tipo, texto, ... }] */
+   - precios: foto fija con la lista de servicios y su precio.
+   Hero por piezas: pinta todas las pestañas comunes con su estilo (platos son las fotos, reservar el contacto);
+   la barra es una pieza (hero.barra; la suya, las pastillas sobre la foto).
+   hero: barra?, pestanas[{ tipo, texto, ... }] */
 
 const HISTORIA_MS = 5000
 
@@ -22,7 +27,8 @@ function Velo() {
 }
 
 function EscenaPlatos({ pestana, activa }) {
-  const fotos = pestana.fotos ?? []
+  // Las fotos de cualquier demo (fotos u opciones); la frase, si la trae
+  const fotos = fotosDe(pestana)
   const [actual, setActual] = useState(0)
 
   // Pasa sola a la siguiente historia; tocar reinicia la cuenta
@@ -33,12 +39,13 @@ function EscenaPlatos({ pestana, activa }) {
   }, [activa, actual, fotos.length])
 
   const plato = fotos[actual]
+  const frase = pestana.fotos?.[actual]?.frase
 
   return (
     <>
       {fotos.map((f, i) => (
         <div key={i} className={`absolute inset-0 transition-opacity duration-500 ${i === actual ? 'opacity-100' : 'opacity-0'}`}>
-          <Img src={f.src} alt={f.plato ?? ''} className="h-full w-full object-cover" />
+          <Img src={f.src} alt={f.alt ?? ''} className="h-full w-full object-cover" />
         </div>
       ))}
       <Velo />
@@ -61,25 +68,25 @@ function EscenaPlatos({ pestana, activa }) {
       </div>
 
       {/* Plato que se ve */}
-      {plato && (
+      {plato?.etiqueta && (
         <div className="pointer-events-none absolute inset-x-0 bottom-[4.25rem] px-[1.25rem]">
-          <p className="font-demo-heading text-[clamp(2rem,1.6rem+2vw,2.5rem)] leading-[1]">{plato.plato}</p>
-          {plato.frase && <p className="mt-[0.35rem] text-[0.92rem] text-white/80">{plato.frase}</p>}
+          <p className="font-demo-heading text-[clamp(2rem,1.6rem+2vw,2.5rem)] leading-[1]">{plato.etiqueta}</p>
+          {frase && <p className="mt-[0.35rem] text-[0.92rem] text-white/80">{frase}</p>}
         </div>
       )}
     </>
   )
 }
 
-function EscenaHorario({ pestana }) {
+function EscenaHorario({ pestana, respaldo }) {
   return (
     <>
-      <Img src={pestana.foto} alt="" className="absolute inset-0 h-full w-full object-cover" />
+      <Img src={pestana.foto ?? respaldo} alt="" className="absolute inset-0 h-full w-full object-cover" />
       <Velo />
       <div className="absolute inset-x-0 bottom-[4.25rem] px-[1.25rem]">
         <p className="font-demo-heading text-[2rem] leading-none">{pestana.titulo}</p>
         <dl className="mt-[0.6rem] grid gap-[0.2rem] text-[0.9rem]">
-          {pestana.lineas.map(l => (
+          {(pestana.lineas ?? []).map(l => (
             <div key={l.dias} className="flex flex-wrap gap-x-[0.5rem]">
               <dt className="font-semibold text-demo-accent">{l.dias}</dt>
               <dd className="text-white/85">{l.horas}</dd>
@@ -91,22 +98,26 @@ function EscenaHorario({ pestana }) {
   )
 }
 
-function EscenaReservar({ pestana }) {
+// Contacto (reservar, y también cita, encargos... de otras demos)
+function EscenaReservar({ pestana, respaldo }) {
   return (
     <>
-      <Img src={pestana.foto} alt="" className="absolute inset-0 h-full w-full object-cover" />
+      <Img src={pestana.foto ?? respaldo} alt="" className="absolute inset-0 h-full w-full object-cover" />
       <Velo />
       <div className="absolute inset-x-0 bottom-[4.25rem] px-[1.25rem]">
         <p className="font-demo-heading text-[2rem] leading-none">{pestana.titulo}</p>
+        {pestana.texto_encargo && <p className="mt-[0.4rem] text-[0.88rem] text-white/80">{pestana.texto_encargo}</p>}
         <div className="mt-[0.8rem] flex flex-wrap items-center gap-x-[1rem] gap-y-[0.5rem]">
-          <a
-            href={pestana.url}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex min-h-[2.6rem] items-center rounded-full bg-demo-primary px-[1.2rem] text-[0.95rem] font-semibold text-white"
-          >
-            {pestana.boton}
-          </a>
+          {pestana.url && pestana.boton && (
+            <a
+              href={pestana.url}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex min-h-[2.6rem] items-center rounded-full bg-demo-primary px-[1.2rem] text-[0.95rem] font-semibold text-white"
+            >
+              {pestana.boton}
+            </a>
+          )}
           {pestana.telefono && (
             <a href={`tel:${pestana.telefono.replace(/\s/g, '')}`} className="flex items-center gap-[0.35rem] text-[0.85rem] text-white/85">
               <Phone className="h-[0.85rem] w-[0.85rem]" aria-hidden="true" />
@@ -114,6 +125,27 @@ function EscenaReservar({ pestana }) {
             </a>
           )}
         </div>
+      </div>
+    </>
+  )
+}
+
+// Precios (de otras demos): la lista sobre la foto, con el precio en el color de acento
+function EscenaPrecios({ pestana, respaldo }) {
+  return (
+    <>
+      <Img src={pestana.foto ?? respaldo} alt="" className="absolute inset-0 h-full w-full object-cover" />
+      <Velo />
+      <div className="absolute inset-x-0 bottom-[4.25rem] px-[1.25rem]">
+        {pestana.titulo && <p className="font-demo-heading text-[2rem] leading-none">{pestana.titulo}</p>}
+        <ul className="mt-[0.6rem] grid gap-[0.2rem] text-[0.9rem]">
+          {(pestana.servicios ?? []).map(s => (
+            <li key={s.nombre} className="flex items-baseline justify-between gap-[1rem]">
+              <span className="text-white/90">{s.nombre}</span>
+              <span className="shrink-0 font-semibold text-demo-accent">{s.precio}</span>
+            </li>
+          ))}
+        </ul>
       </div>
     </>
   )
@@ -138,14 +170,19 @@ function EscenaUbicacion({ pestana, cargar }) {
   )
 }
 
+// Por tipo común: todas las pestañas comunes con su estilo propio
 const ESCENAS = {
-  platos: EscenaPlatos,
+  fotos: EscenaPlatos,
   horario: EscenaHorario,
-  reservar: EscenaReservar,
+  contacto: EscenaReservar,
+  precios: EscenaPrecios,
 }
 
-export default function HeroHistorias({ hero, nombre, lema }) {
-  const pestanas = hero.pestanas ?? []
+// sinBarra: sin barra de pestañas, cuando hace de portada de una miniweb (la miniweb lleva su propio menú)
+export default function HeroHistorias({ hero, nombre, lema, sinBarra = false }) {
+  // Solo las pestañas que sabe pintar (las comunes)
+  const pestanas = useMemo(() => (hero.pestanas ?? []).filter(p => tipoComun(p.tipo)), [hero.pestanas])
+  const respaldo = fotoDeRespaldo(pestanas)
   const [activa, setActiva] = useState(0)
   // El mapa se carga desde el principio, en segundo plano, para que esté listo cuando la vuelta llegue a él
   const [mapaPedido, setMapaPedido] = useState(true)
@@ -154,26 +191,27 @@ export default function HeroHistorias({ hero, nombre, lema }) {
   const tocar = i => {
     parar()
     setActiva(i)
-    if (pestanas[i].tipo === 'ubicacion') setMapaPedido(true)
+    if (tipoComun(pestanas[i].tipo) === 'ubicacion') setMapaPedido(true)
   }
 
-  const enMapa = pestanas[activa]?.tipo === 'ubicacion'
-  const enPlatos = pestanas[activa]?.tipo === 'platos'
+  const enMapa = tipoComun(pestanas[activa]?.tipo) === 'ubicacion'
+  const enPlatos = tipoComun(pestanas[activa]?.tipo) === 'fotos'
 
   return (
     // Cualquier toque en el hero para la vuelta de presentación
     <div className="relative flex min-h-[20rem] flex-1 flex-col overflow-hidden bg-black text-white" onPointerDown={parar}>
       {pestanas.map((p, i) => {
-        const Escena = ESCENAS[p.tipo]
+        const tipo = tipoComun(p.tipo)
+        const Escena = ESCENAS[tipo]
         return (
           <div
-            key={p.tipo}
+            key={`${p.tipo}-${i}`}
             aria-hidden={i !== activa}
             className={`absolute inset-0 transition-opacity duration-700 ${i === activa ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
           >
-            {p.tipo === 'ubicacion'
+            {tipo === 'ubicacion'
               ? <EscenaUbicacion pestana={p} cargar={mapaPedido} />
-              : <Escena pestana={p} activa={i === activa && !enVuelta} />}
+              : <Escena pestana={p} activa={i === activa && !enVuelta} respaldo={respaldo} />}
           </div>
         )
       })}
@@ -192,22 +230,12 @@ export default function HeroHistorias({ hero, nombre, lema }) {
         </div>
       </div>
 
-      {/* Pestañas en pastillas, abajo sobre la foto (la activa en blanco, como en la carta) */}
-      <nav className="relative mt-auto grid grid-cols-4 gap-[0.3rem] px-[1.25rem] pb-[1rem]">
-        {pestanas.map((p, i) => (
-          <button
-            key={p.tipo}
-            type="button"
-            aria-pressed={i === activa}
-            onClick={() => tocar(i)}
-            className={`rounded-full py-[0.55rem] text-[0.8rem] font-semibold backdrop-blur-sm transition-colors duration-300 ${
-              i === activa ? 'bg-white text-[#141414]' : 'bg-black/45 text-white hover:bg-black/60'
-            }`}
-          >
-            {p.texto}
-          </button>
-        ))}
-      </nav>
+      {/* Barra de pestañas (pieza); la suya, pastillas abajo sobre la foto (la activa en blanco, como en la carta) */}
+      {!sinBarra && (
+        <nav className="relative mt-auto px-[1.25rem] pb-[1rem]">
+          <BarraPestanas estilo={hero.barra ?? 'pastillas'} pestanas={pestanas} activa={activa} tocar={tocar} sobre="oscuro" />
+        </nav>
+      )}
     </div>
   )
 }

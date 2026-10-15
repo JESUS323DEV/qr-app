@@ -1,7 +1,7 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { HexColorPicker } from 'react-colorful'
 import { Link, useSearchParams } from 'react-router-dom'
-import { ArrowLeft, ArrowUpRight, Camera, Copy, Search, Sparkles, Trash2 } from 'lucide-react'
+import { ArrowLeft, ArrowUp, ArrowUpRight, Camera, ChevronDown, ChevronsDownUp, Copy, Menu, Search, Sparkles, Trash2, X } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { aplicar } from '../lib/ediciones'
 import { getNegocio, negocios, rutaNegocio } from '../negocios'
@@ -238,7 +238,22 @@ async function llamar(funcion, cuerpo) {
 }
 
 // Los campos editables con su valor actual, como se los pasa el panel a la IA (las fotos sin su enlace)
-const camposParaIA = datos => camposDe(datos).map(c => ({ ...c, valor: c.clase === 'foto' ? '' : leerRuta(datos, c.ruta) }))
+// En los textos, max: los caracteres que caben en ese sitio (el largo del texto de la demo, con un pequeño margen),
+// para que la IA escriba textos nuevos sin romper el diseño
+// (en los cortos, el margen es más amplio: "Valóranos en Google" tiene que poder ser "Cuéntanos qué tal en Google")
+const maxDe = texto => Math.max(Math.ceil(texto.length * 1.25), texto.length + 12)
+const camposParaIA = datos =>
+  camposDe(datos).map(c => {
+    const valor = c.clase === 'foto' ? '' : leerRuta(datos, c.ruta)
+    return { ...c, valor, ...(c.clase === 'texto' || c.clase === 'largo' ? { max: maxDe(valor) } : {}) }
+  })
+
+// Si un texto se pasa de su máximo, se corta en la última palabra que cabe (sin puntos suspensivos)
+const recortar = (texto, max) => {
+  if (!max || texto.length <= max) return texto
+  const corte = texto.slice(0, max + 1).lastIndexOf(' ')
+  return (corte > max * 0.6 ? texto.slice(0, corte) : texto.slice(0, max)).replace(/[\s,;:]+$/, '')
+}
 
 // Por si acaso: ningún guion largo llega a la página, aunque la IA se lo salte
 const sinGuionLargo = texto => texto.replace(/\s*—\s*/g, ', ')
@@ -331,7 +346,8 @@ async function cambiosDeIA(resultado, campos, actual) {
       if (esColor(valor.trim())) cambios[ruta] = valor.trim().toUpperCase()
       continue
     }
-    cambios[ruta] = sinGuionLargo(valor)
+    // Nunca más largo de lo que cabe en ese sitio del diseño
+    cambios[ruta] = recortar(sinGuionLargo(valor), campo.max)
   }
 
   const tipografia = TIPOGRAFIAS.find(t => t.id === resultado.tipografia)
@@ -1099,12 +1115,14 @@ function Editor({ tipo, slug, fila, volver, recargar, abrir }) {
   // a los del editor y se guardan al momento, para verlos ya en la vista previa
   const retocar = async peticion => {
     const fonts = leerRuta(vista, rutaTipografia(vista))
+    // Los mismos campos (con su máximo de caracteres) para pedir y para comprobar lo que devuelve
+    const camposIA = camposParaIA(vista)
     const { resultado } = await llamar('asistente', {
       paso: 'retocar',
       peticion,
       perfil: tipo === 'carta' ? 'carta' : tipoDe(vista),
       historial: historial.map(h => h.peticion),
-      campos: camposParaIA(vista),
+      campos: camposIA,
       // En las cartas, también sus secciones y su menú, por si piden añadir, quitar o mover platos
       carta: estructuraCarta(vista),
       alergenos: Object.keys(ALERGENOS),
@@ -1113,7 +1131,7 @@ function Editor({ tipo, slug, fila, volver, recargar, abrir }) {
       // En las fichas, también el aspecto (por si piden "otras pestañas" o "otro estilo")
       ...(tipo === 'negocio' && tipoDe(vista) === 'ficha' ? { piezas: piezasParaIA(), disenoActual: vista.hero?.diseno, barraActual: vista.hero?.barra ?? HEROS[vista.hero?.diseno]?.barra } : {}),
     })
-    const deLaIA = { ...(await cambiosDeIA(resultado, campos, vista)), ...(tipo === 'negocio' && tipoDe(vista) === 'ficha' ? piezasDeIA(resultado, vista) : {}) }
+    const deLaIA = { ...(await cambiosDeIA(resultado, camposIA, vista)), ...(tipo === 'negocio' && tipoDe(vista) === 'ficha' ? piezasDeIA(resultado, vista) : {}) }
     // El menú del día de una carta vive en su panel (tabla cartas): si la IA lo cambia, se cambia allí
     if (tipo === 'carta' && deLaIA.menuDia) {
       const { error } = await supabase.from('cartas').update({ menu_dia: menuDelPanel(deLaIA.menuDia) }).eq('slug', slug)
@@ -1421,6 +1439,20 @@ function Duplicar({ tipo, datos, setDatos, crear }) {
    (ficha, miniweb o carta), el diseño y la marca (nombre, colores y letra), viéndolo en un móvil. Al crearlo se
    guarda como una copia de la demo de esa temática con el diseño y la marca elegidos, y se abre en el editor.
    La vista previa enseña todo al momento: el contenido, el diseño y la marca (con la marca de prueba de lib/prueba.js). */
+// Apartado de Nuevo perfil que se pliega: cerrado, el título y lo elegido; al tocarlo se abren las opciones
+function Plegable({ titulo, elegido, children }) {
+  return (
+    <details className="group rounded-[0.75rem] ring-1 ring-zinc-200">
+      <summary className="flex cursor-pointer list-none items-center gap-[0.75rem] px-[0.85rem] py-[0.7rem] [&::-webkit-details-marker]:hidden">
+        <span className="text-[0.85rem] font-semibold text-zinc-500">{titulo}</span>
+        <span className="ml-auto min-w-0 truncate text-[0.9rem] font-semibold">{elegido}</span>
+        <ChevronDown className="h-[1rem] w-[1rem] shrink-0 text-zinc-500 transition-transform group-open:rotate-180" aria-hidden="true" />
+      </summary>
+      <div className="px-[0.85rem] pb-[0.85rem] pt-[0.2rem]">{children}</div>
+    </details>
+  )
+}
+
 function NuevoPerfil({ filas, recargar, abrir }) {
   const [tema, setTema] = useState(PLANTILLAS[0].clave)
   const [producto, setProducto] = useState('ficha')
@@ -1431,8 +1463,12 @@ function NuevoPerfil({ filas, recargar, abrir }) {
   const [principal, setPrincipal] = useState('')
   const [acento, setAcento] = useState('')
   const [colorTexto, setColorTexto] = useState('')
+  const [fondo, setFondo] = useState('')
   const [letra, setLetra] = useState('')
-  const [creando, setCreando] = useState(false)
+  // Lo que se le cuenta al asistente del negocio: con esto se inventa el copy y busca las fotos al crear
+  const [cuento, setCuento] = useState('')
+  // Qué está haciendo al crear (null: nada)
+  const [creando, setCreando] = useState(null)
   const [error, setError] = useState('')
 
   const plantilla = PLANTILLAS.find(p => p.clave === tema)
@@ -1444,6 +1480,7 @@ function NuevoPerfil({ filas, recargar, abrir }) {
   const colorPrincipal = principal || marcaBase?.theme?.colors?.primary || '#000000'
   const colorAcento = acento || marcaBase?.theme?.colors?.accent || '#000000'
   const colorDelTexto = colorTexto || marcaBase?.theme?.colors?.text || '#000000'
+  const colorFondo = fondo || marcaBase?.theme?.colors?.bg || '#FFFFFF'
 
   const heros = Object.entries(HEROS).filter(([, h]) => h.piezas && !h.paginaCompleta)
   const estilos = Object.values(FAMILIAS).filter(f => f.carta)
@@ -1460,6 +1497,7 @@ function NuevoPerfil({ filas, recargar, abrir }) {
     principal && `principal=${principal.slice(1)}`,
     acento && `acento=${acento.slice(1)}`,
     colorTexto && `texto=${colorTexto.slice(1)}`,
+    fondo && `fondo=${fondo.slice(1)}`,
     letra && `letra=${letra}`,
   ]
     .filter(Boolean)
@@ -1480,7 +1518,7 @@ function NuevoPerfil({ filas, recargar, abrir }) {
 
   const crear = async () => {
     if (!nombre.trim() || creando) return
-    setCreando(true)
+    setCreando('Creando...')
     setError('')
     try {
       const tipoFila = esCarta ? 'carta' : 'negocio'
@@ -1505,6 +1543,7 @@ function NuevoPerfil({ filas, recargar, abrir }) {
           ...(principal ? { 'marca.theme.colors.primary': principal } : {}),
           ...(acento ? { 'marca.theme.colors.accent': acento } : {}),
           ...(colorTexto ? { 'marca.theme.colors.text': colorTexto } : {}),
+          ...(fondo ? { 'marca.theme.colors.bg': fondo } : {}),
           ...(tipografia ? { 'marca.theme.fonts': tipografia.fonts } : {}),
         })
       } else {
@@ -1516,6 +1555,7 @@ function NuevoPerfil({ filas, recargar, abrir }) {
           ...(principal ? { 'theme.colors.primary': principal } : {}),
           ...(acento ? { 'theme.colors.accent': acento } : {}),
           ...(colorTexto ? { 'theme.colors.text': colorTexto } : {}),
+          ...(fondo ? { 'theme.colors.bg': fondo } : {}),
           ...(tipografia ? { 'theme.fonts': tipografia.fonts } : {}),
           ...(producto === 'ficha'
             ? { 'hero.diseno': hero, ...(barra ? { 'hero.barra': barra } : {}) }
@@ -1531,14 +1571,39 @@ function NuevoPerfil({ filas, recargar, abrir }) {
         }
       }
 
-      const { error } = await supabase.from('ediciones').insert({ tipo: tipoFila, slug, base, cambios })
+      // Con lo que se le ha contado del negocio, el asistente se inventa el copy y busca las fotos sobre el diseño
+      // ya montado. Lo elegido aquí manda: nunca cambia el nombre, el diseño ni la tipografía (colores, solo si se piden)
+      let historial = []
+      if (cuento.trim()) {
+        setCreando('Escribiendo los textos...')
+        const datosBase = esCarta ? cartaBase : getNegocio(base)
+        const preparada = aplicar(datosBase, cambios)
+        const campos = camposParaIA(preparada)
+        const { resultado } = await llamar('asistente', {
+          paso: 'copy',
+          peticion: cuento.trim(),
+          perfil: producto,
+          nombre: nombre.trim(),
+          campos,
+          carta: estructuraCarta(preparada),
+          alergenos: Object.keys(ALERGENOS),
+        })
+        setCreando('Buscando fotos...')
+        const deIA = await cambiosDeIA({ ...resultado, tipografia: '' }, campos, preparada)
+        for (const ruta of ['nombre', 'marca.nombre', 'hero.diseno', 'hero.barra', 'hero.portada']) delete deIA[ruta]
+        cambios = fusionar(cambios, deIA)
+        historial = [{ peticion: cuento.trim(), resumen: sinGuionLargo(resultado.resumen ?? '') }]
+        setCreando('Creando...')
+      }
+
+      const { error } = await supabase.from('ediciones').insert({ tipo: tipoFila, slug, base, cambios, ...(historial.length ? { historial } : {}) })
       if (error) throw new Error('No se ha podido crear.')
       if (esCarta) await crearCartaConDueno(slug, aplicar(cartaBase, cambios).menuDia)
       await recargar()
       abrir(`${tipoFila}:${slug}`)
     } catch (e) {
       setError(e.message)
-      setCreando(false)
+      setCreando(null)
     }
   }
 
@@ -1546,13 +1611,54 @@ function NuevoPerfil({ filas, recargar, abrir }) {
   const opcion = activa => `rounded-[0.6rem] px-[0.75rem] py-[0.45rem] text-[0.9rem] font-medium ring-1 ${activa ? 'bg-zinc-900 text-white ring-zinc-900' : 'bg-white ring-zinc-300'}`
 
   return (
-    <details className="rounded-[1rem] bg-white ring-1 ring-zinc-200 [&[open]>summary]:border-b [&[open]>summary]:border-zinc-200">
-      <summary className="cursor-pointer px-[1rem] py-[0.9rem] text-[1.05rem] font-bold">Nuevo perfil</summary>
-      <div className="grid gap-[1.25rem] px-[1rem] py-[1rem] lg:grid-cols-[minmax(0,1fr)_23.3rem] lg:items-start">
+    // peer: abierto, se oculta el botón de "Crear con el asistente" que va justo debajo (en Lista)
+    <details className="group/perfil peer rounded-[1rem] bg-white ring-1 ring-zinc-200">
+      {/* Cerrado: "Nuevo perfil" con una flecha para abrir. Abierto: solo un icono pequeño de plegar, para que la
+          vista previa empiece casi arriba */}
+      <summary
+        aria-label="Nuevo perfil"
+        className="flex cursor-pointer list-none items-center px-[1rem] py-[0.9rem] group-open/perfil:justify-center group-open/perfil:pb-0 group-open/perfil:pt-[0.4rem] [&::-webkit-details-marker]:hidden"
+      >
+        <span className="text-[1.05rem] font-bold group-open/perfil:hidden">Nuevo perfil</span>
+        <ChevronDown className="ml-auto h-[1.1rem] w-[1.1rem] text-zinc-500 group-open/perfil:hidden" aria-hidden="true" />
+        <ChevronsDownUp className="hidden h-[1.1rem] w-[1.1rem] text-zinc-400 group-open/perfil:block" aria-hidden="true" />
+      </summary>
+      {/* En una columna: vista previa, asistente, diseño y crear */}
+      <div className="mx-auto grid w-full max-w-[32rem] gap-[1rem] px-[1rem] py-[1rem]">
+        {/* Vista previa: el contenido de la temática con el diseño elegido.
+            A 360 px de ancho por dentro, como el móvil bajo: se ve lo mismo que verá el cliente */}
+        <div>
+          {vista && <Movil key={vista} src={vista} titulo="Vista previa" ancho={360} className="mx-auto w-full max-w-[20rem]" />}
+          <p className="mt-[0.5rem] text-center text-[0.8rem] text-zinc-500">Con el contenido de ejemplo de la temática</p>
+        </div>
+
+        {/* El negocio, para el asistente: con esto escribe el copy y busca las fotos al crear */}
+        <div className="grid gap-[0.4rem]">
+          <Etiqueta texto="Cuéntale el negocio al asistente (opcional)">
+            <textarea
+              value={cuento}
+              onChange={e => setCuento(e.target.value)}
+              disabled={Boolean(creando)}
+              rows={4}
+              placeholder="Barbería de barrio en Sants, clásica pero cercana. Cita por WhatsApp al 612 345 678. Abre de martes a sábado de 10 a 20."
+              className={`${CAMPO} resize-y`}
+            />
+          </Etiqueta>
+          <p className="text-[0.8rem] text-zinc-500">
+            Se inventa los textos y busca las fotos sobre tu diseño. Los colores solo los cambia si se lo pides. Vacío: se crea con el contenido de ejemplo.
+          </p>
+        </div>
+
         <div className="grid gap-[1rem]">
+          {/* Todo el diseño en un apartado que se pliega: cerrado, quedan el asistente y la vista previa a la vista */}
+          <details open className="group/diseno rounded-[0.75rem] ring-1 ring-zinc-200">
+            <summary className="flex cursor-pointer list-none items-center gap-[0.75rem] px-[0.85rem] py-[0.8rem] [&::-webkit-details-marker]:hidden">
+              <span className="text-[1rem] font-bold">Diseño</span>
+              <ChevronDown className="ml-auto h-[1rem] w-[1rem] shrink-0 text-zinc-500 transition-transform group-open/diseno:rotate-180" aria-hidden="true" />
+            </summary>
+            <div className="grid gap-[1rem] px-[0.85rem] pb-[0.85rem] pt-[0.2rem]">
           {/* 1. Temática: pone el contenido de ejemplo */}
-          <div className="grid gap-[0.4rem]">
-            <span className={titulo}>Temática del negocio</span>
+          <Plegable titulo="Temática del negocio" elegido={plantilla.nombre}>
             <div className="flex flex-wrap gap-[0.4rem]">
               {PLANTILLAS.map(p => (
                 <button key={p.clave} type="button" aria-pressed={tema === p.clave} onClick={() => setTema(p.clave)} className={opcion(tema === p.clave)}>
@@ -1560,7 +1666,7 @@ function NuevoPerfil({ filas, recargar, abrir }) {
                 </button>
               ))}
             </div>
-          </div>
+          </Plegable>
 
           {/* 2. Producto */}
           <div className="grid gap-[0.4rem]">
@@ -1588,8 +1694,7 @@ function NuevoPerfil({ filas, recargar, abrir }) {
 
           {/* 3. Diseño, según el producto */}
           {!esCarta ? (
-            <div className="grid gap-[0.4rem]">
-              <span className={titulo}>{producto === 'miniweb' ? 'Portada' : 'Diseño de arriba'}</span>
+            <Plegable titulo={producto === 'miniweb' ? 'Portada' : 'Diseño de arriba'} elegido={HEROS[hero]?.nombre}>
               <div className="flex flex-wrap gap-[0.4rem]">
                 {heros.map(([clave, h]) => (
                   <button key={clave} type="button" aria-pressed={hero === clave} onClick={() => setHero(clave)} className={opcion(hero === clave)}>
@@ -1597,10 +1702,9 @@ function NuevoPerfil({ filas, recargar, abrir }) {
                   </button>
                 ))}
               </div>
-            </div>
+            </Plegable>
           ) : (
-            <div className="grid gap-[0.4rem]">
-              <span className={titulo}>Estilo de carta</span>
+            <Plegable titulo="Estilo de carta" elegido={estilos.find(f => f.carta === estilo)?.nombre}>
               <div className="flex flex-wrap gap-[0.4rem]">
                 {estilos.map(f => (
                   <button key={f.carta} type="button" aria-pressed={estilo === f.carta} onClick={() => setEstilo(f.carta)} className={opcion(estilo === f.carta)}>
@@ -1608,11 +1712,10 @@ function NuevoPerfil({ filas, recargar, abrir }) {
                   </button>
                 ))}
               </div>
-            </div>
+            </Plegable>
           )}
           {producto === 'ficha' && (
-            <div className="grid gap-[0.4rem]">
-              <span className={titulo}>Estilo de pestañas</span>
+            <Plegable titulo="Estilo de pestañas" elegido={barra ? BARRAS[barra]?.nombre : 'El suyo'}>
               <div className="flex flex-wrap gap-[0.4rem]">
                 {[['', { nombre: 'El suyo' }], ...Object.entries(BARRAS)].map(([clave, b]) => (
                   <button key={clave || 'suyo'} type="button" aria-pressed={barra === clave} onClick={() => setBarra(clave)} className={opcion(barra === clave)}>
@@ -1620,24 +1723,41 @@ function NuevoPerfil({ filas, recargar, abrir }) {
                   </button>
                 ))}
               </div>
-            </div>
+            </Plegable>
           )}
 
           {/* 4. Marca */}
           <Etiqueta texto="Nombre del negocio">
             <input value={nombre} onChange={e => setNombre(e.target.value)} className={CAMPO} placeholder="Peluquería Ranita" />
           </Etiqueta>
-          <div className="grid grid-cols-2 gap-[0.6rem]">
-            <Etiqueta texto="Color principal">
-              <CampoColor valor={colorPrincipal} cambiar={setPrincipal} />
-            </Etiqueta>
-            <Etiqueta texto="Color de acento">
-              <CampoColor valor={colorAcento} cambiar={setAcento} />
-            </Etiqueta>
-            <Etiqueta texto="Color del texto">
-              <CampoColor valor={colorDelTexto} cambiar={setColorTexto} />
-            </Etiqueta>
+          {/* Colores: cada uno en su fila, con para qué sirve; cerrado, las cuatro muestras */}
+          <Plegable
+            titulo="Colores"
+            elegido={
+              <span className="flex justify-end gap-[0.25rem]">
+                {[colorPrincipal, colorAcento, colorFondo, colorDelTexto].map((c, i) => (
+                  <span key={i} className="h-[1.1rem] w-[1.1rem] rounded-full ring-1 ring-zinc-300" style={{ background: c }} />
+                ))}
+              </span>
+            }
+          >
+          <div className="grid gap-[0.9rem]">
+            {[
+              ['Color principal', 'Botones, bloques de color y, en algunos diseños, el fondo.', colorPrincipal, setPrincipal],
+              ['Color de acento', 'Precios, subrayados de las pestañas y detalles.', colorAcento, setAcento],
+              ['Color de fondo', 'El fondo de la página: claro u oscuro.', colorFondo, setFondo],
+              ['Color del texto', 'Las letras sobre el fondo.', colorDelTexto, setColorTexto],
+            ].map(([nombreColor, ayuda, valor, poner]) => (
+              <div key={nombreColor} className="grid gap-[0.3rem]">
+                <div>
+                  <p className="text-[0.8rem] font-semibold text-zinc-500">{nombreColor}</p>
+                  <p className="text-[0.8rem] text-zinc-400">{ayuda}</p>
+                </div>
+                <CampoColor valor={valor} cambiar={poner} />
+              </div>
+            ))}
           </div>
+          </Plegable>
           <Etiqueta texto="Tipografía">
             <select value={letra} onChange={e => setLetra(e.target.value)} className={CAMPO}>
               <option value="">La de la plantilla</option>
@@ -1648,18 +1768,13 @@ function NuevoPerfil({ filas, recargar, abrir }) {
               ))}
             </select>
           </Etiqueta>
+            </div>
+          </details>
 
           {error && <p className="text-[0.9rem] font-semibold text-red-600">{error}</p>}
-          <button type="button" onClick={crear} disabled={!nombre.trim() || creando} className={BOTON}>
-            {creando ? 'Creando...' : `Crear ${producto === 'carta' ? 'carta' : producto === 'miniweb' ? 'miniweb' : 'ficha'}`}
+          <button type="button" onClick={crear} disabled={!nombre.trim() || Boolean(creando)} className={BOTON}>
+            {creando ?? `Crear ${producto === 'carta' ? 'carta' : producto === 'miniweb' ? 'miniweb' : 'ficha'}`}
           </button>
-        </div>
-
-        {/* Vista previa: el contenido de la temática con el diseño elegido.
-            A 360 px de ancho por dentro, como el móvil bajo: se ve lo mismo que verá el cliente */}
-        <div className="lg:sticky lg:top-[1rem]">
-          {vista && <Movil key={vista} src={vista} titulo="Vista previa" ancho={360} className="mx-auto w-full max-w-[20rem]" />}
-          <p className="mt-[0.5rem] text-center text-[0.8rem] text-zinc-500">Con el contenido de ejemplo de la temática</p>
         </div>
       </div>
     </details>
@@ -1717,12 +1832,11 @@ function Lista({ filas, abrir, recargar }) {
 
   return (
     <div className="grid gap-[1.25rem]">
-      <h1 className="text-[1.5rem] font-bold">Administración</h1>
-
       {/* Panel principal: crear un perfil nuevo eligiendo temática, producto, diseño y marca */}
       <NuevoPerfil filas={filas} recargar={recargar} abrir={abrir} />
 
-      <button type="button" onClick={() => abrir('asistente')} className={`${BOTON} inline-flex items-center justify-center gap-[0.4rem]`}>
+      {/* Con Nuevo perfil abierto no se ve: ya tiene su asistente dentro */}
+      <button type="button" onClick={() => abrir('asistente')} className={`${BOTON} inline-flex items-center justify-center gap-[0.4rem] peer-open:hidden`}>
         <Sparkles className="h-[1.1rem] w-[1.1rem]" aria-hidden="true" />
         Crear con el asistente
       </button>
@@ -1738,6 +1852,83 @@ function Lista({ filas, abrir, recargar }) {
         />
       </div>
     </div>
+  )
+}
+
+/* Barra de arriba de /admin, en todas sus pantallas: el título y un menú hamburguesa con el correo y Salir.
+   El menú se cierra tocando fuera o con Escape. */
+function BarraAdmin({ email }) {
+  const [abierto, setAbierto] = useState(false)
+  const caja = useRef(null)
+
+  useEffect(() => {
+    if (!abierto) return
+    const fuera = e => {
+      if (!caja.current?.contains(e.target)) setAbierto(false)
+    }
+    const tecla = e => {
+      if (e.key === 'Escape') setAbierto(false)
+    }
+    document.addEventListener('pointerdown', fuera)
+    document.addEventListener('keydown', tecla)
+    return () => {
+      document.removeEventListener('pointerdown', fuera)
+      document.removeEventListener('keydown', tecla)
+    }
+  }, [abierto])
+
+  return (
+    <nav className="mb-[0.5rem] flex items-center justify-between gap-[1rem]">
+      <p className="text-[1.1rem] font-bold">Generador</p>
+      <div ref={caja} className="relative">
+        <button
+          type="button"
+          aria-label={abierto ? 'Cerrar menú' : 'Abrir menú'}
+          aria-expanded={abierto}
+          onClick={() => setAbierto(a => !a)}
+          className="flex h-[2rem] w-[2rem] items-center justify-center rounded-[0.5rem] text-zinc-900 hover:bg-zinc-200"
+        >
+          {abierto ? <X className="h-[1.1rem] w-[1.1rem]" aria-hidden="true" /> : <Menu className="h-[1.1rem] w-[1.1rem]" aria-hidden="true" />}
+        </button>
+        {abierto && (
+          <div className="absolute right-0 top-[calc(100%+0.4rem)] z-20 grid w-[16rem] max-w-[calc(100vw-2rem)] gap-[0.6rem] rounded-[0.9rem] bg-white p-[0.9rem] shadow-[0_0.3rem_1.2rem_rgb(0_0_0/0.15)] ring-1 ring-zinc-200">
+            <p className="truncate text-[0.85rem] text-zinc-500">{email}</p>
+            <button
+              type="button"
+              onClick={() => supabase.auth.signOut()}
+              className="rounded-[0.6rem] bg-zinc-100 py-[0.55rem] text-[0.92rem] font-semibold text-zinc-900 hover:bg-zinc-200"
+            >
+              Salir
+            </button>
+          </div>
+        )}
+      </div>
+    </nav>
+  )
+}
+
+// Flecha fija abajo a la derecha para volver arriba del todo; sale al bajar un poco (arriba no hace falta)
+function SubirArriba() {
+  const [visible, setVisible] = useState(false)
+
+  useEffect(() => {
+    const mirar = () => setVisible(window.scrollY > 300)
+    mirar()
+    window.addEventListener('scroll', mirar, { passive: true })
+    return () => window.removeEventListener('scroll', mirar)
+  }, [])
+
+  return (
+    <button
+      type="button"
+      aria-label="Volver arriba"
+      onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+      className={`fixed bottom-[1rem] right-[1rem] z-30 flex h-[2.75rem] w-[2.75rem] items-center justify-center rounded-full bg-zinc-900 text-white shadow-[0_0.2rem_0.8rem_rgb(0_0_0/0.25)] transition-opacity duration-300 ${
+        visible ? 'opacity-100' : 'pointer-events-none opacity-0'
+      }`}
+    >
+      <ArrowUp className="h-[1.2rem] w-[1.2rem]" aria-hidden="true" />
+    </button>
   )
 }
 
@@ -1793,12 +1984,8 @@ export default function AdminPage() {
           <Entrar titulo="Administración" texto="Entra para editar las fichas, miniwebs y cartas." />
         ) : (
           <>
-            <div className="mb-[1rem] flex items-center justify-between gap-[1rem] text-[0.85rem] text-zinc-500">
-              <span className="truncate">{sesion.user.email}</span>
-              <button type="button" onClick={() => supabase.auth.signOut()} className="shrink-0 font-semibold text-zinc-900 underline underline-offset-[0.2em]">
-                Salir
-              </button>
-            </div>
+            <BarraAdmin email={sesion.user.email} />
+            <SubirArriba />
 
             {esAdmin === undefined || (esAdmin && !filas) ? (
               <p className="text-zinc-500">Cargando...</p>

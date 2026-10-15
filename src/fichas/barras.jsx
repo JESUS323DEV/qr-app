@@ -4,7 +4,8 @@ import { tipoComun } from './escenas'
 /* Barras de pestañas de las fichas, como piezas sueltas: cualquier hero por piezas puede usar cualquiera
    (hero.barra en el archivo del negocio; si no lleva, la de su diseño). Cada una sale del hero donde nació.
    sobre: lo que hay detrás de la barra. 'claro' es el fondo de la marca (demo-bg); 'oscuro' es una foto
-   oscurecida o un bloque de color, y entonces la barra va en blanco.
+   oscurecida o un bloque de color, y entonces la barra va en blanco; 'primario' es el bloque del color principal
+   (como en Banner): igual que oscuro, salvo los bloques, que toman el color del fondo de la marca.
    El hero pone el hueco alrededor (márgenes); la barra es solo la fila de botones. */
 
 export const BARRAS = {
@@ -40,7 +41,8 @@ function Onda({ visible }) {
 const ICONOS = { fotos: Images, inicio: House, horario: Clock, contacto: MessageCircle, ubicacion: MapPin, precios: ListChecks, servicios: ListChecks, sobremi: UserRound }
 
 export default function BarraPestanas({ estilo = 'subrayado', pestanas, activa, tocar, sobre = 'claro' }) {
-  const oscuro = sobre === 'oscuro'
+  // 'primario' (el bloque del color principal) se trata como oscuro, salvo en los bloques, que tienen su versión
+  const oscuro = sobre === 'oscuro' || sobre === 'primario'
   // En las barras de botones iguales (pastillas, segmentada, carpetas), las palabras largas ("Ubicación",
   // "Encargos") no caben en móviles estrechos: entonces la letra se ajusta al ancho de la pantalla
   const largas = pestanas.some(p => (p.texto ?? '').length > 7)
@@ -154,7 +156,23 @@ export default function BarraPestanas({ estilo = 'subrayado', pestanas, activa, 
   }
 
   if (estilo === 'bloques') {
-    // En su hero (Banner) va sobre el bloque de color: la elegida, en el color del fondo
+    // En su hero (Banner) va sobre el bloque del color principal (sobre="primario"): la elegida, en el color del
+    // fondo de la marca, como era
+    if (sobre === 'primario') {
+      return (
+        <div className="grid border border-demo-bg/50" style={columnas(pestanas.length)}>
+          {pestanas.map((p, i) =>
+            boton(
+              p,
+              i,
+              `min-w-0 py-[0.6rem] font-demo-heading uppercase transition-colors duration-300 ${
+                pestanas.some(x => (x.texto ?? '').length > 7) ? 'px-[0.15rem] text-[clamp(0.68rem,0.4rem+1.2vw,0.9rem)] leading-tight' : 'text-[0.9rem]'
+              } ${i > 0 ? 'border-l border-demo-bg/50' : ''} ${i === activa ? 'bg-demo-bg text-demo-primary' : 'text-demo-bg hover:bg-demo-bg/10'}`,
+            ),
+          )}
+        </div>
+      )
+    }
     const borde = oscuro ? 'border-white/50' : 'border-demo-primary'
     // En mayúsculas, las palabras largas ("Ubicación", "Reservar") no caben en un bloque: entonces la letra se
     // ajusta al ancho de la pantalla. Con palabras cortas (como las de El Pollastre) se queda a su tamaño
@@ -184,7 +202,8 @@ export default function BarraPestanas({ estilo = 'subrayado', pestanas, activa, 
           boton(
             p,
             i,
-            `flex-1 rounded-t-[0.8rem] py-[0.55rem] ${largas ? letraAjustada : 'text-[0.85rem]'} font-semibold transition-colors duration-300 ${
+            // Con tres pestañas o menos caben a su tamaño (como las de Vanessa)
+            `flex-1 rounded-t-[0.8rem] py-[0.55rem] ${largas && pestanas.length > 3 ? letraAjustada : 'text-[0.85rem]'} font-semibold transition-colors duration-300 ${
               oscuro
                 ? i === activa ? 'bg-white text-[#141414]' : 'bg-white/20 text-white/80 hover:text-white'
                 : i === activa ? 'bg-demo-surface text-demo-text' : 'bg-demo-surface/45 text-demo-muted hover:text-demo-text'

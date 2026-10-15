@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Mail, MessageCircle, Phone, Play } from 'lucide-react'
 import Img from '../components/Img'
 import { SocialIcon } from '../components/SocialIcons'
 import { COLORES_REDES } from '../lib/coloresRedes'
+import Escena, { fotoDeRespaldo, tipoComun } from '../fichas/escenas'
+import BarraPestanas from '../fichas/barras'
 
 /* Ficha (pensado a partir del Beacons de Vanessa: botones grandes con foto a la izquierda y texto a la derecha).
    Aquí es una sola ficha grande con pestañas de carpeta encima: la foto y el contenido cambian con cada pestaña.
@@ -11,7 +13,10 @@ import { COLORES_REDES } from '../lib/coloresRedes'
    - cita: foto + WhatsApp, teléfono, correo y dónde atiende (agenda de verdad, sin pasar por otra web).
    - youtube: el vídeo destacado reproducible en la ficha (si aún no hay vídeo, un hueco) y el botón al canal.
    - sobremi: foto + presentación corta y el enlace a su web completa.
-   hero: profesion, pestanas[{ tipo, texto, ... }] */
+   Hero por piezas: además de las suyas, pinta las pestañas comunes (fotos, horario, ubicación, precios) con la
+   pieza común a sangre dentro de la ficha; la barra es una pieza (hero.barra; la suya, las carpetas pegadas a la
+   ficha). Con otra barra, la ficha se separa un poco y lleva todas las esquinas redondas.
+   hero: profesion?, barra?, pestanas[{ tipo, texto, ... }] */
 
 function Foto({ src, alt }) {
   return (
@@ -40,13 +45,13 @@ function VerMas({ mas }) {
   )
 }
 
-function EscenaInicio({ pestana }) {
+function EscenaInicio({ pestana, nombre, respaldo }) {
   return (
     <div className="flex h-full">
-      <Foto src={pestana.foto} alt="" />
+      <Foto src={pestana.foto ?? respaldo} alt="" />
       <Contenido>
         <h1 className="font-demo-heading text-[clamp(1.45rem,1.15rem+1.6vw,1.9rem)] font-bold leading-[1.08]">
-          {pestana.titular.map((l, i) => (
+          {(pestana.titular ?? [nombre]).map((l, i) => (
             <span key={i} className="block">{l}</span>
           ))}
         </h1>
@@ -57,24 +62,28 @@ function EscenaInicio({ pestana }) {
   )
 }
 
-function EscenaCita({ pestana }) {
+// Contacto (cita, y también reservar, encargos... de otras demos)
+function EscenaCita({ pestana, respaldo }) {
+  const donde = pestana.donde ?? pestana.texto_encargo
   return (
     <div className="flex h-full">
-      <Foto src={pestana.foto} alt="" />
+      <Foto src={pestana.foto ?? respaldo} alt="" />
       <Contenido>
         <p className="font-demo-heading text-[1.4rem] font-bold leading-tight">{pestana.titulo}</p>
-        {pestana.donde && <p className="mt-[0.3rem] text-[0.82rem] leading-[1.35] text-demo-muted">{pestana.donde}</p>}
+        {donde && <p className="mt-[0.3rem] text-[0.82rem] leading-[1.35] text-demo-muted">{donde}</p>}
         {/* Botón y, debajo, teléfono e iconos centrados respecto al botón */}
         <div className="mt-[0.75rem] flex w-fit flex-col items-center">
-        <a
-          href={pestana.url}
-          target="_blank"
-          rel="noreferrer"
-          className="inline-flex min-h-[2.4rem] w-fit items-center gap-[0.4rem] rounded-[0.5rem] bg-demo-text px-[0.85rem] text-[0.85rem] font-semibold text-demo-bg"
-        >
-          <MessageCircle className="h-[0.95rem] w-[0.95rem]" aria-hidden="true" />
-          {pestana.boton}
-        </a>
+        {pestana.url && pestana.boton && (
+          <a
+            href={pestana.url}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex min-h-[2.4rem] w-fit items-center gap-[0.4rem] rounded-[0.5rem] bg-demo-text px-[0.85rem] text-[0.85rem] font-semibold text-demo-bg"
+          >
+            <MessageCircle className="h-[0.95rem] w-[0.95rem]" aria-hidden="true" />
+            {pestana.boton}
+          </a>
+        )}
         {pestana.telefono && (
           <a href={`tel:${pestana.telefono.replace(/\s/g, '')}`} className="mt-[0.55rem] flex w-fit items-center gap-[0.35rem] text-[0.8rem]">
             <Phone className="h-[0.8rem] w-[0.8rem]" aria-hidden="true" />
@@ -181,10 +190,10 @@ function EscenaYoutube({ pestana, activa }) {
   )
 }
 
-function EscenaSobreMi({ pestana }) {
+function EscenaSobreMi({ pestana, respaldo }) {
   return (
     <div className="flex h-full">
-      <Foto src={pestana.foto} alt="" />
+      <Foto src={pestana.foto ?? respaldo} alt="" />
       <Contenido>
         <p className="font-demo-heading text-[1.4rem] font-bold leading-tight">{pestana.titulo}</p>
         <p className="mt-[0.4rem] text-[0.85rem] leading-[1.4] text-demo-muted">{pestana.texto_sobremi}</p>
@@ -194,15 +203,22 @@ function EscenaSobreMi({ pestana }) {
   )
 }
 
+// Sus escenas propias; contacto (cita, reservar...) por tipo común, y el resto con la pieza común
 const ESCENAS = {
   inicio: EscenaInicio,
-  cita: EscenaCita,
   youtube: EscenaYoutube,
   sobremi: EscenaSobreMi,
 }
+const escenaDe = tipo => ESCENAS[tipo] ?? (tipoComun(tipo) === 'contacto' ? EscenaCita : null)
 
-export default function HeroFicha({ hero, nombre, redes, redesTexto }) {
-  const pestanas = hero.pestanas ?? []
+// sinBarra: sin barra de pestañas, cuando hace de portada de una miniweb (la miniweb lleva su propio menú)
+export default function HeroFicha({ hero, nombre, redes, redesTexto, sinBarra = false }) {
+  // Solo las pestañas que sabe pintar (las suyas y las comunes)
+  const pestanas = useMemo(() => (hero.pestanas ?? []).filter(p => ESCENAS[p.tipo] || tipoComun(p.tipo)), [hero.pestanas])
+  const respaldo = fotoDeRespaldo(pestanas)
+  const barra = hero.barra ?? 'carpeta'
+  // Las carpetas van pegadas a la ficha; con otra barra (o sin barra) la ficha va suelta
+  const pegada = !sinBarra && barra === 'carpeta'
   const [activa, setActiva] = useState(0)
   const [tocado, setTocado] = useState(false)
 
@@ -219,7 +235,7 @@ export default function HeroFicha({ hero, nombre, redes, redesTexto }) {
       <div className="flex items-end justify-between gap-[0.75rem]">
         <div className="min-w-0">
           <p className="font-demo-heading text-[2rem] font-bold leading-none">{nombre}</p>
-          <p className="mt-[0.3rem] text-[0.92rem] text-demo-muted">{hero.profesion}</p>
+          {hero.profesion && <p className="mt-[0.3rem] text-[0.92rem] text-demo-muted">{hero.profesion}</p>}
         </div>
         {hero.redesArriba && redes?.length > 0 && (
           <div className="flex shrink-0 flex-col items-end gap-[0.3rem]">
@@ -243,34 +259,32 @@ export default function HeroFicha({ hero, nombre, redes, redesTexto }) {
         )}
       </div>
 
-      {/* Pestañas de carpeta, pegadas a la ficha: la activa es del mismo color que la ficha */}
-      <div className="mt-[0.9rem] flex gap-[0.25rem]">
-        {pestanas.map((p, i) => (
-          <button
-            key={p.tipo}
-            type="button"
-            aria-pressed={i === activa}
-            onClick={() => { setTocado(true); setActiva(i) }}
-            className={`flex-1 rounded-t-[0.8rem] py-[0.55rem] text-[0.85rem] font-semibold transition-colors duration-300 ${
-              i === activa ? 'bg-demo-surface text-demo-text' : 'bg-demo-surface/45 text-demo-muted hover:text-demo-text'
-            }`}
-          >
-            {p.texto}
-          </button>
-        ))}
-      </div>
+      {/* Barra de pestañas (pieza); la suya, carpetas pegadas a la ficha: la activa es del mismo color que la ficha */}
+      {!sinBarra && (
+        <div className={pegada ? 'mt-[0.9rem]' : 'mb-[0.7rem] mt-[0.9rem]'}>
+          <BarraPestanas estilo={barra} pestanas={pestanas} activa={activa} tocar={i => { setTocado(true); setActiva(i) }} />
+        </div>
+      )}
 
       {/* La ficha ocupa el alto que sobra, para que todo quepa en una pantalla */}
-      <div className="relative min-h-[13rem] flex-1 overflow-hidden rounded-b-[1.25rem] rounded-tr-[1.25rem] bg-demo-surface">
+      <div
+        className={`relative min-h-[13rem] flex-1 overflow-hidden bg-demo-surface ${
+          pegada ? 'rounded-b-[1.25rem] rounded-tr-[1.25rem]' : `rounded-[1.25rem] ${sinBarra ? 'mt-[0.9rem]' : ''}`
+        }`}
+      >
         {pestanas.map((p, i) => {
-          const Escena = ESCENAS[p.tipo]
+          const Propia = escenaDe(p.tipo)
           return (
             <div
-              key={p.tipo}
+              key={`${p.tipo}-${i}`}
               aria-hidden={i !== activa}
               className={`absolute inset-0 transition-opacity duration-500 ${i === activa ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
             >
-              <Escena pestana={p} activa={i === activa} />
+              {Propia ? (
+                <Propia pestana={p} activa={i === activa} nombre={nombre} respaldo={respaldo} />
+              ) : (
+                <Escena pestana={p} forma="foto" info="abajo" activa={i === activa} cargar respaldo={respaldo} />
+              )}
             </div>
           )
         })}

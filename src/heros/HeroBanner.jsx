@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Phone } from 'lucide-react'
 import Img from '../components/Img'
 import useVueltaPestanas from '../lib/useVueltaPestanas'
 import BotonCompartir from '../components/BotonCompartir'
+import Escena, { fotoDeRespaldo, fotosDe, tipoComun } from '../fichas/escenas'
+import BarraPestanas from '../fichas/barras'
 
 /* Banner (adaptado del de Señorío en platform). Arriba la foto, con la marca encima;
    debajo un bloque del color principal con el titular en mayúsculas y las pestañas.
@@ -12,7 +14,11 @@ import BotonCompartir from '../components/BotonCompartir'
    - horari: foto fija con el horario encima.
    - comanda: foto fija con el teléfono para llamar y, si hay, WhatsApp.
    El titular del bloque cambia con cada pestaña (titular: [primera línea, segunda línea]).
-   hero: siglas, pestanas[{ tipo, texto, titular, ... }] */
+   Hero por piezas: conserva sus escenas propias para las pestañas comunes (fotos, horario, contacto, ubicación)
+   y usa la pieza común para precios; la barra es una pieza (hero.barra; la suya, los bloques sobre el color).
+   Con datos de otras demos (sin titular), el titular es el título de la pestaña y su segunda línea; sin siglas,
+   las iniciales del nombre.
+   hero: siglas?, barra?, pestanas[{ tipo, texto, titular?, ... }] */
 
 const TURNO_MS = 4500
 
@@ -25,7 +31,8 @@ function Abajo({ children }) {
 }
 
 function EscenaPlats({ pestana, activa }) {
-  const fotos = pestana.fotos ?? []
+  // Las fotos de cualquier demo (fotos u opciones)
+  const fotos = fotosDe(pestana)
   const [actual, setActual] = useState(0)
 
   useEffect(() => {
@@ -67,15 +74,15 @@ function EscenaOnSom({ pestana, cargar }) {
   ) : null
 }
 
-function EscenaHorari({ pestana }) {
+function EscenaHorari({ pestana, respaldo }) {
   return (
     <>
-      <Img src={pestana.foto} alt="" className="absolute inset-0 h-full w-full object-cover" />
+      <Img src={pestana.foto ?? respaldo} alt="" className="absolute inset-0 h-full w-full object-cover" />
       <Velo />
       <Abajo>
         <p className="font-demo-heading text-[1.6rem] uppercase leading-none">{pestana.titulo}</p>
         <dl className="mt-[0.45rem] grid gap-[0.1rem] text-[0.85rem]">
-          {pestana.lineas.map(l => (
+          {(pestana.lineas ?? []).map(l => (
             <div key={l.dias} className="flex flex-wrap gap-x-[0.5rem]">
               <dt className="whitespace-nowrap font-semibold">{l.dias}</dt>
               <dd className="whitespace-nowrap text-white/80">{l.horas}</dd>
@@ -87,20 +94,38 @@ function EscenaHorari({ pestana }) {
   )
 }
 
-function EscenaComanda({ pestana }) {
+// Contacto: llamar (El Pollastre) o, en otras demos, su botón de WhatsApp (cita, encargos, reservar)
+function EscenaComanda({ pestana, respaldo }) {
+  const conBoton = Boolean(pestana.url && pestana.boton)
   return (
     <>
-      <Img src={pestana.foto} alt="" className="absolute inset-0 h-full w-full object-cover" />
+      <Img src={pestana.foto ?? respaldo} alt="" className="absolute inset-0 h-full w-full object-cover" />
       <Velo />
       <Abajo>
         <div className="flex flex-wrap items-center gap-x-[1rem] gap-y-[0.4rem]">
-          <a
-            href={`tel:${pestana.telefono.replace(/\s/g, '')}`}
-            className="inline-flex items-center gap-[0.45rem] rounded-full bg-white px-[1rem] py-[0.5rem] text-[1rem] font-semibold text-demo-primary"
-          >
-            <Phone className="h-[0.95rem] w-[0.95rem]" aria-hidden="true" />
-            {pestana.telefono}
-          </a>
+          {conBoton && (
+            <a
+              href={pestana.url}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center rounded-full bg-white px-[1rem] py-[0.5rem] text-[1rem] font-semibold text-demo-primary"
+            >
+              {pestana.boton}
+            </a>
+          )}
+          {pestana.telefono && (
+            <a
+              href={`tel:${pestana.telefono.replace(/\s/g, '')}`}
+              className={
+                conBoton
+                  ? 'inline-flex items-center gap-[0.35rem] text-[0.85rem] text-white/85'
+                  : 'inline-flex items-center gap-[0.45rem] rounded-full bg-white px-[1rem] py-[0.5rem] text-[1rem] font-semibold text-demo-primary'
+              }
+            >
+              <Phone className="h-[0.95rem] w-[0.95rem]" aria-hidden="true" />
+              {pestana.telefono}
+            </a>
+          )}
           {pestana.whatsapp && (
             <a href={pestana.whatsapp} target="_blank" rel="noreferrer" className="text-[0.8rem] text-white/85 underline underline-offset-[0.2em]">
               {pestana.texto_whatsapp}
@@ -112,14 +137,23 @@ function EscenaComanda({ pestana }) {
   )
 }
 
+// Sus escenas propias, por tipo común (las demás, como precios, salen con la pieza común)
 const ESCENAS = {
-  plats: EscenaPlats,
-  horari: EscenaHorari,
-  comanda: EscenaComanda,
+  fotos: EscenaPlats,
+  horario: EscenaHorari,
+  contacto: EscenaComanda,
 }
 
-export default function HeroBanner({ hero, nombre, lema }) {
-  const pestanas = hero.pestanas ?? []
+// Titular del bloque de color: el propio (El Pollastre) o, con datos de otras demos, título y segunda línea
+const titularDe = (p, nombre) =>
+  p.titular ?? (tipoComun(p.tipo) === 'ubicacion' ? [p.texto, p.direccion] : [p.titulo ?? nombre, p.destacado ?? p.texto])
+
+// sinBarra: sin barra de pestañas, cuando hace de portada de una miniweb (la miniweb lleva su propio menú)
+export default function HeroBanner({ hero, nombre, lema, sinBarra = false }) {
+  // Solo las pestañas que sabe pintar (las comunes)
+  const pestanas = useMemo(() => (hero.pestanas ?? []).filter(p => tipoComun(p.tipo)), [hero.pestanas])
+  const respaldo = fotoDeRespaldo(pestanas)
+  const siglas = hero.siglas ?? (nombre ?? '').split(/\s+/).filter(Boolean).slice(0, 2).map(x => x[0]).join('').toUpperCase()
   const [activa, setActiva] = useState(0)
   // El mapa se carga desde el principio, en segundo plano, para que esté listo cuando la vuelta llegue a él
   const [mapaPedido, setMapaPedido] = useState(true)
@@ -128,10 +162,10 @@ export default function HeroBanner({ hero, nombre, lema }) {
   const tocar = i => {
     parar()
     setActiva(i)
-    if (pestanas[i].tipo === 'onsom') setMapaPedido(true)
+    if (tipoComun(pestanas[i].tipo) === 'ubicacion') setMapaPedido(true)
   }
 
-  const enMapa = pestanas[activa]?.tipo === 'onsom'
+  const enMapa = tipoComun(pestanas[activa]?.tipo) === 'ubicacion'
 
   return (
     // Cualquier toque en el hero para la vuelta de presentación
@@ -139,16 +173,21 @@ export default function HeroBanner({ hero, nombre, lema }) {
       {/* La foto ocupa el alto que sobra, para que todo quepa en una pantalla */}
       <div className="relative min-h-[9rem] flex-1 overflow-hidden bg-demo-primary">
         {pestanas.map((p, i) => {
-          const Escena = ESCENAS[p.tipo]
+          const tipo = tipoComun(p.tipo)
+          const Propia = ESCENAS[tipo]
           return (
             <div
-              key={p.tipo}
+              key={`${p.tipo}-${i}`}
               aria-hidden={i !== activa}
               className={`absolute inset-0 transition-opacity duration-700 ${i === activa ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
             >
-              {p.tipo === 'onsom'
-                ? <EscenaOnSom pestana={p} cargar={mapaPedido} />
-                : <Escena pestana={p} activa={i === activa && !enVuelta} />}
+              {tipo === 'ubicacion' ? (
+                <EscenaOnSom pestana={p} cargar={mapaPedido} />
+              ) : Propia ? (
+                <Propia pestana={p} activa={i === activa && !enVuelta} respaldo={respaldo} />
+              ) : (
+                <Escena pestana={p} forma="foto" info="abajo" activa={i === activa && !enVuelta} cargar={mapaPedido} respaldo={respaldo} />
+              )}
             </div>
           )
         })}
@@ -156,7 +195,7 @@ export default function HeroBanner({ hero, nombre, lema }) {
         {/* Marca arriba: sello con las siglas, nombre y lema (en el mapa se desvanece) */}
         <div className={`pointer-events-none absolute inset-x-0 top-0 flex items-center gap-[0.6rem] bg-gradient-to-b from-black/50 to-transparent px-[1.25rem] pb-[2rem] pt-[0.9rem] text-white transition-opacity duration-700 ${enMapa ? 'opacity-0' : 'opacity-100'}`}>
           <span className="flex h-[2.4rem] w-[2.4rem] shrink-0 items-center justify-center rounded-full bg-demo-accent font-demo-heading text-[0.95rem] text-white">
-            {hero.siglas}
+            {siglas}
           </span>
           <div className="leading-tight">
             <p className="font-demo-heading text-[1rem]">{nombre}</p>
@@ -171,34 +210,31 @@ export default function HeroBanner({ hero, nombre, lema }) {
       <div className="bg-demo-primary px-[1.25rem] pb-[1.1rem] pt-[1.1rem] text-demo-bg">
         {/* El titular cambia con la pestaña (fundido); todos ocupan el mismo hueco */}
         <h1 className="grid font-demo-heading text-[clamp(2rem,1.6rem+2vw,2.6rem)] uppercase leading-[1]" aria-live="polite">
-          {pestanas.map((p, i) => (
-            <span
-              key={p.tipo}
-              aria-hidden={i !== activa}
-              className={`col-start-1 row-start-1 transition-opacity duration-500 ${i === activa ? 'opacity-100 delay-200' : 'opacity-0'}`}
-            >
-              {p.titular[0]}
-              <br />
-              {p.titular[1]}
-            </span>
-          ))}
+          {pestanas.map((p, i) => {
+            const titular = titularDe(p, nombre)
+            return (
+              <span
+                key={`${p.tipo}-${i}`}
+                aria-hidden={i !== activa}
+                className={`col-start-1 row-start-1 transition-opacity duration-500 ${i === activa ? 'opacity-100 delay-200' : 'opacity-0'}`}
+              >
+                {titular[0]}
+                {titular[1] && (
+                  <>
+                    <br />
+                    {titular[1]}
+                  </>
+                )}
+              </span>
+            )
+          })}
         </h1>
-        {/* Pestañas en bloques rectos pegados, en mayúsculas como el titular */}
-        <div className="mt-[0.9rem] grid grid-cols-4 border border-demo-bg/50">
-          {pestanas.map((p, i) => (
-            <button
-              key={p.tipo}
-              type="button"
-              aria-pressed={i === activa}
-              onClick={() => tocar(i)}
-              className={`py-[0.6rem] font-demo-heading text-[0.9rem] uppercase transition-colors duration-300 ${
-                i > 0 ? 'border-l border-demo-bg/50' : ''
-              } ${i === activa ? 'bg-demo-bg text-demo-primary' : 'text-demo-bg hover:bg-demo-bg/10'}`}
-            >
-              {p.texto}
-            </button>
-          ))}
-        </div>
+        {/* Barra de pestañas (pieza); la suya, bloques rectos sobre el color */}
+        {!sinBarra && (
+          <div className="mt-[0.9rem]">
+            <BarraPestanas estilo={hero.barra ?? 'bloques'} pestanas={pestanas} activa={activa} tocar={tocar} sobre="primario" />
+          </div>
+        )}
       </div>
     </div>
   )

@@ -13,14 +13,15 @@ export function marcaDePrueba(marca, params) {
   const principal = hex(params.get('principal'))
   const acento = hex(params.get('acento'))
   const texto = hex(params.get('texto'))
+  const fondo = hex(params.get('fondo'))
   const letra = TIPOGRAFIAS.find(t => t.id === params.get('letra'))
-  if (!nombre && !principal && !acento && !texto && !letra) return marca
+  if (!nombre && !principal && !acento && !texto && !fondo && !letra) return marca
   return {
     ...marca,
     ...(nombre ? { nombre } : {}),
     theme: {
       ...marca.theme,
-      colors: { ...marca.theme?.colors, ...(principal ? { primary: principal } : {}), ...(acento ? { accent: acento } : {}), ...(texto ? { text: texto } : {}) },
+      colors: { ...marca.theme?.colors, ...(principal ? { primary: principal } : {}), ...(acento ? { accent: acento } : {}), ...(texto ? { text: texto } : {}), ...(fondo ? { bg: fondo } : {}) },
       ...(letra ? { fonts: letra.fonts } : {}),
     },
   }
