@@ -6,7 +6,8 @@
 import Anthropic from 'npm:@anthropic-ai/sdk'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
-const LIMITE_DIARIO = 20
+// Una foto al día y alguna repetida si sale borrosa: con 5 sobra (y si se acaban, el menú se escribe a mano)
+const LIMITE_DIARIO = 5
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',

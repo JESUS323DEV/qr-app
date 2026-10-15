@@ -12,8 +12,11 @@
 import Anthropic from 'npm:@anthropic-ai/sdk'
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
-const LIMITE_DIARIO = 60
+// Para usarlo a diario en la calle: unas 30 fichas con un retoque cada una (una ficha son 2 usos, un retoque 1)
+const LIMITE_DIARIO = 100
+// Escribir textos, colores y cartas: Sonnet. Elegir el diseño: Haiku, mucho más barato
 const MODELO = 'claude-sonnet-5-5'
+const MODELO_ELEGIR = 'claude-haiku-5-5'
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -241,16 +244,28 @@ Deno.serve(async req => {
   const claude = new Anthropic({ apiKey: Deno.env.get('ANTHROPIC_API_KEY') })
   let respuesta
   try {
-    respuesta = await claude.beta.messages.create({
-      model: MODELO,
-      max_tokens: 16000,
-      // Si el modelo declina la petición, la API la repite en el modelo de respaldo que recomienda Anthropic
-      betas: ['server-side-fallback-2026-07-01'],
-      fallbacks: 'default',
-      output_config: { effort: paso === 'elegir' ? 'low' : 'medium', format: { type: 'json_schema', schema: paso === 'elegir' ? ESQUEMA_ELEGIR : ESQUEMA_CAMBIOS } },
-      system: INSTRUCCIONES[paso],
-      messages: [{ role: 'user', content: mensaje(paso, datos) }],
-    })
+    if (paso === 'elegir') {
+      // Elegir el diseño es una decisión corta entre una lista: Haiku lo hace igual de bien por casi nada.
+      // Haiku no tiene modelo de respaldo si declina; si pasa, se avisa abajo y se prueba otra vez
+      respuesta = await claude.messages.create({
+        model: MODELO_ELEGIR,
+        max_tokens: 4000,
+        output_config: { effort: 'low', format: { type: 'json_schema', schema: ESQUEMA_ELEGIR } },
+        system: INSTRUCCIONES[paso],
+        messages: [{ role: 'user', content: mensaje(paso, datos) }],
+      })
+    } else {
+      respuesta = await claude.beta.messages.create({
+        model: MODELO,
+        max_tokens: 16000,
+        // Si el modelo declina la petición, la API la repite en el modelo de respaldo que recomienda Anthropic
+        betas: ['server-side-fallback-2026-07-01'],
+        fallbacks: 'default',
+        output_config: { effort: 'medium', format: { type: 'json_schema', schema: ESQUEMA_CAMBIOS } },
+        system: INSTRUCCIONES[paso],
+        messages: [{ role: 'user', content: mensaje(paso, datos) }],
+      })
+    }
   } catch (error) {
     console.error('Error de la API de Claude:', error)
     return responder({ error: 'El asistente no ha podido responder. Prueba otra vez en un momento.' }, 502)
