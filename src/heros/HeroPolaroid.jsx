@@ -1,0 +1,141 @@
+import { useEffect, useMemo, useState } from 'react'
+import { X } from 'lucide-react'
+import Img from '../components/Img'
+import useVueltaPestanas from '../lib/useVueltaPestanas'
+import BotonCompartir from '../components/BotonCompartir'
+import { loadFont } from '../lib/applyTheme'
+import Escena, { fotoDeRespaldo, fotosDe, tipoComun } from '../fichas/escenas'
+import BarraPestanas from '../fichas/barras'
+
+/* Polaroid (inspirado en la carta Polaroid de Forno Nonna). Hero por piezas: acepta cualquier pestaña común y
+   cualquier barra (hero.barra; la suya son las pastillas, sobre el color de la marca).
+   Fondo del color fuerte de la marca (primary), con el nombre escrito a mano arriba. En la pestaña de fotos, las
+   fotos como polaroids pegadas un poco torcidas, de dos en dos, con su nombre a mano debajo; al tocar una se abre
+   grande y recta. Las demás pestañas (horario, contacto, ubicación, precios) van en una nota de papel pegada,
+   también un poco torcida.
+   La letra a mano es Caveat, siempre: es parte del diseño, no de la marca.
+   hero: barra?, pestanas[{ tipo, texto, ... }] */
+
+const A_MANO = '"Caveat", "Comic Sans MS", cursive'
+const FUENTE = 'https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&display=swap'
+
+// Inclinación de cada polaroid según su sitio, para que parezcan pegadas a mano
+const GIROS = ['-rotate-[2.5deg]', 'rotate-[2deg]', 'rotate-[1.5deg]', '-rotate-[2deg]']
+const SOMBRA = 'shadow-[0_0.5rem_1.2rem_-0.3rem_rgb(0_0_0/0.45)]'
+
+function Polaroid({ foto, giro, abrir }) {
+  return (
+    <button
+      type="button"
+      onClick={abrir}
+      className={`flex h-full min-h-0 w-full flex-col bg-white p-[0.35rem] pb-0 text-left text-[#2A211C] transition-transform duration-200 hover:rotate-0 hover:scale-[1.03] ${SOMBRA} ${giro}`}
+    >
+      <div className="relative min-h-0 w-full flex-1 overflow-hidden bg-black/5">
+        <Img src={foto.src} alt={foto.alt} className="absolute inset-0 h-full w-full object-cover" />
+      </div>
+      <span className="block truncate px-[0.15rem] pb-[0.2rem] pt-[0.05rem] text-[1.05rem] font-bold leading-tight" style={{ fontFamily: A_MANO }}>
+        {foto.etiqueta ?? ' '}
+      </span>
+    </button>
+  )
+}
+
+// La polaroid tocada, grande y recta; se cierra tocando fuera, con la X o con Escape
+function PolaroidAbierta({ foto, cerrar }) {
+  useEffect(() => {
+    const alPulsar = e => e.key === 'Escape' && cerrar()
+    window.addEventListener('keydown', alPulsar)
+    return () => window.removeEventListener('keydown', alPulsar)
+  }, [cerrar])
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-[1.5rem]" onClick={cerrar}>
+      <div role="dialog" aria-modal="true" aria-label={foto.etiqueta ?? 'Foto'} onClick={e => e.stopPropagation()} className={`relative w-full max-w-[22rem] bg-white p-[0.6rem] text-[#2A211C] ${SOMBRA}`}>
+        <button type="button" onClick={cerrar} aria-label="Cerrar" className="absolute -right-[0.7rem] -top-[0.7rem] z-10 rounded-full bg-white p-[0.35rem] shadow-[0_0.2rem_0.6rem_rgb(0_0_0/0.3)]">
+          <X className="h-[1.1rem] w-[1.1rem]" />
+        </button>
+        <div className="relative aspect-square w-full overflow-hidden">
+          <Img src={foto.src} alt={foto.alt} className="absolute inset-0 h-full w-full object-cover" />
+        </div>
+        {foto.etiqueta && (
+          <p className="px-[0.3rem] pb-[0.3rem] pt-[0.4rem] text-[1.9rem] font-bold leading-none" style={{ fontFamily: A_MANO }}>
+            {foto.etiqueta}
+          </p>
+        )}
+      </div>
+    </div>
+  )
+}
+
+export default function HeroPolaroid({ hero, nombre, lema }) {
+  // Solo las pestañas que sabe pintar (las comunes)
+  const pestanas = useMemo(() => (hero.pestanas ?? []).filter(p => tipoComun(p.tipo)), [hero.pestanas])
+  const [activa, setActiva] = useState(0)
+  const [mapaPedido, setMapaPedido] = useState(true)
+  const [abierta, setAbierta] = useState(null)
+  const { enVuelta, parar } = useVueltaPestanas(pestanas, setActiva)
+  const respaldo = fotoDeRespaldo(pestanas)
+
+  useEffect(() => loadFont(FUENTE), [])
+
+  const tocar = i => {
+    parar()
+    setActiva(i)
+    if (tipoComun(pestanas[i].tipo) === 'ubicacion') setMapaPedido(true)
+  }
+
+  return (
+    // Cualquier toque en el hero para la vuelta de presentación
+    <div className="flex flex-1 flex-col bg-demo-primary text-white" onPointerDown={parar}>
+      {/* Nombre a mano y lema; compartir a la derecha */}
+      <div className="flex items-start justify-between gap-[1rem] px-[1.25rem] pt-[0.8rem]">
+        <div className="min-w-0">
+          <h1 className="text-[clamp(2.2rem,1.8rem+2vw,2.8rem)] font-bold leading-[0.85]" style={{ fontFamily: A_MANO }}>
+            {nombre}
+          </h1>
+          {lema && <p className="mt-[0.2rem] text-[0.85rem] text-white/80">{lema}</p>}
+        </div>
+        <BotonCompartir titulo={nombre} className="mt-[0.4rem] shrink-0" />
+      </div>
+
+      {/* Lo que cambia con cada pestaña: ocupa el alto que sobra, para que todo quepa en una pantalla */}
+      <div className="relative mx-[1.25rem] mt-[0.7rem] min-h-[9rem] flex-1">
+        {pestanas.map((p, i) => {
+          const fotos = tipoComun(p.tipo) === 'fotos' ? fotosDe(p).slice(0, 4) : null
+          return (
+            <div
+              key={`${p.tipo}-${i}`}
+              aria-hidden={i !== activa}
+              className={`absolute inset-0 transition-opacity duration-500 ${i === activa ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
+            >
+              {fotos ? (
+                // Polaroids de dos en dos (con una sola, sola y centrada)
+                <div
+                  className={`grid h-full gap-x-[0.7rem] gap-y-[0.7rem] p-[0.25rem] ${fotos.length === 1 ? 'grid-cols-1 px-[12%]' : 'grid-cols-2'}`}
+                  style={{ gridTemplateRows: `repeat(${Math.ceil(fotos.length / 2) || 1}, minmax(0, 1fr))` }}
+                >
+                  {fotos.map((f, k) => (
+                    <Polaroid key={k} foto={f} giro={GIROS[k % GIROS.length]} abrir={() => setAbierta(f)} />
+                  ))}
+                </div>
+              ) : (
+                // Nota de papel pegada, un poco torcida, con la escena dentro
+                <div className={`h-full -rotate-[1deg] bg-demo-bg p-[0.45rem] text-demo-text ${SOMBRA}`}>
+                  <div className="relative h-full overflow-hidden rounded-[1.1rem]">
+                    <Escena pestana={p} forma="tarjeta" activa={i === activa && !enVuelta} cargar={mapaPedido} respaldo={respaldo} />
+                  </div>
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+
+      <div className="px-[1.25rem] pb-[0.8rem] pt-[0.8rem]">
+        <BarraPestanas estilo={hero.barra ?? 'pastillas'} pestanas={pestanas} activa={activa} tocar={tocar} sobre="oscuro" />
+      </div>
+
+      {abierta && <PolaroidAbierta foto={abierta} cerrar={() => setAbierta(null)} />}
+    </div>
+  )
+}

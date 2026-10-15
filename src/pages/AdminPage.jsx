@@ -10,6 +10,8 @@ import { loadFont } from '../lib/applyTheme'
 import { TIPOGRAFIAS, parejaDe } from '../asistente/tipografias'
 import { DISENOS_ASISTENTE, DISENOS_CARTA } from '../asistente/disenos'
 import { tipoDe } from '../lib/tematicas'
+import { HEROS } from '../heros'
+import { BARRAS } from '../fichas/barras'
 
 /* Panel de Jesús (/admin): cambiar textos, fotos y colores de cualquier ficha, miniweb o carta desde el móvil,
    sin tocar código, y duplicar una demo para adaptarla en segundos al negocio que tiene delante.
@@ -17,7 +19,7 @@ import { tipoDe } from '../lib/tematicas'
    hacen que solo un administrador (tabla admins) pueda guardarlos. El diseño y la estructura siguen en el código. */
 
 // Direcciones que no puede usar una copia: las de las páginas de la web
-const RESERVADAS = new Set(['demo', 'tematicas', 'gestion', 'catalogo', 'planes', 'panel', 'admin', 'miniweb'])
+const RESERVADAS = new Set(['demo', 'tematicas', 'gestion', 'catalogo', 'planes', 'panel', 'mi-carta', 'admin', 'miniweb', 'disenos'])
 
 // "Peluquería Ranita" → "peluqueria-ranita"
 const aSlug = texto =>
@@ -52,7 +54,8 @@ const reducirFoto = archivo =>
 /* ---------- Qué se puede editar de cada archivo ---------- */
 
 // Datos que no se tocan desde aquí: estructura, diseño, direcciones internas, tipografías...
-const SALTAR = new Set(['slug', 'demo', 'copia', 'diseno', 'tipo', 'platform', 'tematica', 'sector', 'negocio', 'google', 'family', 'idiomas', 'alergenos', 'alt'])
+// (barra es el estilo de pestañas: se elige en el bloque Diseño, con su selector)
+const SALTAR = new Set(['slug', 'demo', 'copia', 'diseno', 'barra', 'tipo', 'platform', 'tematica', 'sector', 'negocio', 'google', 'family', 'idiomas', 'alergenos', 'alt'])
 
 const CLAVES_FOTO = new Set(['src', 'foto', 'fotos', 'imagen', 'img', 'logo', 'poster', 'captura'])
 const esColor = v => /^#([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(v)
@@ -89,7 +92,7 @@ function camposDe(datos) {
   const visitar = (valor, ruta, etiqueta) => {
     const clave = ruta.at(-1)
     if (SALTAR.has(clave)) return
-    // Del menú del día solo la foto: lo demás lo cambia el dueño desde su panel (/panel)
+    // Del menú del día solo la foto: lo demás lo cambia el dueño desde su panel (/mi-carta)
     if (ruta[0] === 'menuDia' && typeof valor === 'string' && clave !== 'foto') return
     if (typeof valor === 'string') {
       // La clave del dato es la de la lista si está dentro de una (fotos: ['...'])
@@ -119,6 +122,98 @@ function camposDe(datos) {
 }
 
 const leerRuta = (datos, ruta) => ruta.split('.').reduce((n, p) => n?.[p], datos)
+
+/* ---------- Cómo se enseñan los campos en el editor ---------- */
+
+// Etiquetas en lenguaje normal (las de camposDe son para la IA)
+const ETIQUETAS = {
+  titulo: 'Titular', titular: 'Titular', destacado: 'Segunda línea del titular', brillo: 'Segunda línea del titular',
+  texto: 'Texto', boton: 'Texto del botón', url: 'Enlace del botón', href: 'Enlace', mapa: 'Dirección para el mapa',
+  direccion: 'Dirección que se ve', telefono: 'Teléfono', texto_telefono: 'Texto antes del teléfono', texto_encargo: 'Texto',
+  etiqueta: 'Nombre', plato: 'Nombre', frase: 'Frase', alt: 'Descripción de la foto (para buscadores)',
+  dias: 'Días', horas: 'Horas', nombre: 'Nombre', descripcion: 'Descripción', precio: 'Precio', foto: 'Foto', src: 'Foto',
+  lema: 'Lema', profesion: 'Profesión', franja: 'Franja de arriba',
+}
+// Nombre de cada elemento de una lista, para el título de su tarjeta
+const ELEMENTO = {
+  fotos: 'Foto', opciones: 'Foto', platos: 'Plato', lineas: 'Línea', servicios: 'Servicio', esmaltes: 'Esmalte', redes: 'Red',
+  carrusel: 'Tarjeta', extras: 'Botón', grupos: 'Grupo', secciones: 'Sección', titular: 'Línea',
+}
+// Datos técnicos: se tocan poco, van plegados en "Más opciones"
+const TECNICOS = new Set(['url', 'href', 'mapa', 'alt'])
+
+const esIndice = p => /^\d+$/.test(p)
+const etiquetaDe = (clave, enPestana) => (enPestana && clave === 'texto' ? 'Nombre en la barra' : ETIQUETAS[clave] ?? nombreDato(clave))
+
+/* Ordena los campos para el editor: un bloque por cosa (datos, arriba, colores, cada pestaña, cada sección de la
+   carta...), y dentro de cada bloque los campos sueltos, las tarjetas (cada foto, cada plato... con todos sus datos
+   juntos) y lo técnico aparte. orden: dónde va el bloque (más arriba lo que más se toca) */
+function organizar(datos, campos) {
+  const bloques = new Map()
+  const bloque = (clave, titulo, orden) => {
+    if (!bloques.has(clave)) bloques.set(clave, { clave, titulo, orden, sueltos: [], tarjetas: new Map(), tecnicos: [] })
+    return bloques.get(clave)
+  }
+
+  for (const c of campos) {
+    const partes = c.ruta.split('.')
+    let b
+    let resto
+    let enPestana = false
+    if (partes[0] === 'hero' && partes[1] === 'pestanas' && esIndice(partes[2])) {
+      const p = datos.hero.pestanas[Number(partes[2])]
+      b = bloque(`pestana-${partes[2]}`, `Pestaña ${p?.texto ?? Number(partes[2]) + 1}`, 50 + Number(partes[2]))
+      resto = partes.slice(3)
+      enPestana = true
+    } else if (partes[0] === 'hero') {
+      b = bloque('arriba', 'Arriba', 10)
+      resto = partes.slice(1)
+    } else if (partes[0] === 'secciones' && esIndice(partes[1])) {
+      b = bloque(`seccion-${partes[1]}`, `Sección ${datos.secciones[Number(partes[1])]?.nombre ?? Number(partes[1]) + 1}`, 50 + Number(partes[1]))
+      resto = partes.slice(2)
+    } else if ((partes[0] === 'marca' && partes[1] === 'theme') || partes[0] === 'theme') {
+      b = bloque('colores', 'Colores de la marca', 30)
+      resto = partes.slice(partes[0] === 'marca' ? 3 : 2)
+    } else if (partes.length === 1 || partes[0] === 'marca') {
+      b = bloque('datos', 'Datos', 0)
+      resto = partes.slice(partes[0] === 'marca' ? 1 : 0)
+    } else {
+      b = bloque(partes[0], GRUPOS[partes[0]] ?? nombreDato(partes[0]), partes[0] === 'menuDia' ? 40 : 70)
+      resto = partes.slice(1)
+    }
+
+    const tecnico = TECNICOS.has(partes.at(-1))
+    // ¿Es parte de un elemento de una lista (una foto, un plato...)? Entonces va en su tarjeta
+    const j = resto.findIndex((p, k) => k > 0 && esIndice(p))
+    if (j > 0) {
+      const lista = resto[j - 1]
+      const n = Number(resto[j])
+      const prefijo = partes.slice(0, partes.length - resto.length + j + 1).join('.')
+      const elemento = leerRuta(datos, prefijo)
+      const propio = elemento && typeof elemento === 'object' ? elemento.etiqueta ?? elemento.plato ?? elemento.nombre ?? elemento.dias ?? elemento.platform : null
+      const titulo = `${ELEMENTO[lista] ?? nombreDato(lista)} ${n + 1}${propio ? ` · ${propio}` : ''}`
+      const etiqueta = resto.length > j + 1 ? etiquetaDe(resto.at(-1), false) : ELEMENTO[lista] ?? nombreDato(lista)
+      if (tecnico) {
+        b.tecnicos.push({ ...c, etiqueta: `${titulo} · ${etiqueta}` })
+      } else {
+        if (!b.tarjetas.has(prefijo)) b.tarjetas.set(prefijo, { clave: prefijo, titulo, campos: [] })
+        b.tarjetas.get(prefijo).campos.push({ ...c, etiqueta })
+      }
+      continue
+    }
+
+    const etiqueta = resto.length ? resto.filter(p => !esIndice(p)).map((p, k, todos) => (k === todos.length - 1 ? etiquetaDe(p, enPestana && todos.length === 1) : nombreDato(p))).join(' · ') : c.etiqueta
+    ;(tecnico ? b.tecnicos : b.sueltos).push({ ...c, etiqueta })
+  }
+
+  return [...bloques.values()]
+    .map(b => ({
+      ...b,
+      // En cada tarjeta, la foto primero
+      tarjetas: [...b.tarjetas.values()].map(t => ({ ...t, campos: [...t.campos].sort((x, y) => (y.clase === 'foto') - (x.clase === 'foto')) })),
+    }))
+    .sort((a, b) => a.orden - b.orden)
+}
 
 /* ---------- Asistente con IA ---------- */
 
@@ -247,6 +342,27 @@ async function cambiosDeIA(resultado, campos, actual) {
   return cambios
 }
 
+/* Piezas de las fichas que la IA puede elegir: los diseños de arriba que van por piezas y los estilos de
+   pestañas. Salen solos de heros/index.js (piezas: true) y de fichas/barras.jsx: cada hero que se convierta
+   aparece aquí sin tocar nada más */
+const piezasParaIA = () => ({
+  disenos: Object.entries(HEROS)
+    .filter(([, h]) => h.piezas && !h.paginaCompleta)
+    .map(([clave, h]) => ({ clave, nombre: h.nombre, texto: h.texto })),
+  barras: Object.entries(BARRAS).map(([clave, b]) => ({ clave, nombre: b.nombre, texto: b.texto })),
+})
+
+// Lo que eligió la IA de piezas, comprobado: solo diseños por piezas y barras que existen ('' = no cambiar)
+function piezasDeIA(resultado, actual) {
+  const cambios = {}
+  if (!actual?.hero) return cambios
+  const diseno = HEROS[resultado.diseno]?.piezas && !HEROS[resultado.diseno].paginaCompleta ? resultado.diseno : null
+  if (diseno && diseno !== actual.hero.diseno) cambios['hero.diseno'] = diseno
+  // La barra solo vale en un diseño por piezas (el nuevo o el que ya tenía)
+  if (BARRAS[resultado.barra] && HEROS[diseno ?? actual.hero.diseno]?.piezas) cambios['hero.barra'] = resultado.barra
+  return cambios
+}
+
 // Lo que la IA necesita ver de una carta para rehacerla: sus secciones y su menú del día, sin fotos
 const estructuraCarta = carta =>
   Array.isArray(carta?.secciones)
@@ -271,7 +387,7 @@ const inicioCopiaCarta = carta => ({ negocio: null, marca: marcaInicial(carta), 
 const menuDelPanel = m => (m ? { titulo: m.titulo, cuando: m.cuando ?? '', precio: m.precio ?? '', incluye: m.incluye ?? '', grupos: m.grupos ?? [] } : null)
 
 /* Una carta nueva nace como la de Ají Limón: con su fila en la tabla cartas y un dueño (de momento, quien la crea;
-   al venderla se pasa a la cuenta del restaurante). Así el dueño cambia su menú del día desde /panel. */
+   al venderla se pasa a la cuenta del restaurante). Así el dueño cambia su menú del día desde /mi-carta. */
 async function crearCartaConDueno(slug, menuDia) {
   const { data } = await supabase.auth.getUser()
   const { error } = await supabase.from('cartas').insert({ slug, dueno: data.user.id, menu_dia: menuDelPanel(menuDia), hay_menu: true })
@@ -343,11 +459,13 @@ function CrearConAsistente({ filas, volver, recargar, abrir }) {
         carta: estructuraCarta(preparada),
         alergenos: Object.keys(ALERGENOS),
         tipografias: TIPOGRAFIAS.map(({ id, nombre, estilo }) => ({ id, nombre, estilo })),
+        // En las fichas, también el aspecto: el diseño de arriba y el estilo de pestañas
+        ...(perfil === 'ficha' ? { piezas: piezasParaIA(), disenoActual: plantilla.hero?.diseno } : {}),
       })
 
       // 3. Fotos de Unsplash
       setPaso('Buscando fotos...')
-      const cambios = fusionar(inicio, await cambiosDeIA(resultado, campos, preparada))
+      const cambios = fusionar(inicio, { ...(await cambiosDeIA(resultado, campos, preparada)), ...(perfil === 'ficha' ? piezasDeIA(resultado, preparada) : {}) })
 
       // 4. La copia, en una dirección libre (si ya existe, se le añade un número)
       setPaso('Creando...')
@@ -693,6 +811,81 @@ function ElegirTipografia({ actual, original, elegir }) {
   )
 }
 
+/* Un bloque del editor (Datos, Arriba, una pestaña, una sección de la carta...): sus campos sueltos, sus tarjetas
+   (cada foto con su nombre, cada plato con su precio...) y lo técnico plegado en "Más opciones" */
+function Bloque({ bloque, abierto, campo }) {
+  return (
+    <details open={abierto} className="rounded-[1rem] bg-white ring-1 ring-zinc-200 [&[open]>summary]:border-b [&[open]>summary]:border-zinc-200">
+      <summary className="cursor-pointer px-[1rem] py-[0.85rem] text-[1rem] font-bold">{bloque.titulo}</summary>
+      <div className="grid gap-[1rem] px-[1rem] py-[1rem]">
+        {bloque.sueltos.map(c => campo(c))}
+
+        {bloque.tarjetas.map(t => (
+          <div key={t.clave} className="grid gap-[0.7rem] rounded-[0.8rem] bg-zinc-50 p-[0.8rem] ring-1 ring-zinc-200">
+            <div className="flex items-baseline justify-between gap-[0.75rem]">
+              <p className="min-w-0 truncate text-[0.9rem] font-bold">{t.titulo}</p>
+              {campo.tarjetaCambiada(t) && (
+                <button type="button" onClick={() => campo.volverTarjeta(t)} className="shrink-0 text-[0.78rem] font-semibold text-zinc-500 underline underline-offset-[0.2em]">
+                  Volver al original
+                </button>
+              )}
+            </div>
+            {t.campos.map(c => campo(c, true))}
+          </div>
+        ))}
+
+        {bloque.tecnicos.length > 0 && (
+          <details className="rounded-[0.8rem] ring-1 ring-zinc-200">
+            <summary className="cursor-pointer px-[0.8rem] py-[0.6rem] text-[0.88rem] font-semibold text-zinc-600">Más opciones</summary>
+            <div className="grid gap-[0.9rem] px-[0.8rem] pb-[0.8rem] pt-[0.3rem]">{bloque.tecnicos.map(c => campo(c))}</div>
+          </details>
+        )}
+      </div>
+    </details>
+  )
+}
+
+/* Piezas de una ficha: el diseño de arriba (los heros por piezas, más el que trae) y el estilo de las pestañas.
+   Al cambiar de diseño, las pestañas comunes (fotos, horario, contacto, ubicación, precios) se pintan en el nuevo;
+   las propias de un diseño (esmaltes, youtube...) solo salen en el suyo. */
+function Piezas({ hero, cambiar }) {
+  const diseno = hero?.diseno
+  const opciones = Object.entries(HEROS).filter(([clave, h]) => (h.piezas || clave === diseno) && !h.paginaCompleta)
+  const porPiezas = Boolean(HEROS[diseno]?.piezas)
+  const barra = hero?.barra ?? HEROS[diseno]?.barra
+
+  return (
+    <details open className="rounded-[1rem] bg-white ring-1 ring-zinc-200 [&[open]>summary]:border-b [&[open]>summary]:border-zinc-200">
+      <summary className="cursor-pointer px-[1rem] py-[0.85rem] text-[1rem] font-bold">Diseño</summary>
+      <div className="grid gap-[1rem] px-[1rem] py-[1rem]">
+        <Etiqueta texto="Diseño de arriba">
+          <select value={diseno} onChange={e => cambiar('hero.diseno', e.target.value)} className={CAMPO}>
+            {opciones.map(([clave, h]) => (
+              <option key={clave} value={clave}>
+                {h.nombre}
+                {h.piezas ? '' : ' (el de la demo)'}
+              </option>
+            ))}
+          </select>
+        </Etiqueta>
+        {porPiezas ? (
+          <Etiqueta texto="Estilo de pestañas">
+            <select value={barra} onChange={e => cambiar('hero.barra', e.target.value)} className={CAMPO}>
+              {Object.entries(BARRAS).map(([clave, b]) => (
+                <option key={clave} value={clave}>
+                  {b.nombre}
+                </option>
+              ))}
+            </select>
+          </Etiqueta>
+        ) : (
+          <p className="text-[0.85rem] text-zinc-500">Este diseño todavía lleva sus propias pestañas. Elige uno de los otros para cambiarlas.</p>
+        )}
+      </div>
+    </details>
+  )
+}
+
 /* ---------- Editor de una ficha, miniweb o carta ---------- */
 
 function Editor({ tipo, slug, fila, volver, recargar, abrir }) {
@@ -711,11 +904,7 @@ function Editor({ tipo, slug, fila, volver, recargar, abrir }) {
 
   const vista = useMemo(() => aplicar(original, cambios), [original, cambios])
   const campos = useMemo(() => (vista ? camposDe(vista) : []), [vista])
-  const grupos = useMemo(() => {
-    const mapa = new Map()
-    for (const c of campos) mapa.set(c.grupo, [...(mapa.get(c.grupo) ?? []), c])
-    return [...mapa]
-  }, [campos])
+  const bloques = useMemo(() => (vista ? organizar(vista, campos) : []), [vista, campos])
 
   if (!original) return <p className="text-zinc-500">No se encuentra esta página.</p>
 
@@ -761,8 +950,10 @@ function Editor({ tipo, slug, fila, volver, recargar, abrir }) {
       alergenos: Object.keys(ALERGENOS),
       tipografias: TIPOGRAFIAS.map(({ id, nombre, estilo }) => ({ id, nombre, estilo })),
       tipografiaActual: parejaDe(fonts)?.id ?? '',
+      // En las fichas, también el aspecto (por si piden "otras pestañas" o "otro estilo")
+      ...(tipo === 'negocio' && tipoDe(vista) === 'ficha' ? { piezas: piezasParaIA(), disenoActual: vista.hero?.diseno, barraActual: vista.hero?.barra ?? HEROS[vista.hero?.diseno]?.barra } : {}),
     })
-    const deLaIA = await cambiosDeIA(resultado, campos, vista)
+    const deLaIA = { ...(await cambiosDeIA(resultado, campos, vista)), ...(tipo === 'negocio' && tipoDe(vista) === 'ficha' ? piezasDeIA(resultado, vista) : {}) }
     // El menú del día de una carta vive en su panel (tabla cartas): si la IA lo cambia, se cambia allí
     if (tipo === 'carta' && deLaIA.menuDia) {
       const { error } = await supabase.from('cartas').update({ menu_dia: menuDelPanel(deLaIA.menuDia) }).eq('slug', slug)
@@ -779,6 +970,65 @@ function Editor({ tipo, slug, fila, volver, recargar, abrir }) {
     setVersion(v => v + 1)
     recargar()
   }
+
+  // Un campo del editor: su etiqueta, "Volver al original" si se ha cambiado y la casilla según su clase
+  // (enTarjeta: sin "Volver al original", que lo lleva la tarjeta entera)
+  const campo = (c, enTarjeta = false) => {
+    const valor = leerRuta(vista, c.ruta) ?? ''
+    const cambiado = c.ruta in cambios
+    return (
+      <div key={c.ruta} className="grid gap-[0.3rem]">
+        <div className="flex items-baseline justify-between gap-[0.75rem]">
+          <span className="text-[0.8rem] font-semibold text-zinc-500">{c.etiqueta}</span>
+          {cambiado && !enTarjeta && (
+            <button type="button" onClick={() => cambiar(c.ruta, leerRuta(original, c.ruta))} className="shrink-0 text-[0.78rem] font-semibold text-zinc-500 underline underline-offset-[0.2em]">
+              Volver al original
+            </button>
+          )}
+        </div>
+        {c.clase === 'color' ? (
+          <CampoColor valor={valor} cambiar={v => cambiar(c.ruta, v)} />
+        ) : c.clase === 'foto' ? (
+          // Búsqueda que sale ya escrita: el sector del negocio (Pollería, Estudio de uñas...).
+          // En las cartas, fotos en vertical, que llenan la pantalla del móvil
+          <CampoFoto
+            valor={valor}
+            cambiar={v => cambiar(c.ruta, v)}
+            carpeta={`${tipo}/${slug}`}
+            sugerencia={(tipo === 'negocio' ? vista.sector : marcaDe(vista)?.sector) ?? ''}
+            orientacion={tipo === 'carta' ? 'portrait' : undefined}
+          />
+        ) : c.clase === 'largo' ? (
+          <textarea value={valor} onChange={e => cambiar(c.ruta, e.target.value)} rows={3} className={`${CAMPO} resize-y`} />
+        ) : (
+          <input value={valor} onChange={e => cambiar(c.ruta, e.target.value)} className={CAMPO} />
+        )}
+      </div>
+    )
+  }
+  // Deshacer todos los cambios de una tarjeta (una foto con su nombre, un plato...)
+  campo.volverTarjeta = t => t.campos.forEach(c => cambiar(c.ruta, leerRuta(original, c.ruta)))
+  campo.tarjetaCambiada = t => t.campos.some(c => c.ruta in cambios)
+
+  const tipografia = (
+    <details className="rounded-[1rem] bg-white ring-1 ring-zinc-200 [&[open]>summary]:border-b [&[open]>summary]:border-zinc-200">
+      <summary className="cursor-pointer px-[1rem] py-[0.85rem] text-[1rem] font-bold">Tipografía</summary>
+      <div className="px-[1rem] py-[1rem]">
+        <ElegirTipografia
+          actual={leerRuta(vista, rutaTipografia(vista))}
+          original={(tipo === 'carta' ? marcaDe(original) : original)?.theme?.fonts}
+          elegir={fonts =>
+            setCambios(c => {
+              const nuevo = { ...c }
+              delete nuevo[rutaTipografia(vista)]
+              if (fonts) nuevo[rutaTipografia(vista)] = fonts
+              return nuevo
+            })
+          }
+        />
+      </div>
+    </details>
+  )
 
   const borrarCopia = async () => {
     const { error } = await supabase.from('ediciones').delete().eq('tipo', tipo).eq('slug', slug)
@@ -838,8 +1088,8 @@ function Editor({ tipo, slug, fila, volver, recargar, abrir }) {
       {tipo === 'carta' && (
         <p className="text-[0.88rem] leading-[1.45] text-zinc-600">
           El menú del día se cambia desde el panel del dueño,{' '}
-          <a href="/panel" target="_blank" rel="noreferrer" className="font-semibold text-zinc-900 underline underline-offset-[0.2em]">
-            /panel
+          <a href="/mi-carta" target="_blank" rel="noreferrer" className="font-semibold text-zinc-900 underline underline-offset-[0.2em]">
+            /mi-carta
           </a>
           , con la foto de la pizarra incluida. El asistente también puede cambiarlo.
         </p>
@@ -861,69 +1111,19 @@ function Editor({ tipo, slug, fila, volver, recargar, abrir }) {
 
       {/* En una demo original, todos los campos y botones quedan desactivados (fieldset disabled) */}
       <fieldset disabled={soloLectura} className="contents">
-      {grupos.map(([grupo, lista], i) => (
-        <Fragment key={grupo}>
-        {/* Tipografía: en las fichas, entre los datos y los colores de la marca; en las copias de cartas
-            (con marca propia), la primera. Las cartas de una ficha usan la de su ficha */}
-        {((tipo === 'negocio' && i === 1) || (tipo === 'carta' && vista.marca && i === 0)) && (
-          <details className="rounded-[1rem] bg-white ring-1 ring-zinc-200 [&[open]>summary]:border-b [&[open]>summary]:border-zinc-200">
-            <summary className="cursor-pointer px-[1rem] py-[0.85rem] text-[1rem] font-bold">Tipografía</summary>
-            <div className="px-[1rem] py-[1rem]">
-              <ElegirTipografia
-                actual={leerRuta(vista, rutaTipografia(vista))}
-                original={(tipo === 'carta' ? marcaDe(original) : original)?.theme?.fonts}
-                elegir={fonts =>
-                  setCambios(c => {
-                    const nuevo = { ...c }
-                    delete nuevo[rutaTipografia(vista)]
-                    if (fonts) nuevo[rutaTipografia(vista)] = fonts
-                    return nuevo
-                  })
-                }
-              />
-            </div>
-          </details>
-        )}
-        <details key={grupo} open={i === 0} className="rounded-[1rem] bg-white ring-1 ring-zinc-200 [&[open]>summary]:border-b [&[open]>summary]:border-zinc-200">
-          <summary className="cursor-pointer px-[1rem] py-[0.85rem] text-[1rem] font-bold">{grupo}</summary>
-          <div className="grid gap-[1rem] px-[1rem] py-[1rem]">
-            {lista.map(c => {
-              const valor = leerRuta(vista, c.ruta) ?? ''
-              const cambiado = c.ruta in cambios
-              return (
-                <div key={c.ruta} className="grid gap-[0.3rem]">
-                  <div className="flex items-baseline justify-between gap-[0.75rem]">
-                    <span className="text-[0.8rem] font-semibold text-zinc-500">{c.etiqueta}</span>
-                    {cambiado && (
-                      <button type="button" onClick={() => cambiar(c.ruta, leerRuta(original, c.ruta))} className="shrink-0 text-[0.78rem] font-semibold text-zinc-500 underline underline-offset-[0.2em]">
-                        Volver al original
-                      </button>
-                    )}
-                  </div>
-                  {c.clase === 'color' ? (
-                    <CampoColor valor={valor} cambiar={v => cambiar(c.ruta, v)} />
-                  ) : c.clase === 'foto' ? (
-                    // Búsqueda que sale ya escrita: el sector del negocio (Pollería, Estudio de uñas...).
-                    // En las cartas, fotos en vertical, que llenan la pantalla del móvil
-                    <CampoFoto
-                      valor={valor}
-                      cambiar={v => cambiar(c.ruta, v)}
-                      carpeta={`${tipo}/${slug}`}
-                      sugerencia={(tipo === 'negocio' ? vista.sector : marcaDe(vista)?.sector) ?? ''}
-                      orientacion={tipo === 'carta' ? 'portrait' : undefined}
-                    />
-                  ) : c.clase === 'largo' ? (
-                    <textarea value={valor} onChange={e => cambiar(c.ruta, e.target.value)} rows={3} className={`${CAMPO} resize-y`} />
-                  ) : (
-                    <input value={valor} onChange={e => cambiar(c.ruta, e.target.value)} className={CAMPO} />
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        </details>
+      {bloques.map((b, i) => (
+        <Fragment key={b.clave}>
+          {/* Diseño (diseño de arriba y estilo de pestañas, solo fichas) justo después de Arriba */}
+          {tipo === 'negocio' && !HEROS[vista.hero?.diseno]?.paginaCompleta && b.orden > 10 && (bloques[i - 1]?.orden ?? 0) <= 10 && (
+            <Piezas hero={vista.hero} cambiar={cambiar} />
+          )}
+          {/* Tipografía, justo después de los colores de la marca (las cartas de una ficha usan la de su ficha) */}
+          {(tipo === 'negocio' || vista.marca) && b.orden > 30 && (bloques[i - 1]?.orden ?? 0) <= 30 && tipografia}
+          <Bloque bloque={b} abierto={b.orden <= 10} campo={campo} />
         </Fragment>
       ))}
+      {/* Si no hay bloques después de los colores (raro), la tipografía va al final */}
+      {(tipo === 'negocio' || vista.marca) && (bloques.at(-1)?.orden ?? 0) <= 30 && tipografia}
       </fieldset>
     </div>
 
@@ -1096,7 +1296,7 @@ function Lista({ filas, abrir }) {
 
   return (
     <div className="grid gap-[1.25rem]">
-      <h1 className="text-[1.5rem] font-bold">Panel</h1>
+      <h1 className="text-[1.5rem] font-bold">Administración</h1>
 
       <button type="button" onClick={() => abrir('asistente')} className={`${BOTON} inline-flex items-center justify-center gap-[0.4rem]`}>
         <Sparkles className="h-[1.1rem] w-[1.1rem]" aria-hidden="true" />
@@ -1136,7 +1336,7 @@ function Lista({ filas, abrir }) {
 }
 
 export default function AdminPage() {
-  const sesion = usePaginaPrivada('Panel')
+  const sesion = usePaginaPrivada('Administración')
   const [esAdmin, setEsAdmin] = useState(undefined)
   const [filas, setFilas] = useState(null)
   const [params, setParams] = useSearchParams()
@@ -1184,7 +1384,7 @@ export default function AdminPage() {
         {!supabase ? (
           <p className="mt-[3rem] text-center text-zinc-500">El panel no está disponible ahora mismo.</p>
         ) : sesion === undefined ? null : !sesion ? (
-          <Entrar titulo="Panel" texto="Entra para editar las fichas, miniwebs y cartas." />
+          <Entrar titulo="Administración" texto="Entra para editar las fichas, miniwebs y cartas." />
         ) : (
           <>
             <div className="mb-[1rem] flex items-center justify-between gap-[1rem] text-[0.85rem] text-zinc-500">

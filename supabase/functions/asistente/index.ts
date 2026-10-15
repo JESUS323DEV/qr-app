@@ -39,6 +39,9 @@ const ESQUEMA_CAMBIOS = {
   properties: {
     slug: { type: 'string' },
     tipografia: { type: 'string' },
+    // Solo en fichas: el diseño de arriba y el estilo de pestañas (vacíos si no cambian)
+    diseno: { type: 'string' },
+    barra: { type: 'string' },
     cambios: {
       type: 'array',
       items: {
@@ -108,7 +111,7 @@ const ESQUEMA_CAMBIOS = {
     },
     resumen: { type: 'string' },
   },
-  required: ['slug', 'tipografia', 'cambios', 'fotos', 'secciones', 'menu', 'resumen'],
+  required: ['slug', 'tipografia', 'diseno', 'barra', 'cambios', 'fotos', 'secciones', 'menu', 'resumen'],
   additionalProperties: false,
 }
 
@@ -140,6 +143,11 @@ Fotos:
 - Para cada foto que haya que cambiar, una búsqueda para Unsplash en inglés, concreta y visual, de 3 a 6 palabras (por ejemplo "barber cutting hair warm light" o "peruvian ceviche plate top view"). Las fotos de una ficha tienen que verse del mismo negocio: misma luz y estilo.
 
 Tipografía: elige una de la lista por su id, o deja tipografia vacía para no cambiarla.
+
+Aspecto de una ficha (diseno y barra; solo en fichas, en lo demás vacíos):
+- diseno: el diseño de la parte de arriba, por su clave, entre los de la lista. Elige el que mejor vaya con la marca y el estilo que piden, para que la ficha tenga un aspecto propio y no sea igual que la demo. Vacío para dejar el que trae la demo.
+- barra: el estilo de las pestañas, por su clave, entre los de la lista. Que combine con el diseño y con la marca (por ejemplo: marcas elegantes, subrayada, índice de revista o menú con barras; marcas alegres, ondulada o pastillas; marcas contundentes, bloques). Vacío para no cambiarlo.
+- Al cambiar de diseño, las pestañas propias de la demo (por ejemplo, los esmaltes de una de uñas) dejan de verse; las demás (fotos, horario, cita o encargos, ubicación, precios) se ven igual.
 
 secciones y menu (solo en cartas; en fichas y miniwebs, secciones vacía y menu con todo vacío y grupos vacía):
 - Si la carta cambia (al crearla, o si piden añadir, quitar, mover o cambiar platos o secciones), devuelve secciones con la carta COMPLETA, también lo que no cambia. Si no cambia, secciones vacía.
@@ -179,6 +187,11 @@ function mensaje(paso: string, d: any): string {
     campos.map(c => `${c.ruta} | ${c.etiqueta} | ${c.clase}${c.clase === 'foto' ? '' : ` | ${c.valor}`}`).join('\n')
   const tipografias = (t: any[]) => t.map(x => `${x.id}: ${x.nombre}. ${x.estilo}`).join('\n')
   // En las cartas: su carta y su menú del día ahora mismo, y los ids de alérgenos que se pueden usar
+  // En las fichas: los diseños de arriba y los estilos de pestañas que puede elegir, y los que tiene ahora
+  const piezas = d.piezas
+    ? `\n\nDiseños de arriba (diseno):\n${d.piezas.disenos.map((x: any) => `${x.clave}: ${x.nombre}. ${x.texto}`).join('\n')}\nAhora: ${d.disenoActual ?? 'el de la demo'}` +
+      `\n\nEstilos de pestañas (barra):\n${d.piezas.barras.map((x: any) => `${x.clave}: ${x.nombre}. ${x.texto}`).join('\n')}${d.barraActual ? `\nAhora: ${d.barraActual}` : ''}`
+    : ''
   const carta = d.carta
     ? `\n\nCarta actual (JSON):\n${JSON.stringify(d.carta)}\n\nAlérgenos (ids): ${(d.alergenos ?? []).join(', ')}`
     : ''
@@ -194,10 +207,10 @@ function mensaje(paso: string, d: any): string {
     const extra = d.perfil === 'miniweb'
       ? '\n\nEs una miniweb: adapta también las páginas de menú (menú del día y carta, con platos y precios de ese tipo de cocina si no te los dan), horario y reservas.'
       : ''
-    return `Tipo de página: ${d.perfil ?? 'ficha'}${extra}\n\nPetición:\n${d.peticion}\n\nDemo elegida: ${d.demo.slug} (${d.demo.nombre}, ${d.demo.sector}). ${d.demo.estilo}\n\nCampos (ruta | qué es | tipo | valor actual):\n${lista(d.campos)}${carta}\n\nTipografías:\n${tipografias(d.tipografias)}`
+    return `Tipo de página: ${d.perfil ?? 'ficha'}${extra}\n\nPetición:\n${d.peticion}\n\nDemo elegida: ${d.demo.slug} (${d.demo.nombre}, ${d.demo.sector}). ${d.demo.estilo}\n\nCampos (ruta | qué es | tipo | valor actual):\n${lista(d.campos)}${carta}${piezas}\n\nTipografías:\n${tipografias(d.tipografias)}`
   }
   const antes = d.historial?.length ? d.historial.map((h: string) => `- ${h}`).join('\n') : '(nada)'
-  return `Tipo de página: ${d.perfil ?? 'ficha'}\n\nPedido antes:\n${antes}\n\nPetición nueva:\n${d.peticion}\n\nTipografía actual: ${d.tipografiaActual || 'la de la demo'}\n\nCampos (ruta | qué es | tipo | valor actual):\n${lista(d.campos)}${carta}\n\nTipografías:\n${tipografias(d.tipografias)}`
+  return `Tipo de página: ${d.perfil ?? 'ficha'}\n\nPedido antes:\n${antes}\n\nPetición nueva:\n${d.peticion}\n\nTipografía actual: ${d.tipografiaActual || 'la de la demo'}\n\nCampos (ruta | qué es | tipo | valor actual):\n${lista(d.campos)}${carta}${piezas}\n\nTipografías:\n${tipografias(d.tipografias)}`
 }
 
 Deno.serve(async req => {

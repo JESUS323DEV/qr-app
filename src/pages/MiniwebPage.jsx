@@ -1,5 +1,6 @@
 import { useEffect, useMemo } from 'react'
-import { Navigate, useParams } from 'react-router-dom'
+import { Navigate, useParams, useSearchParams } from 'react-router-dom'
+import { BARRAS } from '../fichas/barras'
 import { ChevronRight } from 'lucide-react'
 import { conEdicion, useEdicion } from '../lib/ediciones'
 import { HEROS } from '../heros'
@@ -195,9 +196,21 @@ function Cuerpo({ negocio, soloResena = false }) {
 
 export default function MiniwebPage({ demo = false }) {
   const { slug } = useParams()
+  // En las demos, el diseño de arriba y las pestañas se pueden probar desde la dirección
+  // (?diseno=mosaico&barra=pastillas): lo usa el escaparate de diseños (/disenos) y sirve para mandar el enlace
+  const [params] = useSearchParams()
+  const pruebaDiseno = params.get('diseno')
+  const pruebaBarra = params.get('barra')
   // El archivo del negocio con los cambios de /admin encima (o una copia de una demo, que solo vive en Supabase)
   const { cargando, fila } = useEdicion('negocio', slug)
-  const negocio = useMemo(() => conEdicion('negocio', slug, fila), [slug, fila])
+  const negocio = useMemo(() => {
+    const n = conEdicion('negocio', slug, fila)
+    if (!n?.demo || (!pruebaDiseno && !pruebaBarra)) return n
+    const diseno = HEROS[pruebaDiseno]?.piezas ? pruebaDiseno : n.hero.diseno
+    // La barra solo cambia en los diseños por piezas
+    const barra = HEROS[diseno]?.piezas && BARRAS[pruebaBarra] ? pruebaBarra : n.hero.barra
+    return { ...n, hero: { ...n.hero, diseno, barra } }
+  }, [slug, fila, pruebaDiseno, pruebaBarra])
 
   useEffect(() => {
     if (!negocio) return

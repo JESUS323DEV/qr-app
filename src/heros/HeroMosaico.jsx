@@ -1,150 +1,33 @@
-import { useEffect, useState } from 'react'
-import { Phone } from 'lucide-react'
-import Img from '../components/Img'
+import { useMemo, useState } from 'react'
 import useVueltaPestanas from '../lib/useVueltaPestanas'
 import BotonCompartir from '../components/BotonCompartir'
+import Escena, { fotoDeRespaldo, tipoComun } from '../fichas/escenas'
+import BarraPestanas from '../fichas/barras'
 
-/* Mosaico (inspirado en el Split de Dulce Lima en platform). Fondo claro: arriba la marca y el titular,
-   con un brillo suave en la segunda línea; en el centro un mosaico de tres fotos (una grande y dos pequeñas)
-   que van rotando en cascada como un escaparate. Pestañas con un subrayado ondulado bajo la activa.
-   Pestañas (solo cambian al tocarlas):
-   - dulces: el mosaico de fotos, cada una con su etiqueta.
-   - ubicacion: el mapa (se carga la primera vez que se toca) con la dirección encima.
-   - horario: una tarjeta con el horario.
-   - encargos: una tarjeta con el texto del encargo, WhatsApp y, si hay, teléfono.
-   hero: titulo, brillo (segunda línea), pestanas[{ tipo, texto, ... }] */
-
-const TURNO_MS = 4000
-const CASILLAS = ['row-span-2', '', '']
-
-function EscenaDulces({ pestana, activa }) {
-  const fotos = pestana.fotos ?? []
-  const [desfase, setDesfase] = useState(0)
-
-  useEffect(() => {
-    if (!activa || fotos.length < 4) return
-    const id = setInterval(() => setDesfase(d => (d + 1) % fotos.length), TURNO_MS)
-    return () => clearInterval(id)
-  }, [activa, fotos.length])
-
-  return (
-    <div className="grid h-full grid-cols-[1.25fr_1fr] grid-rows-2 gap-[0.5rem]">
-      {CASILLAS.map((clase, k) => {
-        const visible = (desfase + k) % fotos.length
-        return (
-          <div key={k} className={`relative overflow-hidden rounded-[1.1rem] bg-demo-surface ${clase}`}>
-            {fotos.map((f, i) => (
-              <div
-                key={i}
-                className={`absolute inset-0 transition-opacity duration-700 ${i === visible ? 'opacity-100' : 'opacity-0'}`}
-                style={{ transitionDelay: `${k * 180}ms` }}
-              >
-                <Img src={f.src} alt={f.etiqueta} className="h-full w-full object-cover" />
-                <span className="absolute bottom-[0.5rem] left-[0.5rem] rounded-full bg-white/90 px-[0.6rem] py-[0.15rem] text-[0.72rem] font-semibold text-demo-text">
-                  {f.etiqueta}
-                </span>
-              </div>
-            ))}
-          </div>
-        )
-      })}
-    </div>
-  )
-}
-
-function EscenaUbicacion({ pestana, cargar }) {
-  return (
-    <div className="relative h-full overflow-hidden rounded-[1.1rem] bg-demo-surface">
-      {cargar && (
-        <iframe
-          title="Mapa"
-          src={`https://www.google.com/maps?q=${encodeURIComponent(pestana.mapa)}&output=embed`}
-          className="absolute inset-0 h-full w-full border-0"
-          loading="lazy"
-          referrerPolicy="no-referrer-when-downgrade"
-        />
-      )}
-      <span className="absolute bottom-[0.6rem] left-[0.6rem] max-w-[calc(100%-1.2rem)] rounded-full bg-white/90 px-[0.75rem] py-[0.25rem] text-[0.75rem] font-semibold text-demo-text">
-        {pestana.direccion}
-      </span>
-    </div>
-  )
-}
-
-function EscenaHorario({ pestana }) {
-  return (
-    <div className="flex h-full flex-col justify-center rounded-[1.1rem] bg-demo-surface px-[1.25rem]">
-      <p className="font-demo-heading text-[1.6rem] italic">{pestana.titulo}</p>
-      <dl className="mt-[0.6rem] grid gap-[0.35rem] text-[0.9rem]">
-        {pestana.lineas.map(l => (
-          <div key={l.dias} className="flex flex-wrap justify-between gap-x-[0.75rem] border-b border-demo-text/10 pb-[0.35rem]">
-            <dt className="font-semibold">{l.dias}</dt>
-            <dd className="text-demo-muted">{l.horas}</dd>
-          </div>
-        ))}
-      </dl>
-    </div>
-  )
-}
-
-function EscenaEncargos({ pestana }) {
-  return (
-    <div className="flex h-full flex-col items-start justify-center rounded-[1.1rem] bg-demo-primary px-[1.25rem] py-[1.1rem] text-white">
-      <p className="font-demo-heading text-[1.35rem] italic leading-tight">{pestana.titulo}</p>
-      <p className="mt-[0.25rem] text-[0.8rem] leading-[1.35] text-white/80">{pestana.texto_encargo}</p>
-      <a
-        href={pestana.url}
-        target="_blank"
-        rel="noreferrer"
-        className="mt-[0.6rem] inline-flex min-h-[2.2rem] items-center rounded-full bg-white px-[1rem] text-[0.82rem] font-semibold text-demo-primary"
-      >
-        {pestana.boton}
-      </a>
-      {pestana.telefono && (
-        <a
-          href={`tel:${pestana.telefono.replace(/\s/g, '')}`}
-          className="mt-[0.45rem] flex items-center gap-[0.35rem] text-[0.75rem] text-white/85"
-        >
-          {pestana.texto_telefono ?? 'o por teléfono'}
-          <Phone className="h-[0.8rem] w-[0.8rem]" aria-hidden="true" />
-          <span className="underline underline-offset-[0.2em]">{pestana.telefono}</span>
-        </a>
-      )}
-    </div>
-  )
-}
-
-const ESCENAS = {
-  dulces: EscenaDulces,
-  horario: EscenaHorario,
-  encargos: EscenaEncargos,
-}
-
-// Subrayado ondulado de la pestaña activa
-function Onda({ visible }) {
-  return (
-    <svg
-      viewBox="0 0 40 6"
-      preserveAspectRatio="none"
-      className={`absolute bottom-0 left-1/2 h-[0.4rem] w-[2.6rem] -translate-x-1/2 text-demo-accent transition-opacity duration-300 ${visible ? 'opacity-100' : 'opacity-0'}`}
-      aria-hidden="true"
-    >
-      <path d="M1 3 Q 5.75 0 10.5 3 T 20 3 T 29.5 3 T 39 3" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-    </svg>
-  )
-}
+/* Mosaico (inspirado en el Split de Dulce Lima en platform). Hero por piezas: el marco es suyo y las escenas y la
+   barra de pestañas son piezas comunes (src/fichas), en forma de tarjeta; acepta cualquier pestaña común (fotos,
+   horario, contacto, ubicación, precios) y cualquier barra (hero.barra; la suya es la ondulada).
+   Fondo claro: arriba la marca y el titular, con un brillo suave en la segunda línea; en el centro las escenas
+   en tarjetas (las fotos, en un mosaico de tres que van rotando como un escaparate).
+   hero: titulo, brillo (segunda línea), barra?, pestanas[{ tipo, texto, ... }]
+   (si no hay titulo, usa el de la primera pestaña: así vale con datos de otras demos) */
 
 export default function HeroMosaico({ hero, nombre, lema }) {
-  const pestanas = hero.pestanas ?? []
+  // Solo las pestañas que sabe pintar (las comunes)
+  const pestanas = useMemo(() => (hero.pestanas ?? []).filter(p => tipoComun(p.tipo)), [hero.pestanas])
   const [activa, setActiva] = useState(0)
   // El mapa se carga desde el principio, en segundo plano, para que esté listo cuando la vuelta llegue a él
   const [mapaPedido, setMapaPedido] = useState(true)
   const { enVuelta, parar } = useVueltaPestanas(pestanas, setActiva)
+  const respaldo = fotoDeRespaldo(pestanas)
+
+  const titulo = hero.titulo ?? pestanas[0]?.titulo
+  const brillo = hero.brillo ?? hero.destacado ?? pestanas[0]?.destacado
 
   const tocar = i => {
     parar()
     setActiva(i)
-    if (pestanas[i].tipo === 'ubicacion') setMapaPedido(true)
+    if (tipoComun(pestanas[i].tipo) === 'ubicacion') setMapaPedido(true)
   }
 
   return (
@@ -156,51 +39,34 @@ export default function HeroMosaico({ hero, nombre, lema }) {
           {lema && <p className="text-[0.78rem] text-demo-muted">{lema}</p>}
         </div>
         <h1 className="mt-[0.6rem] font-demo-heading text-[clamp(2.2rem,1.7rem+2.4vw,2.8rem)] font-semibold leading-[1.02]">
-          {hero.titulo}
-          <br />
-          <em className="font-normal italic [text-shadow:0_0_1.4rem_color-mix(in_srgb,var(--demo-accent)_45%,transparent)]">{hero.brillo}</em>
+          {titulo}
+          {brillo && (
+            <>
+              <br />
+              <em className="font-normal italic [text-shadow:0_0_1.4rem_color-mix(in_srgb,var(--demo-accent)_45%,transparent)]">{brillo}</em>
+            </>
+          )}
         </h1>
       </div>
 
       {/* El escaparate ocupa el alto que sobra, para que todo quepa en una pantalla */}
       <div className="relative mx-[1.25rem] mt-[0.9rem] min-h-[8rem] flex-1">
-        {pestanas.map((p, i) => {
-          const Escena = ESCENAS[p.tipo]
-          return (
-            <div
-              key={p.tipo}
-              aria-hidden={i !== activa}
-              className={`absolute inset-0 transition-opacity duration-500 ${i === activa ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
-            >
-              {p.tipo === 'ubicacion'
-                ? <EscenaUbicacion pestana={p} cargar={mapaPedido} />
-                : <Escena pestana={p} activa={i === activa && !enVuelta} />}
-            </div>
-          )
-        })}
+        {pestanas.map((p, i) => (
+          <div
+            key={`${p.tipo}-${i}`}
+            aria-hidden={i !== activa}
+            className={`absolute inset-0 transition-opacity duration-500 ${i === activa ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
+          >
+            <Escena pestana={p} forma="tarjeta" activa={i === activa && !enVuelta} cargar={mapaPedido} respaldo={respaldo} />
+          </div>
+        ))}
 
         {/* Compartir, arriba a la izquierda dentro de la foto grande; en todas las pestañas menos en la del mapa */}
-        {pestanas[activa]?.tipo !== 'ubicacion' && (
-          <BotonCompartir titulo={nombre} className="absolute left-[0.6rem] top-[0.6rem]" />
-        )}
+        {tipoComun(pestanas[activa]?.tipo) !== 'ubicacion' && <BotonCompartir titulo={nombre} className="absolute left-[0.6rem] top-[0.6rem]" />}
       </div>
 
-      {/* Pestañas con subrayado ondulado, propias de este diseño */}
-      <div className="mt-[0.4rem] flex px-[1.25rem]">
-        {pestanas.map((p, i) => (
-          <button
-            key={p.tipo}
-            type="button"
-            aria-pressed={i === activa}
-            onClick={() => tocar(i)}
-            className={`relative flex-1 pb-[0.65rem] pt-[0.45rem] text-[0.88rem] font-semibold transition-colors duration-300 ${
-              i === activa ? 'text-demo-text' : 'text-demo-muted hover:text-demo-text'
-            }`}
-          >
-            {p.texto}
-            <Onda visible={i === activa} />
-          </button>
-        ))}
+      <div className="mt-[0.4rem] px-[1.25rem]">
+        <BarraPestanas estilo={hero.barra ?? 'onda'} pestanas={pestanas} activa={activa} tocar={tocar} />
       </div>
     </div>
   )

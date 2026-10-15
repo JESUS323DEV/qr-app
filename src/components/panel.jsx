@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
-/* Piezas comunes del panel del dueño (/panel) y del panel de Jesús (/admin) */
+/* Piezas comunes del panel del dueño (/mi-carta) y del panel de Jesús (/admin) */
 
 export const CAMPO = 'w-full min-w-0 rounded-[0.6rem] border border-zinc-300 bg-white px-[0.75rem] py-[0.6rem] text-[1rem] focus:border-zinc-900 focus:outline-none'
 export const BOTON = 'rounded-[0.6rem] bg-zinc-900 px-[1rem] py-[0.75rem] text-[1rem] font-semibold text-white disabled:opacity-40'
@@ -60,7 +60,7 @@ export function Confirmar({ pregunta, alCerrar }) {
   )
 }
 
-export function Entrar({ titulo = 'Tu panel', texto = 'Entra para cambiar tu menú del día.' }) {
+export function Entrar({ titulo = 'Tu carta', texto = 'Entra para cambiar tu menú del día.' }) {
   const [email, setEmail] = useState('')
   const [clave, setClave] = useState('')
   const [error, setError] = useState('')

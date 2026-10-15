@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Navigate, Routes, Route } from 'react-router-dom'
 import LandingPage from './pages/LandingPage'
 import MiniwebPage from './pages/MiniwebPage'
 import TematicaPage from './pages/TematicaPage'
@@ -8,12 +8,13 @@ import CatalogoPage from './pages/CatalogoPage'
 import PlanesPage from './pages/PlanesPage'
 import PanelPage from './pages/PanelPage'
 
+// El panel de Jesús y el escaparate de diseños se cargan aparte: los visitantes de las páginas no descargan su código
+const AdminPage = lazy(() => import('./pages/AdminPage'))
+const DisenosPage = lazy(() => import('./pages/DisenosPage'))
+
 // Gestión interna: solo con el servidor de desarrollo. En el build de Netlify import.meta.env.DEV es false,
 // así que ni la página ni su código se publican
-// El panel de Jesús se carga aparte: los visitantes de las páginas no descargan su código
-const AdminPage = lazy(() => import('./pages/AdminPage'))
-
-const GestionPage =import.meta.env.DEV ? lazy(() => import('./pages/GestionPage')) : null
+const GestionPage = import.meta.env.DEV ? lazy(() => import('./pages/GestionPage')) : null
 
 export default function App() {
   return (
@@ -28,7 +29,11 @@ export default function App() {
         {/* Planes en detalle */}
         <Route path="/planes" element={<PlanesPage />} />
         {/* Panel del dueño: cambiar su menú del día (Supabase) */}
-        <Route path="/panel" element={<PanelPage />} />
+        <Route path="/mi-carta" element={<PanelPage />} />
+        {/* Dirección antigua del panel del dueño: lleva a la nueva */}
+        <Route path="/panel" element={<Navigate to="/mi-carta" replace />} />
+        {/* Escaparate de diseños: probar y enseñar las fichas por piezas (diseño de arriba y estilo de pestañas) */}
+        <Route path="/disenos" element={<Suspense fallback={null}><DisenosPage /></Suspense>} />
         {/* Panel de Jesús: textos, fotos y colores de cualquier página, y copias de demos (Supabase) */}
         <Route path="/admin" element={<Suspense fallback={null}><AdminPage /></Suspense>} />
         {GestionPage && (

@@ -6,7 +6,7 @@ import { conEdicion } from '../lib/ediciones'
 import { BOTON, CAMPO, Confirmar, Entrar, Etiqueta, usePaginaPrivada } from '../components/panel'
 import { INICIALES, SEMANA, textoHorario } from '../lib/horarioMenu'
 
-/* Panel del dueño (/panel): entra con su email y contraseña (las cuentas las crea Jesús en Supabase)
+/* Panel del dueño (/mi-carta): entra con su email y contraseña (las cuentas las crea Jesús en Supabase)
    y cambia el menú del día de su carta desde el móvil. Al publicar, la carta de las mesas cambia al momento.
    Los permisos de Supabase (RLS) hacen que cada dueño solo pueda leer para editar y guardar su propia carta. */
 
@@ -433,7 +433,7 @@ function EditorMenu({ fila, alGuardar }) {
 
 export default function PanelPage() {
   // Sesión del dueño; la página no sale en buscadores ni recarga al tirar hacia abajo
-  const sesion = usePaginaPrivada('Tu panel')
+  const sesion = usePaginaPrivada('Tu carta')
   const [cartasDueno, setCartasDueno] = useState(null)
   const [elegida, setElegida] = useState(null)
 
