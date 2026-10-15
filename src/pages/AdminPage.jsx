@@ -1,4 +1,5 @@
-import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { HexColorPicker } from 'react-colorful'
 import { Link, useSearchParams } from 'react-router-dom'
 import { ArrowLeft, ArrowUpRight, Camera, Copy, Search, Sparkles, Trash2 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
@@ -9,6 +10,9 @@ import { BOTON, CAMPO, Confirmar, Entrar, Etiqueta, usePaginaPrivada } from '../
 import { loadFont } from '../lib/applyTheme'
 import { TIPOGRAFIAS, parejaDe } from '../asistente/tipografias'
 import { DISENOS_ASISTENTE, DISENOS_CARTA } from '../asistente/disenos'
+import { PLANTILLAS } from '../plantillas'
+import Movil from '../components/Movil'
+import { pestanasDeMiniweb } from '../lib/miniweb'
 import { tipoDe } from '../lib/tematicas'
 import { HEROS } from '../heros'
 import { BARRAS } from '../fichas/barras'
@@ -603,13 +607,45 @@ function Retocar({ historial, enviar }) {
 
 /* ---------- Campos del editor ---------- */
 
+/* Color: una muestra que, al tocarla, abre un selector propio (cuadrado de tono e intensidad y barra de color,
+   react-colorful), igual en el móvil que en el ordenador; al lado, el código para escribirlo o pegarlo.
+   Se cierra tocando fuera o con Escape. */
 function CampoColor({ valor, cambiar }) {
-  // El selector del navegador solo entiende #rrggbb
+  const [abierto, setAbierto] = useState(false)
+  const caja = useRef(null)
+  // El selector solo entiende #rrggbb
   const seis = valor.length === 4 ? `#${[...valor.slice(1)].map(c => c + c).join('')}` : valor.slice(0, 7)
+
+  useEffect(() => {
+    if (!abierto) return
+    const fuera = e => caja.current && !caja.current.contains(e.target) && setAbierto(false)
+    const escape = e => e.key === 'Escape' && setAbierto(false)
+    document.addEventListener('pointerdown', fuera)
+    window.addEventListener('keydown', escape)
+    return () => {
+      document.removeEventListener('pointerdown', fuera)
+      window.removeEventListener('keydown', escape)
+    }
+  }, [abierto])
+
   return (
-    <div className="flex items-center gap-[0.5rem]">
-      <input type="color" value={seis} onChange={e => cambiar(e.target.value.toUpperCase())} className="h-[2.75rem] w-[3.25rem] shrink-0 cursor-pointer rounded-[0.6rem] border border-zinc-300 bg-white p-[0.2rem]" />
+    <div ref={caja} className="relative flex items-center gap-[0.5rem]">
+      <button
+        type="button"
+        aria-label="Elegir color"
+        aria-expanded={abierto}
+        onClick={() => setAbierto(a => !a)}
+        className="h-[2.75rem] w-[3.25rem] shrink-0 rounded-[0.6rem] border border-zinc-300 p-[0.2rem]"
+      >
+        <span className="block h-full w-full rounded-[0.4rem]" style={{ background: seis }} />
+      </button>
       <input value={valor} onChange={e => cambiar(e.target.value)} className={`${CAMPO} font-mono`} spellCheck={false} />
+      {abierto && (
+        // En el móvil, abajo y a todo el ancho (para que no se salga de la pantalla); en el ordenador, debajo de la muestra
+        <div className="fixed inset-x-[1rem] bottom-[1rem] z-50 rounded-[0.9rem] bg-white p-[0.8rem] shadow-[0_0.6rem_1.6rem_-0.4rem_rgb(0_0_0/0.35)] ring-1 ring-zinc-200 sm:absolute sm:inset-x-auto sm:bottom-auto sm:left-0 sm:top-[calc(100%+0.4rem)] sm:z-30 sm:w-[15rem] sm:p-[0.7rem] [&_.react-colorful]:!h-[13rem] [&_.react-colorful]:!w-full sm:[&_.react-colorful]:!h-[11rem]">
+          <HexColorPicker color={seis} onChange={c => cambiar(c.toUpperCase())} />
+        </div>
+      )}
     </div>
   )
 }
@@ -876,15 +912,18 @@ function Diseno({ tipo, slug, vista, original, cambiar, abrir }) {
     if (destino === 'carta') return suCarta && abrir(`carta:${suCarta.slug}`)
     if (tipo === 'carta') return suFicha && abrir(`negocio:${suFicha}`)
     if (destino === 'miniweb') {
+      // Estructura de Chalaquita: Inicio con la portada, Servicios, Horario con el mapa y Contacto
       cambiar('hero.diseno', 'web')
       cambiar('hero.portada', HEROS[hero.diseno]?.piezas ? hero.diseno : 'galeria')
       cambiar('hero.redesArriba', true)
+      cambiar('hero.pestanas', pestanasDeMiniweb(vista))
       cambiar('tipo', 'miniweb')
     } else {
       const disenoOriginal = original.hero?.diseno
       cambiar('hero.diseno', hero.portada ?? (HEROS[disenoOriginal]?.paginaCompleta ? 'galeria' : disenoOriginal))
       cambiar('hero.portada', original.hero?.portada)
       cambiar('hero.redesArriba', original.hero?.redesArriba)
+      cambiar('hero.pestanas', original.hero?.pestanas)
       cambiar('tipo', original.tipo === 'miniweb' ? 'ficha' : original.tipo)
     }
   }
@@ -1162,7 +1201,7 @@ function Editor({ tipo, slug, fila, volver, recargar, abrir }) {
 
   return (
     // En el ordenador, el editor a la izquierda y la vista previa a la derecha; en el móvil, "Ver página"
-    <div className="pb-[6rem] lg:grid lg:grid-cols-[minmax(0,1fr)_23rem] lg:items-start lg:gap-[2rem]">
+    <div className="pb-[6rem] lg:grid lg:grid-cols-[minmax(0,1fr)_23.3rem] lg:items-start lg:gap-[2rem]">
     <div className="grid gap-[1rem]">
       <button type="button" onClick={volver} className="inline-flex items-center gap-[0.3rem] justify-self-start text-[0.9rem] font-semibold">
         <ArrowLeft className="h-[1rem] w-[1rem]" aria-hidden="true" />
@@ -1250,12 +1289,8 @@ function Editor({ tipo, slug, fila, volver, recargar, abrir }) {
 
       {/* Vista previa: la página tal cual está guardada, del tamaño de un móvil; se recarga al guardar */}
       <aside className="sticky top-[1rem] hidden lg:block">
-        <iframe
-          key={version}
-          title="Vista previa"
-          src={ruta}
-          className="h-[min(48rem,calc(100svh-6rem))] w-full rounded-[1.5rem] border-[0.4rem] border-zinc-900 bg-white"
-        />
+        {/* La página a 360 px de ancho (el móvil bajo), reducida entera para caber en el marco */}
+        <Movil key={version} src={ruta} titulo="Vista previa" ancho={360} className="mx-auto w-full max-w-[21rem]" />
         <p className="mt-[0.5rem] text-center text-[0.8rem] text-zinc-500">Vista previa de lo guardado</p>
       </aside>
 
@@ -1382,7 +1417,256 @@ function Duplicar({ tipo, datos, setDatos, crear }) {
 
 /* ---------- Lista de todo ---------- */
 
-function Lista({ filas, abrir }) {
+/* Nuevo perfil: se elige la temática (pone el contenido de ejemplo: pestañas, fotos y textos), el producto
+   (ficha, miniweb o carta), el diseño y la marca (nombre, colores y letra), viéndolo en un móvil. Al crearlo se
+   guarda como una copia de la demo de esa temática con el diseño y la marca elegidos, y se abre en el editor.
+   La vista previa enseña todo al momento: el contenido, el diseño y la marca (con la marca de prueba de lib/prueba.js). */
+function NuevoPerfil({ filas, recargar, abrir }) {
+  const [tema, setTema] = useState(PLANTILLAS[0].clave)
+  const [producto, setProducto] = useState('ficha')
+  const [hero, setHero] = useState('polaroid')
+  const [barra, setBarra] = useState('')
+  const [estilo, setEstilo] = useState('revista')
+  const [nombre, setNombre] = useState('')
+  const [principal, setPrincipal] = useState('')
+  const [acento, setAcento] = useState('')
+  const [colorTexto, setColorTexto] = useState('')
+  const [letra, setLetra] = useState('')
+  const [creando, setCreando] = useState(false)
+  const [error, setError] = useState('')
+
+  const plantilla = PLANTILLAS.find(p => p.clave === tema)
+  const negocioBase = getNegocio(plantilla.ficha)
+  const cartaBase = plantilla.carta ? getCarta(plantilla.carta) : null
+  const esCarta = producto === 'carta'
+  // Colores de partida: los de la demo de la temática
+  const marcaBase = esCarta ? marcaDe(cartaBase ?? {}) : negocioBase
+  const colorPrincipal = principal || marcaBase?.theme?.colors?.primary || '#000000'
+  const colorAcento = acento || marcaBase?.theme?.colors?.accent || '#000000'
+  const colorDelTexto = colorTexto || marcaBase?.theme?.colors?.text || '#000000'
+
+  const heros = Object.entries(HEROS).filter(([, h]) => h.piezas && !h.paginaCompleta)
+  const estilos = Object.values(FAMILIAS).filter(f => f.carta)
+
+  // El nombre llega a la vista previa medio segundo después de dejar de escribir (si no, se recargaría a cada letra)
+  const [nombreVista, setNombreVista] = useState('')
+  useEffect(() => {
+    const t = setTimeout(() => setNombreVista(nombre.trim()), 500)
+    return () => clearTimeout(t)
+  }, [nombre])
+  // Marca de prueba en la dirección: la vista previa enseña el nombre, los colores y la tipografía al momento
+  const marca = [
+    nombreVista && `nombre=${encodeURIComponent(nombreVista)}`,
+    principal && `principal=${principal.slice(1)}`,
+    acento && `acento=${acento.slice(1)}`,
+    colorTexto && `texto=${colorTexto.slice(1)}`,
+    letra && `letra=${letra}`,
+  ]
+    .filter(Boolean)
+    .map(p => `&${p}`)
+    .join('')
+
+  const vista =
+    producto === 'ficha'
+      ? `/demo/${plantilla.ficha}?diseno=${hero}${barra ? `&barra=${barra}` : ''}${marca}`
+      : producto === 'miniweb'
+        ? // Comida: la miniweb de Chalaquita con la portada elegida; el resto, su ficha como miniweb
+          plantilla.miniweb
+          ? `/demo/${plantilla.miniweb}?diseno=${hero}${marca}`
+          : `/demo/${plantilla.ficha}?diseno=${hero}&miniweb=1${marca}`
+        : cartaBase
+          ? `/demo/${plantilla.carta}/carta?diseno=${estilo}${marca}`
+          : null
+
+  const crear = async () => {
+    if (!nombre.trim() || creando) return
+    setCreando(true)
+    setError('')
+    try {
+      const tipoFila = esCarta ? 'carta' : 'negocio'
+      const ocupadas = new Set([
+        ...(filas ?? []).filter(f => f.tipo === tipoFila).map(f => f.slug),
+        ...(esCarta ? cartas : negocios).map(n => n.slug),
+        ...RESERVADAS,
+      ])
+      const raiz = aSlug(nombre) || 'nuevo'
+      let slug = raiz
+      for (let n = 2; ocupadas.has(slug); n++) slug = `${raiz}-${n}`
+
+      const tipografia = TIPOGRAFIAS.find(t => t.id === letra)
+      let cambios
+      let base
+      if (esCarta) {
+        base = plantilla.carta
+        const inicio = inicioCopiaCarta(cartaBase)
+        cambios = fusionar(inicio, {
+          'marca.nombre': nombre.trim(),
+          diseno: estilo,
+          ...(principal ? { 'marca.theme.colors.primary': principal } : {}),
+          ...(acento ? { 'marca.theme.colors.accent': acento } : {}),
+          ...(colorTexto ? { 'marca.theme.colors.text': colorTexto } : {}),
+          ...(tipografia ? { 'marca.theme.fonts': tipografia.fonts } : {}),
+        })
+      } else {
+        // Miniweb de comida: copia de Chalaquita con la portada elegida. El resto: su ficha como miniweb
+        const deChalaquita = producto === 'miniweb' && plantilla.miniweb
+        base = deChalaquita ? plantilla.miniweb : plantilla.ficha
+        cambios = {
+          nombre: nombre.trim(),
+          ...(principal ? { 'theme.colors.primary': principal } : {}),
+          ...(acento ? { 'theme.colors.accent': acento } : {}),
+          ...(colorTexto ? { 'theme.colors.text': colorTexto } : {}),
+          ...(tipografia ? { 'theme.fonts': tipografia.fonts } : {}),
+          ...(producto === 'ficha'
+            ? { 'hero.diseno': hero, ...(barra ? { 'hero.barra': barra } : {}) }
+            : deChalaquita
+              ? { 'hero.portada': hero }
+              : {
+                  'hero.diseno': 'web',
+                  'hero.portada': hero,
+                  'hero.redesArriba': true,
+                  'hero.pestanas': pestanasDeMiniweb(negocioBase),
+                  tipo: 'miniweb',
+                }),
+        }
+      }
+
+      const { error } = await supabase.from('ediciones').insert({ tipo: tipoFila, slug, base, cambios })
+      if (error) throw new Error('No se ha podido crear.')
+      if (esCarta) await crearCartaConDueno(slug, aplicar(cartaBase, cambios).menuDia)
+      await recargar()
+      abrir(`${tipoFila}:${slug}`)
+    } catch (e) {
+      setError(e.message)
+      setCreando(false)
+    }
+  }
+
+  const titulo = 'text-[0.8rem] font-semibold text-zinc-500'
+  const opcion = activa => `rounded-[0.6rem] px-[0.75rem] py-[0.45rem] text-[0.9rem] font-medium ring-1 ${activa ? 'bg-zinc-900 text-white ring-zinc-900' : 'bg-white ring-zinc-300'}`
+
+  return (
+    <details className="rounded-[1rem] bg-white ring-1 ring-zinc-200 [&[open]>summary]:border-b [&[open]>summary]:border-zinc-200">
+      <summary className="cursor-pointer px-[1rem] py-[0.9rem] text-[1.05rem] font-bold">Nuevo perfil</summary>
+      <div className="grid gap-[1.25rem] px-[1rem] py-[1rem] lg:grid-cols-[minmax(0,1fr)_23.3rem] lg:items-start">
+        <div className="grid gap-[1rem]">
+          {/* 1. Temática: pone el contenido de ejemplo */}
+          <div className="grid gap-[0.4rem]">
+            <span className={titulo}>Temática del negocio</span>
+            <div className="flex flex-wrap gap-[0.4rem]">
+              {PLANTILLAS.map(p => (
+                <button key={p.clave} type="button" aria-pressed={tema === p.clave} onClick={() => setTema(p.clave)} className={opcion(tema === p.clave)}>
+                  {p.nombre}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 2. Producto */}
+          <div className="grid gap-[0.4rem]">
+            <span className={titulo}>Producto</span>
+            <div className="grid grid-cols-3 gap-[0.3rem] rounded-[0.75rem] bg-zinc-200 p-[0.25rem]">
+              {[
+                ['ficha', 'Ficha'],
+                ['miniweb', 'Miniweb'],
+                ['carta', 'Carta'],
+              ].map(([clave, texto]) => (
+                <button
+                  key={clave}
+                  type="button"
+                  aria-pressed={producto === clave}
+                  disabled={clave === 'carta' && !cartaBase}
+                  onClick={() => setProducto(clave)}
+                  className={`rounded-[0.55rem] py-[0.5rem] text-[0.95rem] font-semibold disabled:opacity-40 ${producto === clave ? 'bg-white shadow-[0_0.05rem_0.2rem_rgb(0_0_0/0.15)]' : 'text-zinc-600'}`}
+                >
+                  {texto}
+                </button>
+              ))}
+            </div>
+            {!cartaBase && <p className="text-[0.82rem] text-zinc-500">Esta temática todavía no tiene carta de ejemplo.</p>}
+          </div>
+
+          {/* 3. Diseño, según el producto */}
+          {!esCarta ? (
+            <div className="grid gap-[0.4rem]">
+              <span className={titulo}>{producto === 'miniweb' ? 'Portada' : 'Diseño de arriba'}</span>
+              <div className="flex flex-wrap gap-[0.4rem]">
+                {heros.map(([clave, h]) => (
+                  <button key={clave} type="button" aria-pressed={hero === clave} onClick={() => setHero(clave)} className={opcion(hero === clave)}>
+                    {h.nombre}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="grid gap-[0.4rem]">
+              <span className={titulo}>Estilo de carta</span>
+              <div className="flex flex-wrap gap-[0.4rem]">
+                {estilos.map(f => (
+                  <button key={f.carta} type="button" aria-pressed={estilo === f.carta} onClick={() => setEstilo(f.carta)} className={opcion(estilo === f.carta)}>
+                    {f.nombre}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          {producto === 'ficha' && (
+            <div className="grid gap-[0.4rem]">
+              <span className={titulo}>Estilo de pestañas</span>
+              <div className="flex flex-wrap gap-[0.4rem]">
+                {[['', { nombre: 'El suyo' }], ...Object.entries(BARRAS)].map(([clave, b]) => (
+                  <button key={clave || 'suyo'} type="button" aria-pressed={barra === clave} onClick={() => setBarra(clave)} className={opcion(barra === clave)}>
+                    {b.nombre}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 4. Marca */}
+          <Etiqueta texto="Nombre del negocio">
+            <input value={nombre} onChange={e => setNombre(e.target.value)} className={CAMPO} placeholder="Peluquería Ranita" />
+          </Etiqueta>
+          <div className="grid grid-cols-2 gap-[0.6rem]">
+            <Etiqueta texto="Color principal">
+              <CampoColor valor={colorPrincipal} cambiar={setPrincipal} />
+            </Etiqueta>
+            <Etiqueta texto="Color de acento">
+              <CampoColor valor={colorAcento} cambiar={setAcento} />
+            </Etiqueta>
+            <Etiqueta texto="Color del texto">
+              <CampoColor valor={colorDelTexto} cambiar={setColorTexto} />
+            </Etiqueta>
+          </div>
+          <Etiqueta texto="Tipografía">
+            <select value={letra} onChange={e => setLetra(e.target.value)} className={CAMPO}>
+              <option value="">La de la plantilla</option>
+              {TIPOGRAFIAS.map(t => (
+                <option key={t.id} value={t.id}>
+                  {t.nombre}
+                </option>
+              ))}
+            </select>
+          </Etiqueta>
+
+          {error && <p className="text-[0.9rem] font-semibold text-red-600">{error}</p>}
+          <button type="button" onClick={crear} disabled={!nombre.trim() || creando} className={BOTON}>
+            {creando ? 'Creando...' : `Crear ${producto === 'carta' ? 'carta' : producto === 'miniweb' ? 'miniweb' : 'ficha'}`}
+          </button>
+        </div>
+
+        {/* Vista previa: el contenido de la temática con el diseño elegido.
+            A 360 px de ancho por dentro, como el móvil bajo: se ve lo mismo que verá el cliente */}
+        <div className="lg:sticky lg:top-[1rem]">
+          {vista && <Movil key={vista} src={vista} titulo="Vista previa" ancho={360} className="mx-auto w-full max-w-[20rem]" />}
+          <p className="mt-[0.5rem] text-center text-[0.8rem] text-zinc-500">Con el contenido de ejemplo de la temática</p>
+        </div>
+      </div>
+    </details>
+  )
+}
+
+function Lista({ filas, abrir, recargar }) {
   const editadas = new Set((filas ?? []).map(f => `${f.tipo}:${f.slug}`))
   // Copias de fichas, miniwebs y cartas, con el nombre que les has puesto
   const copias = (filas ?? [])
@@ -1413,45 +1697,46 @@ function Lista({ filas, abrir }) {
     </li>
   )
 
-  const bloque = 'rounded-[1rem] bg-white px-[1rem] ring-1 ring-zinc-200'
+  // Grupo desplegable: cerrado, con su número; al tocarlo se abre la lista
+  const Grupo = ({ titulo, filas: lista }) =>
+    lista.length > 0 && (
+      <details className="rounded-[1rem] bg-white ring-1 ring-zinc-200 [&[open]>summary]:border-b [&[open]>summary]:border-zinc-200">
+        <summary className="flex cursor-pointer items-baseline justify-between gap-[1rem] px-[1rem] py-[0.9rem]">
+          <span className="text-[1.05rem] font-bold">{titulo}</span>
+          <span className="text-[0.9rem] text-zinc-500">{lista.length}</span>
+        </summary>
+        <ul className="px-[1rem]">
+          {lista.map(f => (
+            <Fila key={f.clave} {...f} />
+          ))}
+        </ul>
+      </details>
+    )
+
+  const aFila = n => ({ clave: `negocio:${n.slug}`, nombre: n.nombre, detalle: n.demo ? 'Demo' : 'Cliente', ruta: rutaNegocio(n) })
 
   return (
     <div className="grid gap-[1.25rem]">
       <h1 className="text-[1.5rem] font-bold">Administración</h1>
+
+      {/* Panel principal: crear un perfil nuevo eligiendo temática, producto, diseño y marca */}
+      <NuevoPerfil filas={filas} recargar={recargar} abrir={abrir} />
 
       <button type="button" onClick={() => abrir('asistente')} className={`${BOTON} inline-flex items-center justify-center gap-[0.4rem]`}>
         <Sparkles className="h-[1.1rem] w-[1.1rem]" aria-hidden="true" />
         Crear con el asistente
       </button>
 
-      {copias.length > 0 && (
-        <section>
-          <h2 className="mb-[0.5rem] text-[0.9rem] font-bold text-zinc-500">Copias para enseñar</h2>
-          <ul className={bloque}>
-            {copias.map(f => (
-              <Fila key={`${f.tipo}:${f.slug}`} clave={`${f.tipo}:${f.slug}`} nombre={f.nombre} detalle={f.detalle} ruta={f.ruta} />
-            ))}
-          </ul>
-        </section>
-      )}
-
-      <section>
-        <h2 className="mb-[0.5rem] text-[0.9rem] font-bold text-zinc-500">Fichas y miniwebs</h2>
-        <ul className={bloque}>
-          {negocios.map(n => (
-            <Fila key={n.slug} clave={`negocio:${n.slug}`} nombre={n.nombre} detalle={n.demo ? 'Demo' : 'Cliente'} ruta={rutaNegocio(n)} />
-          ))}
-        </ul>
-      </section>
-
-      <section>
-        <h2 className="mb-[0.5rem] text-[0.9rem] font-bold text-zinc-500">Cartas</h2>
-        <ul className={bloque}>
-          {cartas.map(c => (
-            <Fila key={c.slug} clave={`carta:${c.slug}`} nombre={marcaDe(c)?.nombre ?? c.slug} detalle={c.demo ? 'Demo' : 'Cliente'} ruta={rutaCarta(c)} />
-          ))}
-        </ul>
-      </section>
+      {/* Todo lo que hay, por producto, en desplegables cerrados */}
+      <div className="grid gap-[0.6rem]">
+        <Grupo titulo="Copias para enseñar" filas={copias.map(f => ({ clave: `${f.tipo}:${f.slug}`, nombre: f.nombre, detalle: f.detalle, ruta: f.ruta }))} />
+        <Grupo titulo="Fichas" filas={negocios.filter(n => tipoDe(n) === 'ficha').map(aFila)} />
+        <Grupo titulo="Miniwebs" filas={negocios.filter(n => tipoDe(n) === 'miniweb').map(aFila)} />
+        <Grupo
+          titulo="Cartas"
+          filas={cartas.map(c => ({ clave: `carta:${c.slug}`, nombre: marcaDe(c)?.nombre ?? c.slug, detalle: c.demo ? 'Demo' : 'Cliente', ruta: rutaCarta(c) }))}
+        />
+      </div>
     </div>
   )
 }
@@ -1501,7 +1786,7 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-svh bg-zinc-100 font-sans text-zinc-900">
-      <div className={`mx-auto w-full max-w-[32rem] px-[1rem] pb-[2rem] pt-[1rem] ${editar?.includes(':') ? 'lg:max-w-[64rem]' : ''}`}>
+      <div className={`mx-auto w-full max-w-[32rem] px-[1rem] pb-[2rem] pt-[1rem] ${editar === 'asistente' ? '' : 'lg:max-w-[64rem]'}`}>
         {!supabase ? (
           <p className="mt-[3rem] text-center text-zinc-500">El panel no está disponible ahora mismo.</p>
         ) : sesion === undefined ? null : !sesion ? (
@@ -1525,7 +1810,7 @@ export default function AdminPage() {
               // key: al abrir otra (por ejemplo, la copia recién creada) el editor empieza de cero
               <Editor key={`${editar}-${Boolean(fila)}`}tipo={tipo} slug={slug} fila={fila} volver={() => abrir(null)} recargar={recargar} abrir={abrir} />
             ) : (
-              <Lista filas={filas} abrir={abrir} />
+              <Lista filas={filas} abrir={abrir} recargar={recargar} />
             )}
           </>
         )}

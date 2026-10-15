@@ -6,6 +6,7 @@ import { HEROS } from '../heros'
 import { BARRAS } from '../fichas/barras'
 import { tipoDe } from '../lib/tematicas'
 import { FAMILIAS, fichaPorPiezas } from '../familias'
+import Movil from '../components/Movil'
 
 /* Escaparate de diseños (/disenos): para probar y enseñar las fichas por piezas. Se elige con qué datos verla
    (los de una demo: su marca, sus fotos y sus textos), el diseño de arriba y el estilo de pestañas, y se ve en un
@@ -179,12 +180,8 @@ export default function DisenosPage() {
 
         {/* Vista en un móvil */}
         <div className="lg:sticky lg:top-[1.25rem]">
-          <iframe
-            key={ruta}
-            title="Vista previa"
-            src={ruta}
-            className="mx-auto block h-[min(48rem,calc(100svh-2.5rem))] w-full max-w-[24rem] rounded-[1.5rem] border-[0.4rem] border-zinc-900 bg-white"
-          />
+          {/* La página a 360 px de ancho (el móvil bajo), reducida entera para caber en el marco */}
+          <Movil key={ruta} src={ruta} titulo="Vista previa" ancho={360} className="mx-auto w-full max-w-[22rem]" />
         </div>
       </div>
     </div>

@@ -1,5 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
+import { FAMILIAS } from '../familias'
+import { marcaDePrueba } from '../lib/prueba'
+
+// Estilos de carta que existen (los que se pueden probar con ?diseno=)
+const ESTILOS_CARTA = new Set(Object.values(FAMILIAS).map(f => f.carta).filter(Boolean))
 import { ArrowUpRight, ChevronLeft, ChevronRight } from 'lucide-react'
 import { cartas, fotoDe, rutaCarta, ALERGENOS } from '../cartas'
 import DemoPager from '../components/DemoPager'
@@ -249,6 +254,8 @@ function useAhora() {
 // Al pasar de una carta a otra con las flechas, la página empieza de cero (pestañas, sección e idioma)
 export default function CartaPage(props) {
   const { slug } = useParams()
+  const [params] = useSearchParams()
+  const pruebaDiseno = params.get('diseno')
   const { cargando, fila } = useCartaRemota(slug)
   const ahora = useAhora()
   // Cambios de /admin: los de la carta (textos, fotos, platos; o una copia, que solo vive en Supabase)
@@ -261,11 +268,15 @@ export default function CartaPage(props) {
   const edicionMarca = useEdicion('negocio', conCambios?.negocio)
   const negocio = useMemo(() => {
     if (!conCambios) return null
-    return conCambios.negocio ? conEdicion('negocio', conCambios.negocio, edicionMarca.fila) : conCambios.marca ?? null
-  }, [conCambios, edicionMarca.fila])
+    const marca = conCambios.negocio ? conEdicion('negocio', conCambios.negocio, edicionMarca.fila) : conCambios.marca ?? null
+    // En las demos: nombre, colores y tipografía de prueba desde la dirección (vista previa de /admin)
+    return conCambios.demo ? marcaDePrueba(marca, params) : marca
+  }, [conCambios, edicionMarca.fila, params])
   // Mientras llega lo de Supabase no se pinta nada, para no enseñar un momento el menú antiguo
   if (cargando || edicionCarta.cargando || edicionMarca.cargando) return null
-  const carta = conOfertas(conHorario(juntar(conCambios, fila), ahora), ahora)
+  let carta = conOfertas(conHorario(juntar(conCambios, fila), ahora), ahora)
+  // En las demos, el estilo de carta se puede probar desde la dirección (?diseno=polaroid): lo usa /admin
+  if (carta?.demo && ESTILOS_CARTA.has(pruebaDiseno)) carta = { ...carta, diseno: pruebaDiseno }
   // La clave cambia si el menú del día aparece o desaparece (horario, interruptor): la carta empieza de cero
   // en lo que toca, y no se queda en blanco en la pestaña del menú que ya no existe
   return <Carta key={`${slug}-${Boolean(carta?.menuDia)}`} carta={carta} negocio={negocio} {...props} />

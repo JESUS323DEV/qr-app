@@ -55,6 +55,8 @@ Proyecto de Jesús (desarrollador autodidacta, marca JesúsDev, Barcelona). Es i
 
 - **Mezclar piezas entre diseños (para el asistente)**: poder combinar el hero de una demo con las pestañas de otra (por ejemplo, hero Mosaico con pestañas Precios, Cita y Ubicación). Ahora cada hero pinta sus propias pestañas y solo entiende ciertos tipos, así que no se pueden mezclar. Pasos: 1) sacar una tabla de qué tipos de pestaña entiende cada hero; 2) unificar las comunes (Horario, Ubicación, Cita, Encargos) para que todos los heros las pinten con su estilo; 3) que el asistente elija hero y pestañas por separado. Jesús valida las combinaciones.
 
+- **Asistente dentro del "Nuevo perfil" de /admin**: un cuadro de texto arriba ("peluquería en Gràcia, rosa palo y negro...") y un botón que rellena los selectores (temática, producto, diseño, colores y tipografía); Jesús lo ve en la vista previa y retoca antes de crear. Al crear, el asistente escribe los textos y busca las fotos con los datos reales. Así queda una sola herramienta en vez de dos.
+
 - **Generador de QR**: pantalla interna para generar el QR de cada negocio con sus colores (librería `qr-code-styling`): forma de los puntos, ojos, inicial o logo en el centro y marco con texto, descargable en alta calidad para imprenta.
 - **Semántica de las pestañas** (landing y miniwebs): pintar todas las pestañas en el HTML y ocultar solo las inactivas, con roles accesibles (`tablist`, `tab`, `tabpanel`). Ahora solo existe en el HTML la pestaña abierta, así que Google no ve las demás y los lectores de pantalla no entienden la estructura.
 - **Prerenderizar** la landing y las miniwebs (HTML ya pintado al publicar): mejor SEO y vista previa con título e imagen al compartir el enlace por WhatsApp o Instagram.

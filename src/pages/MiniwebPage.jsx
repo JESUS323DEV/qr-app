@@ -1,6 +1,8 @@
 import { useEffect, useMemo } from 'react'
 import { Navigate, useParams, useSearchParams } from 'react-router-dom'
 import { BARRAS } from '../fichas/barras'
+import { marcaDePrueba } from '../lib/prueba'
+import { fichaAMiniweb } from '../lib/miniweb'
 import { ChevronRight } from 'lucide-react'
 import { conEdicion, useEdicion } from '../lib/ediciones'
 import { HEROS } from '../heros'
@@ -206,19 +208,23 @@ export default function MiniwebPage({ demo = false }) {
   // ?miniweb=1: la ficha vista como miniweb (su diseño de arriba pasa a ser la portada y cada pestaña, una página)
   const pruebaMiniweb = params.get('miniweb') === '1'
   const negocio = useMemo(() => {
-    const n = conEdicion('negocio', slug, fila)
+    const leido = conEdicion('negocio', slug, fila)
+    // En las demos: nombre, colores y tipografía de prueba desde la dirección (vista previa de /admin)
+    const n = leido?.demo ? marcaDePrueba(leido, params) : leido
     if (!n?.demo || (!pruebaDiseno && !pruebaBarra && !pruebaMiniweb)) return n
+    // Una miniweb (Chalaquita): el diseño pedido es su portada
+    if (HEROS[n.hero.diseno]?.paginaCompleta) {
+      return HEROS[pruebaDiseno]?.piezas ? { ...n, hero: { ...n.hero, portada: pruebaDiseno } } : n
+    }
     const diseno = HEROS[pruebaDiseno]?.piezas ? pruebaDiseno : n.hero.diseno
-    if (pruebaMiniweb && !HEROS[diseno]?.paginaCompleta) {
-      // Estructura de Chalaquita (menú de enlaces arriba y redes debajo) con la portada de la ficha
-      // si va por piezas; si no, la Galería
-      const portada = HEROS[diseno]?.piezas ? diseno : 'galeria'
-      return { ...n, tipo: 'miniweb', hero: { ...n.hero, diseno: 'web', portada, barra: undefined, redesArriba: true } }
+    if (pruebaMiniweb) {
+      // La ficha como miniweb, con la estructura de Chalaquita y el diseño de portada (si no va por piezas, Galería)
+      return fichaAMiniweb(n, HEROS[diseno]?.piezas ? diseno : 'galeria')
     }
     // La barra solo cambia en los diseños por piezas
     const barra = HEROS[diseno]?.piezas && BARRAS[pruebaBarra] ? pruebaBarra : n.hero.barra
     return { ...n, hero: { ...n.hero, diseno, barra } }
-  }, [slug, fila, pruebaDiseno, pruebaBarra, pruebaMiniweb])
+  }, [slug, fila, pruebaDiseno, pruebaBarra, pruebaMiniweb, params])
 
   useEffect(() => {
     if (!negocio) return

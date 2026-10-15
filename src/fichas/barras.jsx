@@ -41,6 +41,10 @@ const ICONOS = { fotos: Images, inicio: House, horario: Clock, contacto: Message
 
 export default function BarraPestanas({ estilo = 'subrayado', pestanas, activa, tocar, sobre = 'claro' }) {
   const oscuro = sobre === 'oscuro'
+  // En las barras de botones iguales (pastillas, segmentada, carpetas), las palabras largas ("Ubicación",
+  // "Encargos") no caben en móviles estrechos: entonces la letra se ajusta al ancho de la pantalla
+  const largas = pestanas.some(p => (p.texto ?? '').length > 7)
+  const letraAjustada = largas ? 'min-w-0 px-[0.1rem] text-[clamp(0.68rem,0.42rem+1.1vw,0.8rem)]' : 'text-[0.8rem]'
   const boton = (p, i, clase, contenido = p.texto) => (
     <button key={`${p.tipo}-${i}`} type="button" aria-pressed={i === activa} onClick={() => tocar(i)} className={clase}>
       {contenido}
@@ -74,7 +78,7 @@ export default function BarraPestanas({ estilo = 'subrayado', pestanas, activa, 
           boton(
             p,
             i,
-            `flex-1 rounded-full py-[0.55rem] text-[0.8rem] font-semibold transition-colors duration-300 ${
+            `flex-1 rounded-full py-[0.55rem] ${letraAjustada} font-semibold transition-colors duration-300 ${
               i === activa
                 ? oscuro ? 'bg-white text-[#141414]' : 'bg-demo-text text-white'
                 : oscuro ? 'text-white/75 hover:text-white' : 'text-demo-muted hover:text-demo-text'
@@ -92,7 +96,7 @@ export default function BarraPestanas({ estilo = 'subrayado', pestanas, activa, 
           boton(
             p,
             i,
-            `rounded-full py-[0.55rem] text-[0.8rem] font-semibold transition-colors duration-300 ${
+            `rounded-full py-[0.55rem] ${letraAjustada} font-semibold transition-colors duration-300 ${
               oscuro
                 ? `backdrop-blur-sm ${i === activa ? 'bg-white text-[#141414]' : 'bg-black/45 text-white hover:bg-black/60'}`
                 : i === activa ? 'bg-demo-text text-demo-bg' : 'bg-demo-surface text-demo-muted hover:text-demo-text'
@@ -180,7 +184,7 @@ export default function BarraPestanas({ estilo = 'subrayado', pestanas, activa, 
           boton(
             p,
             i,
-            `flex-1 rounded-t-[0.8rem] py-[0.55rem] text-[0.85rem] font-semibold transition-colors duration-300 ${
+            `flex-1 rounded-t-[0.8rem] py-[0.55rem] ${largas ? letraAjustada : 'text-[0.85rem]'} font-semibold transition-colors duration-300 ${
               oscuro
                 ? i === activa ? 'bg-white text-[#141414]' : 'bg-white/20 text-white/80 hover:text-white'
                 : i === activa ? 'bg-demo-surface text-demo-text' : 'bg-demo-surface/45 text-demo-muted hover:text-demo-text'
@@ -200,7 +204,8 @@ export default function BarraPestanas({ estilo = 'subrayado', pestanas, activa, 
             p,
             i,
             `flex flex-1 flex-col items-center gap-[0.2rem] py-[0.55rem] text-[0.75rem] font-medium transition-colors duration-300 ${
-              i === activa ? 'text-demo-primary' : oscuro ? 'text-white/55 hover:text-white' : 'text-demo-muted hover:text-demo-text'
+              // Sobre fondo oscuro o de color (que puede ser el principal), la elegida en blanco para que se vea
+              i === activa ? (oscuro ? 'text-white' : 'text-demo-primary') : oscuro ? 'text-white/55 hover:text-white' : 'text-demo-muted hover:text-demo-text'
             }`,
             <>
               {Icono && <Icono className="h-[1.15rem] w-[1.15rem]" aria-hidden="true" />}

@@ -6,9 +6,10 @@ import BotonCompartir from '../components/BotonCompartir'
 import { enlaceWhatsapp } from '../lib/whatsapp'
 import { ALERGENOS } from '../cartas'
 import useVueltaPestanas from '../lib/useVueltaPestanas'
-import { fotoDeRespaldo, tipoComun } from '../fichas/escenas'
+import { fotoDeRespaldo, fotosDe, tipoComun } from '../fichas/escenas'
 import BarraPestanas from '../fichas/barras'
 import { HEROS } from './index'
+import Ofertas from '../components/carta/Ofertas'
 
 /* Web (plan premium). Parece una web de verdad dentro del móvil: arriba una barra de navegación del color de la marca,
    con las pestañas como enlaces de menú (raya bajo la activa). Debajo, cada pestaña es una "página" completa
@@ -526,8 +527,13 @@ function SeccionCarta({ seccion }) {
 /* Menú: el menú del día y la carta, como en las cartas digitales. Arriba dos pestañas (Menú del día / Carta);
    en la carta, una fila con sus secciones. El contenido se desliza dentro de la página si no cabe.
    pestana: menuDia { texto, titulo, cuando, precio, incluye, grupos }, secciones[{ nombre, platos }] */
+/* También vale para belleza y tiendas (pestaña servicios): en vez del menú del día, las ofertas (con sus
+   polaroids, si traen fotos), y la carta se llama Servicios.
+   pestana: ofertas { texto, titulo, cuando, fotos, lista }, secciones, textoCarta? */
 function PaginaMenu({ pestana }) {
-  const [vista, setVista] = useState(pestana.menuDia ? 'menu' : 'carta')
+  const ofertas = pestana.ofertas
+  const destacado = pestana.menuDia ?? ofertas
+  const [vista, setVista] = useState(destacado ? 'menu' : 'carta')
   const [seccionActiva, setSeccionActiva] = useState(pestana.secciones?.[0]?.nombre)
   const seccion = pestana.secciones?.find(s => s.nombre === seccionActiva)
 
@@ -535,8 +541,12 @@ function PaginaMenu({ pestana }) {
     <div className="flex h-full flex-col">
       <div className="border-b border-demo-text/10 px-[1.25rem] pt-[0.9rem]">
         <div className="flex gap-[1.4rem]">
-          {pestana.menuDia && <Subpestana activa={vista === 'menu'} onClick={() => setVista('menu')}>{pestana.menuDia.texto}</Subpestana>}
-          {pestana.secciones?.length > 0 && <Subpestana activa={vista === 'carta'} onClick={() => setVista('carta')}>Carta</Subpestana>}
+          {destacado && <Subpestana activa={vista === 'menu'} onClick={() => setVista('menu')}>{destacado.texto ?? 'Ofertas'}</Subpestana>}
+          {pestana.secciones?.length > 0 && (
+            <Subpestana activa={vista === 'carta'} onClick={() => setVista('carta')}>
+              {pestana.textoCarta ?? (ofertas ? 'Servicios' : 'Carta')}
+            </Subpestana>
+          )}
         </div>
       </div>
 
@@ -551,7 +561,10 @@ function PaginaMenu({ pestana }) {
       )}
 
       <div className="flex-1 overflow-y-auto px-[1.25rem] pb-[1.25rem] pt-[1rem]">
-        {vista === 'menu' && <MenuDelDia menu={pestana.menuDia} />}
+        {vista === 'menu' && pestana.menuDia && <MenuDelDia menu={pestana.menuDia} />}
+        {vista === 'menu' && !pestana.menuDia && ofertas && (
+          <Ofertas menu={{ titulo: ofertas.titulo ?? 'Ofertas', cuando: ofertas.cuando, fotos: ofertas.fotos, ofertas: ofertas.lista ?? [] }} />
+        )}
         {vista === 'carta' && seccion && <SeccionCarta seccion={seccion} />}
       </div>
     </div>
@@ -563,6 +576,8 @@ const PAGINAS = {
   horario: PaginaHorario,
   reservar: PaginaReservar,
   menu: PaginaMenu,
+  // Belleza y tiendas: ofertas y servicios (la misma página que el menú)
+  servicios: PaginaMenu,
 }
 
 // Pestaña sin página propia
@@ -672,6 +687,8 @@ function PaginaPrecios({ pestana, respaldo }) {
 
 // Página de cada pestaña: la propia de la miniweb (inicio, horario, reservar, menu) o la común de su tipo
 const paginaDe = (tipo, portada) => {
+  // Con portada elegida, también el Inicio de las miniwebs propias (Chalaquita) es la portada
+  if (tipo === 'inicio' && portada) return PaginaPortada
   if (PAGINAS[tipo]) return PAGINAS[tipo]
   const comun = tipoComun(tipo)
   if (comun === 'fotos') return portada ? PaginaPortada : PaginaVacia
@@ -690,6 +707,8 @@ export default function HeroWeb({ hero, nombre, lema, cuerpo, redes, redesTexto 
   const pestanas = hero.pestanas ?? []
   const portada = HEROS[hero.portada]?.piezas ? hero.portada : null
   const respaldo = fotoDeRespaldo(pestanas)
+  // Fotos para la portada del Inicio de una miniweb propia: todas las que lleva repartidas por sus páginas
+  const fotosPortada = [...new Set(pestanas.flatMap(p => [p.foto, ...fotosDe(p).map(f => f.src)]).filter(Boolean))].map(src => ({ src }))
   const [activa, setActiva] = useState(0)
   const { parar } = useVueltaPestanas(pestanas, setActiva)
 
@@ -772,7 +791,7 @@ export default function HeroWeb({ hero, nombre, lema, cuerpo, redes, redesTexto 
                 i === activa ? 'opacity-100 transition-opacity duration-[250ms] ease-out' : 'pointer-events-none opacity-0 transition-none'
               }`}
             >
-              <Pagina pestana={p} irA={irA} cuerpo={cuerpo} negocio={nombre} lema={lema} cargarMapa portada={portada} heroBase={hero} respaldo={respaldo} />
+              <Pagina pestana={p.tipo === 'inicio' && portada ? { tipo: 'fotos', texto: p.texto, fotos: fotosPortada } : p} irA={irA} cuerpo={cuerpo} negocio={nombre} lema={lema} cargarMapa portada={portada} heroBase={hero} respaldo={respaldo} />
             </div>
           )
         })}

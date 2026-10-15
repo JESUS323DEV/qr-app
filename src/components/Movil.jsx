@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from 'react'
 const ANCHO_REAL = 390
 
 // Marco de móvil. Con `src` enseña esa página dentro, como en un teléfono de verdad.
-export default function Movil({ src, titulo, children, className = '' }) {
+// ancho: el ancho del móvil que se imita (en /admin, 360: el móvil bajo)
+export default function Movil({ src, titulo, children, className = '', ancho = ANCHO_REAL }) {
   const pantalla = useRef(null)
   const [medida, setMedida] = useState(null)
 
@@ -12,11 +13,11 @@ export default function Movil({ src, titulo, children, className = '' }) {
     if (!src || !pantalla.current) return
     const obs = new ResizeObserver(([e]) => {
       const { width, height } = e.contentRect
-      setMedida({ escala: width / ANCHO_REAL, alto: height })
+      setMedida({ escala: width / ancho, alto: height })
     })
     obs.observe(pantalla.current)
     return () => obs.disconnect()
-  }, [src])
+  }, [src, ancho])
 
   return (
     <div
@@ -31,7 +32,7 @@ export default function Movil({ src, titulo, children, className = '' }) {
               loading="lazy"
               className="absolute left-0 top-0 origin-top-left border-0"
               style={{
-                width: ANCHO_REAL,
+                width: ancho,
                 height: medida.alto / medida.escala,
                 transform: `scale(${medida.escala})`,
               }}

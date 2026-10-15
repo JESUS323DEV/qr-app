@@ -1,0 +1,47 @@
+import { getCarta } from '../cartas'
+import { tipoComun } from '../fichas/escenas'
+
+/* Una ficha convertida en miniweb, con la estructura de Chalaquita (menú de enlaces arriba, redes debajo):
+   - Inicio: la portada (el hero de ficha elegido) con las fotos de la ficha, y las reseñas debajo.
+   - Servicios: ofertas y servicios. De momento, de relleno, los de la carta de Laca para todas las temáticas,
+     hasta que haya contenidos propios.
+   - Horario: el de la ficha (o uno de relleno si no tiene), con el mapa de su pestaña de ubicación debajo
+     (como Chalaquita).
+   - Contacto: la pestaña de cita, encargos o pedido de la ficha.
+   Las temáticas de comida no pasan por aquí: usan la miniweb de Chalaquita (plantillas.js). */
+
+export const RELLENO_SERVICIOS = 'laca'
+
+// Horario de relleno, para las fichas que no tienen pestaña de horario (por ejemplo, la barbería)
+const RELLENO_HORARIO = [
+  { dias: 'Martes a viernes', horas: '10:00 a 20:00' },
+  { dias: 'Sábado', horas: '10:00 a 15:00' },
+  { dias: 'Domingo y lunes', horas: 'Cerrado' },
+]
+
+export function pestanasDeMiniweb(negocio) {
+  const pestanas = negocio.hero?.pestanas ?? []
+  const de = tipo => pestanas.find(p => tipoComun(p.tipo) === tipo)
+  const fotos = de('fotos')
+  const horario = de('horario')
+  const ubicacion = de('ubicacion')
+  const contacto = de('contacto')
+  const relleno = getCarta(RELLENO_SERVICIOS)
+
+  // Siempre las cuatro páginas de Chalaquita: si la ficha no tiene horario, uno de relleno (con su mapa igual)
+  const horarioDePagina = horario ?? { tipo: 'horario', texto: 'Horario', titulo: 'Horario', foto: contacto?.foto, lineas: RELLENO_HORARIO }
+
+  return [
+    fotos && { ...fotos, texto: 'Inicio' },
+    relleno && { tipo: 'servicios', texto: 'Servicios', ofertas: relleno.ofertas, secciones: relleno.secciones },
+    { ...horarioDePagina, ...(ubicacion ? { mapa: ubicacion.mapa, direccion: ubicacion.direccion } : {}) },
+    contacto,
+  ].filter(Boolean)
+}
+
+// La ficha entera como miniweb, con el hero elegido de portada
+export const fichaAMiniweb = (negocio, portada) => ({
+  ...negocio,
+  tipo: 'miniweb',
+  hero: { ...negocio.hero, diseno: 'web', portada, barra: undefined, redesArriba: true, pestanas: pestanasDeMiniweb(negocio) },
+})
