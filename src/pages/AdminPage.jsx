@@ -12,6 +12,7 @@ import { DISENOS_ASISTENTE, DISENOS_CARTA } from '../asistente/disenos'
 import { tipoDe } from '../lib/tematicas'
 import { HEROS } from '../heros'
 import { BARRAS } from '../fichas/barras'
+import { FAMILIAS } from '../familias'
 
 /* Panel de Jesús (/admin): cambiar textos, fotos y colores de cualquier ficha, miniweb o carta desde el móvil,
    sin tocar código, y duplicar una demo para adaptarla en segundos al negocio que tiene delante.
@@ -55,7 +56,7 @@ const reducirFoto = archivo =>
 
 // Datos que no se tocan desde aquí: estructura, diseño, direcciones internas, tipografías...
 // (barra es el estilo de pestañas: se elige en el bloque Diseño, con su selector)
-const SALTAR = new Set(['slug', 'demo', 'copia', 'diseno', 'barra', 'tipo', 'platform', 'tematica', 'sector', 'negocio', 'google', 'family', 'idiomas', 'alergenos', 'alt'])
+const SALTAR = new Set(['slug', 'demo', 'copia', 'diseno', 'barra', 'portada', 'perfil', 'tipo', 'platform', 'tematica', 'sector', 'negocio', 'google', 'family', 'idiomas', 'alergenos', 'alt'])
 
 const CLAVES_FOTO = new Set(['src', 'foto', 'fotos', 'imagen', 'img', 'logo', 'poster', 'captura'])
 const esColor = v => /^#([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(v)
@@ -845,19 +846,140 @@ function Bloque({ bloque, abierto, campo }) {
   )
 }
 
-/* Piezas de una ficha: el diseño de arriba (los heros por piezas, más el que trae) y el estilo de las pestañas.
-   Al cambiar de diseño, las pestañas comunes (fotos, horario, contacto, ubicación, precios) se pintan en el nuevo;
-   las propias de un diseño (esmaltes, youtube...) solo salen en el suyo. */
-function Piezas({ hero, cambiar }) {
+/* Diseño de una página, con una pestaña por producto:
+   - Ficha: el diseño de arriba (los heros por piezas, más el que trae) y el estilo de las pestañas. Al cambiar de
+     diseño, las pestañas comunes (fotos, horario, contacto, ubicación, precios) se pintan en el nuevo; las propias
+     de un diseño (esmaltes, youtube...) solo salen en el suyo.
+   - Miniweb: la estructura (de momento, la Clásica de Chalaquita: menú de enlaces arriba, redes debajo, portada
+     grande con las reseñas debajo) y el hero de ficha que hace de portada.
+   - Carta: el estilo de carta y el perfil (restaurante con menú del día; belleza o tienda con ofertas).
+   La ficha (o miniweb) y la carta de un negocio son dos páginas distintas: desde una, la pestaña de la otra lleva a
+   su editor. */
+const PERFILES_CARTA = [
+  { clave: 'restaurante', nombre: 'Restaurante (menú del día)' },
+  { clave: 'belleza', nombre: 'Belleza (ofertas y servicios)' },
+  { clave: 'tienda', nombre: 'Tienda (ofertas y productos)' },
+]
+
+function Diseno({ tipo, slug, vista, original, cambiar, abrir }) {
+  const hero = vista.hero
+  const miniweb = tipo === 'negocio' && Boolean(HEROS[hero?.diseno]?.paginaCompleta)
+  const producto = tipo === 'carta' ? 'carta' : miniweb ? 'miniweb' : 'ficha'
+  const portadas = Object.entries(HEROS).filter(([, h]) => h.piezas && !h.paginaCompleta)
+  // La otra página del mismo negocio: su carta (desde la ficha) o su ficha (desde la carta)
+  const suCarta = tipo === 'negocio' ? cartas.find(c => c.negocio === slug) : null
+  const suFicha = tipo === 'carta' ? vista.negocio : null
+
+  // Pasar de ficha a miniweb y al revés: la portada de la miniweb es el diseño de la ficha (si va por piezas)
+  const pasarA = destino => {
+    if (destino === producto) return
+    if (destino === 'carta') return suCarta && abrir(`carta:${suCarta.slug}`)
+    if (tipo === 'carta') return suFicha && abrir(`negocio:${suFicha}`)
+    if (destino === 'miniweb') {
+      cambiar('hero.diseno', 'web')
+      cambiar('hero.portada', HEROS[hero.diseno]?.piezas ? hero.diseno : 'galeria')
+      cambiar('hero.redesArriba', true)
+      cambiar('tipo', 'miniweb')
+    } else {
+      const disenoOriginal = original.hero?.diseno
+      cambiar('hero.diseno', hero.portada ?? (HEROS[disenoOriginal]?.paginaCompleta ? 'galeria' : disenoOriginal))
+      cambiar('hero.portada', original.hero?.portada)
+      cambiar('hero.redesArriba', original.hero?.redesArriba)
+      cambiar('tipo', original.tipo === 'miniweb' ? 'ficha' : original.tipo)
+    }
+  }
+  const pestanas = [
+    { clave: 'ficha', texto: 'Ficha', vale: tipo === 'negocio' || Boolean(suFicha) },
+    { clave: 'miniweb', texto: 'Miniweb', vale: tipo === 'negocio' || Boolean(suFicha) },
+    { clave: 'carta', texto: 'Carta', vale: tipo === 'carta' || Boolean(suCarta) },
+  ]
+
+  return (
+    <details open className="rounded-[1rem] bg-white ring-1 ring-zinc-200 [&[open]>summary]:border-b [&[open]>summary]:border-zinc-200">
+      <summary className="cursor-pointer px-[1rem] py-[0.85rem] text-[1rem] font-bold">Diseño</summary>
+      <div className="grid gap-[1rem] px-[1rem] py-[1rem]">
+        <div role="tablist" aria-label="Producto" className="grid grid-cols-3 gap-[0.3rem] rounded-[0.75rem] bg-zinc-200 p-[0.25rem]">
+          {pestanas.map(p => (
+            <button
+              key={p.clave}
+              type="button"
+              role="tab"
+              aria-selected={producto === p.clave}
+              disabled={!p.vale}
+              onClick={() => pasarA(p.clave)}
+              className={`rounded-[0.55rem] py-[0.5rem] text-[0.95rem] font-semibold disabled:opacity-40 ${producto === p.clave ? 'bg-white text-zinc-900 shadow-[0_0.05rem_0.2rem_rgb(0_0_0/0.15)]' : 'text-zinc-600'}`}
+            >
+              {p.texto}
+            </button>
+          ))}
+        </div>
+        {tipo === 'negocio' && !suCarta && <p className="text-[0.82rem] text-zinc-500">Este negocio no tiene carta.</p>}
+        {tipo === 'carta' && !suFicha && <p className="text-[0.82rem] text-zinc-500">Esta carta no tiene ficha: lleva su propia marca.</p>}
+
+        {producto === 'ficha' && <DisenoFicha hero={hero} cambiar={cambiar} />}
+
+        {producto === 'miniweb' && (
+          <>
+            <Etiqueta texto="Estructura">
+              <select value="clasica" onChange={() => {}} className={CAMPO}>
+                <option value="clasica">Clásica: menú arriba, redes debajo y portada con las reseñas</option>
+              </select>
+            </Etiqueta>
+            <Etiqueta texto="Portada">
+              <select value={hero.portada ?? ''} onChange={e => cambiar('hero.portada', e.target.value || undefined)} className={CAMPO}>
+                {!hero.portada && <option value="">La suya</option>}
+                {portadas.map(([clave, h]) => (
+                  <option key={clave} value={clave}>
+                    {h.nombre}
+                  </option>
+                ))}
+              </select>
+            </Etiqueta>
+          </>
+        )}
+
+        {producto === 'carta' && (
+          <>
+            <Etiqueta texto="Estilo de carta">
+              <select value={vista.diseno} onChange={e => cambiar('diseno', e.target.value)} className={CAMPO}>
+                {Object.values(FAMILIAS)
+                  .filter(f => f.carta)
+                  .map(f => (
+                    <option key={f.carta} value={f.carta}>
+                      {f.nombre}
+                    </option>
+                  ))}
+              </select>
+            </Etiqueta>
+            <Etiqueta texto="Perfil">
+              <select
+                value={vista.perfil ?? 'restaurante'}
+                onChange={e => cambiar('perfil', e.target.value === 'restaurante' && !original.perfil ? undefined : e.target.value)}
+                className={CAMPO}
+              >
+                {PERFILES_CARTA.map(p => (
+                  <option key={p.clave} value={p.clave}>
+                    {p.nombre}
+                  </option>
+                ))}
+              </select>
+            </Etiqueta>
+          </>
+        )}
+      </div>
+    </details>
+  )
+}
+
+// La pestaña Ficha del bloque Diseño: el diseño de arriba y el estilo de pestañas
+function DisenoFicha({ hero, cambiar }) {
   const diseno = hero?.diseno
   const opciones = Object.entries(HEROS).filter(([clave, h]) => (h.piezas || clave === diseno) && !h.paginaCompleta)
   const porPiezas = Boolean(HEROS[diseno]?.piezas)
   const barra = hero?.barra ?? HEROS[diseno]?.barra
 
   return (
-    <details open className="rounded-[1rem] bg-white ring-1 ring-zinc-200 [&[open]>summary]:border-b [&[open]>summary]:border-zinc-200">
-      <summary className="cursor-pointer px-[1rem] py-[0.85rem] text-[1rem] font-bold">Diseño</summary>
-      <div className="grid gap-[1rem] px-[1rem] py-[1rem]">
+      <>
         <Etiqueta texto="Diseño de arriba">
           <select value={diseno} onChange={e => cambiar('hero.diseno', e.target.value)} className={CAMPO}>
             {opciones.map(([clave, h]) => (
@@ -881,8 +1003,7 @@ function Piezas({ hero, cambiar }) {
         ) : (
           <p className="text-[0.85rem] text-zinc-500">Este diseño todavía lleva sus propias pestañas. Elige uno de los otros para cambiarlas.</p>
         )}
-      </div>
-    </details>
+      </>
   )
 }
 
@@ -1113,9 +1234,9 @@ function Editor({ tipo, slug, fila, volver, recargar, abrir }) {
       <fieldset disabled={soloLectura} className="contents">
       {bloques.map((b, i) => (
         <Fragment key={b.clave}>
-          {/* Diseño (diseño de arriba y estilo de pestañas, solo fichas) justo después de Arriba */}
-          {tipo === 'negocio' && !HEROS[vista.hero?.diseno]?.paginaCompleta && b.orden > 10 && (bloques[i - 1]?.orden ?? 0) <= 10 && (
-            <Piezas hero={vista.hero} cambiar={cambiar} />
+          {/* Diseño (ficha, miniweb o carta) justo después de Arriba */}
+          {b.orden > 10 && (bloques[i - 1]?.orden ?? 0) <= 10 && (
+            <Diseno tipo={tipo} slug={slug} vista={vista} original={original} cambiar={cambiar} abrir={abrir} />
           )}
           {/* Tipografía, justo después de los colores de la marca (las cartas de una ficha usan la de su ficha) */}
           {(tipo === 'negocio' || vista.marca) && b.orden > 30 && (bloques[i - 1]?.orden ?? 0) <= 30 && tipografia}

@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { X } from 'lucide-react'
 import { ALERGENOS } from '../../cartas'
 import Img from '../Img'
+import Ofertas from './Ofertas'
 
 /* Diseño de carta "galería": las fotos de los platos son las protagonistas. Cada sección es un mosaico de fotos a
    sangre, sin marcos: el primer plato en grande arriba y los demás de dos en dos, con el nombre y el precio encima.
@@ -102,6 +103,8 @@ function Visor({ platos, inicio, cerrar }) {
 // Menú del día en galería: su foto grande con el título y el precio encima (llena el hueco que queda) y, debajo,
 // los grupos de platos y lo que incluye
 function MenuDia({ menu }) {
+  // Perfil de belleza o de tienda: en el hueco del menú del día van las ofertas
+  if (menu.ofertas) return <Ofertas menu={menu} />
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-[0.5rem] [@media(min-height:46rem)]:gap-[0.6rem]">
       <div className="relative min-h-[5rem] flex-1 overflow-hidden rounded-[0.9rem] bg-demo-surface">
@@ -215,7 +218,7 @@ export default function CartaGaleria({ carta, negocio }) {
           <div className="mt-[0.75rem] grid shrink-0 grid-cols-2 gap-[0.3rem] rounded-full bg-demo-surface p-[0.2rem] [@media(min-height:46rem)]:mt-[0.95rem]">
             {[
               { key: 'menu', texto: carta.menuDia.texto },
-              { key: 'carta', texto: 'Carta' },
+              { key: 'carta', texto: carta.textoCarta ?? 'Carta' },
             ].map(p => (
               <button
                 key={p.key}

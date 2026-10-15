@@ -3,6 +3,7 @@ import { ArrowUpRight, X } from 'lucide-react'
 import { ALERGENOS } from '../../cartas'
 import { rutaNegocio } from '../../negocios'
 import Img from '../Img'
+import Ofertas from './Ofertas'
 
 /* Diseño de carta "revista": como una página de revista de cocina. Cabecera con el nombre grande, mucho aire,
    rayas finas y los precios en el color de la marca.
@@ -19,6 +20,8 @@ const RAYA = 'border-t border-demo-text/15'
 const abreviaturas = lista => (lista?.length ? lista.map(a => ALERGENOS[a]?.corto).join(' · ') : '')
 
 function MenuDia({ menu }) {
+  // Perfil de belleza o de tienda: en el hueco del menú del día van las ofertas
+  if (menu.ofertas) return <Ofertas menu={menu} />
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex shrink-0 items-end justify-between gap-[1rem]">
@@ -148,7 +151,7 @@ export default function CartaRevista({ carta, negocio }) {
   const alergenos = Object.keys(ALERGENOS).filter(a => usados.has(a))
   const pestanas = [
     ...(carta.menuDia ? [{ key: 'menu', texto: carta.menuDia.texto }] : []),
-    { key: 'carta', texto: 'Carta' },
+    { key: 'carta', texto: carta.textoCarta ?? 'Carta' },
   ]
   const abierta = carta.secciones.find(s => s.nombre === seccion) ?? carta.secciones[0]
 

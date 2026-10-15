@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { ChevronRight, X } from 'lucide-react'
 import { ALERGENOS } from '../../cartas'
 import Img from '../Img'
+import Ofertas from './Ofertas'
 
 /* Diseño de carta "historias": como las historias de Instagram, se pasa de lado.
    La primera pantalla es el menú del día; después, cada sección de la carta (Ceviches, Arroces...) ocupa una
@@ -30,6 +31,8 @@ function Precio({ texto = '' }) {
 // Menú del día: en móviles altos (50rem de alto o más) el texto y las separaciones crecen,
 // para llenar la pantalla en vez de dejar un hueco vacío entre las pestañas y el menú
 function MenuDia({ menu }) {
+  // Perfil de belleza o de tienda: en el hueco del menú del día van las ofertas
+  if (menu.ofertas) return <Ofertas menu={menu} sobreFoto />
   return (
     <div>
       <div className="flex items-baseline justify-between gap-[1rem]">
@@ -146,7 +149,7 @@ export default function CartaHistorias({ carta, negocio }) {
   const primeraSeccion = pantallas.findIndex(p => p.tipo === 'seccion')
   const principales = [
     ...(carta.menuDia ? [{ key: 'menu', texto: carta.menuDia.texto, i: 0 }] : []),
-    ...(primeraSeccion !== -1 ? [{ key: 'seccion', texto: 'Carta', i: primeraSeccion }] : []),
+    ...(primeraSeccion !== -1 ? [{ key: 'seccion', texto: carta.textoCarta ?? 'Carta', i: primeraSeccion }] : []),
   ]
   const secciones = pantallas.flatMap((p, i) => (p.tipo === 'seccion' ? [{ texto: p.seccion.nombre, i }] : []))
 

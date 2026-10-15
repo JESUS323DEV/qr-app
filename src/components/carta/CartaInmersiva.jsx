@@ -3,6 +3,7 @@ import { ArrowUpRight } from 'lucide-react'
 import { ALERGENOS } from '../../cartas'
 import { rutaNegocio } from '../../negocios'
 import Img from '../Img'
+import Ofertas from './Ofertas'
 
 /* Diseño de carta "inmersiva": la foto ocupa toda la pantalla y se queda quieta detrás.
    El overlay casi no la tapa arriba y oscurece abajo en degradado.
@@ -12,6 +13,8 @@ import Img from '../Img'
 // Menú del día: cabe en una pantalla. Un solo bloque con separaciones fijas; en móviles altos
 // (50rem de alto o más) el texto crece un poco. Si sobra espacio, queda abajo, debajo del precio.
 function MenuDia({ menu }) {
+  // Perfil de belleza o de tienda: en el hueco del menú del día van las ofertas
+  if (menu.ofertas) return <Ofertas menu={menu} sobreFoto />
   return (
     <div>
       <h1 className="font-demo-heading text-[1.75rem] leading-none [@media(min-height:50rem)]:text-[2.1rem]">{menu.titulo}</h1>
@@ -73,7 +76,7 @@ export default function CartaInmersiva({ carta, negocio, foto }) {
 
   const principales = [
     ...(carta.menuDia ? [{ key: 'menu', texto: carta.menuDia.texto }] : []),
-    { key: 'carta', texto: 'Carta' },
+    { key: 'carta', texto: carta.textoCarta ?? 'Carta' },
   ]
 
   return (

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { X } from 'lucide-react'
 import { ALERGENOS } from '../../cartas'
+import Ofertas from './Ofertas'
 
 /* Diseño de carta "pizarra": la carta escrita con tiza en la pizarra del bar, con su marco de madera.
    Colores de la marca: bg es la pizarra, primary el marco, text la tiza, accent la tiza de color (grupos y precios)
@@ -41,6 +42,8 @@ const RAYA = 'border-t-2 border-dashed border-demo-text/20'
 
 // Menú del día: título con el precio rodeado a mano al lado, y los grupos debajo. Cabe en una pantalla
 function MenuDia({ menu }) {
+  // Perfil de belleza o de tienda: en el hueco del menú del día van las ofertas
+  if (menu.ofertas) return <Ofertas menu={menu} />
   // Con más de 3 grupos (hasta 5) no cabrían uno debajo de otro: van en dos columnas, con la letra un poco menor
   const dosColumnas = menu.grupos.length > 3
   return (
@@ -156,7 +159,7 @@ export default function CartaPizarra({ carta, negocio }) {
 
   const pestanas = [
     ...(carta.menuDia ? [{ key: 'menu', texto: carta.menuDia.texto }] : []),
-    { key: 'carta', texto: 'Carta' },
+    { key: 'carta', texto: carta.textoCarta ?? 'Carta' },
   ]
   const abierta = carta.secciones.find(s => s.nombre === seccion) ?? carta.secciones[0]
 

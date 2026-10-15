@@ -17,6 +17,7 @@ import CartaTicket from '../components/carta/CartaTicket'
 import CartaRevista from '../components/carta/CartaRevista'
 import CartaPolaroid from '../components/carta/CartaPolaroid'
 import CartaGaleria from '../components/carta/CartaGaleria'
+import Ofertas from '../components/carta/Ofertas'
 
 /* Carta digital (QR de la mesa), con la marca del negocio.
    Arriba una franja con foto y el nombre; debajo, fija al hacer scroll, la barra con el idioma y las pestañas
@@ -109,6 +110,8 @@ function Alergenos({ lista }) {
 }
 
 function MenuDia({ menu }) {
+  // Perfil de belleza o de tienda: en el hueco del menú del día van las ofertas
+  if (menu.ofertas) return <div className="rounded-[1.1rem] bg-demo-surface px-[1rem] py-[1rem]"><Ofertas menu={menu} /></div>
   return (
     <div className="rounded-[1.1rem] bg-demo-surface px-[1rem] py-[1rem]">
       <h1 className="font-demo-heading text-[1.5rem] leading-none">{menu.titulo}</h1>
@@ -167,7 +170,8 @@ function useCartaRemota(slug) {
     const leer = () =>
       supabase
         .from('cartas')
-        .select('menu_dia, hay_menu, secciones')
+        // Todo: así sirve tenga o no la columna de ofertas (supabase/008_ofertas.sql)
+        .select('*')
         .eq('slug', slug)
         .maybeSingle()
         .then(({ data }) => vivo && setLeido({ slug, fila: data ?? null }))
@@ -203,7 +207,24 @@ const juntar = (carta, fila) => {
     // Del archivo se quedan las cosas fijas del menú (su texto de pestaña, su foto); lo editable viene de Supabase
     menuDia: fila.hay_menu === false ? null : fila.menu_dia ? { ...carta.menuDia, ...fila.menu_dia } : carta.menuDia,
     secciones: fila.secciones ?? carta.secciones,
+    // Ofertas (perfil de belleza o de tienda): las del dueño, si las ha publicado; si no, las del archivo
+    ofertas: fila.ofertas ? { ...carta.ofertas, ...fila.ofertas } : carta.ofertas,
   }
+}
+
+// Fecha de hoy en España, como "2026-10-15"
+const hoyEnEspana = ahora => ahora.toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' })
+
+/* Perfil de belleza o de tienda: el hueco del menú del día lo ocupan las ofertas que están en fecha
+   (desde y hasta, si las tienen). Las caducadas desaparecen solas; si no queda ninguna, la pestaña tampoco sale.
+   ofertas: { texto (pestaña), titulo, cuando?, foto?, lista[{ nombre, descripcion?, precio, antes?, desde?, hasta? }] } */
+const conOfertas = (carta, ahora) => {
+  if (!carta?.ofertas) return carta
+  const hoy = hoyEnEspana(ahora)
+  const vigentes = (carta.ofertas.lista ?? []).filter(o => (!o.desde || o.desde <= hoy) && (!o.hasta || o.hasta >= hoy))
+  if (vigentes.length === 0) return { ...carta, menuDia: null }
+  const o = carta.ofertas
+  return { ...carta, menuDia: { texto: o.texto ?? 'Ofertas', titulo: o.titulo ?? 'Ofertas', cuando: o.cuando, foto: o.foto, fotos: o.fotos, ofertas: vigentes } }
 }
 
 /* Horario del menú del día: fuera de él, la carta no lo enseña; dentro, el "cuándo se sirve" se escribe solo
@@ -244,7 +265,7 @@ export default function CartaPage(props) {
   }, [conCambios, edicionMarca.fila])
   // Mientras llega lo de Supabase no se pinta nada, para no enseñar un momento el menú antiguo
   if (cargando || edicionCarta.cargando || edicionMarca.cargando) return null
-  const carta = conHorario(juntar(conCambios, fila), ahora)
+  const carta = conOfertas(conHorario(juntar(conCambios, fila), ahora), ahora)
   // La clave cambia si el menú del día aparece o desaparece (horario, interruptor): la carta empieza de cero
   // en lo que toca, y no se queda en blanco en la pestaña del menú que ya no existe
   return <Carta key={`${slug}-${Boolean(carta?.menuDia)}`} carta={carta} negocio={negocio} {...props} />
@@ -348,7 +369,7 @@ function Carta({ carta, negocio, demo = false }) {
   // Pestañas principales: Menú del día (si lo hay) y Carta
   const principales = [
     ...(carta.menuDia ? [{ key: 'menu', texto: carta.menuDia.texto }] : []),
-    { key: 'carta', texto: 'Carta' },
+    { key: 'carta', texto: carta.textoCarta ?? 'Carta' },
   ]
   const seccion = modo === 'carta' ? carta.secciones.find(s => s.nombre === seccionActiva) : null
 

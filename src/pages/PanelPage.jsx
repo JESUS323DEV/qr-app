@@ -431,6 +431,149 @@ function EditorMenu({ fila, alGuardar }) {
   )
 }
 
+// Cartas con perfil de belleza o de tienda: el dueño cambia sus ofertas en vez del menú del día
+const conOfertas = fila => ['belleza', 'tienda'].includes(fila.carta?.perfil)
+const OFERTA_VACIA = { nombre: '', descripcion: '', precio: '', antes: '', desde: '', hasta: '' }
+const hoy = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' })
+
+/* Editor de ofertas (perfil de belleza o de tienda): cada oferta con su nombre, precio, precio de antes (sale
+   tachado) y, si quiere, desde y hasta cuándo. Las que pasan de fecha desaparecen solas de la carta. */
+function EditorOfertas({ fila }) {
+  const carta = fila.carta
+  const nombre = (carta && marcaDe(carta)?.nombre) || fila.slug
+  const [ofertas, setOfertas] = useState(() => {
+    const base = fila.ofertas ?? carta?.ofertas ?? { texto: 'Ofertas', titulo: 'Ofertas', lista: [] }
+    return { ...base, lista: (base.lista ?? []).map(o => ({ ...OFERTA_VACIA, ...o })) }
+  })
+  const [estado, setEstado] = useState('')
+  const [pregunta, setPregunta] = useState(null)
+  const cerrarPregunta = useCallback(() => setPregunta(null), [])
+
+  const cambiarLista = lista => {
+    setOfertas(o => ({ ...o, lista }))
+    setEstado('')
+  }
+  const cambiarOferta = (i, campo, valor) => cambiarLista(ofertas.lista.map((o, j) => (j === i ? { ...o, [campo]: valor } : o)))
+  const mover = (i, paso) => {
+    const lista = [...ofertas.lista]
+    ;[lista[i], lista[i + paso]] = [lista[i + paso], lista[i]]
+    cambiarLista(lista)
+  }
+
+  const publicar = async () => {
+    setEstado('guardando')
+    // Fuera las vacías; los precios en euros con el formato de la carta ("19,00 €"); sin campos vacíos
+    const lista = ofertas.lista
+      .filter(o => o.nombre.trim())
+      .map(o =>
+        Object.fromEntries(
+          Object.entries({ ...o, nombre: o.nombre.trim(), precio: precioOrdenado(o.precio), antes: precioOrdenado(o.antes) }).filter(([, v]) => typeof v === 'string' && v.trim()),
+        ),
+      )
+    const limpio = { ...ofertas, lista }
+    const { error } = await supabase.from('cartas').update({ ofertas: limpio }).eq('slug', fila.slug)
+    if (error) return setEstado('error')
+    setOfertas({ ...limpio, lista: lista.map(o => ({ ...OFERTA_VACIA, ...o })) })
+    setEstado('publicado')
+  }
+
+  return (
+    <div className="grid gap-[1rem]">
+      <div className="flex items-end justify-between gap-[1rem]">
+        <div className="min-w-0">
+          <p className="text-[0.8rem] text-zinc-500">Ofertas de</p>
+          <h1 className="truncate text-[1.5rem] font-bold leading-tight">{nombre}</h1>
+        </div>
+        {carta && (
+          <a href={rutaCarta(carta)} target="_blank" rel="noreferrer" className="flex shrink-0 items-center gap-[0.2rem] text-[0.9rem] font-semibold underline underline-offset-[0.2em]">
+            Ver mi carta
+            <ArrowUpRight className="h-[0.9rem] w-[0.9rem]" aria-hidden="true" />
+          </a>
+        )}
+      </div>
+
+      <p className="text-[0.9rem] leading-[1.45] text-zinc-600">
+        Las ofertas salen arriba en tu carta. Si les pones fecha de fin, desaparecen solas ese día por la noche.
+      </p>
+
+      {ofertas.lista.map((o, i) => {
+        const caducada = o.hasta && o.hasta < hoy()
+        return (
+          <div key={i} className="grid gap-[0.75rem] rounded-[1rem] bg-white p-[1rem] ring-1 ring-zinc-200">
+            <div className="flex items-center justify-between gap-[0.5rem]">
+              <p className="text-[0.95rem] font-bold">Oferta {i + 1}</p>
+              <div className="flex items-center gap-[0.3rem]">
+                <button type="button" aria-label="Subir" disabled={i === 0} onClick={() => mover(i, -1)} className="rounded-[0.5rem] p-[0.4rem] ring-1 ring-zinc-300 disabled:opacity-25">
+                  <ChevronUp className="h-[1rem] w-[1rem]" />
+                </button>
+                <button type="button" aria-label="Bajar" disabled={i === ofertas.lista.length - 1} onClick={() => mover(i, 1)} className="rounded-[0.5rem] p-[0.4rem] ring-1 ring-zinc-300 disabled:opacity-25">
+                  <ChevronDown className="h-[1rem] w-[1rem]" />
+                </button>
+                <button
+                  type="button"
+                  aria-label="Borrar oferta"
+                  onClick={() => setPregunta({ titulo: '¿Borrar esta oferta?', texto: o.nombre || 'Está vacía.', boton: 'Borrar', peligro: true, accion: () => cambiarLista(ofertas.lista.filter((_, j) => j !== i)) })}
+                  className="p-[0.4rem] text-zinc-400 hover:text-red-600"
+                >
+                  <Trash2 className="h-[1rem] w-[1rem]" />
+                </button>
+              </div>
+            </div>
+            {caducada && <p className="text-[0.85rem] font-semibold text-amber-700">Ya ha pasado su fecha: no sale en tu carta.</p>}
+            <Etiqueta texto="Nombre">
+              <input value={o.nombre} onChange={e => cambiarOferta(i, 'nombre', e.target.value)} className={CAMPO} placeholder="Manicura semipermanente" />
+            </Etiqueta>
+            <Etiqueta texto="Descripción (opcional)">
+              <input value={o.descripcion} onChange={e => cambiarOferta(i, 'descripcion', e.target.value)} className={CAMPO} />
+            </Etiqueta>
+            <div className="grid grid-cols-2 gap-[0.6rem]">
+              <Etiqueta texto="Precio de oferta">
+                <input value={o.precio} onChange={e => cambiarOferta(i, 'precio', e.target.value)} className={CAMPO} placeholder="19" inputMode="decimal" />
+              </Etiqueta>
+              <Etiqueta texto="Precio de antes">
+                <input value={o.antes} onChange={e => cambiarOferta(i, 'antes', e.target.value)} className={CAMPO} placeholder="25" inputMode="decimal" />
+              </Etiqueta>
+            </div>
+            <div className="grid grid-cols-2 gap-[0.6rem]">
+              <Etiqueta texto="Desde (opcional)">
+                <input type="date" value={o.desde} onChange={e => cambiarOferta(i, 'desde', e.target.value)} className={CAMPO} />
+              </Etiqueta>
+              <Etiqueta texto="Hasta (opcional)">
+                <input type="date" value={o.hasta} onChange={e => cambiarOferta(i, 'hasta', e.target.value)} className={CAMPO} />
+              </Etiqueta>
+            </div>
+          </div>
+        )
+      })}
+
+      <button
+        type="button"
+        onClick={() => cambiarLista([...ofertas.lista, { ...OFERTA_VACIA }])}
+        className="flex items-center justify-center gap-[0.3rem] rounded-[0.8rem] border border-dashed border-zinc-400 py-[0.8rem] text-[0.95rem] font-semibold text-zinc-700"
+      >
+        <Plus className="h-[1rem] w-[1rem]" aria-hidden="true" />
+        Añadir oferta
+      </button>
+
+      {/* Publicar: fijo abajo para tenerlo siempre a mano en el móvil */}
+      <div className="sticky bottom-0 -mx-[1rem] border-t border-zinc-200 bg-zinc-100/95 px-[1rem] pb-[1rem] pt-[0.75rem] backdrop-blur-sm">
+        {estado === 'publicado' && <p className="mb-[0.5rem] text-center text-[0.9rem] font-semibold text-emerald-700">Publicado. Tu carta ya enseña estas ofertas.</p>}
+        {estado === 'error' && <p className="mb-[0.5rem] text-center text-[0.9rem] font-semibold text-red-600">No se ha podido publicar. Prueba otra vez.</p>}
+        <button
+          type="button"
+          onClick={() => setPregunta({ titulo: '¿Publicar estas ofertas?', texto: 'Tus clientes las verán al momento en tu carta.', boton: 'Publicar', accion: publicar })}
+          disabled={estado === 'guardando'}
+          className={`${BOTON} w-full`}
+        >
+          {estado === 'guardando' ? 'Publicando...' : 'Publicar'}
+        </button>
+      </div>
+
+      <Confirmar pregunta={pregunta} alCerrar={cerrarPregunta} />
+    </div>
+  )
+}
+
 export default function PanelPage() {
   // Sesión del dueño; la página no sale en buscadores ni recarga al tirar hacia abajo
   const sesion = usePaginaPrivada('Tu carta')
@@ -444,7 +587,8 @@ export default function PanelPage() {
       return
     }
     const cargar = async () => {
-      const { data } = await supabase.from('cartas').select('slug, menu_dia, hay_menu').eq('dueno', sesion.user.id).order('slug')
+      // Todo: así sirve tenga o no la columna de ofertas (supabase/008_ofertas.sql)
+      const { data } = await supabase.from('cartas').select('*').eq('dueno', sesion.user.id).order('slug')
       const filas = data ?? []
       // Cada carta con sus datos: su archivo o, si se creó desde /admin, su copia (tabla ediciones)
       const { data: ediciones } = filas.length
@@ -496,7 +640,7 @@ export default function PanelPage() {
                     Volver a tus cartas
                   </button>
                 )}
-                <EditorMenu key={fila.slug} fila={fila} />
+                {conOfertas(fila) ? <EditorOfertas key={fila.slug} fila={fila} /> : <EditorMenu key={fila.slug} fila={fila} />}
               </>
             )}
           </>

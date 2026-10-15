@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { X } from 'lucide-react'
 import { ALERGENOS } from '../../cartas'
+import Ofertas from './Ofertas'
 
 /* Diseño de carta "ticket": la carta como un ticket de papel que flota sobre el color de la marca, con los bordes de
    arriba y abajo en zigzag, como recién cortado, y letra de máquina de escribir.
@@ -40,6 +41,8 @@ function Fila({ nombre, precio, fuerte = false }) {
 }
 
 function MenuDia({ menu }) {
+  // Perfil de belleza o de tienda: en el hueco del menú del día van las ofertas
+  if (menu.ofertas) return <Ofertas menu={menu} />
   // Con más de 3 grupos (hasta 5) no cabrían uno debajo de otro: van en dos columnas
   const dosColumnas = menu.grupos.length > 3
   return (
@@ -152,7 +155,7 @@ export default function CartaTicket({ carta, negocio }) {
   const alergenos = Object.keys(ALERGENOS).filter(a => usados.has(a))
   const pestanas = [
     ...(carta.menuDia ? [{ key: 'menu', texto: carta.menuDia.texto }] : []),
-    { key: 'carta', texto: 'Carta' },
+    { key: 'carta', texto: carta.textoCarta ?? 'Carta' },
   ]
   const abierta = carta.secciones.find(s => s.nombre === seccion) ?? carta.secciones[0]
   // La fecha de hoy, como en un ticket de verdad

@@ -203,14 +203,22 @@ export default function MiniwebPage({ demo = false }) {
   const pruebaBarra = params.get('barra')
   // El archivo del negocio con los cambios de /admin encima (o una copia de una demo, que solo vive en Supabase)
   const { cargando, fila } = useEdicion('negocio', slug)
+  // ?miniweb=1: la ficha vista como miniweb (su diseño de arriba pasa a ser la portada y cada pestaña, una página)
+  const pruebaMiniweb = params.get('miniweb') === '1'
   const negocio = useMemo(() => {
     const n = conEdicion('negocio', slug, fila)
-    if (!n?.demo || (!pruebaDiseno && !pruebaBarra)) return n
+    if (!n?.demo || (!pruebaDiseno && !pruebaBarra && !pruebaMiniweb)) return n
     const diseno = HEROS[pruebaDiseno]?.piezas ? pruebaDiseno : n.hero.diseno
+    if (pruebaMiniweb && !HEROS[diseno]?.paginaCompleta) {
+      // Estructura de Chalaquita (menú de enlaces arriba y redes debajo) con la portada de la ficha
+      // si va por piezas; si no, la Galería
+      const portada = HEROS[diseno]?.piezas ? diseno : 'galeria'
+      return { ...n, tipo: 'miniweb', hero: { ...n.hero, diseno: 'web', portada, barra: undefined, redesArriba: true } }
+    }
     // La barra solo cambia en los diseños por piezas
     const barra = HEROS[diseno]?.piezas && BARRAS[pruebaBarra] ? pruebaBarra : n.hero.barra
     return { ...n, hero: { ...n.hero, diseno, barra } }
-  }, [slug, fila, pruebaDiseno, pruebaBarra])
+  }, [slug, fila, pruebaDiseno, pruebaBarra, pruebaMiniweb])
 
   useEffect(() => {
     if (!negocio) return

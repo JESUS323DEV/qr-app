@@ -12,7 +12,8 @@ import BarraPestanas from '../fichas/barras'
    hero: titulo, brillo (segunda línea), barra?, pestanas[{ tipo, texto, ... }]
    (si no hay titulo, usa el de la primera pestaña: así vale con datos de otras demos) */
 
-export default function HeroMosaico({ hero, nombre, lema }) {
+// sinBarra: sin barra de pestañas, cuando hace de portada de una miniweb (la miniweb lleva su propio menú)
+export default function HeroMosaico({ hero, nombre, lema, sinBarra = false }) {
   // Solo las pestañas que sabe pintar (las comunes)
   const pestanas = useMemo(() => (hero.pestanas ?? []).filter(p => tipoComun(p.tipo)), [hero.pestanas])
   const [activa, setActiva] = useState(0)
@@ -65,9 +66,13 @@ export default function HeroMosaico({ hero, nombre, lema }) {
         {tipoComun(pestanas[activa]?.tipo) !== 'ubicacion' && <BotonCompartir titulo={nombre} className="absolute left-[0.6rem] top-[0.6rem]" />}
       </div>
 
-      <div className="mt-[0.4rem] px-[1.25rem]">
-        <BarraPestanas estilo={hero.barra ?? 'onda'} pestanas={pestanas} activa={activa} tocar={tocar} />
-      </div>
+      {sinBarra ? (
+        <div className="h-[1rem]" />
+      ) : (
+        <div className="mt-[0.4rem] px-[1.25rem]">
+          <BarraPestanas estilo={hero.barra ?? 'onda'} pestanas={pestanas} activa={activa} tocar={tocar} />
+        </div>
+      )}
     </div>
   )
 }

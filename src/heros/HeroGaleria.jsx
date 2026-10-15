@@ -100,7 +100,8 @@ function Visor({ fotos, inicio, cerrar }) {
   )
 }
 
-export default function HeroGaleria({ hero, nombre, lema }) {
+// sinBarra: sin barra de pestañas, cuando hace de portada de una miniweb (la miniweb lleva su propio menú)
+export default function HeroGaleria({ hero, nombre, lema, sinBarra = false }) {
   // Solo las pestañas que sabe pintar (las comunes)
   const pestanas = useMemo(() => (hero.pestanas ?? []).filter(p => tipoComun(p.tipo)), [hero.pestanas])
   const [activa, setActiva] = useState(0)
@@ -148,9 +149,13 @@ export default function HeroGaleria({ hero, nombre, lema }) {
         ))}
       </div>
 
-      <div className="px-[1.25rem] pt-[0.8rem]">
-        <BarraPestanas estilo={hero.barra ?? 'pastillas'} pestanas={pestanas} activa={activa} tocar={tocar} />
-      </div>
+      {sinBarra ? (
+        <div className="h-[1rem]" />
+      ) : (
+        <div className="px-[1.25rem] pt-[0.8rem]">
+          <BarraPestanas estilo={hero.barra ?? 'pastillas'} pestanas={pestanas} activa={activa} tocar={tocar} />
+        </div>
+      )}
 
       {visor !== null && deFotos && <Visor fotos={fotosDe(deFotos).slice(0, 5)} inicio={visor} cerrar={() => setVisor(null)} />}
     </div>

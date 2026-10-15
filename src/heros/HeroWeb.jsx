@@ -6,6 +6,9 @@ import BotonCompartir from '../components/BotonCompartir'
 import { enlaceWhatsapp } from '../lib/whatsapp'
 import { ALERGENOS } from '../cartas'
 import useVueltaPestanas from '../lib/useVueltaPestanas'
+import { fotoDeRespaldo, tipoComun } from '../fichas/escenas'
+import BarraPestanas from '../fichas/barras'
+import { HEROS } from './index'
 
 /* Web (plan premium). Parece una web de verdad dentro del móvil: arriba una barra de navegación del color de la marca,
    con las pestañas como enlaces de menú (raya bajo la activa). Debajo, cada pestaña es una "página" completa
@@ -567,8 +570,126 @@ function PaginaVacia() {
   return <div className="h-full" />
 }
 
-export default function HeroWeb({ hero, nombre, cuerpo, redes, redesTexto }) {
+/* ---------- Páginas para las pestañas de las fichas (miniweb por piezas) ----------
+   Con ellas, cualquier ficha se ve como miniweb: cada pestaña común (fotos, horario, contacto, ubicación,
+   precios) es una página completa. La de fotos es la portada: el hero de una familia por piezas (hero.portada),
+   sin su barra, con el cuerpo (reseña y redes) debajo. */
+
+// Portada: el hero de ficha elegido (hero.portada), solo con sus fotos, y el cuerpo debajo
+function PaginaPortada({ pestana, cuerpo, negocio, lema, portada, heroBase }) {
+  const Portada = HEROS[portada]?.Componente
+  return (
+    <div className="flex h-full flex-col overflow-y-auto [scrollbar-width:none]">
+      <div className="flex min-h-[22rem] flex-1 flex-col">
+        {Portada && <Portada hero={{ ...heroBase, diseno: portada, pestanas: [pestana] }} nombre={negocio} lema={lema} sinBarra />}
+      </div>
+      {cuerpo}
+    </div>
+  )
+}
+
+// Ubicación: el mapa a toda la página y la dirección con "Cómo llegar", como el bloque de contacto de una web
+function PaginaUbicacion({ pestana, cargarMapa }) {
+  return (
+    <div className="relative h-full">
+      {cargarMapa && (
+        <iframe
+          title="Mapa"
+          src={`https://www.google.com/maps?q=${encodeURIComponent(pestana.mapa)}&output=embed`}
+          className="absolute inset-0 h-full w-full border-0"
+          loading="lazy"
+          referrerPolicy="no-referrer-when-downgrade"
+        />
+      )}
+      <div className="absolute inset-x-[1.25rem] bottom-[1.25rem] flex items-center gap-[0.75rem] rounded-[0.8rem] bg-demo-bg px-[1rem] py-[0.8rem] shadow-[0_0.4rem_1.2rem_-0.4rem_rgb(0_0_0/0.4)]">
+        <div className="min-w-0 flex-1">
+          <p className="text-[0.92rem] font-semibold leading-tight">{pestana.direccion}</p>
+          {pestana.telefono && (
+            <a href={`tel:${pestana.telefono.replace(/\s/g, '')}`} className="mt-[0.2rem] block text-[0.85rem] text-demo-muted underline underline-offset-[0.2em]">
+              {pestana.telefono}
+            </a>
+          )}
+        </div>
+        <a
+          href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(pestana.mapa)}`}
+          target="_blank"
+          rel="noreferrer"
+          className="flex shrink-0 items-center gap-[0.15rem] text-[0.85rem] font-semibold text-demo-primary"
+        >
+          Cómo llegar
+          <ArrowUpRight className="h-[0.85rem] w-[0.85rem]" aria-hidden="true" />
+        </a>
+      </div>
+    </div>
+  )
+}
+
+// Contacto (cita, encargos, pedido...): foto en franja y, debajo, el título, el texto y el botón de WhatsApp
+function PaginaContacto({ pestana, respaldo }) {
+  return (
+    <div className="flex h-full flex-col">
+      <Franja foto={pestana.foto ?? respaldo} className="min-h-[6rem] flex-1" />
+      <div className="px-[1.25rem] pb-[1.5rem] pt-[1.1rem]">
+        <h2 className="font-demo-heading text-[1.9rem] font-extrabold leading-none">{pestana.titulo}</h2>
+        {pestana.texto_encargo && <p className="mt-[0.5rem] text-[0.95rem] leading-[1.5] text-demo-muted">{pestana.texto_encargo}</p>}
+        <a
+          href={pestana.url}
+          target="_blank"
+          rel="noreferrer"
+          className="mt-[1rem] flex min-h-[3rem] w-full items-center justify-center rounded-[0.7rem] bg-demo-primary px-[1.1rem] text-[1rem] font-semibold text-white"
+        >
+          {pestana.boton}
+        </a>
+        {pestana.telefono && (
+          <a href={`tel:${pestana.telefono.replace(/\s/g, '')}`} className="mt-[0.7rem] block text-center text-[0.88rem] text-demo-muted">
+            {pestana.texto_telefono ?? 'o por teléfono'} <span className="underline underline-offset-[0.2em]">{pestana.telefono}</span>
+          </a>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// Precios: foto en franja y la lista de servicios con su precio
+function PaginaPrecios({ pestana, respaldo }) {
+  return (
+    <div className="flex h-full flex-col">
+      <Franja foto={pestana.foto ?? respaldo} className="min-h-[5rem] flex-1" />
+      <div className="px-[1.25rem] pb-[1.25rem] pt-[1rem]">
+        <h2 className="font-demo-heading text-[1.8rem] font-extrabold leading-none">{pestana.titulo ?? pestana.texto}</h2>
+        <ul className="mt-[0.6rem] text-[0.95rem]">
+          {(pestana.servicios ?? []).map(s => (
+            <li key={s.nombre} className="flex justify-between gap-[1rem] border-b border-dashed border-demo-text/20 py-[0.5rem]">
+              <span className="font-semibold">{s.nombre}</span>
+              <span className="shrink-0 text-demo-muted">{s.precio}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  )
+}
+
+// Página de cada pestaña: la propia de la miniweb (inicio, horario, reservar, menu) o la común de su tipo
+const paginaDe = (tipo, portada) => {
+  if (PAGINAS[tipo]) return PAGINAS[tipo]
+  const comun = tipoComun(tipo)
+  if (comun === 'fotos') return portada ? PaginaPortada : PaginaVacia
+  if (comun === 'horario') return PaginaHorario
+  if (comun === 'contacto') return PaginaContacto
+  if (comun === 'ubicacion') return PaginaUbicacion
+  if (comun === 'precios') return PaginaPrecios
+  return PaginaVacia
+}
+
+/* Miniweb por piezas: además de sus páginas propias, acepta las pestañas de cualquier ficha.
+   hero.portada: el hero de ficha (por piezas) que hace de portada en la pestaña de fotos.
+   hero.redesArriba: las redes en una barra debajo del menú (y en la portada, solo la reseña).
+   hero.barra: otro estilo para el menú de arriba (fichas/barras.jsx); sin él, el de siempre, el de Chalaquita. */
+export default function HeroWeb({ hero, nombre, lema, cuerpo, redes, redesTexto }) {
   const pestanas = hero.pestanas ?? []
+  const portada = HEROS[hero.portada]?.piezas ? hero.portada : null
+  const respaldo = fotoDeRespaldo(pestanas)
   const [activa, setActiva] = useState(0)
   const { parar } = useVueltaPestanas(pestanas, setActiva)
 
@@ -585,7 +706,13 @@ export default function HeroWeb({ hero, nombre, cuerpo, redes, redesTexto }) {
   return (
     // Cualquier toque en la página para la vuelta de presentación
     <div className="flex flex-1 flex-col" onPointerDown={parar}>
-      {/* Barra de navegación, como la de una web */}
+      {/* Menú con un estilo de pestañas de las fichas (hero.barra), sobre el fondo de la marca */}
+      {hero.barra ? (
+        <header className="bg-demo-bg px-[1.25rem] pb-[0.5rem] pt-[0.7rem]">
+          <BarraPestanas estilo={hero.barra} pestanas={pestanas} activa={activa} tocar={tocar} />
+        </header>
+      ) : (
+      /* Barra de navegación, como la de una web */
       <header className="bg-demo-primary px-[1.25rem] pt-[0.7rem] text-white">
         <nav className="flex justify-between">
           {pestanas.map((p, i) => (
@@ -608,6 +735,7 @@ export default function HeroWeb({ hero, nombre, cuerpo, redes, redesTexto }) {
           ))}
         </nav>
       </header>
+      )}
 
       {/* Redes en una barra debajo del menú (hero.redesArriba), en todas las páginas */}
       {hero.redesArriba && redes?.length > 0 && (
@@ -635,16 +763,16 @@ export default function HeroWeb({ hero, nombre, cuerpo, redes, redesTexto }) {
           El mapa del horario se carga desde el principio, para que esté listo cuando la vuelta llegue a él */}
       <div className="relative min-h-[30rem] flex-1 overflow-hidden">
         {pestanas.map((p, i) => {
-          const Pagina = PAGINAS[p.tipo] ?? PaginaVacia
+          const Pagina = paginaDe(p.tipo, portada)
           return (
             <div
-              key={p.tipo}
+              key={`${p.tipo}-${i}`}
               aria-hidden={i !== activa}
               className={`absolute inset-0 ${
                 i === activa ? 'opacity-100 transition-opacity duration-[250ms] ease-out' : 'pointer-events-none opacity-0 transition-none'
               }`}
             >
-              <Pagina pestana={p} irA={irA} cuerpo={cuerpo} negocio={nombre} cargarMapa />
+              <Pagina pestana={p} irA={irA} cuerpo={cuerpo} negocio={nombre} lema={lema} cargarMapa portada={portada} heroBase={hero} respaldo={respaldo} />
             </div>
           )
         })}

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { X } from 'lucide-react'
 import { ALERGENOS } from '../../cartas'
 import Img from '../Img'
+import Ofertas from './Ofertas'
 
 /* Diseño de carta "polaroid": cada plato es una polaroid con su foto y, debajo, su nombre y su precio escritos a mano.
    Las polaroids están pegadas un poco torcidas sobre el color de la marca, de dos en dos. Al tocar una se acerca y
@@ -73,8 +74,16 @@ function PolaroidAbierta({ plato, cerrar }) {
         <div className="px-[0.3rem] pb-[0.6rem] pt-[0.5rem]">
           <div className="flex items-baseline justify-between gap-[0.75rem]">
             <p className="font-demo-heading text-[1.9rem] font-bold leading-none">{plato.nombre}</p>
-            <p className="shrink-0 font-demo-heading text-[1.7rem] font-bold leading-none text-demo-accent">{plato.precio}</p>
+            <p className="shrink-0 text-right font-demo-heading text-[1.7rem] font-bold leading-none text-demo-accent">
+              {plato.precio}
+              {plato.antes && <span className="mt-[0.2rem] block font-demo-body text-[0.9rem] font-normal text-demo-muted line-through">{plato.antes}</span>}
+            </p>
           </div>
+          {plato.hasta && (
+            <p className="mt-[0.35rem] text-[0.85rem] font-semibold text-demo-muted">
+              Hasta el {new Date(`${plato.hasta}T12:00:00`).toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}
+            </p>
+          )}
           {plato.descripcion && <p className="mt-[0.4rem] text-[0.95rem] leading-[1.4] text-demo-muted">{plato.descripcion}</p>}
           {plato.alergenos?.length > 0 && (
             <p className="mt-[0.35rem] text-[0.85rem] text-demo-muted">Alérgenos: {plato.alergenos.map(a => ALERGENOS[a]?.nombre.toLowerCase()).join(', ')}</p>
@@ -87,6 +96,8 @@ function PolaroidAbierta({ plato, cerrar }) {
 
 // Menú del día: la foto del día en una polaroid grande y, debajo, la nota con los platos, como un papel pegado
 function MenuDia({ menu }) {
+  // Perfil de belleza o de tienda: en el hueco del menú del día van las ofertas
+  if (menu.ofertas) return <div className={`bg-demo-surface px-[1rem] py-[0.9rem] text-demo-text rotate-[1deg] ${SOMBRA}`}><Ofertas menu={menu} /></div>
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-[0.9rem] [@media(min-height:46rem)]:gap-[1.2rem]">
       {menu.foto && (
@@ -164,7 +175,7 @@ export default function CartaPolaroid({ carta, negocio }) {
   const alergenos = Object.keys(ALERGENOS).filter(a => usados.has(a))
   const pestanas = [
     ...(carta.menuDia ? [{ key: 'menu', texto: carta.menuDia.texto }] : []),
-    { key: 'carta', texto: 'Carta' },
+    { key: 'carta', texto: carta.textoCarta ?? 'Carta' },
   ]
   const abierta = carta.secciones.find(s => s.nombre === seccion) ?? carta.secciones[0]
   // Hasta 6 polaroids por pantalla, de dos en dos (con una sola, sola y centrada)

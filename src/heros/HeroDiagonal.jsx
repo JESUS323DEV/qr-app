@@ -12,7 +12,8 @@ import BarraPestanas from '../fichas/barras'
    hero: titulo, destacado (segunda línea, opcional), texto, barra?, pestanas[{ tipo, texto, ... }]
    (si no hay titulo, usa el de la primera pestaña: así vale con datos de otras demos) */
 
-export default function HeroDiagonal({ hero, nombre }) {
+// sinBarra: sin barra de pestañas, cuando hace de portada de una miniweb (la miniweb lleva su propio menú)
+export default function HeroDiagonal({ hero, nombre, sinBarra = false }) {
   // Solo las pestañas que sabe pintar (las comunes)
   const pestanas = useMemo(() => (hero.pestanas ?? []).filter(p => tipoComun(p.tipo)), [hero.pestanas])
   const [activa, setActiva] = useState(0)
@@ -68,9 +69,11 @@ export default function HeroDiagonal({ hero, nombre }) {
         </div>
       </div>
 
-      <div className="px-[1.25rem] pt-[1.4rem]">
-        <BarraPestanas estilo={hero.barra ?? 'subrayado'} pestanas={pestanas} activa={activa} tocar={tocar} />
-      </div>
+      {!sinBarra && (
+        <div className="px-[1.25rem] pt-[1.4rem]">
+          <BarraPestanas estilo={hero.barra ?? 'subrayado'} pestanas={pestanas} activa={activa} tocar={tocar} />
+        </div>
+      )}
     </div>
   )
 }
