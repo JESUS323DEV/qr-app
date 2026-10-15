@@ -171,7 +171,7 @@ export default function HeroBanner({ hero, nombre, lema, sinBarra = false }) {
     // Cualquier toque en el hero para la vuelta de presentación
     <div className="flex flex-1 flex-col" onPointerDown={parar}>
       {/* La foto ocupa el alto que sobra, para que todo quepa en una pantalla */}
-      <div className="relative min-h-[9rem] flex-1 overflow-hidden bg-demo-primary">
+      <div className="relative min-h-[9rem] flex-1 overflow-hidden bg-demo-header">
         {pestanas.map((p, i) => {
           const tipo = tipoComun(p.tipo)
           const Propia = ESCENAS[tipo]
@@ -207,7 +207,7 @@ export default function HeroBanner({ hero, nombre, lema, sinBarra = false }) {
       </div>
 
       {/* Bloque de color con el titular y las pestañas */}
-      <div className="bg-demo-primary px-[1.25rem] pb-[1.1rem] pt-[1.1rem] text-demo-bg">
+      <div className="bg-demo-header px-[1.25rem] pb-[1.1rem] pt-[1.1rem] text-demo-bg">
         {/* El titular cambia con la pestaña (fundido); todos ocupan el mismo hueco */}
         <h1 className="grid font-demo-heading text-[clamp(2rem,1.6rem+2vw,2.6rem)] uppercase leading-[1]" aria-live="polite">
           {pestanas.map((p, i) => {

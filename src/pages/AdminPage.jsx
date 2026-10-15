@@ -24,7 +24,7 @@ import { FAMILIAS } from '../familias'
    hacen que solo un administrador (tabla admins) pueda guardarlos. El diseño y la estructura siguen en el código. */
 
 // Direcciones que no puede usar una copia: las de las páginas de la web
-const RESERVADAS = new Set(['demo', 'tematicas', 'gestion', 'catalogo', 'planes', 'panel', 'mi-carta', 'admin', 'miniweb', 'disenos'])
+const RESERVADAS = new Set(['demo', 'tematicas', 'gestion', 'catalogo', 'planes', 'panel', 'mi-carta', 'admin', 'miniweb', 'disenos', 'aviso-legal', 'privacidad'])
 
 // "Peluquería Ranita" → "peluqueria-ranita"
 const aSlug = texto =>
@@ -73,9 +73,9 @@ const NOMBRES = {
   descripcion: 'Descripción', boton: 'Botón', url: 'Enlace', href: 'Enlace', telefono: 'Teléfono', whatsapp: 'WhatsApp',
   direccion: 'Dirección', mapa: 'Dirección del mapa', zona: 'Zona', foto: 'Foto', fotos: 'Fotos', src: 'Foto', precio: 'Precio',
   dias: 'Días', horas: 'Horas', color: 'Color', fondo: 'Fondo', card: 'Tarjeta', cuando: 'Cuándo', incluye: 'Incluye',
-  bg: 'Fondo', surface: 'Superficie', primary: 'Principal', accent: 'Acento', text: 'Texto', muted: 'Texto suave',
+  bg: 'Fondo', surface: 'Superficie', primary: 'Principal', header: 'Fondo de cabecera', accent: 'Acento', text: 'Texto', muted: 'Texto suave',
   pestanas: 'Pestaña', secciones: 'Sección', platos: 'Plato', lineas: 'Línea', redes: 'Red', carrusel: 'Tarjeta',
-  extras: 'Botón', esmaltes: 'Esmalte', colors: 'Colores', redesTexto: 'Texto de redes',
+  extras: 'Botón', esmaltes: 'Esmalte', colors: 'Colores', redesTexto: 'Texto de redes', colorRedes: 'Color de la barra de redes',
 }
 const GRUPOS = {
   theme: 'Colores de la marca', hero: 'Hero y pestañas', resena: 'Reseña de Google', destacada: 'Tarjeta destacada',
@@ -1465,6 +1465,10 @@ function NuevoPerfil({ filas, recargar, abrir }) {
   const [colorTexto, setColorTexto] = useState('')
   const [fondo, setFondo] = useState('')
   const [letra, setLetra] = useState('')
+  // Solo en miniwebs: el fondo de la barra de redes (sin elegir, el color del texto, como siempre)
+  const [redesColor, setRedesColor] = useState('')
+  // Fondo de cabecera: solo en los diseños que la tienen (sin elegir, el principal, como siempre)
+  const [cabecera, setCabecera] = useState('')
   // Lo que se le cuenta al asistente del negocio: con esto se inventa el copy y busca las fotos al crear
   const [cuento, setCuento] = useState('')
   // Qué está haciendo al crear (null: nada)
@@ -1481,6 +1485,10 @@ function NuevoPerfil({ filas, recargar, abrir }) {
   const colorAcento = acento || marcaBase?.theme?.colors?.accent || '#000000'
   const colorDelTexto = colorTexto || marcaBase?.theme?.colors?.text || '#000000'
   const colorFondo = fondo || marcaBase?.theme?.colors?.bg || '#FFFFFF'
+  const colorRedes = redesColor || colorDelTexto
+  const colorCabecera = cabecera || marcaBase?.theme?.colors?.header || colorPrincipal
+  // Diseños con cabecera de color: Polaroid y Banner, y todas las miniwebs (su menú de arriba)
+  const conCabecera = producto === 'miniweb' || (producto === 'ficha' && ['polaroid', 'banner'].includes(hero))
 
   const heros = Object.entries(HEROS).filter(([, h]) => h.piezas && !h.paginaCompleta)
   const estilos = Object.values(FAMILIAS).filter(f => f.carta)
@@ -1499,6 +1507,8 @@ function NuevoPerfil({ filas, recargar, abrir }) {
     colorTexto && `texto=${colorTexto.slice(1)}`,
     fondo && `fondo=${fondo.slice(1)}`,
     letra && `letra=${letra}`,
+    producto === 'miniweb' && redesColor && `redes=${redesColor.slice(1)}`,
+    conCabecera && cabecera && `cabecera=${cabecera.slice(1)}`,
   ]
     .filter(Boolean)
     .map(p => `&${p}`)
@@ -1556,15 +1566,19 @@ function NuevoPerfil({ filas, recargar, abrir }) {
           ...(acento ? { 'theme.colors.accent': acento } : {}),
           ...(colorTexto ? { 'theme.colors.text': colorTexto } : {}),
           ...(fondo ? { 'theme.colors.bg': fondo } : {}),
+          // Con cabecera, se guarda siempre (aunque sea el principal), para que salga en el editor y se pueda cambiar
+          ...(conCabecera ? { 'theme.colors.header': colorCabecera } : {}),
           ...(tipografia ? { 'theme.fonts': tipografia.fonts } : {}),
           ...(producto === 'ficha'
             ? { 'hero.diseno': hero, ...(barra ? { 'hero.barra': barra } : {}) }
             : deChalaquita
-              ? { 'hero.portada': hero }
+              ? { 'hero.portada': hero, 'hero.colorRedes': colorRedes }
               : {
                   'hero.diseno': 'web',
                   'hero.portada': hero,
                   'hero.redesArriba': true,
+                  // Siempre se guarda (aunque sea el del texto), para que salga en el editor y se pueda cambiar luego
+                  'hero.colorRedes': colorRedes,
                   'hero.pestanas': pestanasDeMiniweb(negocioBase),
                   tipo: 'miniweb',
                 }),
@@ -1735,7 +1749,7 @@ function NuevoPerfil({ filas, recargar, abrir }) {
             titulo="Colores"
             elegido={
               <span className="flex justify-end gap-[0.25rem]">
-                {[colorPrincipal, colorAcento, colorFondo, colorDelTexto].map((c, i) => (
+                {[colorPrincipal, ...(conCabecera ? [colorCabecera] : []), colorAcento, colorFondo, colorDelTexto, ...(producto === 'miniweb' ? [colorRedes] : [])].map((c, i) => (
                   <span key={i} className="h-[1.1rem] w-[1.1rem] rounded-full ring-1 ring-zinc-300" style={{ background: c }} />
                 ))}
               </span>
@@ -1743,10 +1757,18 @@ function NuevoPerfil({ filas, recargar, abrir }) {
           >
           <div className="grid gap-[0.9rem]">
             {[
-              ['Color principal', 'Botones, bloques de color y, en algunos diseños, el fondo.', colorPrincipal, setPrincipal],
+              ['Color principal', 'Botones, precios y lo que tiene que destacar.', colorPrincipal, setPrincipal],
+              // Solo en los diseños con cabecera de color
+              ...(conCabecera
+                ? [['Fondo de cabecera', producto === 'miniweb' ? 'La barra del menú de arriba.' : 'La parte de arriba, detrás de las fotos y el titular.', colorCabecera, setCabecera]]
+                : []),
               ['Color de acento', 'Precios, subrayados de las pestañas y detalles.', colorAcento, setAcento],
               ['Color de fondo', 'El fondo de la página: claro u oscuro.', colorFondo, setFondo],
               ['Color del texto', 'Las letras sobre el fondo.', colorDelTexto, setColorTexto],
+              // Solo en miniwebs: la franja de redes de debajo del menú
+              ...(producto === 'miniweb'
+                ? [['Color de la barra de redes', 'La franja de redes de debajo del menú. Las letras e iconos se ponen en blanco o en oscuro solos.', colorRedes, setRedesColor]]
+                : []),
             ].map(([nombreColor, ayuda, valor, poner]) => (
               <div key={nombreColor} className="grid gap-[0.3rem]">
                 <div>

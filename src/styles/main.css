@@ -23,6 +23,8 @@
   --demo-accent: #444444;
   --demo-text: #111111;
   --demo-muted: #888888;
+  /* Fondo de cabecera (Polaroid, Banner y el menú de las miniwebs): si la marca no lo trae, el principal */
+  --demo-header: var(--demo-primary);
   --demo-heading-font: system-ui, sans-serif;
   --demo-body-font: system-ui, sans-serif;
 }
@@ -34,6 +36,7 @@
   --color-demo-accent: var(--demo-accent);
   --color-demo-text: var(--demo-text);
   --color-demo-muted: var(--demo-muted);
+  --color-demo-header: var(--demo-header);
   --font-demo-heading: var(--demo-heading-font);
   --font-demo-body: var(--demo-body-font);
 }

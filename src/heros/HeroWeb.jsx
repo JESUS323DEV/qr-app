@@ -433,10 +433,12 @@ function PaginaReservar({ pestana, negocio }) {
           <Campo etiqueta="Comentario (opcional)">
             <textarea name="comentario" rows={3} placeholder="Alergias, trona, un cumpleaños..." className={`${CAMPO} resize-none py-[0.65rem]`} />
           </Campo>
-          {/* Información sobre los datos (sin casilla: solo se usan para la reserva que pide el cliente).
-              Pendiente: enlazar la política de privacidad cuando exista su página */}
+          {/* Información sobre los datos (sin casilla: solo se usan para la reserva que pide el cliente) */}
           <p className="-mt-[0.35rem] text-[0.72rem] text-demo-muted">
-            Usamos tus datos solo para gestionar tu reserva. <span className="underline underline-offset-[0.2em]">Política de privacidad</span>
+            Usamos tus datos solo para gestionar tu reserva.{' '}
+            <a href="/privacidad" target="_blank" rel="noreferrer" className="underline underline-offset-[0.2em]">
+              Política de privacidad
+            </a>
           </p>
         </div>
 
@@ -699,9 +701,17 @@ const paginaDe = (tipo, portada) => {
   return PaginaVacia
 }
 
+// Si un color (#RRGGBB) es claro, para poner encima letras oscuras (luminancia percibida); sin color, no
+const esClaro = color => {
+  if (!/^#[0-9a-f]{6}$/i.test(color ?? '')) return false
+  const [r, g, b] = [1, 3, 5].map(i => parseInt(color.slice(i, i + 2), 16))
+  return 0.299 * r + 0.587 * g + 0.114 * b > 160
+}
+
 /* Miniweb por piezas: además de sus páginas propias, acepta las pestañas de cualquier ficha.
    hero.portada: el hero de ficha (por piezas) que hace de portada en la pestaña de fotos.
    hero.redesArriba: las redes en una barra debajo del menú (y en la portada, solo la reseña).
+   hero.colorRedes: el fondo de esa barra (sin él, el color del texto de la marca).
    hero.barra: otro estilo para el menú de arriba (fichas/barras.jsx); sin él, el de siempre, el de Chalaquita. */
 export default function HeroWeb({ hero, nombre, lema, cuerpo, redes, redesTexto }) {
   const pestanas = hero.pestanas ?? []
@@ -711,6 +721,7 @@ export default function HeroWeb({ hero, nombre, lema, cuerpo, redes, redesTexto 
   const fotosPortada = [...new Set(pestanas.flatMap(p => [p.foto, ...fotosDe(p).map(f => f.src)]).filter(Boolean))].map(src => ({ src }))
   const [activa, setActiva] = useState(0)
   const { parar } = useVueltaPestanas(pestanas, setActiva)
+  const redesClaras = esClaro(hero.colorRedes)
 
   const tocar = i => {
     parar()
@@ -732,7 +743,7 @@ export default function HeroWeb({ hero, nombre, lema, cuerpo, redes, redesTexto 
         </header>
       ) : (
       /* Barra de navegación, como la de una web */
-      <header className="bg-demo-primary px-[1.25rem] pt-[0.7rem] text-white">
+      <header className="bg-demo-header px-[1.25rem] pt-[0.7rem] text-white">
         <nav className="flex justify-between">
           {pestanas.map((p, i) => (
             <button
@@ -757,9 +768,14 @@ export default function HeroWeb({ hero, nombre, lema, cuerpo, redes, redesTexto 
       )}
 
       {/* Redes en una barra debajo del menú (hero.redesArriba), en todas las páginas */}
+      {/* Su fondo: hero.colorRedes o, si no lleva, el color del texto. Letras e iconos en blanco sobre fondo oscuro
+          y en oscuro sobre fondo claro */}
       {hero.redesArriba && redes?.length > 0 && (
-        <div className="flex items-center justify-between gap-[1rem] bg-demo-text px-[1.25rem] py-[0.45rem] text-white">
-          <p className="text-[0.78rem] text-white/75">{redesTexto ?? 'Síguenos en redes'}</p>
+        <div
+          className={`flex items-center justify-between gap-[1rem] px-[1.25rem] py-[0.45rem] ${hero.colorRedes ? '' : 'bg-demo-text'} ${redesClaras ? 'text-[#141414]' : 'text-white'}`}
+          style={hero.colorRedes ? { background: hero.colorRedes } : undefined}
+        >
+          <p className={`text-[0.78rem] ${redesClaras ? 'text-[#141414]/75' : 'text-white/75'}`}>{redesTexto ?? 'Síguenos en redes'}</p>
           <div className="flex items-center gap-[0.9rem]">
             {redes.map(r => (
               <a
@@ -768,7 +784,7 @@ export default function HeroWeb({ hero, nombre, lema, cuerpo, redes, redesTexto 
                 target="_blank"
                 rel="noreferrer"
                 aria-label={r.platform}
-                className="text-white/85 transition-colors hover:text-demo-accent"
+                className={`transition-colors hover:text-demo-accent ${redesClaras ? 'text-[#141414]/85' : 'text-white/85'}`}
               >
                 <SocialIcon platform={r.platform} className="h-[1.05rem] w-[1.05rem]" />
               </a>

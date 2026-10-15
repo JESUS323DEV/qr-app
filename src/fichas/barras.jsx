@@ -167,7 +167,7 @@ export default function BarraPestanas({ estilo = 'subrayado', pestanas, activa, 
               i,
               `min-w-0 py-[0.6rem] font-demo-heading uppercase transition-colors duration-300 ${
                 pestanas.some(x => (x.texto ?? '').length > 7) ? 'px-[0.15rem] text-[clamp(0.68rem,0.4rem+1.2vw,0.9rem)] leading-tight' : 'text-[0.9rem]'
-              } ${i > 0 ? 'border-l border-demo-bg/50' : ''} ${i === activa ? 'bg-demo-bg text-demo-primary' : 'text-demo-bg hover:bg-demo-bg/10'}`,
+              } ${i > 0 ? 'border-l border-demo-bg/50' : ''} ${i === activa ? 'bg-demo-bg text-demo-header' : 'text-demo-bg hover:bg-demo-bg/10'}`,
             ),
           )}
         </div>

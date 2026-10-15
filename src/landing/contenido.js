@@ -352,11 +352,109 @@ export const menu = {
     { platform: 'instagram', href: 'https://instagram.com' },
     { platform: 'tiktok', href: 'https://tiktok.com' },
   ],
-  // Textos legales (pendiente: crear sus páginas y poner aquí sus direcciones)
+  // Textos legales (sus páginas: pages/LegalPage.jsx, con los textos de legales, abajo)
   legales: [
-    { texto: 'Política de privacidad', url: '#' },
-    { texto: 'Aviso legal', url: '#' },
+    { texto: 'Política de privacidad', url: '/privacidad' },
+    { texto: 'Aviso legal', url: '/aviso-legal' },
   ],
   boton: 'Escríbeme por WhatsApp',
   firma: 'Mostrador · Hecho por JesúsDev',
+}
+
+/* Textos legales (/aviso-legal y /privacidad). Plantilla básica: conviene que la revise una gestoría al darse de alta.
+   Cada apartado: titulo y parrafos; en los párrafos, {dominio} se cambia por la dirección de la web.
+   Pendiente al darse de alta: NIF y domicilio en los datos del titular (la LSSI los pide). */
+const titular = ['Titular: Jesús (JesúsDev)', 'Actividad: placas con QR y páginas digitales (fichas, miniwebs y cartas) para negocios locales', 'Contacto: WhatsApp · Instagram @jesussdev']
+
+export const legales = {
+  volver: 'Volver al inicio',
+  avisoLegal: {
+    titulo: 'Aviso legal',
+    apartados: [
+      {
+        titulo: '1. Datos identificativos',
+        parrafos: [
+          'En cumplimiento del artículo 10 de la Ley 34/2002, de Servicios de la Sociedad de la Información y Comercio Electrónico (LSSI-CE), se informa:',
+          ...titular,
+        ],
+      },
+      {
+        titulo: '2. Objeto y ámbito de aplicación',
+        parrafos: [
+          'El presente aviso legal regula el uso del sitio web {dominio}, cuya finalidad es presentar los servicios del titular y alojar las páginas de los negocios que los contratan, así como sus páginas de ejemplo.',
+        ],
+      },
+      {
+        titulo: '3. Propiedad intelectual',
+        parrafos: [
+          'El diseño y el código de este sitio web son propiedad del titular. Los textos, logotipos y fotografías de cada negocio pertenecen a ese negocio. Algunas fotografías de las páginas de ejemplo proceden de bancos de imágenes y se usan según su licencia.',
+          'Queda prohibida la reproducción total o parcial de los contenidos sin consentimiento expreso de su propietario.',
+        ],
+      },
+      {
+        titulo: '4. Responsabilidad',
+        parrafos: [
+          'El titular no se hace responsable de los daños derivados del uso de este sitio web ni de los contenidos de terceros a los que pudiera enlazar.',
+          'La información de las páginas de cada negocio (horarios, precios, servicios, platos y alérgenos) es responsabilidad de ese negocio.',
+        ],
+      },
+      {
+        titulo: '5. Legislación aplicable',
+        parrafos: [
+          'Este aviso legal se rige por la legislación española. Para cualquier controversia, las partes se someten a los juzgados y tribunales del domicilio del usuario.',
+        ],
+      },
+    ],
+  },
+  privacidad: {
+    titulo: 'Política de privacidad',
+    apartados: [
+      { titulo: '1. Responsable del tratamiento', parrafos: titular },
+      {
+        titulo: '2. Datos que se recogen',
+        parrafos: [
+          'El formulario de contacto de esta web pide nombre, teléfono y la idea del negocio, pero no los guarda en ningún servidor: al enviarlo se abre WhatsApp con el mensaje ya escrito, y solo llega al titular si el usuario lo envía. WhatsApp e Instagram tienen sus propias políticas de privacidad.',
+          'Los formularios de reserva, cita o encargo de las páginas de cada negocio funcionan igual: abren WhatsApp con el mensaje para ese negocio, que es el responsable de esos datos.',
+          'Los dueños de los negocios que gestionan su carta desde su panel facilitan un correo electrónico para entrar en él.',
+        ],
+      },
+      {
+        titulo: '3. Finalidad del tratamiento',
+        parrafos: [
+          'Los datos que el usuario facilite voluntariamente se utilizarán exclusivamente para responder a sus consultas, gestionar posibles contrataciones de servicios y, en el caso de los dueños de negocios, darles acceso a su panel.',
+        ],
+      },
+      {
+        titulo: '4. Legitimación',
+        parrafos: [
+          'La base legal para el tratamiento de los datos es el consentimiento del propio usuario al iniciar la comunicación (art. 6.1.a del RGPD) y, en el caso de los negocios clientes, la relación contractual (art. 6.1.b del RGPD).',
+        ],
+      },
+      {
+        titulo: '5. Conservación de datos',
+        parrafos: [
+          'Los datos se conservarán durante el tiempo necesario para gestionar la relación con el usuario y, en su caso, durante los plazos legalmente exigibles.',
+        ],
+      },
+      {
+        titulo: '6. Proveedores',
+        parrafos: [
+          'Para funcionar, este sitio web usa estos servicios: Netlify (alojamiento de la web), Supabase (acceso de los dueños de negocios a su panel) y Google (mapas y tipografías; al cargarlos, Google recibe la dirección IP del visitante).',
+        ],
+      },
+      {
+        titulo: '7. Derechos del usuario',
+        parrafos: [
+          'El usuario puede ejercer sus derechos de acceso, rectificación, supresión, oposición y portabilidad contactando a través de los canales indicados. También tiene derecho a presentar una reclamación ante la Agencia Española de Protección de Datos.',
+        ],
+      },
+      {
+        titulo: '8. Cookies',
+        parrafos: [
+          'Este sitio web no utiliza cookies propias con fines de seguimiento o publicidad. Solo guarda en el navegador una preferencia técnica (si ya se ha visto la presentación de las pestañas).',
+          'Los mapas de Google que aparecen en algunas páginas pueden instalar cookies de Google al mostrarse, según su propia política.',
+        ],
+      },
+    ],
+  },
 }

@@ -17,6 +17,9 @@ export function applyTheme({ colors, fonts }) {
   root.style.setProperty('--demo-accent', colors.accent)
   root.style.setProperty('--demo-text', colors.text)
   root.style.setProperty('--demo-muted', colors.muted)
+  // Fondo de cabecera: solo si la marca lo trae; si no, se quita y vale el principal (main.css)
+  if (colors.header) root.style.setProperty('--demo-header', colors.header)
+  else root.style.removeProperty('--demo-header')
 
   if (fonts?.heading?.family) {
     root.style.setProperty('--demo-heading-font', fonts.heading.family)
@@ -30,7 +33,7 @@ export function applyTheme({ colors, fonts }) {
 
 export function resetTheme() {
   const root = document.documentElement
-  ;['bg', 'surface', 'primary', 'accent', 'text', 'muted'].forEach(k =>
+  ;['bg', 'surface', 'primary', 'accent', 'text', 'muted', 'header'].forEach(k =>
     root.style.removeProperty(`--demo-${k}`)
   )
   root.style.removeProperty('--demo-heading-font')

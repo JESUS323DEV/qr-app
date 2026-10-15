@@ -87,7 +87,7 @@ export default function HeroPolaroid({ hero, nombre, lema, sinBarra = false }) {
 
   return (
     // Cualquier toque en el hero para la vuelta de presentación
-    <div className="flex flex-1 flex-col bg-demo-primary text-white" onPointerDown={parar}>
+    <div className="flex flex-1 flex-col bg-demo-header text-white" onPointerDown={parar}>
       {/* Nombre a mano y lema; compartir a la derecha */}
       <div className="flex items-start justify-between gap-[1rem] px-[1.25rem] pt-[0.8rem]">
         <div className="min-w-0">

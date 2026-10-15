@@ -1,15 +1,14 @@
 import { rutaNegocio } from '../negocios'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { ArrowRight, ArrowUpRight, Menu, X } from 'lucide-react'
-import Movil from '../components/Movil'
 import Placa from '../components/Placa'
 import { SocialIcon } from '../components/SocialIcons'
 import { COLORES_REDES } from '../lib/coloresRedes'
-import { tematicasConDemos, secuenciaDemos, tematicaDe, getTematica, tipoDe } from '../lib/tematicas'
+import { secuenciaDemos, tipoDe } from '../lib/tematicas'
 import { cartas, marcaDe, rutaCarta } from '../cartas'
 import { enlaceWhatsapp } from '../lib/whatsapp'
-import { marca, hero, porque, pasos, comoFunciona, ventajas, seo, planes, botones, ejemplos, precio, preguntas, cierre, pie, contactoForm, webCompleta, cartasMiniwebs, escaparate, menu } from '../landing/contenido'
+import { marca, hero, pasos, comoFunciona, ventajas, seo, planes, precio, contactoForm, webCompleta, cartasMiniwebs, escaparate, menu } from '../landing/contenido'
 import useVueltaPestanas from '../lib/useVueltaPestanas'
 
 const contacto = enlaceWhatsapp(marca.whatsapp, marca.mensajeWhatsapp)
@@ -152,19 +151,13 @@ function MenuHamburguesa() {
   )
 }
 
-function Seccion({ id, children, className = '' }) {
+/* Panel de una pestaña del hero: siempre está en el HTML (Google lee todas las pestañas) y solo se ve el de la
+   elegida. contents: no añade caja, así el contenido se coloca como si estuviera directamente en el escenario */
+function Panel({ clave, pestana, children }) {
   return (
-    <section id={id} className={`mx-auto w-full max-w-[68rem] px-4 sm:px-6 ${className}`}>
+    <div id={`panel-${clave}`} role="tabpanel" aria-labelledby={`tab-${clave}`} hidden={pestana !== clave} className="contents">
       {children}
-    </section>
-  )
-}
-
-function Titulo({ children, className = '' }) {
-  return (
-    <h2 className={`font-titulo text-[clamp(1.75rem,1.3rem+2vw,2.75rem)] font-extrabold leading-[1.05] tracking-tight text-balance ${className}`}>
-      {children}
-    </h2>
+    </div>
   )
 }
 
@@ -309,6 +302,13 @@ function HeroMiniweb() {
     return () => clearTimeout(t)
   }, [pestana, actual, tocado, enVuelta])
 
+  // Las filas de móviles siguen en la página aunque su pestaña esté oculta: al volver a ella, empiezan otra vez
+  // por el primero (antes se volvían a pintar desde cero)
+  useEffect(() => {
+    if (pestana === 'ejemplos') fila.current?.scrollTo({ left: 0, behavior: 'instant' })
+    if (pestana === 'cartas') filaCartas.current?.scrollTo({ left: 0, behavior: 'instant' })
+  }, [pestana])
+
   // Fila de Cartas y ofertas: el móvil del centro es el que se nombra debajo
   const [actualCarta, setActualCarta] = useState(0)
   const filaCartas = useRef(null)
@@ -354,36 +354,17 @@ function HeroMiniweb() {
           <MenuHamburguesa />
         </div>
 
-        {/* Texto: cambia con la pestaña. Solo se pinta en las que tienen titular, para no dejar hueco en las demás */}
-        {['qr', 'ejemplos', 'cartas'].includes(pestana) && (
-        <div className="px-[1.25rem] pt-[0.9rem]">
-          {pestana === 'qr' && (
-            <h2 className="font-titulo text-[clamp(1.9rem,1.5rem+2vw,2.5rem)] font-black leading-[1] tracking-tight">
-              {hero.inicio.titulo}
-            </h2>
-          )}
-          {pestana === 'ejemplos' && (
-            <>
-              <h1 className="font-titulo text-[clamp(1.9rem,1.5rem+2vw,2.5rem)] font-black leading-[1] tracking-tight">
-                {hero.titulo}
-              </h1>
-              <VerTodas to="/catalogo?tipo=ficha">{escaparate.verFichas}</VerTodas>
-            </>
-          )}
-          {pestana === 'cartas' && (
-            <>
+        {/* Las pestañas: todas están en el HTML (para Google y los lectores de pantalla) y solo se ve la elegida.
+            Cada una es un panel (Panel) con su titular, si lo tiene, arriba */}
+
+        {/* Pestaña Cartas y miniwebs: como Inicio, primero las miniwebs y después las cartas; tocarlos abre la demo */}
+        <Panel clave="cartas" pestana={pestana}>
+            <div className="px-[1.25rem] pt-[0.9rem]">
               <h2 className="font-titulo text-[clamp(1.9rem,1.5rem+2vw,2.5rem)] font-black leading-[1] tracking-tight">
                 {cartasMiniwebs.titulo}
               </h2>
               <VerTodas to="/catalogo?tipo=carta">{escaparate.verCartasMiniwebs}</VerTodas>
-            </>
-          )}
-        </div>
-        )}
-
-        {/* Pestaña Cartas y miniwebs: como Inicio, primero las miniwebs y después las cartas; tocarlos abre la demo */}
-        {pestana === 'cartas' && (
-          <>
+            </div>
             <div className="relative mt-[1rem] min-h-[9rem] flex-1">
               <ul
                 ref={filaCartas}
@@ -441,16 +422,17 @@ function HeroMiniweb() {
                 ))}
               </div>
             </div>
-          </>
-        )}
+        </Panel>
 
         {/* Pestaña Contacto: formulario sencillo que, al enviar, abre WhatsApp con el mensaje ya escrito */}
-        {pestana === 'contacto' && <FormularioContacto />}
+        <Panel clave="contacto" pestana={pestana}>
+          <FormularioContacto />
+        </Panel>
 
         {/* Pestaña Planes (clave como): arriba cuatro subpestañas (Planes, Ventajas, Pasos y SEO). Ocupa todo el alto;
             si el contenido de una subpestaña no cabe, se desliza por dentro y el resto de la pantalla no se mueve */}
-        {pestana === 'como' && (
-          // Tocar algo dentro (una subpestaña, el texto, el botón) para los cambios solos
+        <Panel clave="como" pestana={pestana}>
+          {/* Tocar algo dentro (una subpestaña, el texto, el botón) para los cambios solos */}
           <div onPointerDown={pararSub} className="flex min-h-0 flex-1 flex-col">
             <nav className="flex gap-[1.4rem] border-b border-linea px-[1.25rem] pt-[0.9rem]">
               {comoFunciona.subpestanas.map(s => (
@@ -467,9 +449,9 @@ function HeroMiniweb() {
               ))}
             </nav>
 
+            {/* Subpestañas: también todas en el HTML, solo se ve la elegida (hidden) */}
             {/* Ventajas: cada una con su explicación */}
-            {subComo === 'ventajas' && (
-              <div className="min-h-0 flex-1 overflow-y-auto px-[1.25rem] pb-[1rem] pt-[0.9rem]">
+              <div hidden={subComo !== 'ventajas'} className="min-h-0 flex-1 overflow-y-auto px-[1.25rem] pb-[1rem] pt-[0.9rem]">
                 <h2 className="font-titulo text-[clamp(1.9rem,1.5rem+2vw,2.5rem)] font-black leading-[1] tracking-tight">{ventajas.titulo}</h2>
                 <ul className="mt-[0.6rem]">
                   {ventajas.lista.map(v => (
@@ -480,10 +462,8 @@ function HeroMiniweb() {
                   ))}
                 </ul>
               </div>
-            )}
 
-            {subComo === 'pasos' && (
-          <div className="flex flex-1 flex-col px-[1.25rem] pb-[1rem] pt-[0.9rem]">
+          <div hidden={subComo !== 'pasos'} className="flex flex-1 flex-col px-[1.25rem] pb-[1rem] pt-[0.9rem]">
             <h2 className="font-titulo text-[clamp(1.9rem,1.5rem+2vw,2.5rem)] font-black leading-[1] tracking-tight">
               {pasos.titulo}
             </h2>
@@ -499,12 +479,10 @@ function HeroMiniweb() {
               ))}
             </ol>
           </div>
-            )}
 
             {/* SEO: como Planes, en tarjetas sin precio. Arriba lo incluido; separado debajo, lo de salir en Google,
                 que se pide con el botón de presupuesto. Cabe en una pantalla con el botón */}
-            {subComo === 'seo' && (
-              <div className="flex min-h-0 flex-1 flex-col gap-[0.8rem] overflow-hidden px-[1.25rem] pb-[1rem] pt-[0.9rem]">
+              <div hidden={subComo !== 'seo'} className="flex min-h-0 flex-1 flex-col gap-[0.8rem] overflow-hidden px-[1.25rem] pb-[1rem] pt-[0.9rem]">
                 <div>
                   <h2 className="font-titulo text-[clamp(1.6rem,1.3rem+1.6vw,2.1rem)] font-black leading-[1] tracking-tight">{seo.titulo}</h2>
                   <p className="mt-[0.4rem] text-[0.85rem] leading-[1.4] text-suave">{seo.texto}</p>
@@ -541,11 +519,9 @@ function HeroMiniweb() {
                   <BotonWhatsapp href={enlaceWhatsapp(marca.whatsapp, seo.mensaje)} className="w-full">{seo.boton}</BotonWhatsapp>
                 </div>
               </div>
-            )}
 
             {/* Planes: Ficha, Carta y Ficha + carta; debajo, lo que va bajo presupuesto. Cabe en una pantalla con el botón */}
-            {subComo === 'planes' && (
-              <div className="flex min-h-0 flex-1 flex-col gap-[0.8rem] overflow-hidden px-[1.25rem] pb-[1rem] pt-[0.9rem]">
+              <div hidden={subComo !== 'planes'} className="flex min-h-0 flex-1 flex-col gap-[0.8rem] overflow-hidden px-[1.25rem] pb-[1rem] pt-[0.9rem]">
                 {/* Cada tarjeta mide lo que necesita su texto (en móviles pequeños no se aprietan); el espacio que sobra queda alrededor del grupo */}
                 <div className="flex min-h-0 flex-1 flex-col justify-center gap-[0.7rem]">
                   {planes.lista.map(p => (
@@ -570,13 +546,16 @@ function HeroMiniweb() {
                   <BotonWhatsapp href={pedirPresupuesto} className="w-full">{planes.boton}</BotonWhatsapp>
                 </div>
               </div>
-            )}
           </div>
-        )}
+        </Panel>
 
         {/* Pestaña Tu QR: la placa del mostrador, personalizable con colores y forma de los puntos del QR */}
-        {pestana === 'qr' && (
-          <>
+        <Panel clave="qr" pestana={pestana}>
+            <div className="px-[1.25rem] pt-[0.9rem]">
+              <h2 className="font-titulo text-[clamp(1.9rem,1.5rem+2vw,2.5rem)] font-black leading-[1] tracking-tight">
+                {hero.inicio.titulo}
+              </h2>
+            </div>
             {/* Tocar la placa o sus botones para los cambios solos */}
             <div onPointerDown={pararPlaca} className="flex min-h-[10rem] flex-1 items-center justify-center py-[1rem]">
               <Placa
@@ -632,13 +611,17 @@ function HeroMiniweb() {
                 ))}
               </div>
             </div>
-          </>
-        )}
+        </Panel>
 
         {/* Pestaña Inicio (clave ejemplos, la primera): fila de móviles con las capturas, como el catálogo en pequeño; se ajusta al alto que queda.
             Se desliza con el dedo; tocar un móvil abre la demo de verdad. */}
-        {pestana === 'ejemplos' && (
-        <>
+        <Panel clave="ejemplos" pestana={pestana}>
+        <div className="px-[1.25rem] pt-[0.9rem]">
+          <h1 className="font-titulo text-[clamp(1.9rem,1.5rem+2vw,2.5rem)] font-black leading-[1] tracking-tight">
+            {hero.titulo}
+          </h1>
+          <VerTodas to="/catalogo?tipo=ficha">{escaparate.verFichas}</VerTodas>
+        </div>
         <div className="relative mt-[1rem] min-h-[9rem] flex-1">
           <ul
             ref={fila}
@@ -702,19 +685,21 @@ function HeroMiniweb() {
             ))}
           </div>
         </div>
-        </>
-        )}
+        </Panel>
       </div>
 
       {/* Pestañas: dos filas, la de abajo centrada */}
-      <nav className="px-[1.25rem] pt-[0.9rem]">
+      <nav role="tablist" aria-label="Apartados" className="px-[1.25rem] pt-[0.9rem]">
         {[PESTANAS, PESTANAS_ABAJO].map((fila, f) => (
-          <div key={f} className={`flex justify-center gap-[0.35rem] ${f > 0 ? 'mt-[0.35rem]' : ''}`}>
+          <div key={f} role="presentation" className={`flex justify-center gap-[0.35rem] ${f > 0 ? 'mt-[0.35rem]' : ''}`}>
             {fila.map(p => (
               <button
                 key={p.key}
+                id={`tab-${p.key}`}
                 type="button"
-                aria-pressed={pestana === p.key}
+                role="tab"
+                aria-selected={pestana === p.key}
+                aria-controls={`panel-${p.key}`}
                 onClick={() => {
                   setPestana(p.key)
                   // Al tocar Tu QR (también en mitad de la vuelta inicial), la placa empieza a probarse diseños sola,
@@ -744,15 +729,9 @@ function HeroMiniweb() {
 }
 
 export default function LandingPage() {
-  const { hash } = useLocation()
-
-  // Al volver desde una temática con /#ejemplos, baja hasta esa sección
-  useEffect(() => {
-    if (hash) document.getElementById(hash.slice(1))?.scrollIntoView()
-  }, [hash])
-
   return (
-    // Sin scroll vertical: solo se ve la miniweb de la primera pantalla. Las secciones de debajo se quedan en el código
+    // Sin scroll vertical: la landing es solo la miniweb de la primera pantalla. Las antiguas secciones de debajo se
+    // han quitado; sus textos siguen en landing/contenido.js para pasarlos a las pestañas (galería, planes...)
     <div className="h-svh overflow-hidden bg-papel font-texto text-tinta">
       {/* Primera pantalla: el hero es una miniweb, exactamente el alto de la pantalla.
           Alto fijo (h-svh, no min-h): así una pestaña con mucho contenido se desliza por dentro
@@ -760,132 +739,6 @@ export default function LandingPage() {
       <div className="flex h-svh flex-col">
         <HeroMiniweb />
       </div>
-
-      <main>
-
-        <div className="border-y border-linea bg-crema">
-          <Seccion className="py-[4rem] md:py-[5.5rem]">
-            <Titulo className="max-w-[40rem]">{porque.titulo}</Titulo>
-            <p className="mt-[1.25rem] max-w-[38rem] text-[1.07rem] leading-[1.65] text-suave">{porque.texto}</p>
-          </Seccion>
-        </div>
-
-        <Seccion id="como-funciona" className="scroll-mt-[1rem] py-[4rem] md:py-[5.5rem]">
-          <Titulo>{pasos.titulo}</Titulo>
-          <ol className="mt-[2.5rem] grid gap-[2.25rem] md:grid-cols-3 md:gap-[2.5rem]">
-            {pasos.lista.map((paso, i) => (
-              <li key={paso.titulo} className="border-t border-tinta pt-[1.1rem]">
-                <span className="font-titulo text-[1.1rem] text-suave">{i + 1}</span>
-                <h3 className="mt-[0.4rem] text-[1.2rem] font-semibold">{paso.titulo}</h3>
-                <p className="mt-[0.5rem] leading-[1.6] text-suave">{paso.texto}</p>
-              </li>
-            ))}
-          </ol>
-        </Seccion>
-
-        <Seccion className="pb-[4rem] md:pb-[5.5rem]">
-          <div className="grid gap-[2rem] md:grid-cols-[1fr_1.4fr] md:gap-[3rem]">
-            <div>
-              <Titulo>{botones.titulo}</Titulo>
-              <p className="mt-[1rem] max-w-[22rem] leading-[1.6] text-suave">{botones.nota}</p>
-            </div>
-            <ul className="grid sm:grid-cols-2 sm:gap-x-[2rem]">
-              {botones.lista.map(b => (
-                <li key={b} className="border-b border-linea py-[0.85rem] text-[1.02rem]">
-                  {b}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </Seccion>
-
-        <div id="ejemplos" className="scroll-mt-[1rem] bg-tinta text-papel">
-          <Seccion className="py-[4rem] md:py-[5.5rem]">
-            <Titulo>{ejemplos.titulo}</Titulo>
-          </Seccion>
-          {/* Todas las demos, ordenadas por temática */}
-          <ul className="mx-auto -mt-[1.5rem] flex w-full max-w-[68rem] snap-x snap-mandatory gap-[1.25rem] overflow-x-auto px-4 pb-[2.5rem] [scrollbar-width:none] sm:px-6 md:grid md:grid-cols-4 md:gap-[1.5rem] md:overflow-visible">
-            {secuenciaDemos.map(n => {
-              const t = getTematica(tematicaDe(n))
-              return (
-                <li key={n.slug} className="mx-auto w-[72%] max-w-[16rem] shrink-0 snap-center md:w-full">
-                  <Movil src={rutaNegocio(n)} titulo={n.nombre} className="border-papel/15" />
-                  <p className="mt-[1rem] font-semibold">{n.nombre}</p>
-                  <p className="mt-[0.2rem] text-[0.92rem] text-papel/65">{n.sector}</p>
-                  <div className="mt-[0.6rem] flex gap-[1rem] text-[0.92rem]">
-                    <Link
-                      to={rutaNegocio(n)}
-                      className="font-semibold underline decoration-papel/30 underline-offset-[0.3em] hover:decoration-papel"
-                    >
-                      Abrir
-                    </Link>
-                    <Link to={`/tematicas/${t.key}`} className="text-papel/65 hover:text-papel">
-                      {t.nombre}
-                    </Link>
-                  </div>
-                </li>
-              )
-            })}
-          </ul>
-
-          {/* Acceso a cada temática */}
-          <div className="mx-auto flex w-full max-w-[68rem] flex-wrap gap-x-[1.5rem] gap-y-[0.5rem] px-4 pb-[4.5rem] sm:px-6 md:pb-[5.5rem]">
-            {tematicasConDemos().map(t => (
-              <Link
-                key={t.key}
-                to={`/tematicas/${t.key}`}
-                className="font-semibold underline decoration-papel/30 underline-offset-[0.3em] hover:decoration-papel"
-              >
-                {ejemplos.verMas} de {t.nombre.toLowerCase()}
-              </Link>
-            ))}
-          </div>
-        </div>
-
-        <Seccion id="precio" className="scroll-mt-[1rem] py-[4rem] md:py-[5.5rem]">
-          <Titulo>{precio.titulo}</Titulo>
-          <p className="mt-[1rem] max-w-[36rem] text-[1.07rem] leading-[1.6] text-suave">{precio.texto}</p>
-          <BotonWhatsapp href={pedirPresupuesto} className="mt-[1.75rem]">{precio.boton}</BotonWhatsapp>
-          <p className="mt-[1.5rem] max-w-[38rem] leading-[1.6] text-suave">{precio.nota}</p>
-        </Seccion>
-
-        <Seccion id="preguntas" className="scroll-mt-[1rem] pb-[4rem] pt-[1rem] md:pb-[5.5rem]">
-          <Titulo>{preguntas.titulo}</Titulo>
-          <div className="mt-[1.75rem] border-t border-linea">
-            {preguntas.lista.map(p => (
-              <details key={p.pregunta} className="group border-b border-linea">
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-[1rem] py-[1.1rem] text-[1.07rem] font-semibold [&::-webkit-details-marker]:hidden">
-                  {p.pregunta}
-                  <span className="text-[1.4rem] font-normal leading-none text-suave transition-transform group-open:rotate-45">+</span>
-                </summary>
-                <p className="max-w-[40rem] pb-[1.25rem] leading-[1.6] text-suave">{p.respuesta}</p>
-              </details>
-            ))}
-          </div>
-        </Seccion>
-
-        <div className="bg-acento text-papel">
-          <Seccion className="py-[4rem] text-center md:py-[5.5rem]">
-            <Titulo>{cierre.titulo}</Titulo>
-            <p className="mx-auto mt-[1rem] max-w-[30rem] text-[1.07rem] leading-[1.6] text-papel/75">{cierre.texto}</p>
-            <a
-              href={contacto}
-              target="_blank"
-              rel="noreferrer"
-              className="mt-[2rem] inline-flex min-h-[3.25rem] items-center justify-center rounded-full bg-papel px-[1.6rem] font-bold text-acento transition-colors hover:bg-crema"
-            >
-              {cierre.boton}
-            </a>
-          </Seccion>
-        </div>
-      </main>
-
-      <footer className="mx-auto flex w-full max-w-[68rem] flex-wrap justify-between gap-[0.5rem] px-4 py-[1.75rem] text-[0.9rem] text-suave sm:px-6">
-        <p>
-          {marca.nombre} · {marca.ciudad}
-        </p>
-        <p>{pie.firma}</p>
-      </footer>
     </div>
   )
 }

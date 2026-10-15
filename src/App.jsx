@@ -7,6 +7,7 @@ import CartaPage from './pages/CartaPage'
 import CatalogoPage from './pages/CatalogoPage'
 import PlanesPage from './pages/PlanesPage'
 import PanelPage from './pages/PanelPage'
+import LegalPage from './pages/LegalPage'
 
 // El panel de Jesús y el escaparate de diseños se cargan aparte: los visitantes de las páginas no descargan su código
 const AdminPage = lazy(() => import('./pages/AdminPage'))
@@ -28,6 +29,9 @@ export default function App() {
         <Route path="/miniweb" element={<CatalogoPage soloMiniwebs />} />
         {/* Planes en detalle */}
         <Route path="/planes" element={<PlanesPage />} />
+        {/* Textos legales */}
+        <Route path="/aviso-legal" element={<LegalPage tipo="avisoLegal" />} />
+        <Route path="/privacidad" element={<LegalPage tipo="privacidad" />} />
         {/* Panel del dueño: cambiar su menú del día (Supabase) */}
         <Route path="/mi-carta" element={<PanelPage />} />
         {/* Dirección antigua del panel del dueño: lleva a la nueva */}
