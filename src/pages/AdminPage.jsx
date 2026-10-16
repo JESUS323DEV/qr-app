@@ -1851,6 +1851,7 @@ function QRSuelto({ copias }) {
         url={`${window.location.origin}${pagina?.ruta ?? '/'}`}
         nombre={pagina?.nombre ?? ''}
         colores={colores}
+        fuentes={marca?.theme?.fonts}
         proponer={descripcion =>
           llamar('asistente', { paso: 'colores-qr', descripcion, nombre: pagina?.nombre ?? '', sector: marca?.sector ?? '', colores })
         }

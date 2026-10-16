@@ -1,18 +1,21 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import QRCodeStyling from 'qr-code-styling'
 import { ChevronDown, QrCode, Sparkles } from 'lucide-react'
-import { SocialIcon, TRAZADOS } from './SocialIcons'
+import { TRAZADOS } from './SocialIcons'
+import { TIPOGRAFIAS } from '../asistente/tipografias'
+import { loadFont } from '../lib/applyTheme'
 
-/* Generador de QR de /admin: el QR de una página (ficha, miniweb o carta) con los colores de su marca, para
-   descargarlo e imprimirlo. Arriba, estilos ya hechos (los de la marca y los de la placa de la landing); después se
-   puede retocar todo: forma de los puntos y de las esquinas, colores y degradados, doble imagen como el logo de
-   TikTok, la inicial en el centro y un marco con texto. Se descarga en PNG grande (casa, WhatsApp) o en SVG
-   (imprenta: no pierde calidad).
-   Siempre con la corrección de errores máxima (H): así se lee aunque la inicial tape parte del centro.
-   El QR se pinta por capas sobre el fondo: la doble imagen son dos copias del QR, una de cada color, un poco
-   desplazadas por debajo del QR de verdad.
-   url: la dirección completa que abre el QR. nombre: el del negocio (para la inicial y el archivo). colores: los de
-   su marca (theme.colors). */
+/* Generador de QR de /admin: el QR de una página (ficha, miniweb o carta) en su placa, para descargarlo e imprimirlo.
+   Todo se elige en "Diseño", en este orden: estilo, colores (predeterminados, a mano y los de la placa), forma de los
+   puntos y de las esquinas, el centro (inicial o logo), la doble imagen (como el logo de TikTok), la placa (forma,
+   esquinas y borde) y los textos (nombre, texto de arriba, líneas de abajo con icono, tipografía y tamaño).
+   Siempre con la corrección de errores máxima (H): así se lee aunque el centro tape parte del QR.
+   La placa se compone una sola vez como SVG (la vista previa y la descarga para imprenta son el mismo dibujo); el PNG
+   se dibuja con las mismas medidas en un lienzo.
+   El QR va por capas sobre su fondo: la doble imagen son dos copias del QR, una de cada color, un poco desplazadas
+   por debajo del QR de verdad.
+   url: la dirección que abre el QR. nombre: el del negocio. colores y fuentes: los de su marca (theme.colors y
+   theme.fonts). proponer: pide al asistente tres diseños (devuelve { propuestas }). */
 
 // Las seis formas de puntos de la librería
 const PUNTOS = [
@@ -40,12 +43,13 @@ const esClaro = color => {
   const [r, g, b] = [1, 3, 5].map(i => parseInt(color.slice(i, i + 2), 16))
   return 0.299 * r + 0.587 * g + 0.114 * b > 160
 }
+const esHex = c => /^#[0-9a-f]{6}$/i.test(c ?? '')
 
 const sinDegradado = color2 => ({ activo: false, color2, intermedios: [], tipo: 'linear', angulo: 45 })
 // Degradado en diagonal, de abajo a la izquierda hacia arriba a la derecha, como el de la placa de la landing
 const enDiagonal = colores => ({ activo: true, color2: colores.at(-1), intermedios: colores.slice(1, -1), tipo: 'linear', angulo: 315 })
 
-/* Estilos ya hechos: los de la placa de la landing (pestaña Tu QR). placa: el color del marco; qr: el color de los
+/* Estilos ya hechos: los de la placa de la landing (pestaña Tu QR). placa: el color de la placa; qr: el color de los
    puntos y las esquinas; degradado: sus colores, si lleva; doble: los dos colores de la doble imagen (TikTok) */
 const ESTILOS = [
   { clave: 'instagram', nombre: 'Instagram', placa: '#FFFFFF', qr: '#833AB4', degradado: ['#833AB4', '#C13584', '#E1306C', '#F77737'] },
@@ -55,7 +59,7 @@ const ESTILOS = [
   { clave: 'celeste', nombre: 'Celeste', placa: '#9BD8F2', qr: '#0B2F4A', degradado: ['#0B2F4A', '#0E4F7A', '#0F7A95'] },
 ]
 
-// Estilos lisos (sin degradado): placa de un color y el QR oscuro a juego, para cualquier negocio
+// Colores predeterminados lisos (sin degradado): placa de un color y el QR oscuro a juego, para cualquier negocio
 const LISOS = [
   { clave: 'negro', nombre: 'Negro', placa: '#141414', qr: '#141414' },
   { clave: 'blanco', nombre: 'Blanco', placa: '#FFFFFF', qr: '#141414' },
@@ -76,7 +80,7 @@ const LISOS = [
   { clave: 'oliva', nombre: 'Oliva', placa: '#4F5B2E', qr: '#4F5B2E' },
   { clave: 'carbon', nombre: 'Carbón', placa: '#33363B', qr: '#33363B' },
 ]
-// Estilos con degradado: todos sus colores oscuros (para que se lea), en diagonal; la placa, del primero
+// Colores predeterminados con degradado: todos sus colores oscuros (para que se lea), en diagonal; la placa, del primero
 const DEGRADADOS = [
   { clave: 'atardecer', nombre: 'Atardecer', colores: ['#7A1E3A', '#B3261E', '#C2551F'] },
   { clave: 'fuego', nombre: 'Fuego', colores: ['#8E1B1B', '#B3261E', '#A8440F'] },
@@ -94,9 +98,9 @@ const DEGRADADOS = [
 const TODOS_ESTILOS = [...ESTILOS, ...LISOS, ...DEGRADADOS]
 
 /* "Su marca", copiando el aspecto de la página (no solo su color principal, que a veces casi no se ve):
-   - marca oscura (fondo de página oscuro, como Umami): marco del color del fondo, texto del marco en el acento
+   - marca oscura (fondo de página oscuro, como Umami): placa del color del fondo, texto de la placa en el acento
      (si se lee) y QR de ese mismo oscuro;
-   - marca clara: marco del principal y QR del principal si es oscuro (si no, del color del texto) */
+   - marca clara: placa del principal y QR del principal si es oscuro (si no, del color del texto) */
 const deMarca = colores => {
   const oscuro = c => (c && !esClaro(c) ? c : null)
   if (colores?.bg && !esClaro(colores.bg)) {
@@ -105,23 +109,28 @@ const deMarca = colores => {
   return { marco: colores?.primary ?? '#141414', qr: oscuro(colores?.primary) ?? oscuro(colores?.text) ?? '#141414', letra: null }
 }
 
-const esHex = c => /^#[0-9a-f]{6}$/i.test(c ?? '')
-
-// La inicial en un círculo, como imagen para el centro del QR
-const imagenInicial = (letra, fondo) => {
+// Lo que va en el centro del QR, como imagen: la inicial sobre un círculo o un cuadrado (sin letra: la forma sola,
+// para las copias de la doble imagen)
+const imagenCentro = (letra, fondo, forma) => {
   const texto = esClaro(fondo) ? '#141414' : '#FFFFFF'
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="${fondo}"/><text x="50" y="50" dy="0.35em" text-anchor="middle" font-family="system-ui, sans-serif" font-weight="700" font-size="56" fill="${texto}">${letra}</text></svg>`
+  const figura = forma === 'cuadrado' ? `<rect width="100" height="100" rx="18" fill="${fondo}"/>` : `<circle cx="50" cy="50" r="50" fill="${fondo}"/>`
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">${figura}${letra ? `<text x="50" y="50" dy="0.35em" text-anchor="middle" font-family="system-ui, sans-serif" font-weight="700" font-size="56" fill="${texto}">${letra}</text>` : ''}</svg>`
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
 }
 
-const escaparXml = t => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+const escaparXml = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 
-/* Medidas del marco, en proporción al lado del QR (iguales en la vista previa, el PNG y el SVG).
-   De arriba abajo: borde, el texto de arriba ("Escanéame"), el QR, una fila por cada línea de abajo (redes o lo que
-   sea, con su icono) y el borde */
-const MARCO = { borde: 0.08, texto: 0.2, letra: 0.075, radio: 0.08, linea: 0.13, letraLinea: 0.058, icono: 0.07, hueco: 0.025 }
+/* Medidas de la placa, en proporción al lado del QR. De arriba abajo: borde, nombre del negocio, texto de arriba
+   ("Escanéame"), el QR, una fila por cada línea de abajo (redes o lo que sea, con su icono) y el borde.
+   Los textos (y sus huecos) crecen o encogen con el tamaño elegido */
+const MEDIDAS = { nombre: 0.15, letraNombre: 0.085, texto: 0.2, letra: 0.075, linea: 0.13, letraLinea: 0.058, icono: 0.07, hueco: 0.025 }
+const TAMANOS = [
+  [0.85, 'Pequeño'],
+  [1, 'Normal'],
+  [1.2, 'Grande'],
+]
 
-// Iconos para las líneas de abajo del marco (solo se ven en la placa, no son enlaces)
+// Iconos para las líneas de abajo de la placa (solo se ven en la placa, no son enlaces)
 const ICONOS_LINEA = [
   ['', 'Sin icono'],
   ['instagram', 'Instagram'],
@@ -134,27 +143,22 @@ const ICONOS_LINEA = [
 ]
 const MAX_LINEAS = 4
 
-// Ancho de un texto con la letra del marco, para centrar cada línea con su icono (en el PNG y en el SVG)
-const medir = (texto, tamano) => {
-  const ctx = document.createElement('canvas').getContext('2d')
-  ctx.font = `600 ${tamano}px system-ui, sans-serif`
-  return ctx.measureText(texto).width
-}
-// Dónde empieza el texto y dónde va el icono de una línea: centrados juntos, el texto primero y el icono a su derecha
-const posicionLinea = (l, ancho, lado) => {
-  const icono = l.icono ? lado * MARCO.icono : 0
-  const hueco = l.icono ? lado * MARCO.hueco : 0
-  const texto = medir(l.texto, lado * MARCO.letraLinea)
-  const x = (ancho - (texto + hueco + icono)) / 2
-  return { xTexto: x, xIcono: x + texto + hueco, icono }
-}
 // Desplazamiento de cada copia de la doble imagen, en proporción al lado
 const DESPLAZAMIENTO = 0.006
+const SISTEMA = 'system-ui, sans-serif'
+
+// Ancho de un texto con una letra concreta (para centrar cada línea con su icono)
+const medir = (texto, tamano, familia) => {
+  const ctx = document.createElement('canvas').getContext('2d')
+  ctx.font = `600 ${tamano}px ${familia}`
+  return ctx.measureText(texto).width
+}
 
 // Degradado de la librería a partir de lo elegido ({ activo, color2, intermedios, tipo, angulo }), o nada
+const coloresDegradado = (color, d) => [color, ...(d.intermedios ?? []), d.color2]
 const degradadoDe = (color, d) => {
   if (!d?.activo) return undefined
-  const todos = [color, ...(d.intermedios ?? []), d.color2]
+  const todos = coloresDegradado(color, d)
   return {
     type: d.tipo,
     rotation: (d.angulo * Math.PI) / 180,
@@ -163,7 +167,7 @@ const degradadoDe = (color, d) => {
 }
 
 // Opciones de una capa del QR, siempre sin fondo (el fondo se pinta debajo de todas las capas)
-const opcionesCapa = ({ url, lado, puntos, esquinas, puntoOjo, colorPuntos, colorEsquinas, degPuntos, degEsquinas, inicial, colorInicial }) => ({
+const opcionesCapa = ({ url, lado, puntos, esquinas, puntoOjo, colorPuntos, colorEsquinas, degPuntos, degEsquinas, imagen, tamanoImagen }) => ({
   width: lado,
   height: lado,
   type: 'svg',
@@ -174,53 +178,87 @@ const opcionesCapa = ({ url, lado, puntos, esquinas, puntoOjo, colorPuntos, colo
   cornersSquareOptions: { type: esquinas, color: colorEsquinas, gradient: degradadoDe(colorEsquinas, degEsquinas) },
   cornersDotOptions: { type: puntoOjo, color: colorEsquinas, gradient: degradadoDe(colorEsquinas, degEsquinas) },
   backgroundOptions: { color: 'rgba(0,0,0,0)' },
-  image: inicial ? imagenInicial(inicial, colorInicial) : undefined,
-  imageOptions: { margin: Math.round(lado * 0.01), imageSize: 0.3, hideBackgroundDots: true },
+  image: imagen,
+  imageOptions: { margin: Math.round(lado * 0.01), imageSize: tamanoImagen ?? 0.3, hideBackgroundDots: true },
 })
 
-// Las capas de un QR de lado `lado`: las dos copias de la doble imagen (si la lleva) y el QR de verdad encima
+/* Las capas de un QR de lado `lado`: las dos copias de la doble imagen (si la lleva) y el QR de verdad encima.
+   En las copias, el centro (si lo hay) es su forma lisa del color de la copia */
 const capasDe = (o, lado) => {
   const d = lado * DESPLAZAMIENTO
+  const imagenPrincipal = o.centro === 'logo' && o.logo ? o.logo : o.centro === 'inicial' && o.inicial ? imagenCentro(o.inicial, o.colorCentro, o.formaCentro) : undefined
   const copia = (color, dx) => ({
-    opciones: opcionesCapa({ ...o, lado, colorPuntos: color, colorEsquinas: color, degPuntos: null, degEsquinas: null, colorInicial: color }),
+    opciones: opcionesCapa({
+      ...o,
+      lado,
+      colorPuntos: color,
+      colorEsquinas: color,
+      degPuntos: null,
+      degEsquinas: null,
+      imagen: imagenPrincipal ? imagenCentro('', color, o.centro === 'logo' ? 'cuadrado' : o.formaCentro) : undefined,
+      tamanoImagen: o.centro === 'logo' ? 0.35 : 0.3,
+    }),
     dx,
     dy: dx,
   })
   return [
     ...(o.doble?.activo ? [copia(o.doble.colores[0], -d), copia(o.doble.colores[1], d)] : []),
-    { opciones: opcionesCapa({ ...o, lado }), dx: 0, dy: 0 },
+    { opciones: opcionesCapa({ ...o, lado, imagen: imagenPrincipal, tamanoImagen: o.centro === 'logo' ? 0.35 : 0.3 }), dx: 0, dy: 0 },
   ]
 }
 
-// proponer: pide al asistente tres combinaciones de colores (devuelve { propuestas })
-export default function GeneradorQR({ url: urlInicial, nombre, colores, proponer }) {
+export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes: fuentesMarca, proponer }) {
   const marca = deMarca(colores)
   const oscuroDeMarca = marca.qr
   const acentoDeMarca = colores?.accent ?? '#555555'
   const [url, setUrl] = useState(urlInicial)
+
+  // Colores y estilo
   const [estilo, setEstilo] = useState(colores ? 'marca' : null)
-  const [puntos, setPuntos] = useState('rounded')
-  const [esquinas, setEsquinas] = useState('extra-rounded')
-  const [puntoOjo, setPuntoOjo] = useState('dot')
   const [colorPuntos, setColorPuntos] = useState(oscuroDeMarca)
   const [colorEsquinas, setColorEsquinas] = useState(oscuroDeMarca)
   // Degradados de los puntos y de las esquinas: segundo color (y los de en medio, en los estilos), lineal o
   // radial, y el ángulo (en los lineales)
   const [degPuntos, setDegPuntos] = useState(sinDegradado(acentoDeMarca))
   const [degEsquinas, setDegEsquinas] = useState(sinDegradado(acentoDeMarca))
+  const [fondo, setFondo] = useState('#FFFFFF')
+  const [colorMarco, setColorMarco] = useState(marca.marco)
+  const [degMarco, setDegMarco] = useState(sinDegradado(acentoDeMarca))
+  // Color de los textos de la placa: el elegido, sea cual sea; sin elegir, blanco o negro según la placa
+  const [colorLetra, setColorLetra] = useState(marca.letra)
+
+  // Formas
+  const [puntos, setPuntos] = useState('rounded')
+  const [esquinas, setEsquinas] = useState('extra-rounded')
+  const [puntoOjo, setPuntoOjo] = useState('dot')
+
+  // Centro: nada, la inicial (en círculo o cuadrado, con su color) o un logo subido
+  const [centro, setCentro] = useState('inicial')
+  const [formaCentro, setFormaCentro] = useState('circulo')
+  const [colorCentroElegido, setColorCentro] = useState(null)
+  const [logo, setLogo] = useState(null)
+  const [errorLogo, setErrorLogo] = useState('')
+
   // Doble imagen, como el logo de TikTok
   const [doble, setDoble] = useState({ activo: false, colores: ['#25F4EE', '#FE2C55'] })
-  const [fondo, setFondo] = useState('#FFFFFF')
-  const [conInicial, setConInicial] = useState(true)
+
+  // Placa: con o sin ella, rectangular o circular (pegatina), lo redondo de sus esquinas y el borde alrededor del QR
   const [conMarco, setConMarco] = useState(true)
-  const [colorMarco, setColorMarco] = useState(marca.marco)
-  // Color del texto del marco: el elegido (si se lee sobre el marco) o, sin elegir, blanco o negro según el marco
-  const [colorLetra, setColorLetra] = useState(marca.letra)
+  const [formaPlaca, setFormaPlaca] = useState('rectangular')
+  const [radioPlaca, setRadioPlaca] = useState(0.08)
+  const [borde, setBorde] = useState(0.08)
+
+  // Textos de la placa
+  const [conNombre, setConNombre] = useState(false)
+  const [textoNombre, setTextoNombre] = useState(nombre ?? '')
   const [textoMarco, setTextoMarco] = useState('Escanéame')
-  // Líneas de abajo del marco: una red (u otra cosa) por línea, con su icono
+  // Líneas de abajo: una red (u otra cosa) por línea, con su icono
   const [lineas, setLineas] = useState([{ icono: 'instagram', texto: '' }])
-  const [descargando, setDescargando] = useState(false)
-  // Propuestas de colores del asistente
+  // Tipografía: '' es la de la marca (o la del sistema, sin marca); si no, una de la lista
+  const [tipografia, setTipografia] = useState('')
+  const [escala, setEscala] = useState(1)
+
+  // Asistente
   const [propuestas, setPropuestas] = useState(null)
   const [pensando, setPensando] = useState(false)
   // Antes de llamar al asistente se pregunta, aquí mismo, por si se ha tocado sin querer
@@ -229,7 +267,24 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, proponer
   const [descripcion, setDescripcion] = useState('')
   const [errorIA, setErrorIA] = useState('')
 
-  // Pone un estilo de golpe (colores, degradados, doble imagen y marco); las formas se quedan como estén
+  const [descargando, setDescargando] = useState(false)
+
+  const colorCentro = colorCentroElegido ?? colorEsquinas
+  const inicial = (nombre ?? '').trim().charAt(0).toUpperCase()
+  const textoSobreMarco = colorLetra || (esClaro(colorMarco) ? '#141414' : '#FFFFFF')
+  // Si el color elegido para los textos se parece a la placa (los dos claros o los dos oscuros), se avisa
+  const textoPocoVisible = Boolean(colorLetra) && esClaro(colorLetra) === esClaro(colorMarco)
+
+  // Tipografía de los textos de la placa: la de títulos para el nombre y el texto de arriba; la de texto, abajo
+  const fuentes = TIPOGRAFIAS.find(t => t.id === tipografia)?.fonts ?? fuentesMarca ?? null
+  const familiaTitulo = fuentes?.heading?.family ?? SISTEMA
+  const familiaTexto = fuentes?.body?.family ?? SISTEMA
+  useEffect(() => {
+    if (fuentes?.heading?.google) loadFont(fuentes.heading.google)
+    if (fuentes?.body?.google) loadFont(fuentes.body.google)
+  }, [fuentes])
+
+  // Pone un estilo de golpe (colores, degradados, doble imagen y placa); las formas se quedan como estén
   const ponerEstilo = clave => {
     setEstilo(clave)
     const e = TODOS_ESTILOS.find(x => x.clave === clave)
@@ -242,7 +297,9 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, proponer
     setDoble({ activo: Boolean(e?.doble), colores: e?.doble ?? ['#25F4EE', '#FE2C55'] })
     setFondo('#FFFFFF')
     setColorMarco(e?.placa ?? marca.marco)
+    setDegMarco(sinDegradado(acentoDeMarca))
     setColorLetra(e ? null : marca.letra)
+    setColorCentro(null)
     setConMarco(true)
   }
 
@@ -292,48 +349,176 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, proponer
     setDoble(p.doble?.activo && p.doble.colores.length === 2 && p.doble.colores.every(esHex) ? { activo: true, colores: p.doble.colores } : { activo: false, colores: ['#25F4EE', '#FE2C55'] })
     setFondo(p.fondo)
     setColorMarco(p.marco)
+    setDegMarco(sinDegradado(acentoDeMarca))
     setColorLetra(p.textoMarco)
+    setColorCentro(null)
     setConMarco(true)
   }
 
-  const inicial = conInicial ? (nombre ?? '').trim().charAt(0).toUpperCase() : ''
-  const opciones = useMemo(
-    () => ({ url, puntos, esquinas, puntoOjo, colorPuntos, colorEsquinas, degPuntos, degEsquinas, doble, inicial, colorInicial: colorEsquinas }),
-    [url, puntos, esquinas, puntoOjo, colorPuntos, colorEsquinas, degPuntos, degEsquinas, doble, inicial],
+  // Logo subido: se guarda como imagen dentro de la página (no se sube a ningún sitio)
+  const subirLogo = archivo => {
+    setErrorLogo('')
+    if (!archivo) return
+    if (!archivo.type.startsWith('image/')) return setErrorLogo('Tiene que ser una imagen.')
+    if (archivo.size > 2 * 1024 * 1024) return setErrorLogo('La imagen pesa demasiado (máximo 2 MB).')
+    const lector = new FileReader()
+    lector.onload = () => {
+      setLogo(lector.result)
+      setCentro('logo')
+    }
+    lector.readAsDataURL(archivo)
+  }
+
+  const opcionesQR = useMemo(
+    () => ({ url, puntos, esquinas, puntoOjo, colorPuntos, colorEsquinas, degPuntos, degEsquinas, doble, centro, inicial, logo, formaCentro, colorCentro }),
+    [url, puntos, esquinas, puntoOjo, colorPuntos, colorEsquinas, degPuntos, degEsquinas, doble, centro, inicial, logo, formaCentro, colorCentro],
   )
 
-  // Vista previa: las capas se vuelven a pintar dentro de la caja con cada cambio (de nuevo, no con update:
-  // update junta las opciones con las anteriores y un degradado quitado se quedaría puesto)
-  const LADO_VISTA = 240
-  const caja = useRef(null)
-  useEffect(() => {
-    if (!caja.current) return
-    caja.current.innerHTML = ''
-    // Sin dirección no hay QR que pintar
-    if (!opciones.url.trim()) return
-    for (const capa of capasDe(opciones, LADO_VISTA)) {
-      const div = document.createElement('div')
-      div.style.cssText = `position:absolute;inset:0;transform:translate(${capa.dx}px,${capa.dy}px)`
-      caja.current.appendChild(div)
-      new QRCodeStyling(capa.opciones).append(div)
+  // Las líneas de abajo que se ven: las que tienen texto (en la placa circular, solo la primera)
+  const lineasVisibles = lineas.filter(l => l.texto.trim())
+
+  /* Medidas de la placa para un QR de lado `lado`: dónde va el QR, cuánto mide la placa y dónde va cada texto.
+     Placa rectangular: borde, nombre, texto de arriba, QR, líneas y borde. Placa circular (pegatina): el QR en el
+     centro, el texto de arriba en la parte de arriba del círculo y la primera línea abajo (sin nombre) */
+  const geometria = lado => {
+    const f = escala
+    const letras = {
+      nombre: lado * MEDIDAS.letraNombre * f,
+      arriba: lado * MEDIDAS.letra * f,
+      linea: lado * MEDIDAS.letraLinea * f,
+      icono: lado * MEDIDAS.icono * f,
+      hueco: lado * MEDIDAS.hueco * f,
     }
-  }, [opciones])
+    if (!conMarco) return { ancho: lado, alto: lado, xQR: 0, yQR: 0, letras, lins: [], forma: null }
+    const b = lado * borde
+    if (formaPlaca === 'circular') {
+      const r = (lado * Math.SQRT2) / 2 + b
+      const xQR = r - lado / 2
+      return {
+        forma: 'circular',
+        ancho: r * 2,
+        alto: r * 2,
+        xQR,
+        yQR: xQR,
+        letras,
+        yArriba: textoMarco.trim() ? xQR * 0.58 : null,
+        yNombre: null,
+        lins: lineasVisibles.slice(0, 1),
+        yLinea: () => r * 2 - xQR * 0.58,
+      }
+    }
+    const altoNombre = conNombre && textoNombre.trim() ? lado * MEDIDAS.nombre * f : 0
+    const altoArriba = textoMarco.trim() ? lado * MEDIDAS.texto * f : 0
+    const altoLinea = lado * MEDIDAS.linea * f
+    const yQR = b + altoNombre + altoArriba
+    return {
+      forma: 'rectangular',
+      ancho: lado + b * 2,
+      alto: yQR + lado + lineasVisibles.length * altoLinea + b,
+      xQR: b,
+      yQR,
+      radio: Math.min(lado * radioPlaca, (lado + b * 2) / 2),
+      letras,
+      yNombre: altoNombre ? b + altoNombre / 2 : null,
+      yArriba: altoArriba ? b + altoNombre + altoArriba / 2 : null,
+      lins: lineasVisibles,
+      yLinea: i => yQR + lado + altoLinea * (i + 0.5),
+    }
+  }
 
-  // Poco contraste: algún color de puntos o esquinas (también los de los degradados) claro, o el fondo oscuro
-  // (puntos claros sobre oscuro: muchos móviles no lo leen). La doble imagen no cuenta: es decoración
-  const coloresQR = [
-    colorPuntos,
-    ...(degPuntos.activo ? [...degPuntos.intermedios, degPuntos.color2] : []),
-    colorEsquinas,
-    ...(degEsquinas.activo ? [...degEsquinas.intermedios, degEsquinas.color2] : []),
-  ]
-  const pocoContraste = !esClaro(fondo) || coloresQR.some(esClaro)
-  // Color del texto del marco: el elegido, sea cual sea; sin elegir, blanco o negro según el marco
-  const textoSobreMarco = colorLetra || (esClaro(colorMarco) ? '#141414' : '#FFFFFF')
-  // Si el elegido se parece al marco (los dos claros o los dos oscuros), se avisa
-  const textoPocoVisible = Boolean(colorLetra) && esClaro(colorLetra) === esClaro(colorMarco)
+  // Dónde empieza el texto y dónde va el icono de una línea: centrados juntos, el texto primero y el icono a su derecha
+  const posicionLinea = (l, g) => {
+    const icono = l.icono ? g.letras.icono : 0
+    const hueco = l.icono ? g.letras.hueco : 0
+    const ancho = medir(l.texto, g.letras.linea, familiaTexto)
+    const x = (g.ancho - (ancho + hueco + icono)) / 2
+    return { xTexto: x, xIcono: x + ancho + hueco, icono }
+  }
+
+  // Espera a que las letras elegidas estén cargadas (si no, se medirían y dibujarían con otra)
+  const esperarLetras = () =>
+    Promise.all([document.fonts.load(`800 40px ${familiaTitulo}`), document.fonts.load(`600 40px ${familiaTexto}`)]).catch(() => null)
+
+  // Colores de la placa: liso o degradado
+  const coloresPlaca = degMarco.activo ? coloresDegradado(colorMarco, degMarco) : [colorMarco]
+
+  /* La placa entera como SVG (vista previa y descarga para imprenta): la placa, el fondo del QR, las capas del QR
+     (cada una con sus ids propios, para que no se pisen) y los textos. pre: prefijo para los ids */
+  const componerSvg = async (lado, pre) => {
+    await esperarLetras()
+    const g = geometria(lado)
+    const capas = url.trim()
+      ? await Promise.all(
+          capasDe(opcionesQR, lado).map(async (capa, i) => {
+            const texto = (await (await new QRCodeStyling(capa.opciones).getRawData('svg')).text()).replace(/<\?xml[^>]*\?>/, '').trim()
+            // Cada pieza con su nombre propio, y sus referencias igual (la librería las escribe con y sin comillas:
+            // url(#x), url('#x'), href="#x")
+            const sufijo = `-${pre}${i}`
+            return texto
+              .replace(/\bid="([^"]+)"/g, `id="$1${sufijo}"`)
+              .replace(/url\((['"]?)#([^'")]+)\1\)/g, `url($1#$2${sufijo}$1)`)
+              .replace(/href="#([^"]+)"/g, `href="#$1${sufijo}"`)
+              .replace('<svg ', `<svg x="${g.xQR + capa.dx}" y="${g.yQR + capa.dy}" `)
+          }),
+        )
+      : []
+    const partes = []
+    if (g.forma) {
+      // Relleno de la placa: liso o con su degradado (lineal girado o radial desde el centro)
+      let relleno = colorMarco
+      if (coloresPlaca.length > 1) {
+        const paradas = coloresPlaca.map((c, i) => `<stop offset="${i / (coloresPlaca.length - 1)}" stop-color="${c}"/>`).join('')
+        partes.push(
+          degMarco.tipo === 'radial'
+            ? `<defs><radialGradient id="${pre}-placa" cx="0.5" cy="0.5" r="0.7">${paradas}</radialGradient></defs>`
+            : `<defs><linearGradient id="${pre}-placa" gradientTransform="rotate(${degMarco.angulo} 0.5 0.5)">${paradas}</linearGradient></defs>`,
+        )
+        relleno = `url(#${pre}-placa)`
+      }
+      partes.push(
+        g.forma === 'circular'
+          ? `<circle cx="${g.ancho / 2}" cy="${g.alto / 2}" r="${g.ancho / 2}" fill="${relleno}"/>`
+          : `<rect width="${g.ancho}" height="${g.alto}" rx="${g.radio}" fill="${relleno}"/>`,
+      )
+    }
+    partes.push(`<rect x="${g.xQR}" y="${g.yQR}" width="${lado}" height="${lado}" fill="${fondo}"/>`)
+    partes.push(...capas)
+    if (g.forma) {
+      const texto = (contenido, y, tamano, familia, peso) =>
+        `<text x="${g.ancho / 2}" y="${y}" dy="0.35em" text-anchor="middle" font-family="${escaparXml(familia)}" font-weight="${peso}" font-size="${tamano}" fill="${textoSobreMarco}">${escaparXml(contenido)}</text>`
+      if (g.yNombre != null) partes.push(texto(textoNombre, g.yNombre, g.letras.nombre, familiaTitulo, 800))
+      if (g.yArriba != null) partes.push(texto(textoMarco, g.yArriba, g.letras.arriba, familiaTitulo, 700))
+      g.lins.forEach((l, i) => {
+        const y = g.yLinea(i)
+        const p = posicionLinea(l, g)
+        if (l.icono && TRAZADOS[l.icono]) {
+          partes.push(`<path transform="translate(${p.xIcono} ${y - p.icono / 2}) scale(${p.icono / 24})" d="${TRAZADOS[l.icono]}" fill="${textoSobreMarco}"/>`)
+        }
+        partes.push(
+          `<text x="${p.xTexto}" y="${y}" dy="0.35em" font-family="${escaparXml(familiaTexto)}" font-weight="600" font-size="${g.letras.linea}" fill="${textoSobreMarco}">${escaparXml(l.texto)}</text>`,
+        )
+      })
+    }
+    return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${g.ancho}" height="${g.alto}" viewBox="0 0 ${g.ancho} ${g.alto}">\n  ${partes.join('\n  ')}\n</svg>`
+  }
+
+  // Vista previa: la misma placa que se descarga, compuesta de nuevo con cada cambio (la última que llega manda)
+  const [vista, setVista] = useState('')
+  useEffect(() => {
+    let vigente = true
+    const t = setTimeout(() => {
+      componerSvg(600, 'vista').then(svg => {
+        if (vigente) setVista(svg.replace('<svg ', '<svg style="display:block;width:100%;height:auto" '))
+      })
+    }, 120)
+    return () => {
+      vigente = false
+      clearTimeout(t)
+    }
+    // Se recompone con cualquier cosa que cambie el dibujo
+  }, [opcionesQR, fondo, colorMarco, degMarco, textoSobreMarco, conMarco, formaPlaca, radioPlaca, borde, conNombre, textoNombre, textoMarco, lineas, familiaTitulo, familiaTexto, escala])
+
   const archivo = `qr-${(nombre || 'negocio').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`
-
   const bajar = (blob, extension) => {
     const enlace = document.createElement('a')
     enlace.href = URL.createObjectURL(blob)
@@ -342,53 +527,73 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, proponer
     setTimeout(() => URL.revokeObjectURL(enlace.href), 1000)
   }
 
-  // Las líneas de abajo que se ven: las que tienen texto
-  const lineasVisibles = lineas.filter(l => l.texto.trim())
-
-  // Medidas de la placa para un QR de lado `lado`: borde, texto de arriba, QR y líneas de abajo
-  const geometria = lado => {
-    const b = conMarco ? lado * MARCO.borde : 0
-    const arriba = conMarco ? lado * MARCO.texto : 0
-    const lins = conMarco ? lineasVisibles : []
-    return { b, arriba, lins, ancho: lado + b * 2, alto: b + arriba + lado + lins.length * lado * MARCO.linea + b, yQR: b + arriba }
+  // SVG para imprenta: todo vectorial
+  const descargarSvg = async () => {
+    setDescargando(true)
+    try {
+      bajar(new Blob([await componerSvg(1000, 'qr')], { type: 'image/svg+xml' }), 'svg')
+    } finally {
+      setDescargando(false)
+    }
   }
-  // Centro vertical de la línea i de abajo
-  const yLinea = (g, lado, i) => g.yQR + lado + lado * MARCO.linea * (i + 0.5)
 
-  // PNG de 2000 px de lado de QR (sobra para imprimir a 10 cm): el marco, el fondo, las capas encima y los textos
+  // PNG de 2000 px de lado de QR (sobra para imprimir a 10 cm), dibujado con las mismas medidas que el SVG
   const descargarPng = async () => {
     setDescargando(true)
     try {
+      await esperarLetras()
       const lado = 2000
       const g = geometria(lado)
       const lienzo = document.createElement('canvas')
       lienzo.width = g.ancho
       lienzo.height = g.alto
       const ctx = lienzo.getContext('2d')
-      if (conMarco) {
-        ctx.fillStyle = colorMarco
+      if (g.forma) {
+        // Placa: liso o con su degradado
+        if (coloresPlaca.length > 1) {
+          let grad
+          if (degMarco.tipo === 'radial') {
+            grad = ctx.createRadialGradient(g.ancho / 2, g.alto / 2, 0, g.ancho / 2, g.alto / 2, Math.max(g.ancho, g.alto) * 0.7)
+          } else {
+            const a = (degMarco.angulo * Math.PI) / 180
+            const medio = (Math.abs(Math.cos(a)) * g.ancho + Math.abs(Math.sin(a)) * g.alto) / 2
+            const [cx, cy] = [g.ancho / 2, g.alto / 2]
+            grad = ctx.createLinearGradient(cx - Math.cos(a) * medio, cy - Math.sin(a) * medio, cx + Math.cos(a) * medio, cy + Math.sin(a) * medio)
+          }
+          coloresPlaca.forEach((c, i) => grad.addColorStop(i / (coloresPlaca.length - 1), c))
+          ctx.fillStyle = grad
+        } else {
+          ctx.fillStyle = colorMarco
+        }
         ctx.beginPath()
-        ctx.roundRect(0, 0, g.ancho, g.alto, lado * MARCO.radio)
+        if (g.forma === 'circular') ctx.arc(g.ancho / 2, g.alto / 2, g.ancho / 2, 0, Math.PI * 2)
+        else ctx.roundRect(0, 0, g.ancho, g.alto, g.radio)
         ctx.fill()
       }
       ctx.fillStyle = fondo
-      ctx.fillRect(g.b, g.yQR, lado, lado)
-      for (const capa of capasDe(opciones, lado)) {
+      ctx.fillRect(g.xQR, g.yQR, lado, lado)
+      for (const capa of capasDe(opcionesQR, lado)) {
         const blob = await new QRCodeStyling({ ...capa.opciones, type: 'canvas' }).getRawData('png')
-        ctx.drawImage(await createImageBitmap(blob), g.b + capa.dx, g.yQR + capa.dy, lado, lado)
+        ctx.drawImage(await createImageBitmap(blob), g.xQR + capa.dx, g.yQR + capa.dy, lado, lado)
       }
-      if (conMarco) {
+      if (g.forma) {
         ctx.fillStyle = textoSobreMarco
         ctx.textBaseline = 'middle'
-        ctx.font = `700 ${lado * MARCO.letra}px system-ui, sans-serif`
         ctx.textAlign = 'center'
-        ctx.fillText(textoMarco, g.ancho / 2, g.b + g.arriba / 2)
+        if (g.yNombre != null) {
+          ctx.font = `800 ${g.letras.nombre}px ${familiaTitulo}`
+          ctx.fillText(textoNombre, g.ancho / 2, g.yNombre)
+        }
+        if (g.yArriba != null) {
+          ctx.font = `700 ${g.letras.arriba}px ${familiaTitulo}`
+          ctx.fillText(textoMarco, g.ancho / 2, g.yArriba)
+        }
         // Líneas de abajo: texto e icono centrados juntos, el icono a la derecha del texto
-        ctx.font = `600 ${lado * MARCO.letraLinea}px system-ui, sans-serif`
+        ctx.font = `600 ${g.letras.linea}px ${familiaTexto}`
         ctx.textAlign = 'left'
         g.lins.forEach((l, i) => {
-          const y = yLinea(g, lado, i)
-          const p = posicionLinea(l, g.ancho, lado)
+          const y = g.yLinea(i)
+          const p = posicionLinea(l, g)
           if (l.icono && TRAZADOS[l.icono]) {
             ctx.save()
             ctx.translate(p.xIcono, y - p.icono / 2)
@@ -405,49 +610,27 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, proponer
     }
   }
 
-  // SVG para imprenta, todo vectorial: el marco, el fondo, las capas encima (cada una con sus ids propios, para que no
-  // se pisen entre ellas), el texto de arriba y las líneas de abajo con sus iconos
-  const descargarSvg = async () => {
-    setDescargando(true)
-    try {
-      const lado = 1000
-      const g = geometria(lado)
-      const capas = await Promise.all(
-        capasDe(opciones, lado).map(async (capa, i) => {
-          const texto = (await (await new QRCodeStyling(capa.opciones).getRawData('svg')).text()).replace(/<\?xml[^>]*\?>/, '').trim()
-          return texto
-            .replace(/(id="|url\(#|href="#)([^"')]+)/g, `$1$2-capa${i}`)
-            .replace('<svg ', `<svg x="${g.b + capa.dx}" y="${g.yQR + capa.dy}" `)
-        }),
-      )
-      const textos = conMarco
-        ? [
-            `<text x="${g.ancho / 2}" y="${g.b + g.arriba / 2}" dy="0.35em" text-anchor="middle" font-family="system-ui, sans-serif" font-weight="700" font-size="${lado * MARCO.letra}" fill="${textoSobreMarco}">${escaparXml(textoMarco)}</text>`,
-            ...g.lins.flatMap((l, i) => {
-              const y = yLinea(g, lado, i)
-              const p = posicionLinea(l, g.ancho, lado)
-              return [
-                ...(l.icono && TRAZADOS[l.icono]
-                  ? [`<path transform="translate(${p.xIcono} ${y - p.icono / 2}) scale(${p.icono / 24})" d="${TRAZADOS[l.icono]}" fill="${textoSobreMarco}"/>`]
-                  : []),
-                `<text x="${p.xTexto}" y="${y}" dy="0.35em" font-family="system-ui, sans-serif" font-weight="600" font-size="${lado * MARCO.letraLinea}" fill="${textoSobreMarco}">${escaparXml(l.texto)}</text>`,
-              ]
-            }),
-          ]
-        : []
-      const final = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${g.ancho}" height="${g.alto}" viewBox="0 0 ${g.ancho} ${g.alto}">
-${conMarco ? `  <rect width="${g.ancho}" height="${g.alto}" rx="${lado * MARCO.radio}" fill="${colorMarco}"/>\n` : ''}  <rect x="${g.b}" y="${g.yQR}" width="${lado}" height="${lado}" fill="${fondo}"/>
-  ${capas.join('\n  ')}
-  ${textos.join('\n  ')}
-</svg>`
-      bajar(new Blob([final], { type: 'image/svg+xml' }), 'svg')
-    } finally {
-      setDescargando(false)
-    }
-  }
+  // Poco contraste: algún color de puntos o esquinas (también los de los degradados) claro, o el fondo oscuro
+  // (puntos claros sobre oscuro: muchos móviles no lo leen). La doble imagen no cuenta: es decoración
+  const coloresQR = [
+    colorPuntos,
+    ...(degPuntos.activo ? [...degPuntos.intermedios, degPuntos.color2] : []),
+    colorEsquinas,
+    ...(degEsquinas.activo ? [...degEsquinas.intermedios, degEsquinas.color2] : []),
+  ]
+  const pocoContraste = !esClaro(fondo) || coloresQR.some(esClaro)
+
+  /* ---------- Piezas del formulario ---------- */
 
   const titulo = 'text-[0.8rem] font-semibold text-zinc-500'
   const opcion = activa => `rounded-[0.6rem] px-[0.75rem] py-[0.45rem] text-[0.9rem] font-medium ring-1 ${activa ? 'bg-zinc-900 text-white ring-zinc-900' : 'bg-white ring-zinc-300'}`
+  const campo = 'block min-h-[2.75rem] w-full min-w-0 rounded-[0.6rem] border border-zinc-300 bg-white px-[0.75rem] text-[0.95rem]'
+  const casilla = (texto, marcada, poner) => (
+    <label className="flex items-center gap-[0.5rem] text-[0.9rem]">
+      <input type="checkbox" checked={marcada} onChange={e => poner(e.target.checked)} className="h-[1.1rem] w-[1.1rem]" />
+      {texto}
+    </label>
+  )
   const color = (texto, valor, poner) => (
     <label className="flex items-center justify-between gap-[0.75rem] text-[0.88rem]">
       {texto}
@@ -457,8 +640,23 @@ ${conMarco ? `  <rect width="${g.ancho}" height="${g.alto}" rx="${lado * MARCO.r
       </span>
     </label>
   )
+  const botones = (lista, actual, poner) => (
+    <div className="flex flex-wrap gap-[0.4rem]">
+      {lista.map(([clave, texto]) => (
+        <button key={String(clave)} type="button" aria-pressed={actual === clave} onClick={() => poner(clave)} className={opcion(actual === clave)}>
+          {texto}
+        </button>
+      ))}
+    </div>
+  )
+  const deslizador = (texto, valor, poner, min, max, paso) => (
+    <label className="flex items-center gap-[0.75rem] text-[0.85rem]">
+      <span className="shrink-0">{texto}</span>
+      <input type="range" min={min} max={max} step={paso} value={valor} onChange={e => poner(Number(e.target.value))} className="min-w-0 flex-1" />
+    </label>
+  )
 
-  // Casilla de degradado de un color (puntos o esquinas) y, si está activa, sus opciones
+  // Casilla de degradado de un color (puntos, esquinas o placa) y, si está activa, sus opciones
   const degradado = (d, poner) => (
     <div className="grid gap-[0.5rem] border-l-2 border-zinc-200 pl-[0.75rem]">
       <label className="flex items-center gap-[0.5rem] text-[0.85rem]">
@@ -481,20 +679,18 @@ ${conMarco ? `  <rect width="${g.ancho}" height="${g.alto}" rx="${lado * MARCO.r
             </div>
           ))}
           {color(d.intermedios.length ? 'Último color' : 'Segundo color', d.color2, c => poner({ ...d, color2: c }))}
-          <div className="flex flex-wrap gap-[0.4rem]">
-            {[
+          {botones(
+            [
               ['linear', 'Lineal'],
               ['radial', 'Radial'],
-            ].map(([clave, texto]) => (
-              <button key={clave} type="button" aria-pressed={d.tipo === clave} onClick={() => poner({ ...d, tipo: clave })} className={opcion(d.tipo === clave)}>
-                {texto}
-              </button>
-            ))}
-          </div>
+            ],
+            d.tipo,
+            tipo => poner({ ...d, tipo }),
+          )}
           {d.tipo === 'linear' && (
             <label className="flex items-center gap-[0.75rem] text-[0.85rem]">
               Ángulo
-              <input type="range" min={0} max={360} step={15} value={d.angulo} onChange={e => poner({ ...d, angulo: Number(e.target.value) })} className="flex-1" />
+              <input type="range" min={0} max={360} step={15} value={d.angulo} onChange={e => poner({ ...d, angulo: Number(e.target.value) })} className="min-w-0 flex-1" />
               <span className="w-[2.6rem] text-right font-mono text-[0.8rem] text-zinc-500">{d.angulo}°</span>
             </label>
           )}
@@ -506,59 +702,25 @@ ${conMarco ? `  <rect width="${g.ancho}" height="${g.alto}" rx="${lado * MARCO.r
   // Lo elegido, para el título de cada apartado plegado
   const nombreEstilo = estilo === 'marca' ? 'Su marca' : TODOS_ESTILOS.find(e => e.clave === estilo)?.nombre ?? 'A tu gusto'
   const nombreDe = (lista, clave) => lista.find(([c]) => c === clave)?.[1]
-  const botones = (lista, actual, poner) => (
-    <div className="flex flex-wrap gap-[0.4rem]">
-      {lista.map(([clave, texto]) => (
-        <button key={clave} type="button" aria-pressed={actual === clave} onClick={() => poner(clave)} className={opcion(actual === clave)}>
-          {texto}
-        </button>
-      ))}
-    </div>
-  )
+  const muestra = c => <span className="h-[1.1rem] w-[1.1rem] rounded-full ring-1 ring-zinc-300" style={{ background: c }} />
 
   // En una columna, como Nuevo perfil: vista previa, dirección, asistente, el diseño plegado y las descargas
   return (
     <div className="mx-auto grid w-full max-w-[32rem] gap-[1rem]">
-      {/* Vista previa, con el marco si lo lleva */}
+      {/* Vista previa: la misma placa que se descarga */}
       <div className="flex justify-center rounded-[0.75rem] bg-zinc-100 p-[1rem]">
-        <div
-          className="flex flex-col items-center"
-          style={conMarco ? { background: colorMarco, padding: `${LADO_VISTA * MARCO.borde}px`, borderRadius: `${LADO_VISTA * MARCO.radio}px` } : undefined}
-        >
-          {/* Texto de arriba ("Escanéame"); el borde de alrededor lo pone el relleno del marco */}
-          {conMarco && (
-            <p
-              className="flex items-center justify-center text-center font-bold leading-none"
-              style={{ height: `${LADO_VISTA * MARCO.texto}px`, fontSize: `${LADO_VISTA * MARCO.letra}px`, color: textoSobreMarco }}
-            >
-              {textoMarco}
-            </p>
-          )}
-          <div ref={caja} className="relative [&_svg]:block" style={{ width: LADO_VISTA, height: LADO_VISTA, background: fondo }} />
-          {/* Líneas de abajo: texto e icono centrados juntos, el icono a la derecha del texto */}
-          {conMarco &&
-            lineasVisibles.map((l, i) => (
-              <p
-                key={i}
-                className="flex items-center justify-center font-semibold leading-none"
-                style={{ width: LADO_VISTA, height: `${LADO_VISTA * MARCO.linea}px`, fontSize: `${LADO_VISTA * MARCO.letraLinea}px`, color: textoSobreMarco, gap: `${LADO_VISTA * MARCO.hueco}px` }}
-              >
-                <span className="min-w-0 truncate">{l.texto}</span>
-                {l.icono && <SocialIcon platform={l.icono} style={{ width: LADO_VISTA * MARCO.icono, height: LADO_VISTA * MARCO.icono, flexShrink: 0 }} />}
-              </p>
-            ))}
-        </div>
+        <div className="w-full max-w-[18rem]" dangerouslySetInnerHTML={{ __html: vista }} />
       </div>
 
       <label className="grid gap-[0.3rem]">
         <span className={titulo}>Dirección que abre</span>
-        <input value={url} onChange={e => setUrl(e.target.value)} className="block min-h-[2.75rem] w-full rounded-[0.6rem] border border-zinc-300 bg-white px-[0.75rem] text-[0.88rem]" />
+        <input value={url} onChange={e => setUrl(e.target.value)} className={`${campo} text-[0.88rem]`} />
         {/localhost|127\.0\.0\.1/.test(url) && (
           <span className="text-[0.8rem] font-semibold text-amber-700">Es la dirección de tu ordenador: el móvil no la abrirá. Pon la de la web publicada.</span>
         )}
       </label>
 
-      {/* El asistente propone tres combinaciones con los colores de la marca; se toca una y se aplica */}
+      {/* El asistente propone tres diseños con lo que se le cuente (y los colores de la marca, si hay); se toca uno y se aplica */}
       {proponer && (
         <div className="grid gap-[0.5rem]">
           <label className="grid gap-[0.3rem]">
@@ -600,14 +762,10 @@ ${conMarco ? `  <rect width="${g.ancho}" height="${g.alto}" rx="${lado * MARCO.r
             <div className="grid gap-[0.5rem]">
               {propuestas.map((p, i) => (
                 <button key={i} type="button" onClick={() => ponerPropuesta(p)} className="flex items-center gap-[0.75rem] rounded-[0.75rem] bg-white p-[0.6rem] text-left ring-1 ring-zinc-200 hover:ring-zinc-400">
-                  {/* Mini placa: el marco, el cuadrado del QR con su color y el texto */}
+                  {/* Mini placa: la placa, el cuadrado del QR con su color y el texto */}
                   <span className="flex w-[3.6rem] shrink-0 flex-col items-center gap-[0.2rem] rounded-[0.45rem] p-[0.3rem]" style={{ background: p.marco }}>
                     <span className="flex aspect-square w-full items-center justify-center rounded-[0.2rem]" style={{ background: p.fondo }}>
-                      <QrCode
-                        className="h-[70%] w-[70%]"
-                        style={{ color: p.degradado?.activo ? p.degradado.colores[0] : p.puntos }}
-                        aria-hidden="true"
-                      />
+                      <QrCode className="h-[70%] w-[70%]" style={{ color: p.degradado?.activo ? p.degradado.colores[0] : p.puntos }} aria-hidden="true" />
                     </span>
                     <span className="text-[0.5rem] font-bold leading-none" style={{ color: p.textoMarco }}>
                       {textoMarco.slice(0, 10)}
@@ -631,7 +789,7 @@ ${conMarco ? `  <rect width="${g.ancho}" height="${g.alto}" rx="${lado * MARCO.r
           <ChevronDown className="ml-auto h-[1rem] w-[1rem] shrink-0 text-zinc-500 transition-transform group-open/diseno:rotate-180" aria-hidden="true" />
         </summary>
         <div className="grid gap-[0.75rem] px-[0.85rem] pb-[0.85rem] pt-[0.2rem]">
-          {/* Estilos: los de la marca y los de la placa de la landing */}
+          {/* 1. Estilo: los de la marca y los de la placa de la landing */}
           <Plegable titulo="Estilo" elegido={nombreEstilo}>
             <div className="flex flex-wrap gap-[0.4rem]">
               {/* "Su marca" solo con los colores de un negocio */}
@@ -643,17 +801,10 @@ ${conMarco ? `  <rect width="${g.ancho}" height="${g.alto}" rx="${lado * MARCO.r
             </div>
           </Plegable>
 
-          {/* Colores: cerrado, las muestras de puntos, esquinas y fondo. Dentro, los predeterminados (lisos y
-              degradados) y, debajo, los colores a mano */}
+          {/* 2. Colores: los predeterminados, los del QR a mano y los de la placa */}
           <Plegable
             titulo="Colores"
-            elegido={
-              <span className="flex justify-end gap-[0.25rem]">
-                {[colorPuntos, colorEsquinas, fondo].map((c, i) => (
-                  <span key={i} className="h-[1.1rem] w-[1.1rem] rounded-full ring-1 ring-zinc-300" style={{ background: c }} />
-                ))}
-              </span>
-            }
+            elegido={<span className="flex justify-end gap-[0.25rem]">{[colorPuntos, colorEsquinas, fondo, colorMarco].map((c, i) => <span key={i}>{muestra(c)}</span>)}</span>}
           >
             <div className="grid gap-[0.6rem]">
               <Plegable titulo="Predeterminados">
@@ -690,17 +841,17 @@ ${conMarco ? `  <rect width="${g.ancho}" height="${g.alto}" rx="${lado * MARCO.r
                 <div className="grid gap-[0.6rem]">
                   {color('Puntos', colorPuntos, setColorPuntos)}
                   {degradado(degPuntos, setDegPuntos)}
-                  {color('Esquinas e inicial', colorEsquinas, setColorEsquinas)}
+                  {color('Esquinas', colorEsquinas, setColorEsquinas)}
                   {degradado(degEsquinas, setDegEsquinas)}
                   {color('Fondo', fondo, setFondo)}
                 </div>
               </Plegable>
-              {/* Colores del marco: la placa y sus textos */}
-              <Plegable titulo="Marco">
+              <Plegable titulo="Placa">
                 <div className="grid gap-[0.6rem]">
-                  {color('Color del marco', colorMarco, setColorMarco)}
-                  {color('Color del texto', textoSobreMarco, setColorLetra)}
-                  {textoPocoVisible && <p className="text-[0.8rem] font-semibold text-amber-700">El texto se parece mucho al marco: puede costar leerlo en la placa.</p>}
+                  {color('Color de la placa', colorMarco, setColorMarco)}
+                  {degradado(degMarco, setDegMarco)}
+                  {color('Color de los textos', textoSobreMarco, setColorLetra)}
+                  {textoPocoVisible && <p className="text-[0.8rem] font-semibold text-amber-700">Los textos se parecen mucho a la placa: puede costar leerlos.</p>}
                 </div>
               </Plegable>
             </div>
@@ -711,6 +862,7 @@ ${conMarco ? `  <rect width="${g.ancho}" height="${g.alto}" rx="${lado * MARCO.r
             </p>
           )}
 
+          {/* 3. Formas del QR */}
           <Plegable titulo="Puntos" elegido={nombreDe(PUNTOS, puntos)}>
             {botones(PUNTOS, puntos, setPuntos)}
           </Plegable>
@@ -728,13 +880,50 @@ ${conMarco ? `  <rect width="${g.ancho}" height="${g.alto}" rx="${lado * MARCO.r
             </div>
           </Plegable>
 
-          {/* Doble imagen, como el logo de TikTok: dos copias de colores un poco desplazadas por debajo */}
+          {/* 4. Centro: nada, la inicial o un logo */}
+          <Plegable titulo="Centro" elegido={centro === 'logo' ? 'Logo' : centro === 'inicial' && inicial ? `Inicial (${inicial})` : 'Nada'}>
+            <div className="grid gap-[0.75rem]">
+              {botones(
+                [
+                  ['nada', 'Nada'],
+                  ['inicial', `Inicial${inicial ? ` (${inicial})` : ''}`],
+                  ['logo', 'Logo'],
+                ],
+                centro,
+                setCentro,
+              )}
+              {centro === 'inicial' && (
+                <>
+                  {!inicial && <p className="text-[0.8rem] text-zinc-500">Elige una página arriba para tener la inicial de su nombre.</p>}
+                  {botones(
+                    [
+                      ['circulo', 'Círculo'],
+                      ['cuadrado', 'Cuadrado'],
+                    ],
+                    formaCentro,
+                    setFormaCentro,
+                  )}
+                  {color('Color de la inicial', colorCentro, setColorCentro)}
+                </>
+              )}
+              {centro === 'logo' && (
+                <div className="grid gap-[0.4rem]">
+                  {logo && <img src={logo} alt="Logo" className="h-[3.5rem] w-[3.5rem] rounded-[0.5rem] object-contain ring-1 ring-zinc-200" />}
+                  <label className="inline-flex min-h-[2.5rem] w-fit cursor-pointer items-center rounded-[0.6rem] bg-white px-[0.9rem] text-[0.9rem] font-semibold ring-1 ring-zinc-300">
+                    {logo ? 'Cambiar logo' : 'Subir logo'}
+                    <input type="file" accept="image/*" onChange={e => subirLogo(e.target.files?.[0])} className="sr-only" />
+                  </label>
+                  {errorLogo && <p className="text-[0.8rem] font-semibold text-red-600">{errorLogo}</p>}
+                  <p className="text-[0.8rem] text-zinc-500">Mejor un logo cuadrado y con fondo, que se vea bien en pequeño.</p>
+                </div>
+              )}
+            </div>
+          </Plegable>
+
+          {/* 5. Doble imagen, como el logo de TikTok: dos copias de colores un poco desplazadas por debajo */}
           <Plegable titulo="Doble imagen" elegido={doble.activo ? 'Sí' : 'No'}>
             <div className="grid gap-[0.6rem]">
-              <label className="flex items-center gap-[0.5rem] text-[0.9rem]">
-                <input type="checkbox" checked={doble.activo} onChange={e => setDoble(d => ({ ...d, activo: e.target.checked }))} className="h-[1.1rem] w-[1.1rem]" />
-                Doble imagen (como TikTok)
-              </label>
+              {casilla('Doble imagen (como TikTok)', doble.activo, activo => setDoble(d => ({ ...d, activo })))}
               {doble.activo && (
                 <div className="grid gap-[0.5rem] border-l-2 border-zinc-200 pl-[0.75rem]">
                   {color('Copia de arriba', doble.colores[0], c => setDoble(d => ({ ...d, colores: [c, d.colores[1]] })))}
@@ -744,80 +933,99 @@ ${conMarco ? `  <rect width="${g.ancho}" height="${g.alto}" rx="${lado * MARCO.r
             </div>
           </Plegable>
 
-          <Plegable titulo="Centro" elegido={conInicial && inicial ? `Inicial (${inicial})` : 'Nada'}>
-            <label className="flex items-center gap-[0.5rem] text-[0.9rem]">
-              <input type="checkbox" checked={conInicial} onChange={e => setConInicial(e.target.checked)} className="h-[1.1rem] w-[1.1rem]" />
-              Inicial en el centro ({(nombre ?? '').trim().charAt(0).toUpperCase() || '?'})
-            </label>
-          </Plegable>
-
-          <Plegable titulo="Marco" elegido={conMarco ? textoMarco : 'Sin marco'}>
-            <div className="grid gap-[0.6rem]">
-              <label className="flex items-center gap-[0.5rem] text-[0.9rem]">
-                <input type="checkbox" checked={conMarco} onChange={e => setConMarco(e.target.checked)} className="h-[1.1rem] w-[1.1rem]" />
-                Marco con texto
-              </label>
+          {/* 6. Placa: con o sin ella, su forma, sus esquinas y el borde alrededor del QR */}
+          <Plegable titulo="Placa" elegido={!conMarco ? 'Sin placa' : formaPlaca === 'circular' ? 'Circular' : 'Rectangular'}>
+            <div className="grid gap-[0.75rem]">
+              {casilla('Con placa alrededor del QR', conMarco, setConMarco)}
               {conMarco && (
                 <>
-                  <label className="grid gap-[0.3rem]">
-                    <span className={titulo}>Texto de arriba</span>
-                    <input
-                      value={textoMarco}
-                      onChange={e => setTextoMarco(e.target.value)}
-                      maxLength={28}
-                      className="block min-h-[2.75rem] w-full rounded-[0.6rem] border border-zinc-300 bg-white px-[0.75rem] text-[0.95rem]"
-                    />
-                  </label>
-                  {/* Líneas de abajo: cada una con su icono (o ninguno) y su texto; las vacías no salen */}
-                  <div className="grid gap-[0.4rem]">
-                    <span className={titulo}>Debajo del QR</span>
-                    {lineas.map((l, i) => {
-                      const cambiar = cambio => setLineas(ls => ls.map((x, j) => (j === i ? { ...x, ...cambio } : x)))
-                      return (
-                        <div key={i} className="flex items-center gap-[0.4rem]">
-                          <select
-                            value={l.icono}
-                            onChange={e => cambiar({ icono: e.target.value })}
-                            aria-label="Icono"
-                            className="min-h-[2.75rem] shrink-0 rounded-[0.6rem] border border-zinc-300 bg-white px-[0.4rem] text-[0.85rem]"
-                          >
-                            {ICONOS_LINEA.map(([clave, texto]) => (
-                              <option key={clave || 'ninguno'} value={clave}>
-                                {texto}
-                              </option>
-                            ))}
-                          </select>
-                          <input
-                            value={l.texto}
-                            onChange={e => cambiar({ texto: e.target.value })}
-                            maxLength={32}
-                            placeholder="@tunegocio"
-                            className="block min-h-[2.75rem] w-full min-w-0 rounded-[0.6rem] border border-zinc-300 bg-white px-[0.75rem] text-[0.95rem]"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setLineas(ls => ls.filter((_, j) => j !== i))}
-                            className="shrink-0 text-[0.8rem] font-semibold text-zinc-500 underline underline-offset-[0.2em]"
-                          >
-                            Quitar
-                          </button>
-                        </div>
-                      )
-                    })}
-                    {lineas.length < MAX_LINEAS && (
-                      <button
-                        type="button"
-                        onClick={() => setLineas(ls => [...ls, { icono: '', texto: '' }])}
-                        className="justify-self-start text-[0.88rem] font-semibold underline underline-offset-[0.2em]"
-                      >
-                        Añadir campo
-                      </button>
-                    )}
-                  </div>
+                  {botones(
+                    [
+                      ['rectangular', 'Rectangular'],
+                      ['circular', 'Circular (pegatina)'],
+                    ],
+                    formaPlaca,
+                    setFormaPlaca,
+                  )}
+                  {formaPlaca === 'rectangular' && deslizador('Esquinas redondeadas', radioPlaca, setRadioPlaca, 0, 0.2, 0.01)}
+                  {deslizador('Borde alrededor del QR', borde, setBorde, 0.03, 0.16, 0.01)}
                 </>
               )}
             </div>
           </Plegable>
+
+          {/* 7. Textos de la placa */}
+          {conMarco && (
+            <Plegable titulo="Textos" elegido={textoMarco || 'Sin textos'}>
+              <div className="grid gap-[0.9rem]">
+                {formaPlaca === 'rectangular' && (
+                  <div className="grid gap-[0.4rem]">
+                    {casilla('Nombre del negocio', conNombre, setConNombre)}
+                    {conNombre && <input value={textoNombre} onChange={e => setTextoNombre(e.target.value)} maxLength={32} placeholder="Peluquería Ranita" className={campo} />}
+                  </div>
+                )}
+                <label className="grid gap-[0.3rem]">
+                  <span className={titulo}>Texto de arriba</span>
+                  <input value={textoMarco} onChange={e => setTextoMarco(e.target.value)} maxLength={28} className={campo} />
+                </label>
+                {/* Líneas de abajo: cada una con su icono (o ninguno) y su texto; las vacías no salen */}
+                <div className="grid gap-[0.4rem]">
+                  <span className={titulo}>Debajo del QR{formaPlaca === 'circular' ? ' (en la circular cabe una sola línea)' : ''}</span>
+                  {lineas.map((l, i) => {
+                    const cambiar = cambio => setLineas(ls => ls.map((x, j) => (j === i ? { ...x, ...cambio } : x)))
+                    return (
+                      <div key={i} className="flex items-center gap-[0.4rem]">
+                        <select
+                          value={l.icono}
+                          onChange={e => cambiar({ icono: e.target.value })}
+                          aria-label="Icono"
+                          className="min-h-[2.75rem] shrink-0 rounded-[0.6rem] border border-zinc-300 bg-white px-[0.4rem] text-[0.85rem]"
+                        >
+                          {ICONOS_LINEA.map(([clave, texto]) => (
+                            <option key={clave || 'ninguno'} value={clave}>
+                              {texto}
+                            </option>
+                          ))}
+                        </select>
+                        <input value={l.texto} onChange={e => cambiar({ texto: e.target.value })} maxLength={32} placeholder="@tunegocio" className={campo} />
+                        <button
+                          type="button"
+                          onClick={() => setLineas(ls => ls.filter((_, j) => j !== i))}
+                          className="shrink-0 text-[0.8rem] font-semibold text-zinc-500 underline underline-offset-[0.2em]"
+                        >
+                          Quitar
+                        </button>
+                      </div>
+                    )
+                  })}
+                  {lineas.length < MAX_LINEAS && (
+                    <button
+                      type="button"
+                      onClick={() => setLineas(ls => [...ls, { icono: '', texto: '' }])}
+                      className="justify-self-start text-[0.88rem] font-semibold underline underline-offset-[0.2em]"
+                    >
+                      Añadir campo
+                    </button>
+                  )}
+                </div>
+                <label className="grid gap-[0.3rem]">
+                  <span className={titulo}>Tipografía</span>
+                  <select value={tipografia} onChange={e => setTipografia(e.target.value)} className={campo}>
+                    <option value="">{fuentesMarca ? 'La de la marca' : 'La del sistema'}</option>
+                    {TIPOGRAFIAS.map(t => (
+                      <option key={t.id} value={t.id}>
+                        {t.nombre}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <div className="grid gap-[0.4rem]">
+                  <span className={titulo}>Tamaño de los textos</span>
+                  {botones(TAMANOS, escala, setEscala)}
+                </div>
+              </div>
+            </Plegable>
+          )}
         </div>
       </details>
 
@@ -829,12 +1037,15 @@ ${conMarco ? `  <rect width="${g.ancho}" height="${g.alto}" rx="${lado * MARCO.r
           SVG para imprenta
         </button>
       </div>
-      <p className="text-[0.8rem] leading-[1.45] text-zinc-500">Antes de imprimir en serio, pruébalo con dos o tres móviles distintos. Tamaño mínimo impreso: unos 3 cm de lado.</p>
+      <p className="text-[0.8rem] leading-[1.45] text-zinc-500">
+        Antes de imprimir en serio, pruébalo con dos o tres móviles distintos. Tamaño mínimo impreso: unos 3 cm de lado. En el SVG, si la imprenta no tiene la
+        tipografía, pídeles que pasen los textos a trazados (o mándales también el PNG).
+      </p>
     </div>
   )
 }
 
-// Apartado que se pliega, como los de Nuevo perfil: cerrado, el título y lo elegido; al tocarlo, las opciones
+// Apartado que se pliega: cerrado, el título y lo elegido; al tocarlo, las opciones
 function Plegable({ titulo, elegido, children }) {
   return (
     // La flecha gira solo con su propio desplegable abierto (no con uno de fuera: los hay uno dentro de otro)
