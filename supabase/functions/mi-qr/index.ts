@@ -36,7 +36,6 @@ async function cifrar(slug: string, pin: string) {
 const pinNuevo = () => String(crypto.getRandomValues(new Uint32Array(1))[0] % 1000000).padStart(6, '0')
 
 const FORMAS_PUNTOS = ['rounded', 'extra-rounded', 'square', 'dots', 'classy-rounded', 'classy']
-const ICONOS = ['', 'instagram', 'tiktok', 'facebook', 'whatsapp', 'youtube', 'twitter', 'linkedin']
 
 const ESQUEMA = {
   type: 'object',
@@ -85,21 +84,11 @@ const ESQUEMA = {
           },
           tipografia: { type: 'string' },
           tamano: { type: 'string', enum: ['pequeno', 'normal', 'grande'] },
+          // Los 3 campos de texto de la placa: uno encima del QR y dos debajo
           textos: {
             type: 'object',
-            properties: {
-              arriba: { type: 'string' },
-              lineas: {
-                type: 'array',
-                items: {
-                  type: 'object',
-                  properties: { icono: { type: 'string', enum: ICONOS }, texto: { type: 'string' } },
-                  required: ['icono', 'texto'],
-                  additionalProperties: false,
-                },
-              },
-            },
-            required: ['arriba', 'lineas'],
+            properties: { arriba: { type: 'string' }, abajo1: { type: 'string' }, abajo2: { type: 'string' } },
+            required: ['arriba', 'abajo1', 'abajo2'],
             additionalProperties: false,
           },
         },
@@ -132,8 +121,11 @@ Formas (que vayan con el estilo):
 Letra y textos:
 - tipografia: el id de una de la lista que te paso, la que mejor vaya con el estilo; vacío para dejar la de la marca.
 - tamano: pequeno, normal o grande (el de los textos de la placa).
-- textos.arriba: lo que va encima del QR, como mucho 22 caracteres, en español correcto, con tildes: una llamada corta a escanear que vaya con lo que pide ("Escanéame", "Mira nuestra carta", "Déjanos tu reseña", "Pide tu cita"...). Sin guiones largos.
-- textos.lineas: las líneas de debajo del QR (redes, web, teléfono), cada una con su icono (instagram, tiktok, facebook, whatsapp, youtube, twitter, linkedin o vacío) y su texto (como mucho 30 caracteres). SOLO con datos que el cliente haya escrito tal cual (su @, su web, su teléfono): nunca te los inventes. Si no ha dado ninguno, lineas vacía.
+- textos: los 3 textos de la placa, en español correcto, con tildes y sin guiones largos, como mucho 30 caracteres cada uno:
+  - arriba: lo que va encima del QR. Normalmente el nombre del negocio, tal cual; o lo que pida el cliente.
+  - abajo1: debajo del QR, una llamada corta a escanear que vaya con lo que pide ("Escanea y déjanos tu reseña", "Mira nuestra carta", "Pide tu cita"...).
+  - abajo2: una segunda línea debajo (un eslogan corto, el horario, la dirección...). Datos como el horario o la dirección, SOLO si el cliente los ha escrito tal cual: nunca te los inventes. Si no hace falta, vacío.
+  Si el cliente dice qué texto quiere en algún sitio, ponlo tal cual.
 
 nombre: dos o tres palabras ("Como tu marca", "Noche y oro"...). motivo: una frase corta en castellano de por qué funciona, hablando de tú al cliente, sin guiones largos.`
 

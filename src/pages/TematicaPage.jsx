@@ -36,8 +36,12 @@ export default function TematicaPage() {
         <Link to="/" className="font-titulo text-[1.35rem]">
           {marca.nombre}
         </Link>
-        <Link to="/#ejemplos" className="text-[0.95rem] font-semibold underline decoration-tinta/30 underline-offset-[0.3em] hover:decoration-tinta">
-          Volver a los ejemplos
+        {/* Al catálogo, con esta temática ya elegida (las cartas, a su tipo) */}
+        <Link
+          to={esCartas ? '/catalogo?tipo=carta' : `/catalogo?tipo=ficha&tematica=${tematica.key}`}
+          className="text-[0.95rem] font-semibold underline decoration-tinta/30 underline-offset-[0.3em] hover:decoration-tinta"
+        >
+          Volver al catálogo
         </Link>
       </header>
 

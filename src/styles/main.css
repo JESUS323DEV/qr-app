@@ -15,6 +15,22 @@
   --font-texto: "Inter", system-ui, sans-serif;
 }
 
+/* Editor de QR del cliente (/mi-qr): con los colores de la landing. El generador está hecho con los grises claros de
+   /admin; dentro de .tema-landing esos colores pasan a ser los de la landing (fondo oscuro, superficies, líneas, texto
+   suave y el amarillo para lo elegido y los botones principales, con su texto oscuro) */
+.tema-landing {
+  --color-white: var(--color-crema);
+  --color-zinc-50: var(--color-crema);
+  --color-zinc-100: #151513;
+  --color-zinc-200: var(--color-linea);
+  --color-zinc-300: #3a3935;
+  --color-zinc-400: var(--color-suave);
+  --color-zinc-500: var(--color-suave);
+  --color-zinc-600: var(--color-suave);
+  --color-zinc-900: var(--color-acento);
+  --color-amber-700: var(--color-acento);
+}
+
 /* Tema de cada negocio: applyTheme cambia estas variables */
 :root {
   --demo-bg: #ffffff;

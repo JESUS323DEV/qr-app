@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import QRCodeStyling from 'qr-code-styling'
-import { ChevronDown, QrCode, Sparkles } from 'lucide-react'
+import { Ban, ChevronDown, Image as ImageIcon, Layers, Minus, Plus, QrCode, Sparkles } from 'lucide-react'
 import { TRAZADOS } from './SocialIcons'
 import { TIPOGRAFIAS } from '../asistente/tipografias'
 import { loadFont } from '../lib/applyTheme'
@@ -108,6 +108,84 @@ const DEGRADADOS = [
 
 const TODOS_ESTILOS = [...ESTILOS, ...LISOS, ...DEGRADADOS]
 
+/* Editor del cliente: empieza con la placa de la pestaña "Tu QR" de la landing (la de Instagram, con los puntos
+   redondeados, el nombre arriba y el texto abajo), para que reconozca lo que vio */
+const DEGRADADO_INSTAGRAM = ['#833AB4', '#C13584', '#E1306C', '#F77737']
+const inicioLanding = nombre => ({
+  estilo: 'instagram',
+  colorPuntos: DEGRADADO_INSTAGRAM[0],
+  colorEsquinas: DEGRADADO_INSTAGRAM[0],
+  degPuntos: enDiagonal(DEGRADADO_INSTAGRAM),
+  degEsquinas: enDiagonal(DEGRADADO_INSTAGRAM),
+  fondo: '#FFFFFF',
+  colorMarco: '#FFFFFF',
+  colorLetra: '#141414',
+  puntos: 'rounded',
+  esquinas: 'extra-rounded',
+  puntoOjo: 'rounded',
+  centro: 'nada',
+  conMarco: true,
+  formaPlaca: 'rectangular',
+  radioPlaca: 0.08,
+  borde: 0.1,
+  radioFondo: 0.05,
+  campoArriba: nombre ?? '',
+  campoAbajo1: 'Escanea y déjanos tu reseña',
+  campoAbajo2: '',
+  lineas: [],
+  tipografia: 'directa',
+  escala: 1.2,
+})
+
+// Muestras de color del editor del cliente (como los círculos de la landing): primero las de la landing, luego el resto
+const MUESTRAS = TODOS_ESTILOS
+const MUESTRAS_A_LA_VISTA = 7
+const FORMAS_A_LA_VISTA = 4
+/* Fondo del círculo de cada muestra, como en la landing: el degradado entero en las placas blancas con degradado
+   (Instagram, Facebook) y en los degradados; la doble imagen en la de TikTok; y en las demás (Rosa, Celeste, lisos),
+   mitad placa y mitad color del QR */
+const fondoMuestra = e =>
+  e.degradado && (e.placa.toUpperCase() === '#FFFFFF' || e.clave.startsWith('deg-'))
+    ? `linear-gradient(45deg, ${e.degradado.join(', ')})`
+    : e.doble
+      ? `linear-gradient(135deg, ${e.doble[0]} 0 24%, ${e.placa} 24% 76%, ${e.doble[1]} 76%)`
+      : `linear-gradient(135deg, ${e.placa} 55%, ${e.placa === e.qr ? '#FFFFFF' : e.qr} 55%)`
+
+/* Esquinas del editor del cliente: el ojo entero (marco de fuera y punto de dentro) en un solo botón. Primero las 4
+   más claras; con el +, el resto */
+const OJOS = [
+  { clave: 'redondeado', nombre: 'Redondeadas', marco: 'extra-rounded', punto: 'rounded' },
+  { clave: 'cuadrado', nombre: 'Cuadradas', marco: 'square', punto: 'square' },
+  { clave: 'circulo', nombre: 'Círculos', marco: 'dot', punto: 'dot' },
+  { clave: 'elegante', nombre: 'Elegantes', marco: 'classy-rounded', punto: 'classy-rounded' },
+  { clave: 'redondeado-punto', nombre: 'Redondeadas con punto', marco: 'extra-rounded', punto: 'dot' },
+  { clave: 'cuadrado-punto', nombre: 'Cuadradas con punto', marco: 'square', punto: 'dot' },
+  { clave: 'suave', nombre: 'Suaves', marco: 'rounded', punto: 'rounded' },
+  { clave: 'puntos', nombre: 'De puntos', marco: 'dots', punto: 'dots' },
+  { clave: 'elegante-recto', nombre: 'Elegantes rectas', marco: 'classy', punto: 'classy' },
+]
+const OJOS_A_LA_VISTA = 4
+// Cómo se dibuja cada forma en el botón pequeño del ojo (el marco con borde y el punto relleno)
+const RADIO_MUESTRA = {
+  square: 'rounded-none',
+  rounded: 'rounded-[0.2rem]',
+  'extra-rounded': 'rounded-[0.35rem]',
+  dot: 'rounded-full',
+  dots: 'rounded-full',
+  classy: 'rounded-tl-[0.35rem] rounded-br-[0.35rem]',
+  'classy-rounded': 'rounded-tl-full rounded-br-full',
+}
+
+// Dibujo pequeño de cada forma de puntos, para los botones del editor del cliente
+const FORMA_MUESTRA = {
+  square: 'rounded-none',
+  rounded: 'rounded-[0.15rem]',
+  'extra-rounded': 'rounded-[0.25rem]',
+  dots: 'rounded-full',
+  classy: 'rounded-tl-[0.3rem] rounded-br-[0.3rem]',
+  'classy-rounded': 'rounded-tl-full rounded-br-full',
+}
+
 /* "Su marca", copiando el aspecto de la página (no solo su color principal, que a veces casi no se ve):
    - marca oscura (fondo de página oscuro, como Umami): placa del color del fondo, texto de la placa en el acento
      (si se lee) y QR de ese mismo oscuro;
@@ -120,12 +198,83 @@ const deMarca = colores => {
   return { marco: colores?.primary ?? '#141414', qr: oscuro(colores?.primary) ?? oscuro(colores?.text) ?? '#141414', letra: null }
 }
 
-// Lo que va en el centro del QR, como imagen: la inicial sobre un círculo o un cuadrado (sin letra: la forma sola,
-// para las copias de la doble imagen)
-const imagenCentro = (letra, fondo, forma) => {
+// Formas del centro (en un cuadro de 100 × 100), con su nombre para los botones. Las 3 primeras son las que se ven
+// de entrada en el editor del cliente; las demás, con el +
+const FORMAS_CENTRO = [
+  ['circulo', 'Círculo'],
+  ['cuadrado', 'Cuadrado'],
+  ['corazon', 'Corazón'],
+  ['recto', 'Cuadrado recto'],
+  ['hoja', 'Hoja'],
+  ['hexagono', 'Hexágono'],
+  ['octogono', 'Octógono'],
+  ['rombo', 'Rombo'],
+  ['escudo', 'Escudo'],
+  ['gota', 'Gota'],
+  ['estrella', 'Estrella'],
+  ['sello', 'Sello'],
+]
+const FORMAS_CENTRO_A_LA_VISTA = 3
+// Sello: un círculo con el borde en picos pequeños, como una chapa
+const PUNTAS_SELLO = Array.from({ length: 32 }, (_, i) => {
+  const r = i % 2 ? 44 : 50
+  const a = (i / 32) * Math.PI * 2
+  return `${(50 + r * Math.cos(a)).toFixed(2)},${(50 + r * Math.sin(a)).toFixed(2)}`
+}).join(' ')
+const FIGURAS_CENTRO = {
+  circulo: r => `<circle cx="50" cy="50" r="50" fill="${r}"/>`,
+  cuadrado: r => `<rect width="100" height="100" rx="18" fill="${r}"/>`,
+  corazon: r => `<path d="M50 94 C20 72 0 52 0 30 C0 12 14 0 30 0 C40 0 47 6 50 14 C53 6 60 0 70 0 C86 0 100 12 100 30 C100 52 80 72 50 94 Z" fill="${r}"/>`,
+  recto: r => `<rect width="100" height="100" fill="${r}"/>`,
+  // Dos esquinas redondas (arriba a la izquierda y abajo a la derecha) y dos rectas, como los puntos "Elegantes"
+  hoja: r => `<path d="M0 50 A50 50 0 0 1 50 0 L100 0 L100 50 A50 50 0 0 1 50 100 L0 100 Z" fill="${r}"/>`,
+  hexagono: r => `<polygon points="50,0 93.3,25 93.3,75 50,100 6.7,75 6.7,25" fill="${r}"/>`,
+  octogono: r => `<polygon points="30,0 70,0 100,30 100,70 70,100 30,100 0,70 0,30" fill="${r}"/>`,
+  rombo: r => `<polygon points="50,0 100,50 50,100 0,50" fill="${r}"/>`,
+  escudo: r => `<path d="M8 0 H92 V44 C92 72 72 90 50 100 C28 90 8 72 8 44 Z" fill="${r}"/>`,
+  gota: r => `<path d="M50 0 C62 18 90 42 90 62 A40 38 0 0 1 10 62 C10 42 38 18 50 0 Z" fill="${r}"/>`,
+  estrella: r => `<polygon points="50,4 61.76,35.82 95.65,37.17 69.02,58.18 78.21,90.83 50,72 21.79,90.83 30.98,58.18 4.35,37.17 38.24,35.82" fill="${r}"/>`,
+  sello: r => `<polygon points="${PUNTAS_SELLO}" fill="${r}"/>`,
+}
+// Recorta un elemento con una forma del centro (las muestras de color del centro, con la forma elegida)
+const mascaraForma = forma => {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">${(FIGURAS_CENTRO[forma] ?? FIGURAS_CENTRO.circulo)('#000')}</svg>`
+  const url = `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}")`
+  return { WebkitMaskImage: url, maskImage: url, WebkitMaskSize: '100% 100%', maskSize: '100% 100%' }
+}
+
+// Dónde y de qué tamaño van las letras en cada forma (tamaño: proporción del normal; y: su centro en el cuadro de 100)
+const LETRAS_CENTRO = {
+  corazon: { tamano: 0.75, y: 42 },
+  hexagono: { tamano: 0.9, y: 50 },
+  rombo: { tamano: 0.75, y: 50 },
+  escudo: { tamano: 0.85, y: 44 },
+  gota: { tamano: 0.8, y: 63 },
+  estrella: { tamano: 0.55, y: 55 },
+  sello: { tamano: 0.9, y: 50 },
+}
+
+/* Lo que va en el centro del QR, como imagen: el texto (de 1 a 3 letras, más pequeñas cuantas más son) sobre un
+   círculo o un cuadrado (sin texto: la forma sola, para las copias de la doble imagen).
+   degradado: { colores, tipo, angulo }, para pintar la forma con el mismo degradado que las esquinas */
+const imagenCentro = (letras, fondo, forma, degradado) => {
   const texto = esClaro(fondo) ? '#141414' : '#FFFFFF'
-  const figura = forma === 'cuadrado' ? `<rect width="100" height="100" rx="18" fill="${fondo}"/>` : `<circle cx="50" cy="50" r="50" fill="${fondo}"/>`
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">${figura}${letra ? `<text x="50" y="50" dy="0.35em" text-anchor="middle" font-family="system-ui, sans-serif" font-weight="700" font-size="56" fill="${texto}">${letra}</text>` : ''}</svg>`
+  const tamano = { 1: 56, 2: 44, 3: 34 }[letras?.length] ?? 56
+  let defs = ''
+  let relleno = fondo
+  if (degradado?.colores?.length > 1) {
+    const paradas = degradado.colores.map((c, i) => `<stop offset="${i / (degradado.colores.length - 1)}" stop-color="${c}"/>`).join('')
+    defs =
+      degradado.tipo === 'radial'
+        ? `<defs><radialGradient id="c" cx="0.5" cy="0.5" r="0.7">${paradas}</radialGradient></defs>`
+        : `<defs><linearGradient id="c" gradientTransform="rotate(${degradado.angulo} 0.5 0.5)">${paradas}</linearGradient></defs>`
+    relleno = 'url(#c)'
+  }
+  const figura = (FIGURAS_CENTRO[forma] ?? FIGURAS_CENTRO.circulo)(relleno)
+  // Algunas formas tienen menos sitio o el hueco más arriba o más abajo: las letras se ajustan a cada una
+  const ajuste = LETRAS_CENTRO[forma] ?? { tamano: 1, y: 50 }
+  const tamanoFinal = tamano * ajuste.tamano
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">${defs}${figura}${letras ? `<text x="50" y="${ajuste.y}" dy="0.35em" text-anchor="middle" font-family="system-ui, sans-serif" font-weight="700" font-size="${tamanoFinal}" fill="${texto}">${escaparXml(letras)}</text>` : ''}</svg>`
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
 }
 
@@ -198,7 +347,8 @@ const opcionesCapa = ({ url, lado, puntos, esquinas, puntoOjo, colorPuntos, colo
    En las copias, el centro (si lo hay) es su forma lisa del color de la copia */
 const capasDe = (o, lado) => {
   const d = lado * DESPLAZAMIENTO
-  const imagenPrincipal = o.centro === 'logo' && o.logo ? o.logo : o.centro === 'inicial' && o.inicial ? imagenCentro(o.inicial, o.colorCentro, o.formaCentro) : undefined
+  const imagenPrincipal =
+    o.centro === 'logo' && o.logo ? o.logo : o.centro === 'inicial' && o.inicial ? imagenCentro(o.inicial, o.colorCentro, o.formaCentro, o.degCentro) : undefined
   const copia = (color, dx) => ({
     opciones: opcionesCapa({
       ...o,
@@ -227,7 +377,8 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
   const marca = deMarca(colores)
   const oscuroDeMarca = marca.qr
   const acentoDeMarca = colores?.accent ?? '#555555'
-  const ini = estadoInicial ?? {}
+  // Sin diseño guardado, el editor del cliente (y su vista) empieza con la placa de la landing
+  const ini = estadoInicial ?? (modo === 'admin' ? {} : inicioLanding(nombre))
   const [url, setUrl] = useState(urlInicial)
 
   // Colores y estilo
@@ -252,9 +403,15 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
   // Centro: nada, la inicial (en círculo o cuadrado, con su color) o un logo subido
   const [centro, setCentro] = useState(ini.centro ?? 'inicial')
   const [formaCentro, setFormaCentro] = useState(ini.formaCentro ?? 'circulo')
+  // Texto del centro: de 1 a 3 letras; sin escribir, la inicial del negocio
+  const [textoCentro, setTextoCentro] = useState(ini.textoCentro ?? (nombre ?? '').trim().charAt(0).toUpperCase())
   const [colorCentroElegido, setColorCentro] = useState(ini.colorCentro ?? null)
+  // Degradado elegido para la forma del centro (de los colores predeterminados); sin él, liso o el de las esquinas
+  const [degCentroElegido, setDegCentroElegido] = useState(ini.degCentro ?? null)
   const [logo, setLogo] = useState(ini.logo ?? null)
   const [errorLogo, setErrorLogo] = useState('')
+  // Selector de archivo del logo (en el editor del cliente se abre directamente al tocar "Logo")
+  const entradaLogo = useRef(null)
   // Tamaño del centro (inicial o logo), en proporción al QR: entre TAMANO_CENTRO.min y .max (más grande, y el QR
   // dejaría de leerse aunque lleve la corrección de errores máxima)
   const [tamanoCentro, setTamanoCentro] = useState(ini.tamanoCentro ?? 0.3)
@@ -271,9 +428,11 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
   const [radioFondoElegido, setRadioFondo] = useState(ini.radioFondo ?? null)
 
   // Textos de la placa
-  const [conNombre, setConNombre] = useState(ini.conNombre ?? false)
-  const [textoNombre, setTextoNombre] = useState(ini.textoNombre ?? nombre ?? '')
-  const [textoMarco, setTextoMarco] = useState(ini.textoMarco ?? 'Escanéame')
+  /* 3 campos libres, para lo que se quiera (el nombre, un eslogan, el horario...): uno encima del QR y dos debajo.
+     Los vacíos no salen. Los diseños guardados antes (con nombre y texto de arriba) se pasan a estos campos */
+  const [campoArriba, setCampoArriba] = useState(ini.campoArriba ?? (ini.conNombre && ini.textoNombre ? ini.textoNombre : ini.textoMarco ?? 'Escanéame'))
+  const [campoAbajo1, setCampoAbajo1] = useState(ini.campoAbajo1 ?? (ini.conNombre && ini.textoNombre && ini.textoMarco ? ini.textoMarco : ''))
+  const [campoAbajo2, setCampoAbajo2] = useState(ini.campoAbajo2 ?? '')
   // Líneas de abajo: una red (u otra cosa) por línea, con su icono
   const [lineas, setLineas] = useState(ini.lineas ?? [{ icono: 'instagram', texto: '' }])
   // Tipografía: '' es la de la marca (o la del sistema, sin marca); si no, una de la lista
@@ -285,13 +444,22 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
   const [enviando, setEnviando] = useState(false)
   const [enviado, setEnviado] = useState(false)
   const [errorEnvio, setErrorEnvio] = useState('')
+  // Editor del cliente: "Ver más" de los colores y de las formas de los puntos
+  const [masColores, setMasColores] = useState(false)
+  const [masFormas, setMasFormas] = useState(false)
+  const [masOjos, setMasOjos] = useState(false)
+  const [masFormasCentro, setMasFormasCentro] = useState(false)
+  // Editor del cliente: el texto de la placa que se está escribiendo (arriba, abajo1 o abajo2; null, ninguno)
+  const [textoAbierto, setTextoAbierto] = useState(null)
+  // Editor del cliente: el "Ver más" de los colores del centro
+  const [masColoresCentro, setMasColoresCentro] = useState(false)
 
   // Todos los ajustes del diseño juntos (lo que se guarda al enviarlo)
   const estado = {
     estilo, colorPuntos, colorEsquinas, degPuntos, degEsquinas, fondo, colorMarco, degMarco, colorLetra,
-    puntos, esquinas, puntoOjo, centro, formaCentro, colorCentro: colorCentroElegido, logo, tamanoCentro, doble,
+    puntos, esquinas, puntoOjo, centro, formaCentro, textoCentro, colorCentro: colorCentroElegido, degCentro: degCentroElegido, logo, tamanoCentro, doble,
     conMarco, formaPlaca, radioPlaca, borde, radioFondo: radioFondoElegido,
-    conNombre, textoNombre, textoMarco, lineas, tipografia, escala,
+    campoArriba, campoAbajo1, campoAbajo2, lineas, tipografia, escala,
   }
   const enviarDiseno = async () => {
     setEnviando(true)
@@ -318,12 +486,38 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
   const [descargando, setDescargando] = useState(false)
 
   const colorCentro = colorCentroElegido ?? colorEsquinas
+  // Sin color elegido para el centro, su forma lleva el degradado de las esquinas (si lo tienen), como el resto del QR
+  const degCentro = useMemo(
+    () =>
+      degCentroElegido
+        ? { colores: degCentroElegido, tipo: 'linear', angulo: 315 }
+        : !colorCentroElegido && degEsquinas.activo
+          ? { colores: coloresDegradado(colorEsquinas, degEsquinas), tipo: degEsquinas.tipo, angulo: degEsquinas.angulo }
+          : null,
+    [degCentroElegido, colorCentroElegido, colorEsquinas, degEsquinas],
+  )
+  // Un color predeterminado para la forma del centro: su degradado entero o, si es liso, el color de su QR (las
+  // letras se ponen solas en blanco o en negro, según lo oscuro que sea)
+  const [muestraCentro, setMuestraCentro] = useState(null)
+  const ponerColorCentro = e => {
+    setMuestraCentro(e.clave)
+    setColorCentro(e.degradado ? e.degradado[0] : e.qr)
+    setDegCentroElegido(e.degradado ?? null)
+  }
+  // Elegido a mano (en Diseño → Centro): liso, sin degradado
+  const ponerColorCentroAMano = c => {
+    setMuestraCentro(null)
+    setColorCentro(c)
+    setDegCentroElegido(null)
+  }
   /* Esquinas del fondo del QR, en proporción al lado: las elegidas o, sin elegir, en proporción a las de la placa
      (placa recta, fondo recto; placa redondeada, fondo redondeado). Como mucho 0,12: más, y la curva se comería las
      esquinas del QR */
   const RADIO_FONDO_MAX = 0.12
   const radioFondo = radioFondoElegido ?? (conMarco && formaPlaca === 'rectangular' ? radioPlaca * 0.6 : conMarco ? 0.06 : 0)
   const inicial = (nombre ?? '').trim().charAt(0).toUpperCase()
+  // Lo que se escribe en el centro (como mucho 3 letras)
+  const letrasCentro = textoCentro.trim().slice(0, 3)
   const textoSobreMarco = colorLetra || (esClaro(colorMarco) ? '#141414' : '#FFFFFF')
   // Si el color elegido para los textos se parece a la placa (los dos claros o los dos oscuros), se avisa
   const textoPocoVisible = Boolean(colorLetra) && esClaro(colorLetra) === esClaro(colorMarco)
@@ -353,6 +547,8 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
     setDegMarco(sinDegradado(acentoDeMarca))
     setColorLetra(e ? null : marca.letra)
     setColorCentro(null)
+    setDegCentroElegido(null)
+    setMuestraCentro(null)
     setConMarco(true)
   }
 
@@ -408,6 +604,8 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
     setDegMarco(sinDegradado(acentoDeMarca))
     setColorLetra(p.textoMarco)
     setColorCentro(null)
+    setDegCentroElegido(null)
+    setMuestraCentro(null)
     setConMarco(true)
     // Las propuestas completas (las del editor del cliente) traen también la placa, la letra y los textos
     if (p.placa) {
@@ -421,13 +619,11 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
     if (typeof p.tipografia === 'string' && (p.tipografia === '' || TIPOGRAFIAS.some(t => t.id === p.tipografia))) setTipografia(p.tipografia)
     const tamanos = { pequeno: 0.85, normal: 1, grande: 1.2 }
     if (p.tamano in tamanos) setEscala(tamanos[p.tamano])
-    if (p.textos?.arriba?.trim()) setTextoMarco(p.textos.arriba.trim().replace(/\s*—\s*/g, ', ').slice(0, 28))
-    // Las líneas, solo si trae alguna (con los datos que dio el cliente); si no, se quedan las que había
-    const nuevas = (p.textos?.lineas ?? [])
-      .filter(l => l?.texto?.trim())
-      .slice(0, MAX_LINEAS)
-      .map(l => ({ icono: ICONOS_LINEA.some(([c]) => c === l.icono) ? l.icono : '', texto: l.texto.trim().slice(0, 32) }))
-    if (nuevas.length) setLineas(nuevas)
+    // Los 3 campos de texto: solo los que trae (los que deja vacíos se quedan como estaban)
+    const limpio = t => t.trim().replace(/\s*—\s*/g, ', ').slice(0, 32)
+    if (p.textos?.arriba?.trim()) setCampoArriba(limpio(p.textos.arriba))
+    if (p.textos?.abajo1?.trim()) setCampoAbajo1(limpio(p.textos.abajo1))
+    if (p.textos?.abajo2?.trim()) setCampoAbajo2(limpio(p.textos.abajo2))
   }
 
   // Logo subido: se guarda como imagen dentro de la página (no se sube a ningún sitio)
@@ -445,12 +641,16 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
   }
 
   const opcionesQR = useMemo(
-    () => ({ url, puntos, esquinas, puntoOjo, colorPuntos, colorEsquinas, degPuntos, degEsquinas, doble, centro, inicial, logo, formaCentro, colorCentro, tamanoCentro }),
-    [url, puntos, esquinas, puntoOjo, colorPuntos, colorEsquinas, degPuntos, degEsquinas, doble, centro, inicial, logo, formaCentro, colorCentro, tamanoCentro],
+    () => ({ url, puntos, esquinas, puntoOjo, colorPuntos, colorEsquinas, degPuntos, degEsquinas, doble, centro, inicial: letrasCentro, logo, formaCentro, colorCentro, degCentro, tamanoCentro }),
+    [url, puntos, esquinas, puntoOjo, colorPuntos, colorEsquinas, degPuntos, degEsquinas, doble, centro, letrasCentro, logo, formaCentro, colorCentro, degCentro, tamanoCentro],
   )
 
-  // Las líneas de abajo que se ven: las que tienen texto (en la placa circular, solo la primera)
-  const lineasVisibles = lineas.filter(l => l.texto.trim())
+  // Lo que va debajo del QR: los dos campos de abajo y, solo en el panel de Jesús, las líneas de redes con icono.
+  // Solo los que tienen texto (en la placa circular, solo el primero)
+  const lineasVisibles = [
+    ...[campoAbajo1, campoAbajo2].filter(t => t.trim()).map(t => ({ icono: '', texto: t.trim() })),
+    ...(modo === 'cliente' ? [] : lineas.filter(l => l.texto.trim())),
+  ]
 
   /* Medidas de la placa para un QR de lado `lado`: dónde va el QR, cuánto mide la placa y dónde va cada texto.
      Placa rectangular: borde, nombre, texto de arriba, QR, líneas y borde. Placa circular (pegatina): el QR en el
@@ -476,14 +676,15 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
         xQR,
         yQR: xQR,
         letras,
-        yArriba: textoMarco.trim() ? xQR * 0.58 : null,
-        yNombre: null,
+        yNombre: campoArriba.trim() ? xQR * 0.58 : null,
+        yArriba: null,
         lins: lineasVisibles.slice(0, 1),
         yLinea: () => r * 2 - xQR * 0.58,
       }
     }
-    const altoNombre = conNombre && textoNombre.trim() ? lado * MEDIDAS.nombre * f : 0
-    const altoArriba = textoMarco.trim() ? lado * MEDIDAS.texto * f : 0
+    // Encima del QR, el campo de arriba (con la letra de los títulos)
+    const altoNombre = campoArriba.trim() ? lado * MEDIDAS.nombre * f : 0
+    const altoArriba = 0
     const altoLinea = lado * MEDIDAS.linea * f
     const yQR = b + altoNombre + altoArriba
     return {
@@ -561,8 +762,7 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
     if (g.forma) {
       const texto = (contenido, y, tamano, familia, peso) =>
         `<text x="${g.ancho / 2}" y="${y}" dy="0.35em" text-anchor="middle" font-family="${escaparXml(familia)}" font-weight="${peso}" font-size="${tamano}" fill="${textoSobreMarco}">${escaparXml(contenido)}</text>`
-      if (g.yNombre != null) partes.push(texto(textoNombre, g.yNombre, g.letras.nombre, familiaTitulo, 800))
-      if (g.yArriba != null) partes.push(texto(textoMarco, g.yArriba, g.letras.arriba, familiaTitulo, 700))
+      if (g.yNombre != null) partes.push(texto(campoArriba, g.yNombre, g.letras.nombre, familiaTitulo, 800))
       g.lins.forEach((l, i) => {
         const y = g.yLinea(i)
         const p = posicionLinea(l, g)
@@ -583,7 +783,9 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
     let vigente = true
     const t = setTimeout(() => {
       componerSvg(600, 'vista').then(svg => {
-        if (vigente) setVista(svg.replace('<svg ', '<svg style="display:block;width:100%;height:auto" '))
+        // Sin su ancho y alto en píxeles (solo con su proporción, el viewBox): así se ajusta al hueco y nunca empuja
+        // la página hacia el lado en un móvil estrecho
+        if (vigente) setVista(svg.replace(/^<svg([^>]*?) width="[^"]*" height="[^"]*"/, '<svg$1 style="display:block;width:100%;height:auto;max-width:100%"'))
       })
     }, 120)
     return () => {
@@ -591,7 +793,7 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
       clearTimeout(t)
     }
     // Se recompone con cualquier cosa que cambie el dibujo
-  }, [opcionesQR, fondo, colorMarco, degMarco, textoSobreMarco, conMarco, formaPlaca, radioPlaca, radioFondo, borde, conNombre, textoNombre, textoMarco, lineas, familiaTitulo, familiaTexto, escala])
+  }, [opcionesQR, fondo, colorMarco, degMarco, textoSobreMarco, conMarco, formaPlaca, radioPlaca, radioFondo, borde, campoArriba, campoAbajo1, campoAbajo2, lineas, modo, familiaTitulo, familiaTexto, escala])
 
   const archivo = `qr-${(nombre || 'negocio').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`
   const bajar = (blob, extension) => {
@@ -659,11 +861,7 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
         ctx.textAlign = 'center'
         if (g.yNombre != null) {
           ctx.font = `800 ${g.letras.nombre}px ${familiaTitulo}`
-          ctx.fillText(textoNombre, g.ancho / 2, g.yNombre)
-        }
-        if (g.yArriba != null) {
-          ctx.font = `700 ${g.letras.arriba}px ${familiaTitulo}`
-          ctx.fillText(textoMarco, g.ancho / 2, g.yArriba)
+          ctx.fillText(campoArriba, g.ancho / 2, g.yNombre)
         }
         // Líneas de abajo: texto e icono centrados juntos, el icono a la derecha del texto
         ctx.font = `600 ${g.letras.linea}px ${familiaTexto}`
@@ -700,6 +898,8 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
   /* ---------- Piezas del formulario ---------- */
 
   const titulo = 'text-[0.8rem] font-semibold text-zinc-500'
+  // Título de cada grupo del editor del cliente (más grande que el de cada fila)
+  const tituloGrupo = 'text-[0.95rem] font-bold'
   const opcion = activa => `rounded-[0.6rem] px-[0.75rem] py-[0.45rem] text-[0.9rem] font-medium ring-1 ${activa ? 'bg-zinc-900 text-white ring-zinc-900' : 'bg-white ring-zinc-300'}`
   const campo = 'block min-h-[2.75rem] w-full min-w-0 rounded-[0.6rem] border border-zinc-300 bg-white px-[0.75rem] text-[0.95rem]'
   const casilla = (texto, marcada, poner) => (
@@ -780,21 +980,312 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
   const nombreEstilo = estilo === 'marca' ? 'Su marca' : TODOS_ESTILOS.find(e => e.clave === estilo)?.nombre ?? 'A tu gusto'
   const nombreDe = (lista, clave) => lista.find(([c]) => c === clave)?.[1]
   const muestra = c => <span className="h-[1.1rem] w-[1.1rem] rounded-full ring-1 ring-zinc-300" style={{ background: c }} />
+  // Campo del texto del centro (de 1 a 3 letras), el mismo dentro de "Diseño" y fuera en el editor del cliente
+  // En columna: el campo arriba y, debajo, una etiqueta corta
+  const campoTextoCentro = (
+    <label className="flex flex-col items-center gap-[0.2rem]">
+      <input
+        value={textoCentro}
+        onChange={e => setTextoCentro(e.target.value.toUpperCase().slice(0, 3))}
+        maxLength={3}
+        placeholder={inicial || 'A'}
+        className="block min-h-[2.2rem] w-[3.4rem] rounded-[0.5rem] border border-zinc-300 bg-white px-[0.2rem] text-center text-[0.88rem] font-bold tracking-[0.05em]"
+      />
+      <span className="text-[0.72rem] text-zinc-500">Letras (máx. 3)</span>
+    </label>
+  )
 
   const esCliente = modo === 'cliente'
   // Vista previa: la misma placa que se descarga
   const previa = (
-    <div className="flex justify-center rounded-[0.75rem] bg-zinc-100 p-[1rem]">
-      <div className="w-full max-w-[18rem]" dangerouslySetInnerHTML={{ __html: vista }} />
+    <div className="flex min-w-0 justify-center overflow-hidden rounded-[0.75rem] bg-zinc-100 p-[1rem]">
+      <div className="w-full min-w-0 max-w-[18rem]" dangerouslySetInnerHTML={{ __html: vista }} />
     </div>
   )
-  if (modo === 'vista') return <div className="mx-auto w-full max-w-[32rem]">{previa}</div>
+  if (modo === 'vista') return <div className="mx-auto grid w-full max-w-[32rem] grid-cols-[minmax(0,1fr)]">{previa}</div>
 
   // En una columna, como Nuevo perfil: vista previa, dirección, asistente, el diseño plegado y las descargas (en el
   // editor del cliente, sin dirección y con "Enviar mi diseño" en vez de las descargas)
   return (
-    <div className="mx-auto grid w-full max-w-[32rem] gap-[1rem]">
+    <div className="mx-auto grid w-full max-w-[32rem] grid-cols-[minmax(0,1fr)] gap-[1rem]">
       {previa}
+
+      {/* Editor del cliente: colores y formas de los puntos a la vista, como en la pestaña "Tu QR" de la landing.
+          Primero unos pocos; con "Ver más", todos */}
+      {esCliente && (
+        <div className="grid gap-[0.9rem]">
+          <div className="grid gap-[0.45rem]">
+            <span className={titulo}>Colores</span>
+            <div className="flex flex-wrap items-center gap-[0.4rem]">
+              {(masColores ? MUESTRAS : MUESTRAS.slice(0, MUESTRAS_A_LA_VISTA)).map(e => (
+                <button
+                  key={e.clave}
+                  type="button"
+                  title={e.nombre}
+                  aria-label={`Colores ${e.nombre}`}
+                  aria-pressed={estilo === e.clave}
+                  onClick={() => ponerEstilo(e.clave)}
+                  className={`h-[1.9rem] w-[1.9rem] rounded-[0.4rem] border-2 transition-transform duration-300 ${estilo === e.clave ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
+                  style={{ background: fondoMuestra(e) }}
+                />
+              ))}
+              {/* Ver más (o menos) colores: un círculo más, una rueda de color, con un + (o un −) encima */}
+              <button
+                type="button"
+                aria-label={masColores ? 'Ver menos colores' : 'Ver más colores'}
+                aria-expanded={masColores}
+                onClick={() => setMasColores(v => !v)}
+                className="flex h-[1.9rem] w-[1.9rem] items-center justify-center rounded-[0.4rem] border-2 border-zinc-300 transition-transform duration-300 hover:scale-105"
+                /* El + casi negro, que no se camufla con los colores de la rueda */
+                style={{ background: 'conic-gradient(#E5484D, #F5A524, #F2D33B, #46A758, #2E9FD9, #5B5BD6, #B04BC4, #E5484D)', color: '#141414' }}
+              >
+                {masColores ? <Minus className="h-[1rem] w-[1rem]" strokeWidth={3} aria-hidden="true" /> : <Plus className="h-[1rem] w-[1rem]" strokeWidth={3} aria-hidden="true" />}
+              </button>
+            </div>
+          </div>
+          {/* Grupo: formas de los puntos (los de dentro y las esquinas) */}
+          <details className="rounded-[0.1rem] bg-[#242422] ring-1 ring-[#3a3935]">
+            <summary className="flex cursor-pointer list-none items-center gap-[0.75rem] px-[0.85rem] py-[0.8rem] [&::-webkit-details-marker]:hidden">
+              <span className={tituloGrupo}>Cambiar los puntos</span>
+              {/* La pista, en palabra y en amarillo (la flecha sola no la entiende todo el mundo) */}
+              <span className="ml-auto text-[0.85rem] font-semibold text-acento [details[open]>summary>&]:hidden">Abrir</span>
+              <span className="ml-auto hidden text-[0.85rem] font-semibold text-acento [details[open]>summary>&]:inline">Cerrar</span>
+              <ChevronDown className="h-[1rem] w-[1rem] shrink-0 text-acento transition-transform [details[open]>summary>&]:rotate-180" aria-hidden="true" />
+            </summary>
+            <div className="grid gap-[0.7rem] px-[0.85rem] pb-[0.85rem]">
+          <div className="grid gap-[0.45rem]">
+            <span className={titulo}>Puntos interiores</span>
+            <div className="flex flex-wrap items-center gap-[0.4rem]">
+              <div className="flex flex-wrap gap-[0.3rem] rounded-[1.2rem] bg-zinc-100 p-[0.25rem]">
+                {(masFormas ? PUNTOS : PUNTOS.slice(0, FORMAS_A_LA_VISTA)).map(([clave, texto]) => (
+                  <button
+                    key={clave}
+                    type="button"
+                    title={texto}
+                    aria-label={`Puntos ${texto.toLowerCase()}`}
+                    aria-pressed={puntos === clave}
+                    onClick={() => setPuntos(clave)}
+                    className={`flex h-[2rem] w-[2rem] items-center justify-center rounded-full transition-colors ${puntos === clave ? 'bg-zinc-900 text-white' : 'text-zinc-500 hover:text-zinc-900'}`}
+                  >
+                    {clave === 'classy-rounded' ? <Layers className="h-[0.95rem] w-[0.95rem]" aria-hidden="true" /> : <span className={`block h-[0.7rem] w-[0.7rem] bg-current ${FORMA_MUESTRA[clave]}`} />}
+                  </button>
+                ))}
+                {/* Ver más (o menos) formas: un botón más de la cápsula, con un + (o un −) */}
+                <button
+                  type="button"
+                  aria-label={masFormas ? 'Ver menos formas' : 'Ver más formas'}
+                  aria-expanded={masFormas}
+                  onClick={() => setMasFormas(v => !v)}
+                  className="flex h-[2rem] w-[2rem] items-center justify-center rounded-full text-zinc-500 transition-colors hover:text-tinta"
+                >
+                  {masFormas ? <Minus className="h-[0.95rem] w-[0.95rem]" strokeWidth={3} aria-hidden="true" /> : <Plus className="h-[0.95rem] w-[0.95rem]" strokeWidth={3} aria-hidden="true" />}
+                </button>
+              </div>
+            </div>
+          </div>
+          {/* Esquinas: el ojo entero (marco y punto) en cada botón; 4 a la vista y el resto con el + */}
+          <div className="grid gap-[0.45rem]">
+            <span className={titulo}>Esquinas</span>
+            <div className="flex flex-wrap gap-[0.3rem] self-start justify-self-start rounded-[1.2rem] bg-zinc-100 p-[0.25rem]">
+              {(masOjos ? OJOS : OJOS.slice(0, OJOS_A_LA_VISTA)).map(o => {
+                const elegido = esquinas === o.marco && puntoOjo === o.punto
+                return (
+                  <button
+                    key={o.clave}
+                    type="button"
+                    title={o.nombre}
+                    aria-label={`Esquinas ${o.nombre.toLowerCase()}`}
+                    aria-pressed={elegido}
+                    onClick={() => {
+                      setEsquinas(o.marco)
+                      setPuntoOjo(o.punto)
+                    }}
+                    className={`flex h-[2rem] w-[2rem] items-center justify-center rounded-full transition-colors ${elegido ? 'bg-zinc-900 text-white' : 'text-zinc-500 hover:text-tinta'}`}
+                  >
+                    {/* El ojo en pequeño: el marco (con borde, a puntos en la forma "de puntos") y el punto relleno */}
+                    <span className={`flex h-[1rem] w-[1rem] items-center justify-center border-[0.14rem] border-current ${o.marco === 'dots' ? 'border-dotted' : ''} ${RADIO_MUESTRA[o.marco]}`}>
+                      <span className={`block h-[0.35rem] w-[0.35rem] bg-current ${RADIO_MUESTRA[o.punto]}`} />
+                    </span>
+                  </button>
+                )
+              })}
+              {/* Ver más (o menos) esquinas */}
+              <button
+                type="button"
+                aria-label={masOjos ? 'Ver menos esquinas' : 'Ver más esquinas'}
+                aria-expanded={masOjos}
+                onClick={() => setMasOjos(v => !v)}
+                className="flex h-[2rem] w-[2rem] items-center justify-center rounded-full text-zinc-500 transition-colors hover:text-tinta"
+              >
+                {masOjos ? <Minus className="h-[0.95rem] w-[0.95rem]" strokeWidth={3} aria-hidden="true" /> : <Plus className="h-[0.95rem] w-[0.95rem]" strokeWidth={3} aria-hidden="true" />}
+              </button>
+            </div>
+          </div>
+            </div>
+          </details>
+
+          {/* Centro: nada, un texto (la inicial o hasta 3 letras) o el logo (al tocarlo, se elige o se hace la foto) */}
+          <details className="rounded-[0.1rem] bg-[#242422] ring-1 ring-[#3a3935]">
+            <summary className="flex cursor-pointer list-none items-center gap-[0.75rem] px-[0.85rem] py-[0.8rem] [&::-webkit-details-marker]:hidden">
+              <span className={tituloGrupo}>Cambiar el centro</span>
+              {/* La pista, en palabra y en amarillo (la flecha sola no la entiende todo el mundo) */}
+              <span className="ml-auto text-[0.85rem] font-semibold text-acento [details[open]>summary>&]:hidden">Abrir</span>
+              <span className="ml-auto hidden text-[0.85rem] font-semibold text-acento [details[open]>summary>&]:inline">Cerrar</span>
+              <ChevronDown className="h-[1rem] w-[1rem] shrink-0 text-acento transition-transform [details[open]>summary>&]:rotate-180" aria-hidden="true" />
+            </summary>
+            <div className="grid gap-[0.7rem] px-[0.85rem] pb-[0.85rem]">
+            {/* Forma del centro: 3 a la vista y el resto con el + */}
+            <div className="grid gap-[0.45rem]">
+              <span className={titulo}>Forma</span>
+              <div className="flex flex-wrap gap-[0.3rem] self-start justify-self-start rounded-[1.2rem] bg-zinc-100 p-[0.25rem]">
+                {(masFormasCentro ? FORMAS_CENTRO : FORMAS_CENTRO.slice(0, FORMAS_CENTRO_A_LA_VISTA)).map(([clave, texto]) => (
+                  <button
+                    key={clave}
+                    type="button"
+                    title={texto}
+                    aria-label={`Centro en forma de ${texto.toLowerCase()}`}
+                    aria-pressed={formaCentro === clave}
+                    onClick={() => setFormaCentro(clave)}
+                    className={`flex h-[2rem] w-[2rem] items-center justify-center rounded-full transition-colors ${formaCentro === clave ? 'bg-zinc-900 text-white' : 'text-zinc-500 hover:text-tinta'}`}
+                  >
+                    <svg viewBox="0 0 100 100" className="h-[0.95rem] w-[0.95rem]" aria-hidden="true" dangerouslySetInnerHTML={{ __html: FIGURAS_CENTRO[clave]('currentColor') }} />
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  aria-label={masFormasCentro ? 'Ver menos formas del centro' : 'Ver más formas del centro'}
+                  aria-expanded={masFormasCentro}
+                  onClick={() => setMasFormasCentro(v => !v)}
+                  className="flex h-[2rem] w-[2rem] items-center justify-center rounded-full text-zinc-500 transition-colors hover:text-tinta"
+                >
+                  {masFormasCentro ? <Minus className="h-[0.95rem] w-[0.95rem]" strokeWidth={3} aria-hidden="true" /> : <Plus className="h-[0.95rem] w-[0.95rem]" strokeWidth={3} aria-hidden="true" />}
+                </button>
+              </div>
+            </div>
+            {/* Color del centro: los mismos predeterminados que los colores principales, con la forma elegida (círculos
+                por defecto; corazones si es el corazón...). 7 a la vista y el + con la rueda */}
+            <div className="grid gap-[0.45rem]">
+              <span className={titulo}>Color</span>
+              <div className="flex flex-wrap items-center gap-[0.4rem]">
+                {(masColoresCentro ? MUESTRAS : MUESTRAS.slice(0, MUESTRAS_A_LA_VISTA)).map(e => (
+                  <button
+                    key={e.clave}
+                    type="button"
+                    title={e.nombre}
+                    aria-label={`Centro de color ${e.nombre}`}
+                    aria-pressed={muestraCentro === e.clave}
+                    onClick={() => ponerColorCentro(e)}
+                    className={`rounded-[0.45rem] p-[0.12rem] transition-transform duration-300 ${muestraCentro === e.clave ? 'scale-110 ring-2 ring-zinc-900' : 'hover:scale-105'}`}
+                  >
+                    <span className="block h-[1.65rem] w-[1.65rem]" style={{ background: fondoMuestra(e), ...mascaraForma(formaCentro) }} />
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  aria-label={masColoresCentro ? 'Ver menos colores del centro' : 'Ver más colores del centro'}
+                  aria-expanded={masColoresCentro}
+                  onClick={() => setMasColoresCentro(v => !v)}
+                  className="flex h-[1.9rem] w-[1.9rem] items-center justify-center rounded-full border-2 border-zinc-300 transition-transform duration-300 hover:scale-105"
+                  style={{ background: 'conic-gradient(#E5484D, #F5A524, #F2D33B, #46A758, #2E9FD9, #5B5BD6, #B04BC4, #E5484D)', color: '#141414' }}
+                >
+                  {masColoresCentro ? <Minus className="h-[1rem] w-[1rem]" strokeWidth={3} aria-hidden="true" /> : <Plus className="h-[1rem] w-[1rem]" strokeWidth={3} aria-hidden="true" />}
+                </button>
+              </div>
+            </div>
+            {/* Texto del centro: el campo en una cápsula y, al lado, el máximo. Al escribir, el centro lleva las letras;
+                al borrarlo todo, queda vacío */}
+            <div className="grid gap-[0.45rem]">
+              <span className={titulo}>Texto</span>
+              {/* Como las demás cápsulas: el campo y el máximo dentro, sobre el mismo fondo oscuro */}
+              <div className="flex items-center gap-[0.8rem] self-start justify-self-start rounded-[1.2rem] bg-zinc-100 px-[1rem] py-[0.25rem]">
+                <input
+                  value={textoCentro}
+                  onChange={e => {
+                    const v = e.target.value.toUpperCase().slice(0, 3)
+                    setTextoCentro(v)
+                    setCentro(c => (v.trim() ? 'inicial' : c === 'inicial' ? 'nada' : c))
+                  }}
+                  maxLength={3}
+                  placeholder={inicial || 'A'}
+                  aria-label="Letras del centro"
+                  className="block h-[2rem] rounded-none border-0 border-b border-zinc-500 bg-transparent px-[0.1rem] text-center text-[0.9rem] font-bold focus:border-zinc-900 focus:outline-none"
+                  /* El ancho, el de lo escrito (de 1 a 3 letras, en mayúsculas y negrita): la línea de debajo crece con el texto */
+                  style={{ width: `${Math.max((textoCentro || inicial || 'A').length, 1) * 1.15 + 0.4}ch` }}
+                />
+                <span className="text-[0.8rem] text-zinc-500">Máx. 3 letras</span>
+              </div>
+            </div>
+            {/* La cápsula y, debajo, lo de la opción elegida ("Cambiar logo") */}
+            <div className="grid justify-items-start gap-[0.5rem]">
+              <div className="flex gap-[0.3rem] rounded-[1.2rem] bg-zinc-100 p-[0.25rem]">
+                {/* Nada, el color de la forma del centro (abre debajo los colores predeterminados), texto y logo */}
+                {[
+                  ['nada', 'Nada', <Ban key="i" className="h-[0.95rem] w-[0.95rem]" aria-hidden="true" />],
+                  ['logo', 'Logo', <ImageIcon key="i" className="h-[0.95rem] w-[0.95rem]" aria-hidden="true" />],
+                ].map(([clave, texto, icono]) =>
+                  (
+                    <button
+                      key={clave}
+                      type="button"
+                      title={texto}
+                      aria-label={`Centro: ${texto.toLowerCase()}`}
+                      aria-pressed={centro === clave}
+                      onClick={() => (clave === 'logo' && !logo ? entradaLogo.current?.click() : setCentro(clave))}
+                      className={`flex h-[2rem] w-[2rem] items-center justify-center rounded-full transition-colors ${centro === clave ? 'bg-zinc-900 text-white' : 'text-zinc-500 hover:text-tinta'}`}
+                    >
+                      {icono}
+                    </button>
+                  ),
+                )}
+              </div>
+              {centro === 'logo' && logo && (
+                <button type="button" onClick={() => entradaLogo.current?.click()} className="text-[0.85rem] font-semibold underline underline-offset-[0.2em]">
+                  Cambiar logo
+                </button>
+              )}
+            </div>
+            <input ref={entradaLogo} type="file" accept="image/*" onChange={e => subirLogo(e.target.files?.[0])} className="sr-only" tabIndex={-1} aria-hidden="true" />
+            {errorLogo && <p className="text-[0.8rem] font-semibold text-red-600">{errorLogo}</p>}
+            </div>
+          </details>
+
+          {/* Textos de la placa, con el mismo sistema que Centro: una cápsula con los 3 sitios y, debajo, solo el campo
+              del que se ha tocado (así no ocupan los tres a la vez) */}
+          {conMarco && (
+            <div className="grid gap-[0.45rem]">
+              <span className={titulo}>Textos de la placa</span>
+              <div className="grid justify-items-start gap-[0.5rem]">
+                <div className="flex gap-[0.3rem] rounded-[1.2rem] bg-zinc-100 p-[0.25rem]">
+                  {[
+                    ['arriba', 'Arriba'],
+                    ['abajo1', 'Abajo'],
+                    ['abajo2', '2.ª línea'],
+                  ].map(([clave, texto]) => (
+                    <button
+                      key={clave}
+                      type="button"
+                      aria-pressed={textoAbierto === clave}
+                      onClick={() => setTextoAbierto(t => (t === clave ? null : clave))}
+                      className={`min-h-[2rem] rounded-full px-[0.8rem] text-[0.85rem] font-semibold transition-colors ${textoAbierto === clave ? 'bg-zinc-900 text-white' : 'text-zinc-500 hover:text-tinta'}`}
+                    >
+                      {texto}
+                    </button>
+                  ))}
+                </div>
+                {textoAbierto === 'arriba' && (
+                  <input value={campoArriba} onChange={e => setCampoArriba(e.target.value)} maxLength={32} placeholder="El nombre de tu negocio" aria-label="Texto de arriba" className={campo} />
+                )}
+                {textoAbierto === 'abajo1' && (
+                  <input value={campoAbajo1} onChange={e => setCampoAbajo1(e.target.value)} maxLength={32} placeholder="Escanea y déjanos tu reseña" aria-label="Texto de abajo" className={campo} />
+                )}
+                {textoAbierto === 'abajo2' && (
+                  <input value={campoAbajo2} onChange={e => setCampoAbajo2(e.target.value)} maxLength={32} placeholder="Horario, dirección..." aria-label="Segunda línea de abajo" className={campo} />
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {!esCliente && (
         <label className="grid gap-[0.3rem]">
@@ -866,7 +1357,7 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
                       <QrCode className="h-[70%] w-[70%]" style={{ color: p.degradado?.activo ? p.degradado.colores[0] : p.puntos }} aria-hidden="true" />
                     </span>
                     <span className="text-[0.5rem] font-bold leading-none" style={{ color: p.textoMarco }}>
-                      {textoMarco.slice(0, 10)}
+                      {(campoArriba || 'Escanéame').slice(0, 10)}
                     </span>
                   </span>
                   <span className="min-w-0">
@@ -886,8 +1377,10 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
           <span className="text-[1rem] font-bold">Diseño</span>
           <ChevronDown className="ml-auto h-[1rem] w-[1rem] shrink-0 text-zinc-500 transition-transform group-open/diseno:rotate-180" aria-hidden="true" />
         </summary>
-        <div className="grid gap-[0.75rem] px-[0.85rem] pb-[0.85rem] pt-[0.2rem]">
-          {/* 1. Estilo: los de la marca y los de la placa de la landing */}
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-[0.75rem] px-[0.85rem] pb-[0.85rem] pt-[0.2rem]">
+          {/* 1. Estilo: los de la marca y los de la placa de la landing (en el editor del cliente, ya están a la vista
+              en las muestras de colores) */}
+          {!esCliente && (
           <Plegable titulo="Estilo" elegido={nombreEstilo}>
             <div className="flex flex-wrap gap-[0.4rem]">
               {/* "Su marca" solo con los colores de un negocio */}
@@ -898,6 +1391,7 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
               ))}
             </div>
           </Plegable>
+          )}
 
           {/* 2. Colores: los predeterminados, los del QR a mano y los de la placa */}
           <Plegable
@@ -905,6 +1399,8 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
             elegido={<span className="flex justify-end gap-[0.25rem]">{[colorPuntos, colorEsquinas, fondo, colorMarco].map((c, i) => <span key={i}>{muestra(c)}</span>)}</span>}
           >
             <div className="grid gap-[0.6rem]">
+              {/* En el editor del cliente, los predeterminados están a la vista en las muestras de colores */}
+              {!esCliente && (
               <Plegable titulo="Predeterminados">
                 <div className="grid gap-[0.9rem]">
                   {/* Lisos: cada botón con su muestra (la placa y, dentro, el color del QR) */}
@@ -935,6 +1431,7 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
                   </div>
                 </div>
               </Plegable>
+              )}
               <Plegable titulo="Personalizado">
                 <div className="grid gap-[0.6rem]">
                   {color('Puntos', colorPuntos, setColorPuntos)}
@@ -960,10 +1457,12 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
             </p>
           )}
 
-          {/* 3. Formas del QR */}
-          <Plegable titulo="Puntos" elegido={nombreDe(PUNTOS, puntos)}>
-            {botones(PUNTOS, puntos, setPuntos)}
-          </Plegable>
+          {/* 3. Formas del QR (en el editor del cliente, la de los puntos está a la vista, arriba) */}
+          {!esCliente && (
+            <Plegable titulo="Puntos" elegido={nombreDe(PUNTOS, puntos)}>
+              {botones(PUNTOS, puntos, setPuntos)}
+            </Plegable>
+          )}
 
           <Plegable titulo="Esquinas" elegido={`${nombreDe(MARCOS_OJO, esquinas)} · ${nombreDe(PUNTOS_OJO, puntoOjo)}`}>
             <div className="grid gap-[0.75rem]">
@@ -978,13 +1477,13 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
             </div>
           </Plegable>
 
-          {/* 4. Centro: nada, la inicial o un logo */}
-          <Plegable titulo="Centro" elegido={centro === 'logo' ? 'Logo' : centro === 'inicial' && inicial ? `Inicial (${inicial})` : 'Nada'}>
+          {/* 4. Centro: nada, un texto (la inicial o hasta 3 letras) o un logo */}
+          <Plegable titulo="Centro" elegido={centro === 'logo' ? 'Logo' : centro === 'inicial' && letrasCentro ? `Texto (${letrasCentro})` : 'Nada'}>
             <div className="grid gap-[0.75rem]">
               {botones(
                 [
                   ['nada', 'Nada'],
-                  ['inicial', `Inicial${inicial ? ` (${inicial})` : ''}`],
+                  ['inicial', 'Texto'],
                   ['logo', 'Logo'],
                 ],
                 centro,
@@ -992,16 +1491,9 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
               )}
               {centro === 'inicial' && (
                 <>
-                  {!inicial && <p className="text-[0.8rem] text-zinc-500">Elige una página arriba para tener la inicial de su nombre.</p>}
-                  {botones(
-                    [
-                      ['circulo', 'Círculo'],
-                      ['cuadrado', 'Cuadrado'],
-                    ],
-                    formaCentro,
-                    setFormaCentro,
-                  )}
-                  {color('Color de la inicial', colorCentro, setColorCentro)}
+                  {campoTextoCentro}
+                  {botones(FORMAS_CENTRO, formaCentro, setFormaCentro)}
+                  {color('Color de la forma', colorCentro, ponerColorCentroAMano)}
                 </>
               )}
               {centro === 'logo' && (
@@ -1071,21 +1563,26 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
 
           {/* 7. Textos de la placa */}
           {conMarco && (
-            <Plegable titulo="Textos" elegido={textoMarco || 'Sin textos'}>
+            <Plegable titulo="Textos" elegido={campoArriba || campoAbajo1 || 'Sin textos'}>
               <div className="grid gap-[0.9rem]">
-                {formaPlaca === 'rectangular' && (
-                  <div className="grid gap-[0.4rem]">
-                    {casilla('Nombre del negocio', conNombre, setConNombre)}
-                    {conNombre && <input value={textoNombre} onChange={e => setTextoNombre(e.target.value)} maxLength={32} placeholder="Peluquería Ranita" className={campo} />}
-                  </div>
-                )}
+                {/* 3 campos libres: el nombre, un eslogan, el horario... donde se quiera; los vacíos no salen */}
                 <label className="grid gap-[0.3rem]">
-                  <span className={titulo}>Texto de arriba</span>
-                  <input value={textoMarco} onChange={e => setTextoMarco(e.target.value)} maxLength={28} className={campo} />
+                  <span className={titulo}>Encima del QR</span>
+                  <input value={campoArriba} onChange={e => setCampoArriba(e.target.value)} maxLength={32} placeholder="El nombre, un eslogan..." className={campo} />
                 </label>
-                {/* Líneas de abajo: cada una con su icono (o ninguno) y su texto; las vacías no salen */}
+                <label className="grid gap-[0.3rem]">
+                  <span className={titulo}>Debajo del QR</span>
+                  <input value={campoAbajo1} onChange={e => setCampoAbajo1(e.target.value)} maxLength={32} placeholder="Escanea y déjanos tu reseña" className={campo} />
+                </label>
+                <label className="grid gap-[0.3rem]">
+                  <span className={titulo}>Debajo del QR, segunda línea{formaPlaca === 'circular' ? ' (en la circular no cabe)' : ''}</span>
+                  <input value={campoAbajo2} onChange={e => setCampoAbajo2(e.target.value)} maxLength={32} placeholder="Horario, dirección..." className={campo} />
+                </label>
+                {/* Redes con icono: solo en el panel de Jesús (el QR ya lleva a las redes del negocio). Cada línea con su
+                    icono (o ninguno) y su texto; las vacías no salen */}
+                {modo !== 'cliente' && (
                 <div className="grid gap-[0.4rem]">
-                  <span className={titulo}>Debajo del QR{formaPlaca === 'circular' ? ' (en la circular cabe una sola línea)' : ''}</span>
+                  <span className={titulo}>Redes con icono (debajo de todo)</span>
                   {lineas.map((l, i) => {
                     const cambiar = cambio => setLineas(ls => ls.map((x, j) => (j === i ? { ...x, ...cambio } : x)))
                     return (
@@ -1123,6 +1620,7 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
                     </button>
                   )}
                 </div>
+                )}
                 <label className="grid gap-[0.3rem]">
                   <span className={titulo}>Tipografía</span>
                   <select value={tipografia} onChange={e => setTipografia(e.target.value)} className={campo}>
