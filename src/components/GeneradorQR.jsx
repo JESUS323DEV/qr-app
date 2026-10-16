@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import QRCodeStyling from 'qr-code-styling'
-import { ChevronDown, ImageUp, Layers, Minus, Plus, QrCode, Sparkles } from 'lucide-react'
+import { ChevronDown, ImageUp, Settings, Layers, Minus, Plus, QrCode, Sparkles } from 'lucide-react'
 import { TRAZADOS } from './SocialIcons'
 import { TIPOGRAFIAS } from '../asistente/tipografias'
 import { loadFont } from '../lib/applyTheme'
@@ -448,6 +448,8 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
   const [masColores, setMasColores] = useState(false)
   const [masFormas, setMasFormas] = useState(false)
   const [masOjos, setMasOjos] = useState(false)
+  // Editor del cliente: el editor de colores a mano, abierto o cerrado
+  const [personalizando, setPersonalizando] = useState(false)
   const [masFormasCentro, setMasFormasCentro] = useState(false)
   // Editor del cliente: el "Ver más" de los colores del centro
   const [masColoresCentro, setMasColoresCentro] = useState(false)
@@ -1057,8 +1059,46 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
               >
                 {masColores ? <Minus className="h-[1rem] w-[1rem]" strokeWidth={3} aria-hidden="true" /> : <Plus className="h-[1rem] w-[1rem]" strokeWidth={3} aria-hidden="true" />}
               </button>
+              {/* Personalizar: el editor de colores a mano (lisos y degradados), que se abre debajo. Solo con la lista de
+                  colores abierta (con el +) */}
+              {masColores && (
+              <button
+                type="button"
+                title="Personalizar los colores"
+                aria-label="Personalizar los colores"
+                aria-expanded={personalizando}
+                onClick={() => setPersonalizando(v => !v)}
+                className={`flex h-[1.9rem] w-[1.9rem] items-center justify-center rounded-[0.4rem] border-2 transition-transform duration-300 hover:scale-105 ${personalizando ? 'scale-110 border-zinc-900' : 'border-zinc-300'}`}
+                style={{ background: 'conic-gradient(#E5484D, #F5A524, #F2D33B, #46A758, #2E9FD9, #5B5BD6, #B04BC4, #E5484D)', color: '#141414' }}
+              >
+                <Settings className="h-[1rem] w-[1rem]" strokeWidth={2.5} aria-hidden="true" />
+              </button>
+              )}
             </div>
+            {/* El editor de colores a mano: puntos, esquinas y fondo del QR, y la placa y sus textos; cada color, liso o con
+                degradado */}
+            {masColores && personalizando && (
+              <div className="grid gap-[0.6rem] rounded-[0.1rem] bg-[#242422] p-[0.85rem] ring-1 ring-[#3a3935]">
+                {color('Puntos', colorPuntos, c => { setColorPuntos(c); setEstilo(null) })}
+                {degradado(degPuntos, d => { setDegPuntos(d); setEstilo(null) })}
+                {color('Esquinas', colorEsquinas, c => { setColorEsquinas(c); setEstilo(null) })}
+                {degradado(degEsquinas, d => { setDegEsquinas(d); setEstilo(null) })}
+                {color('Fondo del QR', fondo, c => { setFondo(c); setEstilo(null) })}
+                {color('Placa', colorMarco, c => { setColorMarco(c); setEstilo(null) })}
+                {degradado(degMarco, d => { setDegMarco(d); setEstilo(null) })}
+                {color('Textos de la placa', textoSobreMarco, setColorLetra)}
+                {textoPocoVisible && <p className="text-[0.8rem] font-semibold text-amber-700">Los textos se parecen mucho a la placa: puede costar leerlos.</p>}
+                {pocoContraste && (
+                  <p className="text-[0.8rem] font-semibold text-amber-700">
+                    Poco contraste: para que lo lean todos los móviles, puntos y esquinas oscuros (también los colores de los degradados) sobre fondo claro.
+                  </p>
+                )}
+              </div>
+            )}
           </div>
+          {/* Diseño: los desplegables de los puntos, el centro y los textos, bajo su título (como "Colores") */}
+          <div className="grid gap-[0.45rem]">
+          <span className={titulo}>Diseño</span>
           {/* Grupo: formas de los puntos (los de dentro y las esquinas) */}
           <details className="rounded-[0.1rem] bg-[#242422] ring-1 ring-[#3a3935]">
             <summary className="flex cursor-pointer list-none items-center gap-[0.75rem] px-[0.85rem] py-[0.8rem] [&::-webkit-details-marker]:hidden">
@@ -1273,6 +1313,18 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
               <ChevronDown className="h-[1rem] w-[1rem] shrink-0 text-acento transition-transform [details[open]>summary>&]:rotate-180" aria-hidden="true" />
             </summary>
             <div className="grid gap-[0.9rem] px-[0.85rem] pb-[0.85rem]">
+                {/* La letra de los textos de la placa: la de la marca o una de la lista */}
+                <label className="grid gap-[0.3rem]">
+                  <span className={titulo}>Tipografía</span>
+                  <select value={tipografia} onChange={e => setTipografia(e.target.value)} className={campo}>
+                    <option value="">{fuentesMarca ? 'La de tu marca' : 'La de siempre'}</option>
+                    {TIPOGRAFIAS.map(t => (
+                      <option key={t.id} value={t.id}>
+                        {t.nombre}
+                      </option>
+                    ))}
+                  </select>
+                </label>
                 <label className="grid gap-[0.3rem]">
                   <span className={titulo}>Nombre de la marca</span>
                   <input value={campoArriba} onChange={e => setCampoArriba(e.target.value)} maxLength={24} placeholder="El nombre de tu negocio" className={campo} />
@@ -1291,6 +1343,7 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
             </div>
           </details>
           )}
+          </div>
         </div>
       )}
 
@@ -1379,6 +1432,9 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
       )}
 
       {/* Todo el diseño del QR en un apartado que se pliega, cada parte en su desplegable */}
+      {/* En el editor del cliente no sale: lo que necesita ya está fuera, y lo de dentro (placa, borde, tamaños...) lo
+          decide Jesús */}
+      {!esCliente && (
       <details open className="group/diseno rounded-[0.75rem] ring-1 ring-zinc-200">
         <summary className="flex cursor-pointer list-none items-center gap-[0.75rem] px-[0.85rem] py-[0.8rem] [&::-webkit-details-marker]:hidden">
           <span className="text-[1rem] font-bold">Diseño</span>
@@ -1648,6 +1704,7 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
           )}
         </div>
       </details>
+      )}
 
       {esCliente ? (
         // El cliente no descarga: envía su diseño y Jesús lo revisa, lo prueba e imprime
