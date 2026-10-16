@@ -1,7 +1,8 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { HexColorPicker } from 'react-colorful'
 import { Link, useSearchParams } from 'react-router-dom'
-import { ArrowLeft, ArrowUp, ArrowUpRight, Camera, ChevronDown, ChevronsDownUp, Copy, Menu, Search, Sparkles, Trash2, X } from 'lucide-react'
+import { ArrowLeft, ArrowUp, ArrowUpRight, Camera, ChevronDown, ChevronsDownUp, Copy, Menu, QrCode, Search, Sparkles, Trash2, X } from 'lucide-react'
+import GeneradorQR from '../components/GeneradorQR'
 import { supabase } from '../lib/supabase'
 import { aplicar } from '../lib/ediciones'
 import { getNegocio, negocios, rutaNegocio } from '../negocios'
@@ -1803,6 +1804,61 @@ function NuevoPerfil({ filas, recargar, abrir }) {
   )
 }
 
+/* Generador de QR de la página principal. Arriba se elige la página (copias, fichas, miniwebs y cartas): pone su
+   dirección, su inicial y sus colores ("Su marca" y el asistente los tienen en cuenta). Sin elegir, el QR es suelto:
+   la dirección se escribe a mano y el asistente trabaja con lo que se le cuente. */
+function QRSuelto({ copias }) {
+  const [clave, setClave] = useState('')
+  const paginas = [
+    // Las copias cuya demo sigue existiendo (sin ella no hay datos de los que sacar los colores)
+    ...copias.filter(f => (f.tipo === 'carta' ? getCarta(f.base) : getNegocio(f.base))).map(f => ({
+      clave: `${f.tipo}:${f.slug}`,
+      grupo: 'Copias',
+      nombre: f.nombre,
+      ruta: f.ruta,
+      tipo: f.tipo,
+      datos: aplicar(f.tipo === 'carta' ? getCarta(f.base) : getNegocio(f.base), f.cambios ?? {}),
+    })),
+    ...negocios.map(n => ({ clave: `negocio:${n.slug}`, grupo: 'Fichas y miniwebs', nombre: n.nombre, ruta: rutaNegocio(n), tipo: 'negocio', datos: n })),
+    ...cartas.map(c => ({ clave: `carta:${c.slug}`, grupo: 'Cartas', nombre: marcaDe(c)?.nombre ?? c.slug, ruta: rutaCarta(c), tipo: 'carta', datos: c })),
+  ]
+  const pagina = paginas.find(p => p.clave === clave)
+  const marca = pagina && (pagina.tipo === 'carta' ? marcaDe(pagina.datos) : pagina.datos)
+  const colores = marca?.theme?.colors
+
+  return (
+    <div className="grid gap-[1rem]">
+      <label className="mx-auto grid w-full max-w-[32rem] gap-[0.3rem]">
+        <span className="text-[0.8rem] font-semibold text-zinc-500">Página</span>
+        <select value={clave} onChange={e => setClave(e.target.value)} className={CAMPO}>
+          <option value="">Ninguna (QR suelto)</option>
+          {['Copias', 'Fichas y miniwebs', 'Cartas'].map(g => (
+            <optgroup key={g} label={g}>
+              {paginas
+                .filter(p => p.grupo === g)
+                .map(p => (
+                  <option key={p.clave} value={p.clave}>
+                    {p.nombre}
+                  </option>
+                ))}
+            </optgroup>
+          ))}
+        </select>
+      </label>
+      {/* key: al cambiar de página, el generador empieza de cero con lo de esa página */}
+      <GeneradorQR
+        key={clave || 'suelto'}
+        url={`${window.location.origin}${pagina?.ruta ?? '/'}`}
+        nombre={pagina?.nombre ?? ''}
+        colores={colores}
+        proponer={descripcion =>
+          llamar('asistente', { paso: 'colores-qr', descripcion, nombre: pagina?.nombre ?? '', sector: marca?.sector ?? '', colores })
+        }
+      />
+    </div>
+  )
+}
+
 function Lista({ filas, abrir, recargar }) {
   const editadas = new Set((filas ?? []).map(f => `${f.tipo}:${f.slug}`))
   // Copias de fichas, miniwebs y cartas, con el nombre que les has puesto
@@ -1862,6 +1918,18 @@ function Lista({ filas, abrir, recargar }) {
         <Sparkles className="h-[1.1rem] w-[1.1rem]" aria-hidden="true" />
         Crear con el asistente
       </button>
+
+      {/* Generador de QR, aparte: se elige la página o se hace uno suelto */}
+      <details className="group/qr rounded-[1rem] bg-white ring-1 ring-zinc-200">
+        <summary className="flex cursor-pointer list-none items-center gap-[0.5rem] px-[1rem] py-[0.9rem] [&::-webkit-details-marker]:hidden">
+          <QrCode className="h-[1.1rem] w-[1.1rem]" aria-hidden="true" />
+          <span className="text-[1.05rem] font-bold">QR</span>
+          <ChevronDown className="ml-auto h-[1.1rem] w-[1.1rem] text-zinc-500 transition-transform group-open/qr:rotate-180" aria-hidden="true" />
+        </summary>
+        <div className="border-t border-zinc-200 px-[1rem] py-[1rem]">
+          <QRSuelto copias={copias} />
+        </div>
+      </details>
 
       {/* Todo lo que hay, por producto, en desplegables cerrados */}
       <div className="grid gap-[0.6rem]">

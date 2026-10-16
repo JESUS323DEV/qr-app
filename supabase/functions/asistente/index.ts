@@ -9,6 +9,7 @@
 // - elegir:   { peticion, disenos }               → { base, motivo }
 // - rellenar: { peticion, demo, campos, tipografias } → { slug, tipografia, cambios, fotos, resumen }
 // - retocar:  { peticion, historial, campos, tipografias, tipografiaActual } → igual que rellenar
+// - colores-qr: { nombre, sector, colores } → { propuestas[3] }: colores para el QR (generador de /admin)
 // - copy:     { peticion, perfil, nombre, campos, carta? } → igual que rellenar. Desde Nuevo perfil: el diseño ya lo
 //             ha montado Jesús; solo se inventa el copy y busca las fotos (colores, solo si se piden)
 import Anthropic from 'npm:@anthropic-ai/sdk'
@@ -116,6 +117,76 @@ const ESQUEMA_CAMBIOS = {
   required: ['slug', 'tipografia', 'diseno', 'barra', 'cambios', 'fotos', 'secciones', 'menu', 'resumen'],
   additionalProperties: false,
 }
+
+// Colores del QR (generador de /admin): tres propuestas para elegir
+const ESQUEMA_COLORES_QR = {
+  type: 'object',
+  properties: {
+    propuestas: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          nombre: { type: 'string' },
+          motivo: { type: 'string' },
+          puntos: { type: 'string' },
+          esquinas: { type: 'string' },
+          fondo: { type: 'string' },
+          marco: { type: 'string' },
+          textoMarco: { type: 'string' },
+          formaPuntos: { type: 'string', enum: ['rounded', 'extra-rounded', 'square', 'dots', 'classy-rounded', 'classy'] },
+          formaEsquinas: { type: 'string', enum: ['extra-rounded', 'square', 'dot'] },
+          puntoEsquinas: { type: 'string', enum: ['dot', 'square'] },
+          degradado: {
+            type: 'object',
+            properties: {
+              activo: { type: 'boolean' },
+              colores: { type: 'array', items: { type: 'string' } },
+              tipo: { type: 'string', enum: ['linear', 'radial'] },
+              angulo: { type: 'integer' },
+            },
+            required: ['activo', 'colores', 'tipo', 'angulo'],
+            additionalProperties: false,
+          },
+          doble: {
+            type: 'object',
+            properties: { activo: { type: 'boolean' }, colores: { type: 'array', items: { type: 'string' } } },
+            required: ['activo', 'colores'],
+            additionalProperties: false,
+          },
+        },
+        required: ['nombre', 'motivo', 'puntos', 'esquinas', 'fondo', 'marco', 'textoMarco', 'formaPuntos', 'formaEsquinas', 'puntoEsquinas', 'degradado', 'doble'],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ['propuestas'],
+  additionalProperties: false,
+}
+
+const INSTRUCCIONES_COLORES_QR = `Eres el asistente de Jesús, que hace placas con QR para negocios locales de Barcelona: el QR va impreso en una placa o pegatina en el local y abre la página del negocio. Te pasa lo que quiere (una descripción: colores, degradados, estilo, ambiente) y/o los colores de la marca del negocio (los de su página), y tú propones TRES diseños para su QR, distintos entre sí, que se lean siempre con cualquier móvil.
+- Si hay descripción, manda la descripción: haz lo que pide (sus colores, su degradado y su dirección, su estilo). Los colores de la marca, si los hay, son solo una referencia.
+- Si solo hay colores de marca, que peguen con la marca.
+
+Piezas (todos los colores en #RRGGBB):
+- marco: el color de la placa alrededor del QR. Es lo que más se ve: tiene que recordar a la página del negocio.
+- textoMarco: el color del texto del marco ("Escanéame"). Con mucho contraste sobre el marco.
+- fondo: el fondo del cuadrado del QR. Casi siempre blanco o un tono muy claro.
+- puntos y esquinas (los tres cuadrados de las esquinas, también la inicial del centro): oscuros sobre el fondo.
+- degradado (opcional, en los puntos): de 2 a 4 colores, todos oscuros; tipo "linear" o "radial"; angulo, la dirección del lineal en grados (0 de izquierda a derecha, 90 de arriba abajo, 45 o 315 en diagonal). Si no lleva, activo false, colores vacía, tipo "linear" y angulo 0.
+- formaPuntos: la forma de los puntos (rounded redondeados, extra-rounded muy redondeados, square cuadrados, dots puntos, classy-rounded elegantes, classy elegantes rectos). formaEsquinas: el marco de los ojos de las esquinas (extra-rounded redondeado, square cuadrado, dot círculo). puntoEsquinas: el punto de dentro de los ojos (dot círculo, square cuadrado). Que vayan con el estilo: elegante, classy-rounded; moderno o alegre, dots o extra-rounded; sobrio o clásico, square.
+- doble (opcional): doble imagen como el logo de TikTok, dos copias de colores desplazadas por debajo. Solo si encaja con la marca (atrevida, nocturna, joven). Si no lleva, activo false y colores vacía.
+
+Reglas para que se lea:
+- Puntos, esquinas y todos los colores del degradado: oscuros (luminancia baja). El fondo: claro. Nunca al revés.
+- Nada de amarillos, beis o pasteles en los puntos: aunque sean de la marca, van en el marco o en el texto del marco.
+
+Cómo combinar:
+- Fíjate en qué color domina de verdad en la página: si el fondo de la página es oscuro, ese fondo suele ser lo que la identifica (y el marco debería ir de ese color); si es claro, suele ser el principal.
+- Usa los colores de la marca; puedes oscurecerlos o aclararlos un poco para que funcionen, pero no inventes colores que no tengan nada que ver.
+- Las tres propuestas distintas: por ejemplo, una fiel a la página, una con más contraste o más llamativa y una más sobria o elegante.
+
+nombre: dos o tres palabras ("Como la carta", "Noche y oro"...). motivo: una frase corta en castellano de por qué funciona, sin guiones largos.`
 
 // Reglas comunes: las de diseño y copy de Jesús
 const REGLAS = `Eres el asistente de Jesús, que hace páginas para el móvil para negocios locales de Barcelona; el cliente las abre con un QR en el local. Hay tres tipos:
@@ -260,8 +331,9 @@ Deno.serve(async req => {
   } catch {
     return responder({ error: 'Petición no válida.' }, 400)
   }
-  const paso = datos?.paso as keyof typeof INSTRUCCIONES
-  if (!INSTRUCCIONES[paso] || !datos.peticion?.trim()) return responder({ error: 'Petición no válida.' }, 400)
+  const paso = datos?.paso as keyof typeof INSTRUCCIONES | 'colores-qr'
+  const pasoValido = paso === 'colores-qr' ? Boolean(datos.colores || datos.descripcion?.trim()) :Boolean(INSTRUCCIONES[paso as keyof typeof INSTRUCCIONES] && datos.peticion?.trim())
+  if (!pasoValido) return responder({ error: 'Petición no válida.' }, 400)
 
   // Límite diario (la tabla solo la toca el servidor)
   const servidor = createClient(url, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
@@ -279,14 +351,39 @@ Deno.serve(async req => {
   const claude = new Anthropic({ apiKey: Deno.env.get('ANTHROPIC_API_KEY') })
   let respuesta
   try {
-    if (paso === 'elegir') {
+    if (paso === 'colores-qr') {
+      // Colores del QR: una respuesta corta, pero de gusto (combinar colores), así que Sonnet
+      const c = datos.colores ?? {}
+      respuesta = await claude.beta.messages.create({
+        model: MODELO,
+        max_tokens: 4000,
+        betas: ['server-side-fallback-2026-07-01'],
+        fallbacks: 'default',
+        output_config: { effort: 'low', format: { type: 'json_schema', schema: ESQUEMA_COLORES_QR } },
+        system: INSTRUCCIONES_COLORES_QR,
+        messages: [
+          {
+            role: 'user',
+            content: [
+              datos.nombre ? `Negocio: ${datos.nombre}${datos.sector ? ` (${datos.sector})` : ''}` : '',
+              datos.descripcion?.trim() ? `Lo que quiere:\n${datos.descripcion.trim()}` : '',
+              datos.colores
+                ? `Colores de su página:\n- fondo de la página: ${c.bg}\n- superficies (tarjetas): ${c.surface}\n- principal (botones y bloques): ${c.primary}\n- acento (detalles, precios): ${c.accent}\n- texto: ${c.text}${c.header ? `\n- cabecera: ${c.header}` : ''}`
+                : '',
+            ]
+              .filter(Boolean)
+              .join('\n\n'),
+          },
+        ],
+      })
+    } else if (paso === 'elegir') {
       // Elegir el diseño es una decisión corta entre una lista: Haiku lo hace igual de bien por casi nada.
       // Haiku no tiene modelo de respaldo si declina; si pasa, se avisa abajo y se prueba otra vez
       respuesta = await claude.messages.create({
         model: MODELO_ELEGIR,
         max_tokens: 4000,
         output_config: { effort: 'low', format: { type: 'json_schema', schema: ESQUEMA_ELEGIR } },
-        system: INSTRUCCIONES[paso],
+        system: INSTRUCCIONES[paso as 'elegir'],
         messages: [{ role: 'user', content: mensaje(paso, datos) }],
       })
     } else {
@@ -297,7 +394,7 @@ Deno.serve(async req => {
         betas: ['server-side-fallback-2026-07-01'],
         fallbacks: 'default',
         output_config: { effort: 'medium', format: { type: 'json_schema', schema: ESQUEMA_CAMBIOS } },
-        system: INSTRUCCIONES[paso],
+        system: INSTRUCCIONES[paso as keyof typeof INSTRUCCIONES],
         messages: [{ role: 'user', content: mensaje(paso, datos) }],
       })
     }
