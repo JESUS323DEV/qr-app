@@ -1026,7 +1026,15 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
   // editor del cliente, sin dirección y con "Enviar mi diseño" en vez de las descargas)
   return (
     <div className="mx-auto grid w-full max-w-[32rem] grid-cols-[minmax(0,1fr)] gap-[1rem]">
-      {previa}
+      {/* En el editor del cliente, la placa se queda fija arriba al bajar (más pequeña en el móvil, para que quede sitio
+          para las opciones); así se ve cada cambio sin volver arriba */}
+      {esCliente ? (
+        <div className="sticky top-0 z-10 -mx-[1rem] bg-white px-[1rem] py-[0.5rem]">
+          <div className="mx-auto w-full max-w-[16.5rem] sm:max-w-[18rem]">{previa}</div>
+        </div>
+      ) : (
+        previa
+      )}
 
       {/* Editor del cliente: colores y formas de los puntos a la vista, como en la pestaña "Tu QR" de la landing.
           Primero unos pocos; con "Ver más", todos */}
