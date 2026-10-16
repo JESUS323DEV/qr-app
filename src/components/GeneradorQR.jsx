@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import QRCodeStyling from 'qr-code-styling'
-import { Ban, ChevronDown, Image as ImageIcon, Layers, Minus, Plus, QrCode, Sparkles } from 'lucide-react'
+import { ChevronDown, ImageUp, Layers, Minus, Plus, QrCode, Sparkles } from 'lucide-react'
 import { TRAZADOS } from './SocialIcons'
 import { TIPOGRAFIAS } from '../asistente/tipografias'
 import { loadFont } from '../lib/applyTheme'
@@ -1215,28 +1215,23 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
                 <span className="text-[0.8rem] text-zinc-500">Máx. 3 letras</span>
               </div>
             </div>
-            {/* La cápsula y, debajo, lo de la opción elegida ("Cambiar logo") */}
+            {/* Tu logo: un solo botón. Sin logo, se elige o se hace la foto; con logo, lo pone o lo quita (al quitarlo,
+                vuelven las letras, si hay) */}
+            <span className={titulo}>Tu logo</span>
             <div className="grid justify-items-start gap-[0.5rem]">
               <div className="flex gap-[0.3rem] rounded-[1.2rem] bg-zinc-100 p-[0.25rem]">
-                {/* Nada, el color de la forma del centro (abre debajo los colores predeterminados), texto y logo */}
-                {[
-                  ['nada', 'Nada', <Ban key="i" className="h-[0.95rem] w-[0.95rem]" aria-hidden="true" />],
-                  ['logo', 'Logo', <ImageIcon key="i" className="h-[0.95rem] w-[0.95rem]" aria-hidden="true" />],
-                ].map(([clave, texto, icono]) =>
-                  (
-                    <button
-                      key={clave}
-                      type="button"
-                      title={texto}
-                      aria-label={`Centro: ${texto.toLowerCase()}`}
-                      aria-pressed={centro === clave}
-                      onClick={() => (clave === 'logo' && !logo ? entradaLogo.current?.click() : setCentro(clave))}
-                      className={`flex h-[2rem] w-[2rem] items-center justify-center rounded-full transition-colors ${centro === clave ? 'bg-zinc-900 text-white' : 'text-zinc-500 hover:text-tinta'}`}
-                    >
-                      {icono}
-                    </button>
-                  ),
-                )}
+                <button
+                  type="button"
+                  title="Logo"
+                  aria-label="Logo en el centro"
+                  aria-pressed={centro === 'logo'}
+                  onClick={() =>
+                    !logo ? entradaLogo.current?.click() : setCentro(c => (c === 'logo' ? (textoCentro.trim() ? 'inicial' : 'nada') : 'logo'))
+                  }
+                  className={`flex h-[2rem] w-[2rem] items-center justify-center rounded-full transition-colors ${centro === 'logo' ? 'bg-zinc-900 text-white' : 'text-zinc-500 hover:text-tinta'}`}
+                >
+                  <ImageUp className="h-[0.95rem] w-[0.95rem]" aria-hidden="true" />
+                </button>
               </div>
               {centro === 'logo' && logo && (
                 <button type="button" onClick={() => entradaLogo.current?.click()} className="text-[0.85rem] font-semibold underline underline-offset-[0.2em]">
