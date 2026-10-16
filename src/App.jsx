@@ -12,6 +12,8 @@ import LegalPage from './pages/LegalPage'
 // El panel de Jesús y el escaparate de diseños se cargan aparte: los visitantes de las páginas no descargan su código
 const AdminPage = lazy(() => import('./pages/AdminPage'))
 const DisenosPage = lazy(() => import('./pages/DisenosPage'))
+// Editor de QR del cliente (con PIN): aparte también, lleva el generador de QR
+const MiQrPage = lazy(() => import('./pages/MiQrPage'))
 
 // Gestión interna: solo con el servidor de desarrollo. En el build de Netlify import.meta.env.DEV es false,
 // así que ni la página ni su código se publican
@@ -40,6 +42,8 @@ export default function App() {
         <Route path="/disenos" element={<Suspense fallback={null}><DisenosPage /></Suspense>} />
         {/* Panel de Jesús: textos, fotos y colores de cualquier página, y copias de demos (Supabase) */}
         <Route path="/admin" element={<Suspense fallback={null}><AdminPage /></Suspense>} />
+        {/* Editor de QR del cliente: el enlace y el PIN se los da Jesús (se crean en /admin) */}
+        <Route path="/mi-qr/:slug" element={<Suspense fallback={null}><MiQrPage /></Suspense>} />
         {GestionPage && (
           <Route path="/gestion" element={<Suspense fallback={null}><GestionPage /></Suspense>} />
         )}

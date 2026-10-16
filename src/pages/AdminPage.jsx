@@ -25,7 +25,7 @@ import { FAMILIAS } from '../familias'
    hacen que solo un administrador (tabla admins) pueda guardarlos. El diseño y la estructura siguen en el código. */
 
 // Direcciones que no puede usar una copia: las de las páginas de la web
-const RESERVADAS = new Set(['demo', 'tematicas', 'gestion', 'catalogo', 'planes', 'panel', 'mi-carta', 'admin', 'miniweb', 'disenos', 'aviso-legal', 'privacidad'])
+const RESERVADAS = new Set(['demo', 'tematicas', 'gestion', 'catalogo', 'planes', 'panel', 'mi-carta', 'admin', 'miniweb', 'disenos', 'aviso-legal', 'privacidad', 'mi-qr'])
 
 // "Peluquería Ranita" → "peluqueria-ranita"
 const aSlug = texto =>
@@ -1804,58 +1804,236 @@ function NuevoPerfil({ filas, recargar, abrir }) {
   )
 }
 
-/* Generador de QR de la página principal. Arriba se elige la página (copias, fichas, miniwebs y cartas): pone su
-   dirección, su inicial y sus colores ("Su marca" y el asistente los tienen en cuenta). Sin elegir, el QR es suelto:
-   la dirección se escribe a mano y el asistente trabaja con lo que se le cuente. */
+/* Las páginas que pueden tener QR (copias, fichas y miniwebs, cartas), con su dirección y su marca (colores, fuentes,
+   sector). sesion: el slug de su editor de QR para clientes (en las cartas, slug-carta, para no chocar con su ficha) */
+const paginasConQR = copias =>
+  [
+    // Las copias cuya demo sigue existiendo (sin ella no hay datos de los que sacar los colores)
+    ...copias
+      .filter(f => (f.tipo === 'carta' ? getCarta(f.base) : getNegocio(f.base)))
+      .map(f => ({
+        clave: `${f.tipo}:${f.slug}`,
+        slug: f.slug,
+        grupo: 'Copias',
+        nombre: f.nombre,
+        ruta: f.ruta,
+        tipo: f.tipo,
+        datos: aplicar(f.tipo === 'carta' ? getCarta(f.base) : getNegocio(f.base), f.cambios ?? {}),
+      })),
+    ...negocios.map(n => ({ clave: `negocio:${n.slug}`, slug: n.slug, grupo: 'Fichas y miniwebs', nombre: n.nombre, ruta: rutaNegocio(n), tipo: 'negocio', datos: n })),
+    ...cartas.map(c => ({ clave: `carta:${c.slug}`, slug: c.slug, grupo: 'Cartas', nombre: marcaDe(c)?.nombre ?? c.slug, ruta: rutaCarta(c), tipo: 'carta', datos: c })),
+  ].map(p => {
+    const marca = p.tipo === 'carta' ? marcaDe(p.datos) : p.datos
+    return { ...p, marca, colores: marca?.theme?.colors, fuentes: marca?.theme?.fonts, sesion: p.tipo === 'carta' ? `${p.slug}-carta` : p.slug }
+  })
+
+// Desplegable para elegir una de esas páginas, por grupos
+function ElegirPagina({ paginas, valor, cambiar, vacio }) {
+  return (
+    <select value={valor} onChange={e => cambiar(e.target.value)} className={CAMPO}>
+      <option value="">{vacio}</option>
+      {['Copias', 'Fichas y miniwebs', 'Cartas'].map(g => (
+        <optgroup key={g} label={g}>
+          {paginas
+            .filter(p => p.grupo === g)
+            .map(p => (
+              <option key={p.clave} value={p.clave}>
+                {p.nombre}
+              </option>
+            ))}
+        </optgroup>
+      ))}
+    </select>
+  )
+}
+
+/* Generador de QR de la página principal. Arriba se elige la página: pone su dirección, su inicial y sus colores
+   ("Su marca" y el asistente los tienen en cuenta). Sin elegir, el QR es suelto: la dirección se escribe a mano y el
+   asistente trabaja con lo que se le cuente. */
 function QRSuelto({ copias }) {
   const [clave, setClave] = useState('')
-  const paginas = [
-    // Las copias cuya demo sigue existiendo (sin ella no hay datos de los que sacar los colores)
-    ...copias.filter(f => (f.tipo === 'carta' ? getCarta(f.base) : getNegocio(f.base))).map(f => ({
-      clave: `${f.tipo}:${f.slug}`,
-      grupo: 'Copias',
-      nombre: f.nombre,
-      ruta: f.ruta,
-      tipo: f.tipo,
-      datos: aplicar(f.tipo === 'carta' ? getCarta(f.base) : getNegocio(f.base), f.cambios ?? {}),
-    })),
-    ...negocios.map(n => ({ clave: `negocio:${n.slug}`, grupo: 'Fichas y miniwebs', nombre: n.nombre, ruta: rutaNegocio(n), tipo: 'negocio', datos: n })),
-    ...cartas.map(c => ({ clave: `carta:${c.slug}`, grupo: 'Cartas', nombre: marcaDe(c)?.nombre ?? c.slug, ruta: rutaCarta(c), tipo: 'carta', datos: c })),
-  ]
+  const paginas = paginasConQR(copias)
   const pagina = paginas.find(p => p.clave === clave)
-  const marca = pagina && (pagina.tipo === 'carta' ? marcaDe(pagina.datos) : pagina.datos)
-  const colores = marca?.theme?.colors
 
   return (
     <div className="grid gap-[1rem]">
       <label className="mx-auto grid w-full max-w-[32rem] gap-[0.3rem]">
         <span className="text-[0.8rem] font-semibold text-zinc-500">Página</span>
-        <select value={clave} onChange={e => setClave(e.target.value)} className={CAMPO}>
-          <option value="">Ninguna (QR suelto)</option>
-          {['Copias', 'Fichas y miniwebs', 'Cartas'].map(g => (
-            <optgroup key={g} label={g}>
-              {paginas
-                .filter(p => p.grupo === g)
-                .map(p => (
-                  <option key={p.clave} value={p.clave}>
-                    {p.nombre}
-                  </option>
-                ))}
-            </optgroup>
-          ))}
-        </select>
+        <ElegirPagina paginas={paginas} valor={clave} cambiar={setClave} vacio="Ninguna (QR suelto)" />
       </label>
       {/* key: al cambiar de página, el generador empieza de cero con lo de esa página */}
       <GeneradorQR
         key={clave || 'suelto'}
         url={`${window.location.origin}${pagina?.ruta ?? '/'}`}
         nombre={pagina?.nombre ?? ''}
-        colores={colores}
-        fuentes={marca?.theme?.fonts}
+        colores={pagina?.colores}
+        fuentes={pagina?.fuentes}
         proponer={descripcion =>
-          llamar('asistente', { paso: 'colores-qr', descripcion, nombre: pagina?.nombre ?? '', sector: marca?.sector ?? '', colores })
+          llamar('asistente', { paso: 'colores-qr', descripcion, nombre: pagina?.nombre ?? '', sector: pagina?.marca?.sector ?? '', colores: pagina?.colores })
         }
       />
+    </div>
+  )
+}
+
+/* Editor de QR para clientes: Jesús elige la página y se crea el enlace (/mi-qr/slug) con un PIN, que se ve solo
+   una vez (se guarda cifrado). Debajo, las sesiones: si siguen abiertas, los intentos de IA que le quedan al cliente y
+   el diseño que ha enviado (se abre en el generador para descargarlo e imprimirlo). Se pueden cerrar, renovar con
+   un PIN nuevo y borrar. */
+function EditorClientes({ copias }) {
+  const paginas = paginasConQR(copias)
+  const [clave, setClave] = useState('')
+  const [creando, setCreando] = useState(false)
+  const [nueva, setNueva] = useState(null)
+  const [error, setError] = useState('')
+  const [sesiones, setSesiones] = useState(null)
+  const [viendo, setViendo] = useState(null)
+
+  const cargar = useCallback(() => {
+    supabase
+      .from('qr_sesiones')
+      .select('slug, nombre, url, colores, fuentes, intentos_ia, caduca, activa, diseno, enviado, creado')
+      .order('creado', { ascending: false })
+      .then(({ data, error }) => {
+        if (error) setError('No se pueden leer las sesiones. ¿Has ejecutado el SQL 009_mi_qr.sql en Supabase?')
+        setSesiones(data ?? [])
+      })
+  }, [])
+  useEffect(cargar, [cargar])
+
+  const enlaceDe = slug => `${window.location.origin}/mi-qr/${slug}`
+
+  // Crea (o renueva) la sesión de una página con un PIN nuevo
+  const crear = async p => {
+    setCreando(true)
+    setError('')
+    try {
+      const { pin, caduca } = await llamar('mi-qr', {
+        accion: 'crear',
+        slug: p.sesion,
+        nombre: p.nombre,
+        url: `${window.location.origin}${p.ruta}`,
+        colores: p.colores ?? null,
+        fuentes: p.fuentes ?? null,
+      })
+      setNueva({ nombre: p.nombre, enlace: enlaceDe(p.sesion), pin, caduca })
+      cargar()
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setCreando(false)
+    }
+  }
+
+  const cerrar = async slug => {
+    await supabase.from('qr_sesiones').update({ activa: false }).eq('slug', slug)
+    cargar()
+  }
+  const borrar = async slug => {
+    await supabase.from('qr_sesiones').delete().eq('slug', slug)
+    if (viendo?.slug === slug) setViendo(null)
+    cargar()
+  }
+
+  // Mensaje para mandar al cliente por WhatsApp
+  const mensaje = n => `Hola, aquí puedes diseñar la placa con el QR de ${n.nombre}: ${n.enlace}\nTu PIN es ${n.pin}. Cuando te guste, dale a "Enviar mi diseño".`
+
+  const pagina = paginas.find(p => p.clave === clave)
+  const estadoDe = s => (!s.activa ? 'Cerrada' : s.caduca && new Date(s.caduca) < new Date() ? 'Caducada' : 'Abierta')
+
+  return (
+    <div className="mx-auto grid w-full max-w-[32rem] gap-[1rem]">
+      <p className="text-[0.88rem] leading-[1.45] text-zinc-600">
+        Crea un enlace con PIN para que el cliente diseñe su placa (con 2 propuestas de la IA). Sin el PIN, el enlace solo enseña su QR. Caduca a los 7 días.
+      </p>
+      {/* El enlace y la dirección del QR salen de la web donde se crea: desde el ordenador serían de localhost */}
+      {/localhost|127\.0\.0\.1/.test(window.location.host) && (
+        <p className="text-[0.85rem] font-semibold text-amber-700">
+          Estás en tu ordenador: el enlace y el QR saldrían con localhost. Para un cliente de verdad, créalo desde la web publicada.
+        </p>
+      )}
+      <div className="grid gap-[0.5rem]">
+        <ElegirPagina paginas={paginas} valor={clave} cambiar={setClave} vacio="Elige la página del cliente" />
+        <button type="button" onClick={() => pagina && crear(pagina)} disabled={!pagina || creando} className={BOTON}>
+          {creando ? 'Creando...' : 'Crear enlace y PIN'}
+        </button>
+      </div>
+      {error && <p className="text-[0.88rem] font-semibold text-red-600">{error}</p>}
+
+      {/* El PIN recién creado: solo se ve ahora */}
+      {nueva && (
+        <div className="grid gap-[0.5rem] rounded-[0.75rem] bg-emerald-50 p-[0.9rem] ring-1 ring-emerald-200">
+          <p className="text-[0.9rem] font-semibold">Para {nueva.nombre}</p>
+          <p className="break-all text-[0.85rem]">{nueva.enlace}</p>
+          <p className="font-mono text-[1.4rem] tracking-[0.25em]">{nueva.pin}</p>
+          <p className="text-[0.8rem] text-zinc-600">Apúntalo o mándalo ya: el PIN solo se ve ahora.</p>
+          <div className="flex flex-wrap gap-[0.5rem]">
+            <button
+              type="button"
+              onClick={() => navigator.clipboard?.writeText(mensaje(nueva))}
+              className="min-h-[2.5rem] rounded-[0.6rem] bg-white px-[0.9rem] text-[0.88rem] font-semibold ring-1 ring-zinc-300"
+            >
+              Copiar mensaje
+            </button>
+            <a
+              href={`https://wa.me/?text=${encodeURIComponent(mensaje(nueva))}`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex min-h-[2.5rem] items-center rounded-[0.6rem] bg-white px-[0.9rem] text-[0.88rem] font-semibold ring-1 ring-zinc-300"
+            >
+              Mandar por WhatsApp
+            </a>
+          </div>
+        </div>
+      )}
+
+      {/* Las sesiones */}
+      {sesiones?.length > 0 && (
+        <ul className="grid gap-[0.5rem]">
+          {sesiones.map(s => (
+            <li key={s.slug} className="grid gap-[0.4rem] rounded-[0.75rem] bg-white p-[0.8rem] ring-1 ring-zinc-200">
+              <div className="flex items-baseline justify-between gap-[0.75rem]">
+                <p className="min-w-0 truncate font-semibold">{s.nombre}</p>
+                <p className="shrink-0 text-[0.8rem] text-zinc-500">{estadoDe(s)}</p>
+              </div>
+              <p className="text-[0.8rem] text-zinc-500">
+                {s.enviado ? `Diseño enviado el ${new Date(s.enviado).toLocaleDateString('es-ES')}` : 'Sin diseño enviado'} · IA: le quedan {s.intentos_ia}
+              </p>
+              <div className="flex flex-wrap gap-x-[1rem] gap-y-[0.3rem] text-[0.85rem] font-semibold">
+                {s.diseno && (
+                  <button type="button" onClick={() => setViendo(viendo?.slug === s.slug ? null : s)} className="underline underline-offset-[0.2em]">
+                    {viendo?.slug === s.slug ? 'Ocultar diseño' : 'Ver diseño'}
+                  </button>
+                )}
+                <a href={enlaceDe(s.slug)} target="_blank" rel="noreferrer" className="underline underline-offset-[0.2em]">
+                  Abrir enlace
+                </a>
+                {estadoDe(s) === 'Abierta' && (
+                  <button type="button" onClick={() => cerrar(s.slug)} className="underline underline-offset-[0.2em]">
+                    Cerrar
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => crear({ sesion: s.slug, nombre: s.nombre, ruta: s.url.replace(window.location.origin, ''), colores: s.colores, fuentes: s.fuentes })}
+                  className="underline underline-offset-[0.2em]"
+                >
+                  PIN nuevo
+                </button>
+                <button type="button" onClick={() => borrar(s.slug)} className="text-red-600 underline underline-offset-[0.2em]">
+                  Borrar
+                </button>
+              </div>
+              {/* El diseño del cliente, en el generador: se revisa, se retoca si hace falta y se descarga */}
+              {viendo?.slug === s.slug && (
+                <div className="mt-[0.5rem] border-t border-zinc-200 pt-[0.75rem]">
+                  <GeneradorQR key={`${s.slug}-${s.enviado}`} url={s.url} nombre={s.nombre} colores={s.colores ?? undefined} fuentes={s.fuentes ?? undefined} estadoInicial={s.diseno} />
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   )
 }
@@ -1929,6 +2107,18 @@ function Lista({ filas, abrir, recargar }) {
         </summary>
         <div className="border-t border-zinc-200 px-[1rem] py-[1rem]">
           <QRSuelto copias={copias} />
+        </div>
+      </details>
+
+      {/* Editor de QR para clientes: enlace con PIN para que el cliente diseñe su placa */}
+      <details className="group/clientes rounded-[1rem] bg-white ring-1 ring-zinc-200">
+        <summary className="flex cursor-pointer list-none items-center gap-[0.5rem] px-[1rem] py-[0.9rem] [&::-webkit-details-marker]:hidden">
+          <QrCode className="h-[1.1rem] w-[1.1rem]" aria-hidden="true" />
+          <span className="text-[1.05rem] font-bold">Editor de QR para clientes</span>
+          <ChevronDown className="ml-auto h-[1.1rem] w-[1.1rem] text-zinc-500 transition-transform group-open/clientes:rotate-180" aria-hidden="true" />
+        </summary>
+        <div className="border-t border-zinc-200 px-[1rem] py-[1rem]">
+          <EditorClientes copias={copias} />
         </div>
       </details>
 

@@ -1,0 +1,134 @@
+import { useEffect, useState } from 'react'
+import { useParams } from 'react-router-dom'
+import { supabase } from '../lib/supabase'
+import GeneradorQR from '../components/GeneradorQR'
+import { TIPOGRAFIAS } from '../asistente/tipografias'
+
+/* Editor de QR para el cliente (/mi-qr/slug). Jesús le pasa el enlace y un PIN (se crean en /admin).
+   Sin PIN: se ve su QR (el diseño que envió o, si aún no, uno con los colores de su marca).
+   Con el PIN: el generador en modo cliente, con 2 intentos de propuestas de la IA y "Enviar mi diseño".
+   Todo pasa por la función mi-qr, que comprueba el PIN, los intentos y que la sesión siga abierta. */
+
+// Llama a la función mi-qr y, si falla, lanza su mensaje de error (o uno genérico)
+async function miQr(cuerpo) {
+  const { data, error } = await supabase.functions.invoke('mi-qr', { body: cuerpo })
+  if (error) {
+    let mensaje = 'No ha funcionado. Prueba otra vez.'
+    try {
+      mensaje = (await error.context.json()).error ?? mensaje
+    } catch {
+      // Sin mensaje propio: se queda el genérico
+    }
+    throw new Error(mensaje)
+  }
+  return data
+}
+
+export default function MiQrPage() {
+  const { slug } = useParams()
+  const [info, setInfo] = useState(undefined)
+  const [error, setError] = useState('')
+  const [pin, setPin] = useState('')
+  const [dentro, setDentro] = useState(null)
+  const [entrando, setEntrando] = useState(false)
+
+  useEffect(() => {
+    document.title = 'Tu QR'
+    if (!supabase) return setError('El editor no está disponible ahora mismo.')
+    miQr({ accion: 'ver', slug })
+      .then(setInfo)
+      .catch(e => {
+        setInfo(null)
+        setError(e.message)
+      })
+  }, [slug])
+
+  const entrar = async e => {
+    e.preventDefault()
+    if (entrando) return
+    setEntrando(true)
+    setError('')
+    try {
+      const { intentos } = await miQr({ accion: 'entrar', slug, pin: pin.trim() })
+      setDentro({ pin: pin.trim(), intentos })
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setEntrando(false)
+    }
+  }
+
+  const comunes = info && { url: info.url, nombre: info.nombre, colores: info.colores ?? undefined, fuentes: info.fuentes ?? undefined, estadoInicial: info.diseno ?? undefined }
+
+  return (
+    <div className="min-h-svh bg-zinc-100 font-sans text-zinc-900">
+      <div className="mx-auto grid w-full max-w-[32rem] gap-[1.25rem] px-[1rem] pb-[3rem] pt-[1.5rem]">
+        {info === undefined && !error ? (
+          <p className="text-zinc-500">Cargando...</p>
+        ) : !info ? (
+          <p className="text-[1rem] font-semibold">{error || 'Este enlace no existe.'}</p>
+        ) : dentro ? (
+          <>
+            <div>
+              <h1 className="text-[1.5rem] font-bold leading-tight">Diseña tu QR</h1>
+              <p className="mt-[0.3rem] text-[0.92rem] leading-[1.45] text-zinc-600">
+                Elige colores, formas y textos para la placa de {info.nombre}. Cuando te guste, dale a "Enviar mi diseño": lo revisamos, lo probamos y te avisamos
+                antes de imprimirlo.
+              </p>
+            </div>
+            <div className="rounded-[1rem] bg-white p-[1rem] ring-1 ring-zinc-200">
+              <GeneradorQR
+                {...comunes}
+                modo="cliente"
+                intentos={dentro.intentos}
+                proponer={descripcion =>
+                  miQr({
+                    accion: 'proponer',
+                    slug,
+                    pin: dentro.pin,
+                    descripcion,
+                    tipografias: TIPOGRAFIAS.map(({ id, nombre, estilo }) => ({ id, nombre, estilo })),
+                  })
+                }
+                enviar={diseno => miQr({ accion: 'enviar', slug, pin: dentro.pin, diseno })}
+              />
+            </div>
+          </>
+        ) : (
+          <>
+            <div>
+              <h1 className="text-[1.5rem] font-bold leading-tight">El QR de {info.nombre}</h1>
+              <p className="mt-[0.3rem] text-[0.92rem] leading-[1.45] text-zinc-600">
+                {info.abierta
+                  ? 'Pon el PIN que te hemos dado para diseñar tu placa.'
+                  : info.enviado
+                    ? 'Este es el diseño que nos enviaste.'
+                    : 'Este editor ya está cerrado.'}
+              </p>
+            </div>
+            <GeneradorQR {...comunes} modo="vista" />
+            {info.abierta && (
+              <form onSubmit={entrar} className="grid gap-[0.6rem]">
+                <label className="grid gap-[0.3rem]">
+                  <span className="text-[0.85rem] font-semibold text-zinc-600">PIN</span>
+                  <input
+                    value={pin}
+                    onChange={e => setPin(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    placeholder="123456"
+                    className="block min-h-[3rem] w-full rounded-[0.75rem] border border-zinc-300 bg-white px-[0.9rem] text-center font-mono text-[1.3rem] tracking-[0.3em]"
+                  />
+                </label>
+                <button type="submit" disabled={pin.length < 4 || entrando} className="min-h-[3rem] rounded-[0.75rem] bg-zinc-900 font-semibold text-white disabled:opacity-50">
+                  {entrando ? 'Comprobando...' : 'Entrar'}
+                </button>
+                {error && <p className="text-[0.9rem] font-semibold text-red-600">{error}</p>}
+              </form>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  )
+}

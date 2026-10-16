@@ -11,7 +11,7 @@ const DIST = 'dist'
 const dominio = (process.env.DOMINIO || process.env.URL || 'http://localhost:4173').replace(/\/+$/, '')
 
 // Rutas que Google no tiene que ver: lo interno y las demos
-const PRIVADAS = ['/admin', '/mi-carta', '/panel', '/gestion', '/disenos', '/miniweb', '/demo/']
+const PRIVADAS = ['/admin', '/mi-carta', '/panel', '/gestion', '/disenos', '/miniweb', '/demo/', '/mi-qr/']
 
 // Páginas de clientes reales: se leen los archivos como texto (importarlos no vale fuera de Vite: llevan fotos)
 function clientes(carpeta, sufijo = '') {
