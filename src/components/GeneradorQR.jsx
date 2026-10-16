@@ -309,9 +309,9 @@ const DESPLAZAMIENTO = 0.006
 const SISTEMA = 'system-ui, sans-serif'
 
 // Ancho de un texto con una letra concreta (para centrar cada línea con su icono)
-const medir = (texto, tamano, familia) => {
+const medir = (texto, tamano, familia, peso = 600) => {
   const ctx = document.createElement('canvas').getContext('2d')
-  ctx.font = `600 ${tamano}px ${familia}`
+  ctx.font = `${peso} ${tamano}px ${familia}`
   return ctx.measureText(texto).width
 }
 
@@ -449,8 +449,6 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
   const [masFormas, setMasFormas] = useState(false)
   const [masOjos, setMasOjos] = useState(false)
   const [masFormasCentro, setMasFormasCentro] = useState(false)
-  // Editor del cliente: el texto de la placa que se está escribiendo (arriba, abajo1 o abajo2; null, ninguno)
-  const [textoAbierto, setTextoAbierto] = useState(null)
   // Editor del cliente: el "Ver más" de los colores del centro
   const [masColoresCentro, setMasColoresCentro] = useState(false)
 
@@ -648,7 +646,9 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
   // Lo que va debajo del QR: los dos campos de abajo y, solo en el panel de Jesús, las líneas de redes con icono.
   // Solo los que tienen texto (en la placa circular, solo el primero)
   const lineasVisibles = [
-    ...[campoAbajo1, campoAbajo2].filter(t => t.trim()).map(t => ({ icono: '', texto: t.trim() })),
+    ...(campoAbajo1.trim() ? [{ icono: '', texto: campoAbajo1.trim() }] : []),
+    // La segunda línea, secundaria: siempre un poco más pequeña y más suave que la primera
+    ...(campoAbajo2.trim() ? [{ icono: '', texto: campoAbajo2.trim(), secundario: true }] : []),
     ...(modo === 'cliente' ? [] : lineas.filter(l => l.texto.trim())),
   ]
 
@@ -686,11 +686,13 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
     const altoNombre = campoArriba.trim() ? lado * MEDIDAS.nombre * f : 0
     const altoArriba = 0
     const altoLinea = lado * MEDIDAS.linea * f
+    // Cada línea de abajo con su alto: la secundaria, menos, para que quede pegada a la de encima
+    const altos = lineasVisibles.map(l => (l.secundario ? altoLinea * 0.45 : altoLinea))
     const yQR = b + altoNombre + altoArriba
     return {
       forma: 'rectangular',
       ancho: lado + b * 2,
-      alto: yQR + lado + lineasVisibles.length * altoLinea + b,
+      alto: yQR + lado + altos.reduce((a, h) => a + h, 0) + b,
       xQR: b,
       yQR,
       radio: Math.min(lado * radioPlaca, (lado + b * 2) / 2),
@@ -698,15 +700,25 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
       yNombre: altoNombre ? b + altoNombre / 2 : null,
       yArriba: altoArriba ? b + altoNombre + altoArriba / 2 : null,
       lins: lineasVisibles,
-      yLinea: i => yQR + lado + altoLinea * (i + 0.5),
+      yLinea: i => yQR + lado + altos.slice(0, i).reduce((a, h) => a + h, 0) + altos[i] / 2,
     }
   }
 
   // Dónde empieza el texto y dónde va el icono de una línea: centrados juntos, el texto primero y el icono a su derecha
-  const posicionLinea = (l, g) => {
+  /* Los textos nunca se salen de la placa: si uno no cabe a su tamaño, su letra se hace más pequeña lo justo.
+     Ancho útil: el del QR (en la placa circular, algo menos, que arriba y abajo el círculo se estrecha) */
+  const anchoUtil = g => (g.forma === 'circular' ? (g.ancho - g.xQR * 2) * 0.8 : g.ancho - g.xQR * 2)
+  const tamanoQueCabe = (texto, tamano, familia, peso, disponible) => {
+    const ancho = medir(texto, tamano, familia, peso)
+    return ancho > disponible ? (tamano * disponible) / ancho : tamano
+  }
+  // Tamaño de una línea de abajo (con su icono, si lo lleva, dentro del ancho)
+  const tamanoLinea = (l, g) => tamanoQueCabe(l.texto, g.letras.linea * (l.secundario ? 0.75 : 1), familiaTexto, 600, anchoUtil(g) - (l.icono ? g.letras.icono + g.letras.hueco : 0))
+
+  const posicionLinea = (l, g, tamano = g.letras.linea) => {
     const icono = l.icono ? g.letras.icono : 0
     const hueco = l.icono ? g.letras.hueco : 0
-    const ancho = medir(l.texto, g.letras.linea, familiaTexto)
+    const ancho = medir(l.texto, tamano, familiaTexto)
     const x = (g.ancho - (ancho + hueco + icono)) / 2
     return { xTexto: x, xIcono: x + ancho + hueco, icono }
   }
@@ -762,15 +774,16 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
     if (g.forma) {
       const texto = (contenido, y, tamano, familia, peso) =>
         `<text x="${g.ancho / 2}" y="${y}" dy="0.35em" text-anchor="middle" font-family="${escaparXml(familia)}" font-weight="${peso}" font-size="${tamano}" fill="${textoSobreMarco}">${escaparXml(contenido)}</text>`
-      if (g.yNombre != null) partes.push(texto(campoArriba, g.yNombre, g.letras.nombre, familiaTitulo, 800))
+      if (g.yNombre != null) partes.push(texto(campoArriba, g.yNombre, tamanoQueCabe(campoArriba, g.letras.nombre, familiaTitulo, 800, anchoUtil(g)), familiaTitulo, 800))
       g.lins.forEach((l, i) => {
         const y = g.yLinea(i)
-        const p = posicionLinea(l, g)
+        const tam = tamanoLinea(l, g)
+        const p = posicionLinea(l, g, tam)
         if (l.icono && TRAZADOS[l.icono]) {
           partes.push(`<path transform="translate(${p.xIcono} ${y - p.icono / 2}) scale(${p.icono / 24})" d="${TRAZADOS[l.icono]}" fill="${textoSobreMarco}"/>`)
         }
         partes.push(
-          `<text x="${p.xTexto}" y="${y}" dy="0.35em" font-family="${escaparXml(familiaTexto)}" font-weight="600" font-size="${g.letras.linea}" fill="${textoSobreMarco}">${escaparXml(l.texto)}</text>`,
+          `<text x="${p.xTexto}" y="${y}" dy="0.35em" font-family="${escaparXml(familiaTexto)}" font-weight="600" font-size="${tam}" fill="${textoSobreMarco}"${l.secundario ? ' fill-opacity="0.7"' : ''}>${escaparXml(l.texto)}</text>`,
         )
       })
     }
@@ -860,15 +873,16 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
         ctx.textBaseline = 'middle'
         ctx.textAlign = 'center'
         if (g.yNombre != null) {
-          ctx.font = `800 ${g.letras.nombre}px ${familiaTitulo}`
+          ctx.font = `800 ${tamanoQueCabe(campoArriba, g.letras.nombre, familiaTitulo, 800, anchoUtil(g))}px ${familiaTitulo}`
           ctx.fillText(campoArriba, g.ancho / 2, g.yNombre)
         }
         // Líneas de abajo: texto e icono centrados juntos, el icono a la derecha del texto
-        ctx.font = `600 ${g.letras.linea}px ${familiaTexto}`
         ctx.textAlign = 'left'
         g.lins.forEach((l, i) => {
           const y = g.yLinea(i)
-          const p = posicionLinea(l, g)
+          const tam = tamanoLinea(l, g)
+          const p = posicionLinea(l, g, tam)
+          ctx.font = `600 ${tam}px ${familiaTexto}`
           if (l.icono && TRAZADOS[l.icono]) {
             ctx.save()
             ctx.translate(p.xIcono, y - p.icono / 2)
@@ -876,7 +890,9 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
             ctx.fill(new Path2D(TRAZADOS[l.icono]))
             ctx.restore()
           }
+          ctx.globalAlpha = l.secundario ? 0.7 : 1
           ctx.fillText(l.texto, p.xTexto, y)
+          ctx.globalAlpha = 1
         })
       }
       lienzo.toBlob(final => bajar(final, 'png'), 'image/png')
@@ -1244,40 +1260,36 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
             </div>
           </details>
 
-          {/* Textos de la placa, con el mismo sistema que Centro: una cápsula con los 3 sitios y, debajo, solo el campo
-              del que se ha tocado (así no ocupan los tres a la vez) */}
+          {/* Textos de la placa, como los otros desplegables: el nombre de la marca (por defecto, encima del QR) y dos
+              textos más (por defecto, debajo): el eslogan y otro para lo que haga falta (horario, dirección...).
+              Si no caben a su tamaño, la letra se hace más pequeña sola */}
           {conMarco && (
-            <div className="grid gap-[0.45rem]">
-              <span className={titulo}>Textos de la placa</span>
-              <div className="grid justify-items-start gap-[0.5rem]">
-                <div className="flex gap-[0.3rem] rounded-[1.2rem] bg-zinc-100 p-[0.25rem]">
-                  {[
-                    ['arriba', 'Arriba'],
-                    ['abajo1', 'Abajo'],
-                    ['abajo2', '2.ª línea'],
-                  ].map(([clave, texto]) => (
-                    <button
-                      key={clave}
-                      type="button"
-                      aria-pressed={textoAbierto === clave}
-                      onClick={() => setTextoAbierto(t => (t === clave ? null : clave))}
-                      className={`min-h-[2rem] rounded-full px-[0.8rem] text-[0.85rem] font-semibold transition-colors ${textoAbierto === clave ? 'bg-zinc-900 text-white' : 'text-zinc-500 hover:text-tinta'}`}
-                    >
-                      {texto}
-                    </button>
-                  ))}
-                </div>
-                {textoAbierto === 'arriba' && (
-                  <input value={campoArriba} onChange={e => setCampoArriba(e.target.value)} maxLength={32} placeholder="El nombre de tu negocio" aria-label="Texto de arriba" className={campo} />
-                )}
-                {textoAbierto === 'abajo1' && (
-                  <input value={campoAbajo1} onChange={e => setCampoAbajo1(e.target.value)} maxLength={32} placeholder="Escanea y déjanos tu reseña" aria-label="Texto de abajo" className={campo} />
-                )}
-                {textoAbierto === 'abajo2' && (
-                  <input value={campoAbajo2} onChange={e => setCampoAbajo2(e.target.value)} maxLength={32} placeholder="Horario, dirección..." aria-label="Segunda línea de abajo" className={campo} />
-                )}
-              </div>
+          <details className="rounded-[0.1rem] bg-[#242422] ring-1 ring-[#3a3935]">
+            <summary className="flex cursor-pointer list-none items-center gap-[0.75rem] px-[0.85rem] py-[0.8rem] [&::-webkit-details-marker]:hidden">
+              <span className={tituloGrupo}>Cambiar los textos</span>
+              {/* La pista, en palabra y en amarillo (la flecha sola no la entiende todo el mundo) */}
+              <span className="ml-auto text-[0.85rem] font-semibold text-acento [details[open]>summary>&]:hidden">Abrir</span>
+              <span className="ml-auto hidden text-[0.85rem] font-semibold text-acento [details[open]>summary>&]:inline">Cerrar</span>
+              <ChevronDown className="h-[1rem] w-[1rem] shrink-0 text-acento transition-transform [details[open]>summary>&]:rotate-180" aria-hidden="true" />
+            </summary>
+            <div className="grid gap-[0.9rem] px-[0.85rem] pb-[0.85rem]">
+                <label className="grid gap-[0.3rem]">
+                  <span className={titulo}>Nombre de la marca</span>
+                  <input value={campoArriba} onChange={e => setCampoArriba(e.target.value)} maxLength={24} placeholder="El nombre de tu negocio" className={campo} />
+                  <span className="text-[0.75rem] text-zinc-500">Máx. 24 caracteres</span>
+                </label>
+                <label className="grid gap-[0.3rem]">
+                  <span className={titulo}>Eslogan</span>
+                  <input value={campoAbajo1} onChange={e => setCampoAbajo1(e.target.value)} maxLength={32} placeholder="Escanea y déjanos tu reseña" className={campo} />
+                  <span className="text-[0.75rem] text-zinc-500">Máx. 32 caracteres</span>
+                </label>
+                <label className="grid gap-[0.3rem]">
+                  <span className={titulo}>Otro texto (horario, dirección...)</span>
+                  <input value={campoAbajo2} onChange={e => setCampoAbajo2(e.target.value)} maxLength={32} placeholder="De lunes a sábado, de 10 a 20" className={campo} />
+                  <span className="text-[0.75rem] text-zinc-500">Máx. 32 caracteres</span>
+                </label>
             </div>
+          </details>
           )}
         </div>
       )}
