@@ -37,6 +37,20 @@ const pinNuevo = () => String(crypto.getRandomValues(new Uint32Array(1))[0] % 10
 
 const FORMAS_PUNTOS = ['rounded', 'extra-rounded', 'square', 'dots', 'classy-rounded', 'classy']
 
+// Las siluetas del QR que hay en el editor (las mismas claves que en GeneradorQR): '' es el QR cuadrado de siempre
+const SILUETAS: Record<string, string> = {
+  '': 'Clásico (el QR cuadrado, sin silueta)',
+  flor: 'Flor (redonda, con el borde ondulado)',
+  estrella: 'Estrella (de cinco puntas)',
+  rombo: 'Rombo',
+  ubicacion: 'Ubicación (el pin de los mapas)',
+  'flor-tallo': 'Flor con tallo y hoja',
+  taza: 'Taza de café',
+  pulgar: 'Me gusta (pulgar arriba)',
+  corazon: 'Corazón',
+  bocadillo: 'Mensaje (bocadillo de chat)',
+}
+
 const ESQUEMA = {
   type: 'object',
   properties: {
@@ -81,6 +95,9 @@ const ESQUEMA = {
             required: ['esquinas', 'borde'],
             additionalProperties: false,
           },
+          // La silueta del QR ('' es el clásico, sin silueta) y el color de su borde
+          silueta: { type: 'string', enum: Object.keys(SILUETAS) },
+          contorno: { type: 'string' },
           tipografia: { type: 'string' },
           tamano: { type: 'string', enum: ['pequeno', 'normal', 'grande'] },
           // Los 3 campos de texto de la placa: uno encima del QR y dos debajo
@@ -91,7 +108,7 @@ const ESQUEMA = {
             additionalProperties: false,
           },
         },
-        required: ['nombre', 'motivo', 'puntos', 'esquinas', 'fondo', 'marco', 'textoMarco', 'formaPuntos', 'formaEsquinas', 'puntoEsquinas', 'degradado', 'doble', 'placa', 'tipografia', 'tamano', 'textos'],
+        required: ['nombre', 'motivo', 'puntos', 'esquinas', 'fondo', 'marco', 'textoMarco', 'formaPuntos', 'formaEsquinas', 'puntoEsquinas', 'degradado', 'doble', 'placa', 'silueta', 'contorno', 'tipografia', 'tamano', 'textos'],
         additionalProperties: false,
       },
     },
@@ -110,12 +127,17 @@ Colores (todos en #RRGGBB):
 - fondo: el fondo del cuadrado del QR. Casi siempre blanco o un tono muy claro.
 - puntos y esquinas: oscuros sobre el fondo. Nada de amarillos, beis o pasteles en los puntos: aunque sean de la marca, van en el marco o en los textos.
 - degradado (opcional, en los puntos): de 2 a 4 colores, todos oscuros; tipo "linear" o "radial"; angulo en grados (0 de izquierda a derecha, 90 de arriba abajo, 45 o 315 en diagonal). Si no lleva, activo false, colores vacía, tipo "linear" y angulo 0.
-- doble (opcional): doble imagen como el logo de TikTok (dos copias de colores desplazadas por debajo). Solo si encaja (atrevido, nocturno, joven). Si no lleva, activo false y colores vacía.
+- doble (opcional): doble imagen como el logo de TikTok (dos copias de colores desplazadas por debajo). Solo si encaja (atrevido, nocturno, joven). Con doble imagen, puntos y esquinas SIEMPRE negros o casi negros (#141414 o más oscuro) y sin degradado: con puntos de color, las copias no dejan leer el QR. Si no lleva, activo false y colores vacía.
 
 Formas (que vayan con el estilo):
 - formaPuntos: rounded (redondeados), extra-rounded (muy redondeados), square (cuadrados), dots (puntos), classy-rounded (elegantes), classy (elegantes rectos).
 - formaEsquinas (el marco de los tres ojos de las esquinas) y puntoEsquinas (su punto de dentro): las mismas formas, más dot (círculo) y, en formaEsquinas, extra-rounded (redondeado) y square (cuadrado). Elegante: classy-rounded y dot; moderno o alegre: dots o extra-rounded; sobrio: square.
 - placa (siempre rectangular; la forma no la eliges tú): esquinas rectas, suaves o redondas; borde fino, normal o ancho alrededor del QR.
+
+Silueta (la forma que rodea al QR, rellena de puntos de adorno con el color de los puntos y con su borde):
+- silueta: la que ha elegido el cliente, TAL CUAL, en las tres propuestas. Trabajas sobre su diseño: los colores tienen que pegar con esa forma (una estrella, en tonos de estrella; una taza, en tonos de café; un corazón, en tonos de corazón).
+- Solo si el cliente pide expresamente otras siluetas (por ejemplo "hazme 3 diseños con distintas siluetas" o "ponlo en forma de corazón") eliges otra, de la lista que te paso.
+- contorno: el color del borde de la silueta (#RRGGBB). Puede ser claro u oscuro, no afecta a la lectura; que pegue con la forma y con los puntos. Con el clásico (sin silueta) no se ve: pon el de las esquinas.
 
 Letra y textos:
 - tipografia: el id de una de la lista que te paso, la que mejor vaya con el estilo; vacío para dejar la de la marca.
@@ -227,8 +249,10 @@ Deno.serve(async req => {
 
     const c = s.colores ?? {}
     const tipografias = Array.isArray(d.tipografias) ? d.tipografias.slice(0, 30) : []
+    const silueta = typeof d.silueta === 'string' && d.silueta in SILUETAS ? d.silueta : ''
     const mensaje = [
       `Negocio: ${s.nombre}`,
+      `Diseño elegido por el cliente: silueta "${silueta}" (${SILUETAS[silueta]}).\nSiluetas que hay (clave: forma):\n${Object.entries(SILUETAS).map(([k, v]) => `"${k}": ${v}`).join('\n')}`,
       String(d.descripcion ?? '').trim() ? `Lo que quiere el cliente:\n${String(d.descripcion).trim().slice(0, 600)}` : 'El cliente no ha dicho nada concreto: guíate por su marca.',
       s.colores
         ? `Colores de su página:\n- fondo de la página: ${c.bg}\n- superficies: ${c.surface}\n- principal: ${c.primary}\n- acento: ${c.accent}\n- texto: ${c.text}${c.header ? `\n- cabecera: ${c.header}` : ''}`

@@ -80,12 +80,13 @@ export default function MiQrPage() {
                 {...comunes}
                 modo="cliente"
                 intentos={dentro.intentos}
-                proponer={descripcion =>
+                proponer={(descripcion, silueta) =>
                   miQr({
                     accion: 'proponer',
                     slug,
                     pin: dentro.pin,
                     descripcion,
+                    silueta,
                     tipografias: TIPOGRAFIAS.map(({ id, nombre, estilo }) => ({ id, nombre, estilo })),
                   })
                 }

@@ -56,6 +56,12 @@ const esClaro = color => {
   return 0.299 * r + 0.587 * g + 0.114 * b > 160
 }
 const esHex = c => /^#[0-9a-f]{6}$/i.test(c ?? '')
+// Casi negro: lo que tienen que ser los puntos con la doble imagen (con color, las copias no dejan leerlo)
+const casiNegro = color => {
+  if (!esHex(color)) return false
+  const [r, g, b] = [1, 3, 5].map(i => parseInt(color.slice(i, i + 2), 16))
+  return 0.299 * r + 0.587 * g + 0.114 * b < 40
+}
 
 const sinDegradado = color2 => ({ activo: false, color2, intermedios: [], tipo: 'linear', angulo: 45 })
 // Degradado en diagonal, de abajo a la izquierda hacia arriba a la derecha, como el de la placa de la landing
@@ -672,6 +678,8 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
   const [radioFondoElegido, setRadioFondo] = useState(ini.radioFondo ?? null)
   // Silueta del QR ('' ninguna; si no, una de SILUETAS)
   const [silueta, setSilueta] = useState(ini.silueta ?? '')
+  // Color del borde de la silueta: sin elegir (null), el de las esquinas del QR
+  const [colorContorno, setColorContorno] = useState(ini.colorContorno ?? null)
 
   // Textos de la placa
   /* 3 campos libres, para lo que se quiera (el nombre, un eslogan, el horario...): uno encima del QR y dos debajo.
@@ -700,15 +708,23 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
   // La opción de esquinas y de borde de la placa que se marca: la más cercana a la que lleva
   const esquinasPlacaCerca = masCercano(ESQUINAS_PLACA, radioPlaca)
   const bordeCerca = masCercano(BORDES_PLACA, borde)
-  // Editor del cliente: la placa en miniatura (cuando la grande ya no se ve al bajar) y la placa abierta en grande
+  // Editor del cliente: la placa en miniatura (en cuanto la grande deja de verse entera al bajar) y la placa abierta en grande
   const placaGrande = useRef(null)
   const [verMiniatura, setVerMiniatura] = useState(false)
   const [placaAbierta, setPlacaAbierta] = useState(false)
+  // Abierta en grande desde una propuesta de la IA: con "Enviar mi diseño" debajo
+  const [conEnviar, setConEnviar] = useState(false)
   useEffect(() => {
     if (modo !== 'cliente' || !placaGrande.current) return
-    const observador = new IntersectionObserver(([e]) => setVerMiniatura(!e.isIntersecting), { threshold: 0 })
-    observador.observe(placaGrande.current)
-    return () => observador.disconnect()
+    // Sale cuando la parte de arriba de la placa grande se corta por arriba de la pantalla
+    const mirar = () => setVerMiniatura(placaGrande.current.getBoundingClientRect().top < 0)
+    mirar()
+    window.addEventListener('scroll', mirar, { passive: true })
+    window.addEventListener('resize', mirar)
+    return () => {
+      window.removeEventListener('scroll', mirar)
+      window.removeEventListener('resize', mirar)
+    }
   }, [modo])
   // La placa en grande se cierra también con Escape
   useEffect(() => {
@@ -725,7 +741,7 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
   const estado = {
     estilo, colorPuntos, colorEsquinas, degPuntos, degEsquinas, fondo, colorMarco, degMarco, colorLetra,
     puntos, esquinas, puntoOjo, centro, formaCentro, textoCentro, colorCentro: colorCentroElegido, degCentro: degCentroElegido, logo, tamanoCentro, doble,
-    conMarco, formaPlaca, radioPlaca, borde, radioFondo: radioFondoElegido, silueta,
+    conMarco, formaPlaca, radioPlaca, borde, radioFondo: radioFondoElegido, silueta, colorContorno,
     campoArriba, campoAbajo1, campoAbajo2, lineas, tipografia, escala, tamanoNombre,
   }
   const enviarDiseno = async () => {
@@ -803,6 +819,8 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
     setEstilo(clave)
     const e = [...TODOS_ESTILOS, ...DISENOS].find(x => x.clave === clave)
     if (e && 'silueta' in e) setSilueta(e.silueta)
+    // El borde de la silueta: el del diseño, si lleva uno propio; si no (y con los colores sueltos), el de las esquinas
+    setColorContorno(e?.contorno ?? null)
     const qr = e?.qr ?? oscuroDeMarca
     const deg = e?.degradado ? enDiagonal(e.degradado) : sinDegradado(acentoDeMarca)
     setColorPuntos(qr)
@@ -826,7 +844,8 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
     setPensando(true)
     setErrorIA('')
     try {
-      const respuesta = await proponer(descripcion.trim())
+      // Con la silueta elegida: la IA trabaja sobre ella (y solo la cambia si se lo piden)
+      const respuesta = await proponer(descripcion.trim(), silueta)
       const { resultado } = respuesta
       // En el editor del cliente, la respuesta trae los intentos que le quedan
       if (respuesta.intentos != null) setIntentos(respuesta.intentos)
@@ -844,7 +863,13 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
   }
 
   // Aplica una propuesta: el degradado va en los puntos (desde su primer color); las esquinas, de su color
-  const ponerPropuesta = p => {
+  const ponerPropuesta = propuesta => {
+    // Con doble imagen, los puntos y las esquinas casi negros y sin degradado (si la IA no lo ha hecho, se hace aquí)
+    let p = propuesta
+    const conDoble = p.doble?.activo && p.doble.colores?.length === 2
+    if (conDoble && (!casiNegro(p.puntos) || !casiNegro(p.esquinas) || p.degradado?.activo)) {
+      p = { ...p, puntos: '#141414', esquinas: '#141414', degradado: { ...p.degradado, activo: false } }
+    }
     setEstilo(null)
     const deg = p.degradado?.activo && p.degradado.colores.length >= 2
     setColorPuntos(deg ? p.degradado.colores[0] : p.puntos)
@@ -875,6 +900,9 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
     setDegCentroElegido(null)
     setMuestraCentro(null)
     setConMarco(true)
+    // La silueta (la misma, salvo que se le hayan pedido otras) y el color de su borde
+    if (typeof p.silueta === 'string' && (p.silueta === '' || SILUETAS[p.silueta])) setSilueta(p.silueta)
+    setColorContorno(esHex(p.contorno) ? p.contorno : null)
     // Las propuestas completas (las del editor del cliente) traen también la placa, la letra y los textos
     if (p.placa) {
       // La forma (rectangular o circular), solo en el panel de Jesús: en el editor del cliente la decide él
@@ -1012,7 +1040,7 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
           fondo,
           colores: degPuntos.activo ? coloresDegradado(colorPuntos, degPuntos) : [colorPuntos],
           puntos,
-          contorno: DISENOS.find(d => d.clave === estilo)?.contorno ?? colorEsquinas,
+          contorno: colorContorno ?? colorEsquinas,
           pre,
         })
       : null
@@ -1323,6 +1351,99 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
   )
   if (modo === 'vista') return <div className="mx-auto grid w-full max-w-[32rem] grid-cols-[minmax(0,1fr)]">{previa}</div>
 
+  /* El asistente propone tres diseños con lo que se le cuente (y los colores de la marca, si hay); se toca uno y se aplica */
+  const asistente = proponer && (
+    <div className="grid gap-[0.5rem]">
+      <label className="grid gap-[0.3rem]">
+        <span className={titulo}>
+          {esCliente
+            ? `Elige un diseño arriba, cuéntanos cómo lo quieres y te proponemos 3 versiones${intentos != null ? ` (te quedan ${intentos} ${intentos === 1 ? 'vez' : 'veces'})` : ''}`
+            : `Cuéntale al asistente cómo lo quieres${colores ? ' (opcional: si no, usa los colores de la marca)' : ''}`}
+        </span>
+        <textarea
+          value={descripcion}
+          onChange={e => setDescripcion(e.target.value)}
+          rows={esCliente ? 4 : 2}
+          // Lo que lee la IA: el servidor no pasa de 600 caracteres
+          maxLength={600}
+          placeholder={
+            esCliente
+              ? 'Elegante, en verde botella y dorado. Arriba "Déjanos tu reseña" y abajo nuestro Instagram @tunegocio.'
+              : 'Verde botella y dorado, elegante. O un degradado de morado a rosa, rollo nocturno.'
+          }
+          className="block w-full resize-y rounded-[0.6rem] border border-zinc-300 bg-white px-[0.75rem] py-[0.6rem] text-[0.92rem]"
+        />
+        {esCliente && <span className="justify-self-end text-[0.75rem] text-zinc-500">{descripcion.length}/600</span>}
+      </label>
+      {confirmando ? (
+        // Confirmación en la propia página (sin ventanas del navegador)
+        <div className="grid gap-[0.5rem] rounded-[0.75rem] bg-zinc-50 p-[0.75rem] ring-1 ring-zinc-300">
+          <p className="text-[0.88rem] leading-[1.4]">
+            {esCliente
+              ? `¿Pedir 3 propuestas? ${intentos === 1 ? 'Es la última vez que puedes pedirlas.' : `Puedes pedirlas ${intentos ?? 0} veces.`}`
+              : '¿Pedir 3 propuestas al asistente? Usa la IA (alrededor de 1 céntimo).'}
+          </p>
+          <div className="grid grid-cols-2 gap-[0.5rem]">
+            <button type="button" onClick={() => setConfirmando(false)} className="min-h-[2.5rem] rounded-[0.6rem] bg-white font-semibold ring-1 ring-zinc-300">
+              Cancelar
+            </button>
+            <button type="button" onClick={pedirPropuestas} className="min-h-[2.5rem] rounded-[0.6rem] bg-zinc-900 font-semibold text-white">
+              Sí, pedir
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setConfirmando(true)}
+          disabled={pensando || (!colores && !descripcion.trim()) || (esCliente && !intentos) /* sin negocio, necesita que se le cuente algo; el cliente, que le queden intentos */}
+          className="inline-flex min-h-[2.75rem] items-center justify-center gap-[0.4rem] rounded-[0.75rem] bg-white font-semibold ring-1 ring-zinc-300 disabled:opacity-60"
+        >
+          <Sparkles className="h-[1rem] w-[1rem]" aria-hidden="true" />
+          {pensando ? 'Pensando diseños...' : propuestas ? 'Otras propuestas' : 'Propón diseños'}
+        </button>
+      )}
+      {/* En el editor del cliente, los intentos que le quedan, debajo del botón (cada vez gasta uno) */}
+      {esCliente && intentos != null && !confirmando && (
+        <p className="text-center text-[0.8rem] text-zinc-500">
+          {intentos ? `Te ${intentos === 1 ? 'queda 1 vez' : `quedan ${intentos} veces`} para pedir propuestas.` : 'Ya no te quedan veces para pedir propuestas.'}
+        </p>
+      )}
+      {errorIA && <p className="text-[0.85rem] font-semibold text-red-600">{errorIA}</p>}
+      {propuestas && (
+        <div className="grid gap-[0.5rem]">
+          {propuestas.map((p, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => {
+                ponerPropuesta(p)
+                // En el editor del cliente, la propuesta se abre en grande, con "Enviar mi diseño" debajo
+                if (esCliente) {
+                  setConEnviar(true)
+                  setPlacaAbierta(true)
+                }
+              }} className="flex items-center gap-[0.75rem] rounded-[0.75rem] bg-white p-[0.6rem] text-left ring-1 ring-zinc-200 hover:ring-zinc-400">
+              {/* Mini placa: la placa, el cuadrado del QR con su color y el texto */}
+              <span className="flex w-[3.6rem] shrink-0 flex-col items-center gap-[0.2rem] rounded-[0.45rem] p-[0.3rem]" style={{ background: p.marco }}>
+                <span className="flex aspect-square w-full items-center justify-center rounded-[0.2rem]" style={{ background: p.fondo }}>
+                  <QrCode className="h-[70%] w-[70%]" style={{ color: p.degradado?.activo ? p.degradado.colores[0] : p.puntos }} aria-hidden="true" />
+                </span>
+                <span className="text-[0.5rem] font-bold leading-none" style={{ color: p.textoMarco }}>
+                  {(campoArriba || 'Escanéame').slice(0, 10)}
+                </span>
+              </span>
+              <span className="min-w-0">
+                <span className="block text-[0.92rem] font-semibold">{p.nombre}</span>
+                <span className="block text-[0.8rem] leading-[1.35] text-zinc-500">{p.motivo}</span>
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+
   // En una columna, como Nuevo perfil: vista previa, dirección, asistente, el diseño plegado y las descargas (en el
   // editor del cliente, sin dirección y con "Enviar mi diseño" en vez de las descargas)
   return (
@@ -1336,7 +1457,10 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
       {esCliente && verMiniatura && (
         <button
           type="button"
-          onClick={() => setPlacaAbierta(true)}
+          onClick={() => {
+            setConEnviar(false)
+            setPlacaAbierta(true)
+          }}
           aria-label="Ver la placa en grande"
           className="fixed inset-x-0 top-0 z-20 mx-auto flex w-full max-w-[32rem] items-center gap-[0.75rem] bg-white px-[1rem] py-[0.4rem] text-left shadow-[0_0.4rem_1rem_-0.4rem_rgb(0_0_0/0.6)] ring-1 ring-zinc-200"
         >
@@ -1354,7 +1478,17 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
         >
           <div className="grid w-full max-w-[20rem] gap-[0.75rem]" onClick={e => e.stopPropagation()}>
             <div dangerouslySetInnerHTML={{ __html: vista }} />
-            <button type="button" onClick={() => setPlacaAbierta(false)} className="min-h-[2.75rem] rounded-[0.4rem] bg-zinc-900 font-semibold text-white">
+            {/* Abierta desde una propuesta: "Enviar mi diseño" encima de "Cerrar" */}
+            {conEnviar && (
+              <>
+                <button type="button" onClick={enviarDiseno} disabled={enviando} className="min-h-[2.75rem] rounded-[0.4rem] bg-zinc-900 font-semibold text-white disabled:opacity-50">
+                  {enviando ? 'Enviando...' : enviado ? 'Enviar otra vez con los cambios' : 'Enviar mi diseño'}
+                </button>
+                {enviado && !enviando && <p className="text-center text-[0.85rem] font-semibold" style={{ color: '#FFFFFF' }}>¡Recibido! Lo revisamos y te avisamos antes de imprimirlo.</p>}
+                {errorEnvio && <p className="text-center text-[0.85rem] font-semibold text-red-400">{errorEnvio}</p>}
+              </>
+            )}
+            <button type="button" onClick={() => setPlacaAbierta(false)} className={`min-h-[2.75rem] rounded-[0.4rem] font-semibold ${conEnviar ? 'ring-1 ring-zinc-500' : 'bg-zinc-900 text-white'}`} style={conEnviar ? { color: '#FFFFFF' } : undefined}>
               Cerrar
             </button>
           </div>
@@ -1444,6 +1578,19 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
               </button>
             </div>
           </div>
+          {/* El asistente de IA, en su desplegable: al abrirlo, el cuadro de texto y su botón */}
+          {asistente && (
+            <details className="mt-[0.75rem] rounded-[0.1rem] bg-[#242422] ring-1 ring-[#3a3935]">
+              <summary className="flex cursor-pointer list-none items-center gap-[0.75rem] px-[0.85rem] py-[0.8rem] [&::-webkit-details-marker]:hidden">
+                <Sparkles className="h-[1rem] w-[1rem] shrink-0 text-acento" aria-hidden="true" />
+                <span className={tituloGrupo}>Usar el asistente IA</span>
+                <span className="ml-auto text-[0.85rem] font-semibold text-acento [details[open]>summary>&]:hidden">Abrir</span>
+                <span className="ml-auto hidden text-[0.85rem] font-semibold text-acento [details[open]>summary>&]:inline">Cerrar</span>
+                <ChevronDown className="h-[1rem] w-[1rem] shrink-0 text-acento transition-transform [details[open]>summary>&]:rotate-180" aria-hidden="true" />
+              </summary>
+              <div className="px-[0.85rem] pb-[0.85rem]">{asistente}</div>
+            </details>
+          )}
           {/* Personalizar: un desplegable con los de los colores, los puntos, el centro, los textos y la placa dentro */}
           <details className="rounded-[0.1rem] bg-[#242422] ring-1 ring-[#3a3935]">
             <summary className="flex cursor-pointer list-none items-center gap-[0.75rem] px-[0.85rem] py-[0.8rem] [&::-webkit-details-marker]:hidden">
@@ -1831,79 +1978,8 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
         </label>
       )}
 
-      {/* El asistente propone tres diseños con lo que se le cuente (y los colores de la marca, si hay); se toca uno y se aplica */}
-      {proponer && (
-        <div className="grid gap-[0.5rem]">
-          <label className="grid gap-[0.3rem]">
-            <span className={titulo}>
-              {esCliente
-                ? `Cuéntanos cómo lo quieres y te proponemos 3 diseños${intentos != null ? ` (te quedan ${intentos} ${intentos === 1 ? 'vez' : 'veces'})` : ''}`
-                : `Cuéntale al asistente cómo lo quieres${colores ? ' (opcional: si no, usa los colores de la marca)' : ''}`}
-            </span>
-            <textarea
-              value={descripcion}
-              onChange={e => setDescripcion(e.target.value)}
-              rows={2}
-              placeholder={
-                esCliente
-                  ? 'Elegante, en verde botella y dorado. Arriba "Déjanos tu reseña" y abajo nuestro Instagram @tunegocio.'
-                  : 'Verde botella y dorado, elegante. O un degradado de morado a rosa, rollo nocturno.'
-              }
-              className="block w-full resize-y rounded-[0.6rem] border border-zinc-300 bg-white px-[0.75rem] py-[0.6rem] text-[0.92rem]"
-            />
-          </label>
-          {confirmando ? (
-            // Confirmación en la propia página (sin ventanas del navegador)
-            <div className="grid gap-[0.5rem] rounded-[0.75rem] bg-zinc-50 p-[0.75rem] ring-1 ring-zinc-300">
-              <p className="text-[0.88rem] leading-[1.4]">
-                {esCliente
-                  ? `¿Pedir 3 propuestas? ${intentos === 1 ? 'Es la última vez que puedes pedirlas.' : `Puedes pedirlas ${intentos ?? 0} veces.`}`
-                  : '¿Pedir 3 propuestas al asistente? Usa la IA (alrededor de 1 céntimo).'}
-              </p>
-              <div className="grid grid-cols-2 gap-[0.5rem]">
-                <button type="button" onClick={() => setConfirmando(false)} className="min-h-[2.5rem] rounded-[0.6rem] bg-white font-semibold ring-1 ring-zinc-300">
-                  Cancelar
-                </button>
-                <button type="button" onClick={pedirPropuestas} className="min-h-[2.5rem] rounded-[0.6rem] bg-zinc-900 font-semibold text-white">
-                  Sí, pedir
-                </button>
-              </div>
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setConfirmando(true)}
-              disabled={pensando || (!colores && !descripcion.trim()) || (esCliente && !intentos) /* sin negocio, necesita que se le cuente algo; el cliente, que le queden intentos */}
-              className="inline-flex min-h-[2.75rem] items-center justify-center gap-[0.4rem] rounded-[0.75rem] bg-white font-semibold ring-1 ring-zinc-300 disabled:opacity-60"
-            >
-              <Sparkles className="h-[1rem] w-[1rem]" aria-hidden="true" />
-              {pensando ? 'Pensando diseños...' : propuestas ? 'Otras propuestas' : 'Propón diseños'}
-            </button>
-          )}
-          {errorIA && <p className="text-[0.85rem] font-semibold text-red-600">{errorIA}</p>}
-          {propuestas && (
-            <div className="grid gap-[0.5rem]">
-              {propuestas.map((p, i) => (
-                <button key={i} type="button" onClick={() => ponerPropuesta(p)} className="flex items-center gap-[0.75rem] rounded-[0.75rem] bg-white p-[0.6rem] text-left ring-1 ring-zinc-200 hover:ring-zinc-400">
-                  {/* Mini placa: la placa, el cuadrado del QR con su color y el texto */}
-                  <span className="flex w-[3.6rem] shrink-0 flex-col items-center gap-[0.2rem] rounded-[0.45rem] p-[0.3rem]" style={{ background: p.marco }}>
-                    <span className="flex aspect-square w-full items-center justify-center rounded-[0.2rem]" style={{ background: p.fondo }}>
-                      <QrCode className="h-[70%] w-[70%]" style={{ color: p.degradado?.activo ? p.degradado.colores[0] : p.puntos }} aria-hidden="true" />
-                    </span>
-                    <span className="text-[0.5rem] font-bold leading-none" style={{ color: p.textoMarco }}>
-                      {(campoArriba || 'Escanéame').slice(0, 10)}
-                    </span>
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block text-[0.92rem] font-semibold">{p.nombre}</span>
-                    <span className="block text-[0.8rem] leading-[1.35] text-zinc-500">{p.motivo}</span>
-                  </span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+      {/* El asistente: en el editor del cliente va en su desplegable, encima de Personalizar */}
+      {!esCliente && asistente}
 
       {/* Todo el diseño del QR en un apartado que se pliega, cada parte en su desplegable */}
       {/* En el editor del cliente no sale: lo que necesita ya está fuera, y lo de dentro (placa, borde, tamaños...) lo
@@ -2186,7 +2262,7 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
 
       {esCliente ? (
         // El cliente no descarga: envía su diseño y Jesús lo revisa, lo prueba e imprime
-        <div className="grid gap-[0.5rem]">
+        <div className="mt-[0.75rem] grid gap-[0.5rem]">
           <button type="button" onClick={enviarDiseno} disabled={enviando} className="min-h-[3rem] rounded-[0.75rem] bg-zinc-900 font-semibold text-white disabled:opacity-50">
             {enviando ? 'Enviando...' : enviado ? 'Enviar otra vez con los cambios' : 'Enviar mi diseño'}
           </button>
