@@ -720,6 +720,8 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
   const [pestana, setPestana] = useState('qr')
   // Editor del cliente: la propuesta de la IA que se ve en la placa (en la pestaña Asistente)
   const [indicePropuesta, setIndicePropuesta] = useState(null)
+  // Editor del cliente: los diseños (siluetas) marcados para las propuestas de la IA, hasta 3, en orden
+  const [elegidos, setElegidos] = useState([])
   useEffect(() => {
     if (modo !== 'cliente' || !placaGrande.current) return
     // Sale cuando la parte de arriba de la placa grande se corta por arriba de la pantalla
@@ -850,8 +852,8 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
     setPensando(true)
     setErrorIA('')
     try {
-      // Con la silueta elegida: la IA trabaja sobre ella (y solo la cambia si se lo piden)
-      const respuesta = await proponer(descripcion.trim(), silueta)
+      // Con los diseños marcados: una propuesta por cada uno, en orden (las que falten, la IA elige la silueta)
+      const respuesta = await proponer(descripcion.trim(), elegidos)
       const { resultado } = respuesta
       // En el editor del cliente, la respuesta trae los intentos que le quedan
       if (respuesta.intentos != null) setIntentos(respuesta.intentos)
@@ -1372,7 +1374,8 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
   )
   if (modo === 'vista') return <div className="mx-auto grid w-full max-w-[32rem] grid-cols-[minmax(0,1fr)]">{previa}</div>
 
-  // Editor del cliente: la barra de los diseños (en Tu QR y en el Asistente)
+  // Editor del cliente: la barra de los diseños (en Tu QR y en el Asistente; en este, antes de pedir, se marcan varios)
+  const eligiendoVarios = pestana === 'asistente' && !propuestas
   const barraDisenos = (
     <div className="flex flex-wrap items-center gap-[0.4rem]">
       {/* Cada diseño, con su silueta rellena de sus colores */}
@@ -1383,11 +1386,24 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
           title={e.nombre}
           aria-label={`Diseño ${e.nombre}`}
           /* Marcado por su silueta: sigue marcado aunque luego se prueben otros colores */
-          aria-pressed={silueta === e.silueta}
-          // En el Asistente, solo la silueta: los colores (los de la propuesta de la IA) se quedan
-          onClick={() => (pestana === 'asistente' ? setSilueta(e.silueta) : ponerEstilo(e.clave))}
-          className={`flex h-[1.9rem] w-[1.9rem] items-center justify-center rounded-[0.4rem] border-2 transition-transform duration-300 ${silueta === e.silueta ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
+          aria-pressed={eligiendoVarios ? elegidos.includes(e.silueta) : silueta === e.silueta}
+          /* En el Asistente, antes de pedir, se marcan hasta 3 (uno por propuesta); con propuestas, solo la silueta
+             (los colores de la propuesta de la IA se quedan); en Tu QR, la silueta y sus colores */
+          onClick={() =>
+            eligiendoVarios
+              ? setElegidos(v => (v.includes(e.silueta) ? v.filter(x => x !== e.silueta) : v.length < 3 ? [...v, e.silueta] : v))
+              : pestana === 'asistente'
+                ? setSilueta(e.silueta)
+                : ponerEstilo(e.clave)
+          }
+          className={`relative flex h-[1.9rem] w-[1.9rem] items-center justify-center rounded-[0.4rem] border-2 transition-transform duration-300 ${(eligiendoVarios ? elegidos.includes(e.silueta) : silueta === e.silueta) ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
         >
+          {/* Al marcar varios, su número (el orden en que se han tocado) */}
+          {eligiendoVarios && elegidos.includes(e.silueta) && (
+            <span className="absolute -right-[0.45rem] -top-[0.45rem] flex h-[1rem] w-[1rem] items-center justify-center rounded-full bg-zinc-900 text-[0.65rem] font-bold leading-none text-white">
+              {elegidos.indexOf(e.silueta) + 1}
+            </span>
+          )}
           {/* El clásico, sin silueta: un QR negro sobre blanco (el blanco, a mano, que el tema del cliente lo cambia) */}
           {!e.silueta ? (
             <span className="flex h-[1.35rem] w-[1.35rem] items-center justify-center rounded-[0.2rem]" style={{ background: '#FFFFFF', color: e.qr }}>
@@ -1459,7 +1475,7 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
           ya hechas, también los colores, para probarlos sobre la que se ve */}
       {esCliente && (
         <div className="grid gap-[0.45rem]">
-          <span className={titulo}>Elige un diseño</span>
+          <span className={titulo}>{eligiendoVarios ? 'Elige hasta 3 diseños' : 'Elige un diseño'}</span>
           {barraDisenos}
         </div>
       )}
@@ -1571,8 +1587,8 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
         <div role="tablist" aria-label="Editor de tu QR" className="grid grid-cols-3 gap-[0.25rem] rounded-[1.2rem] bg-zinc-100 p-[0.25rem]">
           {[
             ['qr', 'Tu QR'],
-            ['personalizar', 'Personalizar'],
             ['asistente', 'Asistente'],
+            ['personalizar', 'Personalizar'],
           ].map(([clave, texto]) => (
             <button
               key={clave}
@@ -1696,6 +1712,71 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
             <span className={titulo}>Colores</span>
             {barraColores}
           </div>
+          {/* Textos de la placa, como los otros desplegables: el nombre de la marca (por defecto, encima del QR) y dos
+              textos más (por defecto, debajo): el eslogan y otro para lo que haga falta (horario, dirección...).
+              Si no caben a su tamaño, la letra se hace más pequeña sola */}
+          {conMarco && (
+          <details className="rounded-[0.1rem] bg-[#242422] ring-1 ring-[#3a3935]">
+            <summary className="flex cursor-pointer list-none items-center gap-[0.75rem] px-[0.85rem] py-[0.8rem] [&::-webkit-details-marker]:hidden">
+              <span className={tituloGrupo}>Cambiar los textos</span>
+              {/* La pista, en palabra y en amarillo (la flecha sola no la entiende todo el mundo) */}
+              <span className="ml-auto text-[0.85rem] font-semibold text-acento [details[open]>summary>&]:hidden">Abrir</span>
+              <span className="ml-auto hidden text-[0.85rem] font-semibold text-acento [details[open]>summary>&]:inline">Cerrar</span>
+              <ChevronDown className="h-[1rem] w-[1rem] shrink-0 text-acento transition-transform [details[open]>summary>&]:rotate-180" aria-hidden="true" />
+            </summary>
+            <div className="grid gap-[0.9rem] px-[0.85rem] pb-[0.85rem]">
+                {/* La letra de los textos de la placa: la de la marca o una de la lista */}
+                <label className="grid gap-[0.3rem]">
+                  <span className={titulo}>Tipografía</span>
+                  <select value={tipografia} onChange={e => setTipografia(e.target.value)} className={campo}>
+                    <option value="">{fuentesMarca ? 'La de tu marca' : 'La de siempre'}</option>
+                    {TIPOGRAFIAS.map(t => (
+                      <option key={t.id} value={t.id}>
+                        {t.nombre}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="grid gap-[0.3rem]">
+                  <span className={titulo}>Nombre de la marca</span>
+                  <input value={campoArriba} onChange={e => setCampoArriba(e.target.value)} maxLength={24} placeholder="El nombre de tu negocio" className={campo} />
+                  <span className="text-[0.75rem] text-zinc-500">Máx. 24 caracteres</span>
+                </label>
+                {/* Tamaño del nombre: pequeño (10 % del ancho del QR), medio (12 %) o grande (14 %); si es largo y no
+                    cabe, encoge lo justo */}
+                <div className="grid gap-[0.45rem]">
+                  <span className={titulo}>Tamaño del nombre</span>
+                  <div className="flex gap-[0.3rem] self-start justify-self-start rounded-[1.2rem] bg-zinc-100 p-[0.25rem]">
+                    {[
+                      [1, 'Pequeño'],
+                      [1.18, 'Medio'],
+                      [1.37, 'Grande'],
+                    ].map(([valor, texto]) => (
+                      <button
+                        key={texto}
+                        type="button"
+                        aria-pressed={tamanoNombre === valor}
+                        onClick={() => setTamanoNombre(valor)}
+                        className={`min-h-[2rem] rounded-full px-[0.8rem] text-[0.85rem] font-semibold transition-colors ${tamanoNombre === valor ? 'bg-zinc-900 text-white' : 'text-zinc-500 hover:text-tinta'}`}
+                      >
+                        {texto}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <label className="grid gap-[0.3rem]">
+                  <span className={titulo}>Eslogan</span>
+                  <input value={campoAbajo1} onChange={e => setCampoAbajo1(e.target.value)} maxLength={32} placeholder="Escanea y déjanos tu reseña" className={campo} />
+                  <span className="text-[0.75rem] text-zinc-500">Máx. 32 caracteres</span>
+                </label>
+                <label className="grid gap-[0.3rem]">
+                  <span className={titulo}>Otro texto (horario, dirección...)</span>
+                  <input value={campoAbajo2} onChange={e => setCampoAbajo2(e.target.value)} maxLength={32} placeholder="De lunes a sábado, de 10 a 20" className={campo} />
+                  <span className="text-[0.75rem] text-zinc-500">Máx. 32 caracteres</span>
+                </label>
+            </div>
+          </details>
+          )}
           </>
           )}
           {/* Pestaña Asistente: el cuadro de texto con su botón, los intentos y las propuestas */}
@@ -1952,72 +2033,6 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
             {errorLogo && <p className="text-[0.8rem] font-semibold text-red-600">{errorLogo}</p>}
             </div>
           </details>
-
-          {/* Textos de la placa, como los otros desplegables: el nombre de la marca (por defecto, encima del QR) y dos
-              textos más (por defecto, debajo): el eslogan y otro para lo que haga falta (horario, dirección...).
-              Si no caben a su tamaño, la letra se hace más pequeña sola */}
-          {conMarco && (
-          <details className="rounded-[0.1rem] bg-[#242422] ring-1 ring-[#3a3935]">
-            <summary className="flex cursor-pointer list-none items-center gap-[0.75rem] px-[0.85rem] py-[0.8rem] [&::-webkit-details-marker]:hidden">
-              <span className={tituloGrupo}>Cambiar los textos</span>
-              {/* La pista, en palabra y en amarillo (la flecha sola no la entiende todo el mundo) */}
-              <span className="ml-auto text-[0.85rem] font-semibold text-acento [details[open]>summary>&]:hidden">Abrir</span>
-              <span className="ml-auto hidden text-[0.85rem] font-semibold text-acento [details[open]>summary>&]:inline">Cerrar</span>
-              <ChevronDown className="h-[1rem] w-[1rem] shrink-0 text-acento transition-transform [details[open]>summary>&]:rotate-180" aria-hidden="true" />
-            </summary>
-            <div className="grid gap-[0.9rem] px-[0.85rem] pb-[0.85rem]">
-                {/* La letra de los textos de la placa: la de la marca o una de la lista */}
-                <label className="grid gap-[0.3rem]">
-                  <span className={titulo}>Tipografía</span>
-                  <select value={tipografia} onChange={e => setTipografia(e.target.value)} className={campo}>
-                    <option value="">{fuentesMarca ? 'La de tu marca' : 'La de siempre'}</option>
-                    {TIPOGRAFIAS.map(t => (
-                      <option key={t.id} value={t.id}>
-                        {t.nombre}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="grid gap-[0.3rem]">
-                  <span className={titulo}>Nombre de la marca</span>
-                  <input value={campoArriba} onChange={e => setCampoArriba(e.target.value)} maxLength={24} placeholder="El nombre de tu negocio" className={campo} />
-                  <span className="text-[0.75rem] text-zinc-500">Máx. 24 caracteres</span>
-                </label>
-                {/* Tamaño del nombre: pequeño (10 % del ancho del QR), medio (12 %) o grande (14 %); si es largo y no
-                    cabe, encoge lo justo */}
-                <div className="grid gap-[0.45rem]">
-                  <span className={titulo}>Tamaño del nombre</span>
-                  <div className="flex gap-[0.3rem] self-start justify-self-start rounded-[1.2rem] bg-zinc-100 p-[0.25rem]">
-                    {[
-                      [1, 'Pequeño'],
-                      [1.18, 'Medio'],
-                      [1.37, 'Grande'],
-                    ].map(([valor, texto]) => (
-                      <button
-                        key={texto}
-                        type="button"
-                        aria-pressed={tamanoNombre === valor}
-                        onClick={() => setTamanoNombre(valor)}
-                        className={`min-h-[2rem] rounded-full px-[0.8rem] text-[0.85rem] font-semibold transition-colors ${tamanoNombre === valor ? 'bg-zinc-900 text-white' : 'text-zinc-500 hover:text-tinta'}`}
-                      >
-                        {texto}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <label className="grid gap-[0.3rem]">
-                  <span className={titulo}>Eslogan</span>
-                  <input value={campoAbajo1} onChange={e => setCampoAbajo1(e.target.value)} maxLength={32} placeholder="Escanea y déjanos tu reseña" className={campo} />
-                  <span className="text-[0.75rem] text-zinc-500">Máx. 32 caracteres</span>
-                </label>
-                <label className="grid gap-[0.3rem]">
-                  <span className={titulo}>Otro texto (horario, dirección...)</span>
-                  <input value={campoAbajo2} onChange={e => setCampoAbajo2(e.target.value)} maxLength={32} placeholder="De lunes a sábado, de 10 a 20" className={campo} />
-                  <span className="text-[0.75rem] text-zinc-500">Máx. 32 caracteres</span>
-                </label>
-            </div>
-          </details>
-          )}
 
           {/* Cambiar la placa: sus esquinas (solo en la rectangular) y el borde alrededor del QR. La forma (rectangular o
               circular) la decide Jesús en su panel */}

@@ -127,7 +127,7 @@ const ESQUEMA = {
   additionalProperties: false,
 }
 
-const INSTRUCCIONES = `Eres el asistente de diseño de Jesús, que hace placas con QR para negocios locales de Barcelona: el QR va impreso en una placa o pegatina en el local y abre la página del negocio. El dueño del negocio ha elegido un diseño (una silueta) y te cuenta qué colores representan su marca y cómo quiere su placa; tú propones TRES diseños completos, distintos entre sí, que se lean siempre con cualquier móvil.
+const INSTRUCCIONES = `Eres el asistente de diseño de Jesús, que hace placas con QR para negocios locales de Barcelona: el QR va impreso en una placa o pegatina en el local y abre la página del negocio. El dueño del negocio marca hasta tres diseños (siluetas) y te cuenta qué colores representan su marca y cómo quiere su placa; tú propones TRES diseños completos, distintos entre sí, que se lean siempre con cualquier móvil.
 - Manda lo que pide el cliente: sus colores son la base de las tres propuestas.
 - Las tres propuestas distintas: por ejemplo, una fiel a lo que pide, una más llamativa y una más sobria o elegante.
 
@@ -146,8 +146,8 @@ Formas (que vayan con el estilo):
 - centro: lo que va en medio del QR. texto: las iniciales del nombre que pones arriba en la placa (la primera letra de cada palabra, en mayúsculas, como mucho 3: "Hornitos" → "H", "Corte Oeste" → "CO"). forma: la que mejor vaya con la propuesta: circulo, cuadrado, corazon, recto (cuadrado de esquinas rectas), hoja, hexagono, octogono, rombo, escudo, gota, estrella o sello.
 
 Silueta (la forma que rodea al QR, rellena de puntos de adorno con el color de los puntos y con su borde):
-- silueta: la que ha elegido el cliente, TAL CUAL, en las tres propuestas. Trabajas sobre su diseño: los colores tienen que pegar con esa forma (una estrella, en tonos de estrella; una taza, en tonos de café; un corazón, en tonos de corazón).
-- Solo si el cliente pide expresamente otras siluetas (por ejemplo "hazme 3 diseños con distintas siluetas" o "ponlo en forma de corazón") eliges otra, de la lista que te paso.
+- silueta: te paso los diseños que ha marcado el cliente, en orden (de 0 a 3). La propuesta 1 va con el primero, la 2 con el segundo y la 3 con el tercero, TAL CUAL. Las que no tengan diseño marcado, con una silueta que elijas tú de la lista, distinta de las demás propuestas y que pegue con el negocio.
+- Los colores de cada propuesta tienen que pegar con su forma (una estrella, en tonos de estrella; una taza, en tonos de café; un corazón, en tonos de corazón).
 - contorno: el color del borde de la silueta (#RRGGBB). Puede ser claro u oscuro, no afecta a la lectura; que pegue con la forma y con los puntos. Con el clásico (sin silueta) no se ve: pon el de las esquinas.
 
 Letra y textos:
@@ -261,10 +261,15 @@ Deno.serve(async req => {
     const descripcion = String(d.descripcion ?? '').trim().slice(0, 600)
     if (!descripcion) return responder({ error: 'Cuéntanos qué colores quieres para pedir propuestas.' }, 400)
     const tipografias = Array.isArray(d.tipografias) ? d.tipografias.slice(0, 30) : []
-    const silueta = typeof d.silueta === 'string' && d.silueta in SILUETAS ? d.silueta : ''
+    // Los diseños marcados por el cliente: hasta 3, sin repetir y de los que hay
+    const siluetas = [...new Set((Array.isArray(d.siluetas) ? d.siluetas : []).filter((x: unknown) => typeof x === 'string' && x in SILUETAS))].slice(0, 3) as string[]
     const mensaje = [
       `Negocio: ${s.nombre}`,
-      `Diseño elegido por el cliente: silueta "${silueta}" (${SILUETAS[silueta]}).\nSiluetas que hay (clave: forma):\n${Object.entries(SILUETAS).map(([k, v]) => `"${k}": ${v}`).join('\n')}`,
+      `${
+        siluetas.length
+          ? `Diseños marcados por el cliente, en orden:\n${siluetas.map((k, i) => `${i + 1}. "${k}" (${SILUETAS[k]})`).join('\n')}${siluetas.length < 3 ? `\nLas propuestas ${siluetas.length + 1} a 3, con siluetas que elijas tú.` : ''}`
+          : 'El cliente no ha marcado ningún diseño: elige tú una silueta distinta para cada propuesta.'
+      }\nSiluetas que hay (clave: forma):\n${Object.entries(SILUETAS).map(([k, v]) => `"${k}": ${v}`).join('\n')}`,
       // Sin los colores de su página: la IA propone desde cero con lo que cuenta el cliente y el diseño elegido
       `Lo que quiere el cliente:\n${descripcion}`,
       tipografias.length ? `Tipografías (id: nombre. estilo):\n${tipografias.map((t: any) => `${t.id}: ${t.nombre}. ${t.estilo}`).join('\n')}` : '',
