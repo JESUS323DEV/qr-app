@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import QRCodeStyling from 'qr-code-styling'
 import qrcode from 'qrcode-generator'
-import { ChevronDown, ImageUp, Layers, Minus, Plus, QrCode, Sparkles } from 'lucide-react'
+import { ChevronDown, ChevronLeft, ChevronRight, ImageUp, Layers, Minus, Plus, QrCode, Sparkles } from 'lucide-react'
 import { TRAZADOS } from './SocialIcons'
 import { TIPOGRAFIAS } from '../asistente/tipografias'
 import { loadFont } from '../lib/applyTheme'
@@ -164,6 +164,8 @@ const inicioLanding = nombre => ({
 // Muestras de color del editor del cliente (como los círculos de la landing): primero las de la landing, luego el resto
 const MUESTRAS = TODOS_ESTILOS
 const MUESTRAS_A_LA_VISTA = 7
+// Veces que el cliente puede pedir propuestas a la IA en cada sesión (las mismas que da la función mi-qr)
+const INTENTOS_IA = 2
 // Diseños a la vista en el editor del cliente (el séptimo hueco es el + que abre el resto)
 const DISENOS_A_LA_VISTA = 6
 const FORMAS_A_LA_VISTA = 4
@@ -714,6 +716,10 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
   const [placaAbierta, setPlacaAbierta] = useState(false)
   // Abierta en grande desde una propuesta de la IA: con "Enviar mi diseño" debajo
   const [conEnviar, setConEnviar] = useState(false)
+  // Editor del cliente: la pestaña abierta ('qr', 'personalizar' o 'asistente')
+  const [pestana, setPestana] = useState('qr')
+  // Editor del cliente: la propuesta de la IA que se ve en la placa (en la pestaña Asistente)
+  const [indicePropuesta, setIndicePropuesta] = useState(null)
   useEffect(() => {
     if (modo !== 'cliente' || !placaGrande.current) return
     // Sale cuando la parte de arriba de la placa grande se corta por arriba de la pantalla
@@ -855,6 +861,11 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
       })
       if (!validas.length) throw new Error('Las propuestas no se leían bien. Prueba otra vez.')
       setPropuestas(validas)
+      // En el editor del cliente, la primera ya puesta en la placa (y las flechas para pasar a las otras)
+      if (esCliente) {
+        ponerPropuesta(validas[0])
+        setIndicePropuesta(0)
+      }
     } catch (e) {
       setErrorIA(e.message)
     } finally {
@@ -900,6 +911,15 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
     setDegCentroElegido(null)
     setMuestraCentro(null)
     setConMarco(true)
+    // El centro: su forma y sus iniciales (salvo que el cliente haya puesto su logo, que se respeta)
+    if (p.centro && centro !== 'logo') {
+      if (FORMAS_CENTRO.some(([c]) => c === p.centro.forma)) setFormaCentro(p.centro.forma)
+      const letras = String(p.centro.texto ?? '').trim().toUpperCase().slice(0, 3)
+      if (letras) {
+        setTextoCentro(letras)
+        setCentro('inicial')
+      }
+    }
     // La silueta (la misma, salvo que se le hayan pedido otras) y el color de su borde
     if (typeof p.silueta === 'string' && (p.silueta === '' || SILUETAS[p.silueta])) setSilueta(p.silueta)
     setColorContorno(esHex(p.contorno) ? p.contorno : null)
@@ -1346,21 +1366,115 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
   // Vista previa: la misma placa que se descarga
   const previa = (
     <div className="flex min-w-0 justify-center overflow-hidden rounded-[0.75rem] bg-zinc-100 p-[1rem]">
-      <div className="w-full min-w-0 max-w-[18rem]" dangerouslySetInnerHTML={{ __html: vista }} />
+      {/* En el editor del cliente, algo más pequeña: deja más sitio a las opciones de cada pestaña */}
+      <div className={`w-full min-w-0 ${esCliente ? 'max-w-[14.5rem]' : 'max-w-[18rem]'}`} dangerouslySetInnerHTML={{ __html: vista }} />
     </div>
   )
   if (modo === 'vista') return <div className="mx-auto grid w-full max-w-[32rem] grid-cols-[minmax(0,1fr)]">{previa}</div>
 
+  // Editor del cliente: la barra de los diseños (en Tu QR y en el Asistente)
+  const barraDisenos = (
+    <div className="flex flex-wrap items-center gap-[0.4rem]">
+      {/* Cada diseño, con su silueta rellena de sus colores */}
+      {(masColores ? DISENOS : DISENOS.slice(0, DISENOS_A_LA_VISTA)).map(e => (
+        <button
+          key={e.clave}
+          type="button"
+          title={e.nombre}
+          aria-label={`Diseño ${e.nombre}`}
+          /* Marcado por su silueta: sigue marcado aunque luego se prueben otros colores */
+          aria-pressed={silueta === e.silueta}
+          // En el Asistente, solo la silueta: los colores (los de la propuesta de la IA) se quedan
+          onClick={() => (pestana === 'asistente' ? setSilueta(e.silueta) : ponerEstilo(e.clave))}
+          className={`flex h-[1.9rem] w-[1.9rem] items-center justify-center rounded-[0.4rem] border-2 transition-transform duration-300 ${silueta === e.silueta ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
+        >
+          {/* El clásico, sin silueta: un QR negro sobre blanco (el blanco, a mano, que el tema del cliente lo cambia) */}
+          {!e.silueta ? (
+            <span className="flex h-[1.35rem] w-[1.35rem] items-center justify-center rounded-[0.2rem]" style={{ background: '#FFFFFF', color: e.qr }}>
+              <QrCode className="h-[1.05rem] w-[1.05rem]" strokeWidth={2.5} aria-hidden="true" />
+            </span>
+          ) : (
+          <span
+            className="block h-[1.35rem] w-[1.35rem]"
+            style={{
+              background: e.degradado ? `linear-gradient(45deg, ${e.degradado.join(', ')})` : (e.muestra ?? e.qr),
+              maskImage: mascaraSilueta(e.silueta),
+              WebkitMaskImage: mascaraSilueta(e.silueta),
+              maskSize: 'contain',
+              WebkitMaskSize: 'contain',
+              maskRepeat: 'no-repeat',
+              WebkitMaskRepeat: 'no-repeat',
+            }}
+          />
+          )}
+        </button>
+      ))}
+      {/* Ver más (o menos) diseños: una muestra más, una rueda de color, con un + (o un −) encima */}
+      <button
+        type="button"
+        aria-label={masColores ? 'Ver menos diseños' : 'Ver más diseños'}
+        aria-expanded={masColores}
+        onClick={() => setMasColores(v => !v)}
+        className="flex h-[1.9rem] w-[1.9rem] items-center justify-center rounded-[0.4rem] border-2 border-zinc-300 transition-transform duration-300 hover:scale-105"
+        /* El + casi negro, que no se camufla con los colores de la rueda */
+        style={{ background: 'conic-gradient(#E5484D, #F5A524, #F2D33B, #46A758, #2E9FD9, #5B5BD6, #B04BC4, #E5484D)', color: '#141414' }}
+      >
+        {masColores ? <Minus className="h-[1rem] w-[1rem]" strokeWidth={3} aria-hidden="true" /> : <Plus className="h-[1rem] w-[1rem]" strokeWidth={3} aria-hidden="true" />}
+      </button>
+    </div>
+  )
+
+  // Editor del cliente: la barra de los colores predeterminados (en Tu QR y, con propuestas, en el Asistente)
+  const barraColores = (
+    <div className="flex flex-wrap items-center gap-[0.4rem]">
+      {(masPredeterminados ? MUESTRAS : MUESTRAS.slice(0, DISENOS_A_LA_VISTA)).map(e => (
+        <button
+          key={e.clave}
+          type="button"
+          title={e.nombre}
+          aria-label={`Colores ${e.nombre}`}
+          aria-pressed={estilo === e.clave}
+          onClick={() => ponerEstilo(e.clave)}
+          className={`h-[1.9rem] w-[1.9rem] rounded-[0.4rem] border-2 transition-transform duration-300 ${estilo === e.clave ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
+          style={{ background: fondoMuestra(e) }}
+        />
+      ))}
+      <button
+        type="button"
+        aria-label={masPredeterminados ? 'Ver menos colores' : 'Ver más colores'}
+        aria-expanded={masPredeterminados}
+        onClick={() => setMasPredeterminados(v => !v)}
+        className="flex h-[1.9rem] w-[1.9rem] items-center justify-center rounded-[0.4rem] border-2 border-zinc-300 transition-transform duration-300 hover:scale-105"
+        style={{ background: 'conic-gradient(#E5484D, #F5A524, #F2D33B, #46A758, #2E9FD9, #5B5BD6, #B04BC4, #E5484D)', color: '#141414' }}
+      >
+        {masPredeterminados ? <Minus className="h-[1rem] w-[1rem]" strokeWidth={3} aria-hidden="true" /> : <Plus className="h-[1rem] w-[1rem]" strokeWidth={3} aria-hidden="true" />}
+      </button>
+    </div>
+  )
+
   /* El asistente propone tres diseños con lo que se le cuente (y los colores de la marca, si hay); se toca uno y se aplica */
   const asistente = proponer && (
     <div className="grid gap-[0.5rem]">
+      {/* En el editor del cliente, encima del cuadro: elegir el diseño sobre el que trabaja la IA; con las propuestas
+          ya hechas, también los colores, para probarlos sobre la que se ve */}
+      {esCliente && (
+        <div className="grid gap-[0.45rem]">
+          <span className={titulo}>Elige un diseño</span>
+          {barraDisenos}
+        </div>
+      )}
+      {esCliente && propuestas && (
+        <div className="grid gap-[0.45rem]">
+          <span className={titulo}>Elige un color</span>
+          {barraColores}
+        </div>
+      )}
       <label className="grid gap-[0.3rem]">
-        <span className={titulo}>
-          {esCliente
-            ? `Elige un diseño arriba, cuéntanos cómo lo quieres y te proponemos 3 versiones${intentos != null ? ` (te quedan ${intentos} ${intentos === 1 ? 'vez' : 'veces'})` : ''}`
-            : `Cuéntale al asistente cómo lo quieres${colores ? ' (opcional: si no, usa los colores de la marca)' : ''}`}
-        </span>
+        {!esCliente && (
+          <span className={titulo}>Cuéntale al asistente cómo lo quieres{colores ? ' (opcional: si no, usa los colores de la marca)' : ''}</span>
+        )}
         <textarea
+          aria-label={esCliente ? 'Cuéntanos qué colores representan tu marca' : undefined}
           value={descripcion}
           onChange={e => setDescripcion(e.target.value)}
           rows={esCliente ? 4 : 2}
@@ -1368,7 +1482,7 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
           maxLength={600}
           placeholder={
             esCliente
-              ? 'Elegante, en verde botella y dorado. Arriba "Déjanos tu reseña" y abajo nuestro Instagram @tunegocio.'
+              ? 'Ej.: verde y crema (o los colores que representen tu marca), con la letra grande y que ponga «Déjanos tu reseña».'
               : 'Verde botella y dorado, elegante. O un degradado de morado a rosa, rollo nocturno.'
           }
           className="block w-full resize-y rounded-[0.6rem] border border-zinc-300 bg-white px-[0.75rem] py-[0.6rem] text-[0.92rem]"
@@ -1396,7 +1510,7 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
         <button
           type="button"
           onClick={() => setConfirmando(true)}
-          disabled={pensando || (!colores && !descripcion.trim()) || (esCliente && !intentos) /* sin negocio, necesita que se le cuente algo; el cliente, que le queden intentos */}
+          disabled={pensando || ((esCliente || !colores) && !descripcion.trim()) || (esCliente && !intentos) /* sin negocio (y siempre en el editor del cliente, donde la IA no usa los colores de la marca), necesita que se le cuente algo; el cliente, que le queden intentos */}
           className="inline-flex min-h-[2.75rem] items-center justify-center gap-[0.4rem] rounded-[0.75rem] bg-white font-semibold ring-1 ring-zinc-300 disabled:opacity-60"
         >
           <Sparkles className="h-[1rem] w-[1rem]" aria-hidden="true" />
@@ -1406,11 +1520,12 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
       {/* En el editor del cliente, los intentos que le quedan, debajo del botón (cada vez gasta uno) */}
       {esCliente && intentos != null && !confirmando && (
         <p className="text-center text-[0.8rem] text-zinc-500">
-          {intentos ? `Te ${intentos === 1 ? 'queda 1 vez' : `quedan ${intentos} veces`} para pedir propuestas.` : 'Ya no te quedan veces para pedir propuestas.'}
+          Intentos: {intentos}/{INTENTOS_IA}
         </p>
       )}
       {errorIA && <p className="text-[0.85rem] font-semibold text-red-600">{errorIA}</p>}
-      {propuestas && (
+      {/* En el editor del cliente no salen en lista: se pasan con las flechas en la propia placa */}
+      {!esCliente && propuestas && (
         <div className="grid gap-[0.5rem]">
           {propuestas.map((p, i) => (
             <button
@@ -1450,7 +1565,76 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
     <div className="mx-auto grid w-full max-w-[32rem] grid-cols-[minmax(0,1fr)] gap-[1rem]">
       {/* En el editor del cliente, la placa se queda fija arriba al bajar (más pequeña en el móvil, para que quede sitio
           para las opciones); así se ve cada cambio sin volver arriba */}
-      {esCliente ? <div ref={placaGrande}>{previa}</div> : previa}
+      {/* Editor del cliente: tres pestañas arriba (Tu QR, Personalizar y Asistente); la placa sale en las tres y solo
+          cambia lo de debajo */}
+      {esCliente && (
+        <div role="tablist" aria-label="Editor de tu QR" className="grid grid-cols-3 gap-[0.25rem] rounded-[1.2rem] bg-zinc-100 p-[0.25rem]">
+          {[
+            ['qr', 'Tu QR'],
+            ['personalizar', 'Personalizar'],
+            ['asistente', 'Asistente'],
+          ].map(([clave, texto]) => (
+            <button
+              key={clave}
+              type="button"
+              role="tab"
+              aria-selected={pestana === clave}
+              onClick={() => setPestana(clave)}
+              className={`inline-flex min-h-[2.4rem] items-center justify-center gap-[0.3rem] rounded-full px-[0.25rem] text-[0.8rem] font-semibold transition-colors ${pestana === clave ? 'bg-zinc-900 text-white' : 'text-zinc-500 hover:text-tinta'}`}
+            >
+              {clave === 'asistente' && <Sparkles className="h-[0.9rem] w-[0.9rem] shrink-0" aria-hidden="true" />}
+              {texto}
+            </button>
+          ))}
+        </div>
+      )}
+      {esCliente ? (
+        <div ref={placaGrande}>
+          {/* En la pestaña Asistente, con propuestas: la placa hace de galería (flechas para pasar de una a otra, y al
+              tocarla se abre en grande con "Enviar mi diseño") */}
+          {pestana === 'asistente' && propuestas?.length && indicePropuesta != null ? (
+            <div className="grid gap-[0.4rem]">
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setConEnviar(true)
+                    setPlacaAbierta(true)
+                  }}
+                  aria-label="Ver la propuesta en grande"
+                  className="block w-full"
+                >
+                  {previa}
+                </button>
+                {[
+                  [-1, 'Propuesta anterior', ChevronLeft, 'left-[0.3rem]'],
+                  [1, 'Propuesta siguiente', ChevronRight, 'right-[0.3rem]'],
+                ].map(([paso, texto, Icono, lado]) => (
+                  <button
+                    key={paso}
+                    type="button"
+                    aria-label={texto}
+                    onClick={() => {
+                      const i = (indicePropuesta + paso + propuestas.length) % propuestas.length
+                      ponerPropuesta(propuestas[i])
+                      setIndicePropuesta(i)
+                    }}
+                    className={`absolute top-1/2 ${lado} flex h-[2.2rem] w-[2.2rem] -translate-y-1/2 items-center justify-center rounded-full bg-zinc-900 text-white shadow-[0_0.2rem_0.6rem_rgb(0_0_0/0.35)]`}
+                  >
+                    <Icono className="h-[1.1rem] w-[1.1rem]" strokeWidth={2.5} aria-hidden="true" />
+                  </button>
+                ))}
+              </div>
+              <p className="text-center text-[0.9rem] font-semibold">
+                {indicePropuesta + 1}/{propuestas.length} · {propuestas[indicePropuesta].nombre}
+              </p>            </div>
+          ) : (
+            previa
+          )}
+        </div>
+      ) : (
+        previa
+      )}
 
       {/* Editor del cliente: al bajar y dejar atrás la placa grande, una barra fina fija arriba con la placa en
           miniatura (ve cada cambio sin perder sitio); al tocarla, la placa se abre en grande encima */}
@@ -1499,107 +1683,26 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
           Primero unos pocos; con "Ver más", todos */}
       {esCliente && (
         <div className="grid gap-[0.9rem]">
+          {/* Pestaña Tu QR: los diseños y los colores */}
+          {pestana === 'qr' && (
+          <>
           <div className="grid gap-[0.45rem]">
             <span className={titulo}>Diseños</span>
-            <div className="flex flex-wrap items-center gap-[0.4rem]">
-              {/* Cada diseño, con su silueta rellena de sus colores */}
-              {(masColores ? DISENOS : DISENOS.slice(0, DISENOS_A_LA_VISTA)).map(e => (
-                <button
-                  key={e.clave}
-                  type="button"
-                  title={e.nombre}
-                  aria-label={`Diseño ${e.nombre}`}
-                  /* Marcado por su silueta: sigue marcado aunque luego se prueben otros colores */
-                  aria-pressed={silueta === e.silueta}
-                  onClick={() => ponerEstilo(e.clave)}
-                  className={`flex h-[1.9rem] w-[1.9rem] items-center justify-center rounded-[0.4rem] border-2 transition-transform duration-300 ${silueta === e.silueta ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
-                >
-                  {/* El clásico, sin silueta: un QR negro sobre blanco (el blanco, a mano, que el tema del cliente lo cambia) */}
-                  {!e.silueta ? (
-                    <span className="flex h-[1.35rem] w-[1.35rem] items-center justify-center rounded-[0.2rem]" style={{ background: '#FFFFFF', color: e.qr }}>
-                      <QrCode className="h-[1.05rem] w-[1.05rem]" strokeWidth={2.5} aria-hidden="true" />
-                    </span>
-                  ) : (
-                  <span
-                    className="block h-[1.35rem] w-[1.35rem]"
-                    style={{
-                      background: e.degradado ? `linear-gradient(45deg, ${e.degradado.join(', ')})` : (e.muestra ?? e.qr),
-                      maskImage: mascaraSilueta(e.silueta),
-                      WebkitMaskImage: mascaraSilueta(e.silueta),
-                      maskSize: 'contain',
-                      WebkitMaskSize: 'contain',
-                      maskRepeat: 'no-repeat',
-                      WebkitMaskRepeat: 'no-repeat',
-                    }}
-                  />
-                  )}
-                </button>
-              ))}
-              {/* Ver más (o menos) diseños: una muestra más, una rueda de color, con un + (o un −) encima */}
-              <button
-                type="button"
-                aria-label={masColores ? 'Ver menos diseños' : 'Ver más diseños'}
-                aria-expanded={masColores}
-                onClick={() => setMasColores(v => !v)}
-                className="flex h-[1.9rem] w-[1.9rem] items-center justify-center rounded-[0.4rem] border-2 border-zinc-300 transition-transform duration-300 hover:scale-105"
-                /* El + casi negro, que no se camufla con los colores de la rueda */
-                style={{ background: 'conic-gradient(#E5484D, #F5A524, #F2D33B, #46A758, #2E9FD9, #5B5BD6, #B04BC4, #E5484D)', color: '#141414' }}
-              >
-                {masColores ? <Minus className="h-[1rem] w-[1rem]" strokeWidth={3} aria-hidden="true" /> : <Plus className="h-[1rem] w-[1rem]" strokeWidth={3} aria-hidden="true" />}
-              </button>
-            </div>
+            {barraDisenos}
           </div>
           {/* Colores: los predeterminados (redes, lisos y degradados), para probar colores sobre el diseño elegido; solo
               cambian los colores, la silueta se queda. Primero unos pocos; con el +, todos */}
           <div className="grid gap-[0.45rem]">
             <span className={titulo}>Colores</span>
-            <div className="flex flex-wrap items-center gap-[0.4rem]">
-              {(masPredeterminados ? MUESTRAS : MUESTRAS.slice(0, DISENOS_A_LA_VISTA)).map(e => (
-                <button
-                  key={e.clave}
-                  type="button"
-                  title={e.nombre}
-                  aria-label={`Colores ${e.nombre}`}
-                  aria-pressed={estilo === e.clave}
-                  onClick={() => ponerEstilo(e.clave)}
-                  className={`h-[1.9rem] w-[1.9rem] rounded-[0.4rem] border-2 transition-transform duration-300 ${estilo === e.clave ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
-                  style={{ background: fondoMuestra(e) }}
-                />
-              ))}
-              <button
-                type="button"
-                aria-label={masPredeterminados ? 'Ver menos colores' : 'Ver más colores'}
-                aria-expanded={masPredeterminados}
-                onClick={() => setMasPredeterminados(v => !v)}
-                className="flex h-[1.9rem] w-[1.9rem] items-center justify-center rounded-[0.4rem] border-2 border-zinc-300 transition-transform duration-300 hover:scale-105"
-                style={{ background: 'conic-gradient(#E5484D, #F5A524, #F2D33B, #46A758, #2E9FD9, #5B5BD6, #B04BC4, #E5484D)', color: '#141414' }}
-              >
-                {masPredeterminados ? <Minus className="h-[1rem] w-[1rem]" strokeWidth={3} aria-hidden="true" /> : <Plus className="h-[1rem] w-[1rem]" strokeWidth={3} aria-hidden="true" />}
-              </button>
-            </div>
+            {barraColores}
           </div>
-          {/* El asistente de IA, en su desplegable: al abrirlo, el cuadro de texto y su botón */}
-          {asistente && (
-            <details className="mt-[0.75rem] rounded-[0.1rem] bg-[#242422] ring-1 ring-[#3a3935]">
-              <summary className="flex cursor-pointer list-none items-center gap-[0.75rem] px-[0.85rem] py-[0.8rem] [&::-webkit-details-marker]:hidden">
-                <Sparkles className="h-[1rem] w-[1rem] shrink-0 text-acento" aria-hidden="true" />
-                <span className={tituloGrupo}>Usar el asistente IA</span>
-                <span className="ml-auto text-[0.85rem] font-semibold text-acento [details[open]>summary>&]:hidden">Abrir</span>
-                <span className="ml-auto hidden text-[0.85rem] font-semibold text-acento [details[open]>summary>&]:inline">Cerrar</span>
-                <ChevronDown className="h-[1rem] w-[1rem] shrink-0 text-acento transition-transform [details[open]>summary>&]:rotate-180" aria-hidden="true" />
-              </summary>
-              <div className="px-[0.85rem] pb-[0.85rem]">{asistente}</div>
-            </details>
+          </>
           )}
-          {/* Personalizar: un desplegable con los de los colores, los puntos, el centro, los textos y la placa dentro */}
-          <details className="rounded-[0.1rem] bg-[#242422] ring-1 ring-[#3a3935]">
-            <summary className="flex cursor-pointer list-none items-center gap-[0.75rem] px-[0.85rem] py-[0.8rem] [&::-webkit-details-marker]:hidden">
-              <span className={tituloGrupo}>Personalizar</span>
-              <span className="ml-auto text-[0.85rem] font-semibold text-acento [details[open]>summary>&]:hidden">Abrir</span>
-              <span className="ml-auto hidden text-[0.85rem] font-semibold text-acento [details[open]>summary>&]:inline">Cerrar</span>
-              <ChevronDown className="h-[1rem] w-[1rem] shrink-0 text-acento transition-transform [details[open]>summary>&]:rotate-180" aria-hidden="true" />
-            </summary>
-          <div className="grid gap-[0.45rem] px-[0.85rem] pb-[0.85rem]">
+          {/* Pestaña Asistente: el cuadro de texto con su botón, los intentos y las propuestas */}
+          {pestana === 'asistente' && asistente}
+          {/* Pestaña Personalizar: los desplegables de los colores, los puntos, el centro, los textos y la placa */}
+          {pestana === 'personalizar' && (
+          <div className="grid gap-[0.45rem]">
           {/* Grupo: los colores a mano, uno por cada parte, con su color actual en la barra (liso o su degradado); dentro,
               solo su color y, si tiene, su degradado. Los avisos, debajo, siempre a la vista */}
           <details className="rounded-[0.1rem] bg-[#242422] ring-1 ring-[#3a3935]">
@@ -1964,7 +2067,7 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
             </div>
           </details>
           </div>
-          </details>
+          )}
         </div>
       )}
 

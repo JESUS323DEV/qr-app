@@ -95,6 +95,16 @@ const ESQUEMA = {
             required: ['esquinas', 'borde'],
             additionalProperties: false,
           },
+          // El centro del QR: su forma y sus letras (las iniciales del nombre de arriba)
+          centro: {
+            type: 'object',
+            properties: {
+              forma: { type: 'string', enum: ['circulo', 'cuadrado', 'corazon', 'recto', 'hoja', 'hexagono', 'octogono', 'rombo', 'escudo', 'gota', 'estrella', 'sello'] },
+              texto: { type: 'string' },
+            },
+            required: ['forma', 'texto'],
+            additionalProperties: false,
+          },
           // La silueta del QR ('' es el clásico, sin silueta) y el color de su borde
           silueta: { type: 'string', enum: Object.keys(SILUETAS) },
           contorno: { type: 'string' },
@@ -108,7 +118,7 @@ const ESQUEMA = {
             additionalProperties: false,
           },
         },
-        required: ['nombre', 'motivo', 'puntos', 'esquinas', 'fondo', 'marco', 'textoMarco', 'formaPuntos', 'formaEsquinas', 'puntoEsquinas', 'degradado', 'doble', 'placa', 'silueta', 'contorno', 'tipografia', 'tamano', 'textos'],
+        required: ['nombre', 'motivo', 'puntos', 'esquinas', 'fondo', 'marco', 'textoMarco', 'formaPuntos', 'formaEsquinas', 'puntoEsquinas', 'degradado', 'doble', 'placa', 'centro', 'silueta', 'contorno', 'tipografia', 'tamano', 'textos'],
         additionalProperties: false,
       },
     },
@@ -117,8 +127,8 @@ const ESQUEMA = {
   additionalProperties: false,
 }
 
-const INSTRUCCIONES = `Eres el asistente de diseño de Jesús, que hace placas con QR para negocios locales de Barcelona: el QR va impreso en una placa o pegatina en el local y abre la página del negocio. El dueño del negocio te cuenta cómo quiere su placa (y te paso los colores de su marca) y tú propones TRES diseños completos, distintos entre sí, que se lean siempre con cualquier móvil.
-- Manda lo que pide el cliente. Los colores de su marca son la referencia si no dice otros.
+const INSTRUCCIONES = `Eres el asistente de diseño de Jesús, que hace placas con QR para negocios locales de Barcelona: el QR va impreso en una placa o pegatina en el local y abre la página del negocio. El dueño del negocio ha elegido un diseño (una silueta) y te cuenta qué colores representan su marca y cómo quiere su placa; tú propones TRES diseños completos, distintos entre sí, que se lean siempre con cualquier móvil.
+- Manda lo que pide el cliente: sus colores son la base de las tres propuestas.
 - Las tres propuestas distintas: por ejemplo, una fiel a lo que pide, una más llamativa y una más sobria o elegante.
 
 Colores (todos en #RRGGBB):
@@ -133,6 +143,7 @@ Formas (que vayan con el estilo):
 - formaPuntos: rounded (redondeados), extra-rounded (muy redondeados), square (cuadrados), dots (puntos), classy-rounded (elegantes), classy (elegantes rectos).
 - formaEsquinas (el marco de los tres ojos de las esquinas) y puntoEsquinas (su punto de dentro): las mismas formas, más dot (círculo) y, en formaEsquinas, extra-rounded (redondeado) y square (cuadrado). Elegante: classy-rounded y dot; moderno o alegre: dots o extra-rounded; sobrio: square.
 - placa (siempre rectangular; la forma no la eliges tú): esquinas rectas, suaves o redondas; borde fino, normal o ancho alrededor del QR.
+- centro: lo que va en medio del QR. texto: las iniciales del nombre que pones arriba en la placa (la primera letra de cada palabra, en mayúsculas, como mucho 3: "Hornitos" → "H", "Corte Oeste" → "CO"). forma: la que mejor vaya con la propuesta: circulo, cuadrado, corazon, recto (cuadrado de esquinas rectas), hoja, hexagono, octogono, rombo, escudo, gota, estrella o sello.
 
 Silueta (la forma que rodea al QR, rellena de puntos de adorno con el color de los puntos y con su borde):
 - silueta: la que ha elegido el cliente, TAL CUAL, en las tres propuestas. Trabajas sobre su diseño: los colores tienen que pegar con esa forma (una estrella, en tonos de estrella; una taza, en tonos de café; un corazón, en tonos de corazón).
@@ -247,16 +258,15 @@ Deno.serve(async req => {
     const { count } = await db.from('usos_qr').select('id', { count: 'exact', head: true }).gte('creado', hoy.toISOString())
     if ((count ?? 0) >= LIMITE_DIARIO) return responder({ error: 'Ahora mismo no se pueden pedir más propuestas. Prueba mañana o ajústalo a mano.' }, 429)
 
-    const c = s.colores ?? {}
+    const descripcion = String(d.descripcion ?? '').trim().slice(0, 600)
+    if (!descripcion) return responder({ error: 'Cuéntanos qué colores quieres para pedir propuestas.' }, 400)
     const tipografias = Array.isArray(d.tipografias) ? d.tipografias.slice(0, 30) : []
     const silueta = typeof d.silueta === 'string' && d.silueta in SILUETAS ? d.silueta : ''
     const mensaje = [
       `Negocio: ${s.nombre}`,
       `Diseño elegido por el cliente: silueta "${silueta}" (${SILUETAS[silueta]}).\nSiluetas que hay (clave: forma):\n${Object.entries(SILUETAS).map(([k, v]) => `"${k}": ${v}`).join('\n')}`,
-      String(d.descripcion ?? '').trim() ? `Lo que quiere el cliente:\n${String(d.descripcion).trim().slice(0, 600)}` : 'El cliente no ha dicho nada concreto: guíate por su marca.',
-      s.colores
-        ? `Colores de su página:\n- fondo de la página: ${c.bg}\n- superficies: ${c.surface}\n- principal: ${c.primary}\n- acento: ${c.accent}\n- texto: ${c.text}${c.header ? `\n- cabecera: ${c.header}` : ''}`
-        : '',
+      // Sin los colores de su página: la IA propone desde cero con lo que cuenta el cliente y el diseño elegido
+      `Lo que quiere el cliente:\n${descripcion}`,
       tipografias.length ? `Tipografías (id: nombre. estilo):\n${tipografias.map((t: any) => `${t.id}: ${t.nombre}. ${t.estilo}`).join('\n')}` : '',
     ]
       .filter(Boolean)
