@@ -81,10 +81,11 @@ const DISENOS = [
   // contorno: el color del borde de la silueta, si no es el de las esquinas del QR
   { clave: 'sil-estrella', nombre: 'Estrella', silueta: 'estrella', placa: '#FFFFFF', qr: '#1A57C8', degradado: ['#1A57C8', '#C5221F', '#B06000', '#188038'], contorno: '#B85A0E' },
   { clave: 'sil-ubicacion', nombre: 'Ubicación', silueta: 'ubicacion', placa: '#FFFFFF', qr: '#8E1B1B', degradado: ['#8E1B1B', '#C5221F'], contorno: '#2B2B2B' },
-  { clave: 'sil-taza', nombre: 'Taza de café', silueta: 'taza', placa: '#4A2E1F', qr: '#4A2E1F' },
+  // muestra: el color de su muestra, si el de sus puntos es tan oscuro que no se ve sobre el fondo del editor
+  { clave: 'sil-taza', nombre: 'Taza de café', silueta: 'taza', placa: '#4A2E1F', qr: '#4A2E1F', muestra: '#A86B3C' },
   { clave: 'sil-flor', nombre: 'Flor', silueta: 'flor', placa: '#F2C9CF', qr: '#B5656B' },
   { clave: 'sil-flor-tallo', nombre: 'Flor con tallo', silueta: 'flor-tallo', placa: '#CDBDF0', qr: '#4B3A7A' },
-  { clave: 'sil-rombo', nombre: 'Rombo', silueta: 'rombo', placa: '#1B2A4A', qr: '#1B2A4A' },
+  { clave: 'sil-rombo', nombre: 'Rombo', silueta: 'rombo', placa: '#1B2A4A', qr: '#1B2A4A', muestra: '#3A63B8' },
 ]
 
 // Colores predeterminados lisos (sin degradado): placa de un color y el QR oscuro a juego, para cualquier negocio
@@ -693,6 +694,7 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
   const [errorEnvio, setErrorEnvio] = useState('')
   // Editor del cliente: "Ver más" de los colores y de las formas de los puntos
   const [masColores, setMasColores] = useState(false)
+  const [masPredeterminados, setMasPredeterminados] = useState(false)
   const [masFormas, setMasFormas] = useState(false)
   const [masOjos, setMasOjos] = useState(false)
   // La opción de esquinas y de borde de la placa que se marca: la más cercana a la que lleva
@@ -1373,9 +1375,10 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
                   type="button"
                   title={e.nombre}
                   aria-label={`Diseño ${e.nombre}`}
-                  aria-pressed={estilo === e.clave}
+                  /* Marcado por su silueta: sigue marcado aunque luego se prueben otros colores */
+                  aria-pressed={silueta === e.silueta}
                   onClick={() => ponerEstilo(e.clave)}
-                  className={`flex h-[1.9rem] w-[1.9rem] items-center justify-center rounded-[0.4rem] border-2 transition-transform duration-300 ${estilo === e.clave ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
+                  className={`flex h-[1.9rem] w-[1.9rem] items-center justify-center rounded-[0.4rem] border-2 transition-transform duration-300 ${silueta === e.silueta ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
                 >
                   {/* El clásico, sin silueta: un QR negro sobre blanco (el blanco, a mano, que el tema del cliente lo cambia) */}
                   {!e.silueta ? (
@@ -1386,7 +1389,7 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
                   <span
                     className="block h-[1.35rem] w-[1.35rem]"
                     style={{
-                      background: e.degradado ? `linear-gradient(45deg, ${e.degradado.join(', ')})` : e.qr,
+                      background: e.degradado ? `linear-gradient(45deg, ${e.degradado.join(', ')})` : (e.muestra ?? e.qr),
                       maskImage: mascaraSilueta(e.silueta),
                       WebkitMaskImage: mascaraSilueta(e.silueta),
                       maskSize: 'contain',
@@ -1412,9 +1415,44 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
               </button>
             </div>
           </div>
-          {/* Personalizar: los desplegables de los colores, los puntos, el centro, los textos y la placa, bajo su título */}
+          {/* Colores: los predeterminados (redes, lisos y degradados), para probar colores sobre el diseño elegido; solo
+              cambian los colores, la silueta se queda. Primero unos pocos; con el +, todos */}
           <div className="grid gap-[0.45rem]">
-          <span className={titulo}>Personalizar</span>
+            <span className={titulo}>Colores</span>
+            <div className="flex flex-wrap items-center gap-[0.4rem]">
+              {(masPredeterminados ? MUESTRAS : MUESTRAS.slice(0, DISENOS_A_LA_VISTA)).map(e => (
+                <button
+                  key={e.clave}
+                  type="button"
+                  title={e.nombre}
+                  aria-label={`Colores ${e.nombre}`}
+                  aria-pressed={estilo === e.clave}
+                  onClick={() => ponerEstilo(e.clave)}
+                  className={`h-[1.9rem] w-[1.9rem] rounded-[0.4rem] border-2 transition-transform duration-300 ${estilo === e.clave ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
+                  style={{ background: fondoMuestra(e) }}
+                />
+              ))}
+              <button
+                type="button"
+                aria-label={masPredeterminados ? 'Ver menos colores' : 'Ver más colores'}
+                aria-expanded={masPredeterminados}
+                onClick={() => setMasPredeterminados(v => !v)}
+                className="flex h-[1.9rem] w-[1.9rem] items-center justify-center rounded-[0.4rem] border-2 border-zinc-300 transition-transform duration-300 hover:scale-105"
+                style={{ background: 'conic-gradient(#E5484D, #F5A524, #F2D33B, #46A758, #2E9FD9, #5B5BD6, #B04BC4, #E5484D)', color: '#141414' }}
+              >
+                {masPredeterminados ? <Minus className="h-[1rem] w-[1rem]" strokeWidth={3} aria-hidden="true" /> : <Plus className="h-[1rem] w-[1rem]" strokeWidth={3} aria-hidden="true" />}
+              </button>
+            </div>
+          </div>
+          {/* Personalizar: un desplegable con los de los colores, los puntos, el centro, los textos y la placa dentro */}
+          <details className="rounded-[0.1rem] bg-[#242422] ring-1 ring-[#3a3935]">
+            <summary className="flex cursor-pointer list-none items-center gap-[0.75rem] px-[0.85rem] py-[0.8rem] [&::-webkit-details-marker]:hidden">
+              <span className={tituloGrupo}>Personalizar</span>
+              <span className="ml-auto text-[0.85rem] font-semibold text-acento [details[open]>summary>&]:hidden">Abrir</span>
+              <span className="ml-auto hidden text-[0.85rem] font-semibold text-acento [details[open]>summary>&]:inline">Cerrar</span>
+              <ChevronDown className="h-[1rem] w-[1rem] shrink-0 text-acento transition-transform [details[open]>summary>&]:rotate-180" aria-hidden="true" />
+            </summary>
+          <div className="grid gap-[0.45rem] px-[0.85rem] pb-[0.85rem]">
           {/* Grupo: los colores a mano, uno por cada parte, con su color actual en la barra (liso o su degradado); dentro,
               solo su color y, si tiene, su degradado. Los avisos, debajo, siempre a la vista */}
           <details className="rounded-[0.1rem] bg-[#242422] ring-1 ring-[#3a3935]">
@@ -1742,23 +1780,6 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
               <ChevronDown className="h-[1rem] w-[1rem] shrink-0 text-acento transition-transform [details[open]>summary>&]:rotate-180" aria-hidden="true" />
             </summary>
             <div className="grid gap-[0.9rem] px-[0.85rem] pb-[0.85rem]">
-                {/* Silueta del QR: ninguna o una forma rellena de puntos de adorno, con el QR de verdad en el centro */}
-                <div className="grid gap-[0.45rem]">
-                  <span className={titulo}>Silueta del QR</span>
-                  <div className="flex flex-wrap gap-[0.3rem] self-start justify-self-start rounded-[1.2rem] bg-zinc-100 p-[0.25rem]">
-                    {OPCIONES_SILUETA.map(([valor, texto]) => (
-                      <button
-                        key={texto}
-                        type="button"
-                        aria-pressed={silueta === valor}
-                        onClick={() => setSilueta(valor)}
-                        className={`min-h-[2rem] rounded-full px-[0.8rem] text-[0.85rem] font-semibold transition-colors ${silueta === valor ? 'bg-zinc-900 text-white' : 'text-zinc-500 hover:text-tinta'}`}
-                      >
-                        {texto}
-                      </button>
-                    ))}
-                  </div>
-                </div>
                 {formaPlaca === 'rectangular' && (
                 <div className="grid gap-[0.45rem]">
                   <span className={titulo}>Esquinas</span>
@@ -1796,6 +1817,7 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
             </div>
           </details>
           </div>
+          </details>
         </div>
       )}
 
