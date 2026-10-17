@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import QRCodeStyling from 'qr-code-styling'
-import { ChevronDown, ImageUp, Settings, Layers, Minus, Plus, QrCode, Sparkles } from 'lucide-react'
+import qrcode from 'qrcode-generator'
+import { ChevronDown, ImageUp, Layers, Minus, Plus, QrCode, Sparkles } from 'lucide-react'
 import { TRAZADOS } from './SocialIcons'
 import { TIPOGRAFIAS } from '../asistente/tipografias'
 import { loadFont } from '../lib/applyTheme'
@@ -68,6 +69,22 @@ const ESTILOS = [
   { clave: 'tiktok', nombre: 'TikTok', placa: '#000000', qr: '#000000', doble: ['#25F4EE', '#FE2C55'] },
   { clave: 'rosa', nombre: 'Rosa', placa: '#F2C9CF', qr: '#B5656B' },
   { clave: 'celeste', nombre: 'Celeste', placa: '#9BD8F2', qr: '#0B2F4A', degradado: ['#0B2F4A', '#0E4F7A', '#0F7A95'] },
+]
+
+/* Diseños del editor del cliente: cada silueta del QR con sus colores puestos (como los estilos, más su silueta) */
+const DISENOS = [
+  // El de toda la vida: el QR cuadrado, sin silueta, negro sobre la placa blanca
+  { clave: 'sil-base', nombre: 'Clásico', silueta: '', placa: '#FFFFFF', qr: '#141414' },
+  { clave: 'sil-corazon', nombre: 'Corazón', silueta: 'corazon', placa: '#FFFFFF', qr: '#833AB4', degradado: ['#833AB4', '#C13584', '#E1306C', '#F77737'] },
+  { clave: 'sil-pulgar', nombre: 'Me gusta', silueta: 'pulgar', placa: '#FFFFFF', qr: '#0A2E73', degradado: ['#0A2E73', '#0866FF', '#1E8CFF'] },
+  { clave: 'sil-bocadillo', nombre: 'Mensaje', silueta: 'bocadillo', placa: '#FFFFFF', qr: '#075E54', degradado: ['#075E54', '#128C7E', '#1DA851'] },
+  // contorno: el color del borde de la silueta, si no es el de las esquinas del QR
+  { clave: 'sil-estrella', nombre: 'Estrella', silueta: 'estrella', placa: '#FFFFFF', qr: '#1A57C8', degradado: ['#1A57C8', '#C5221F', '#B06000', '#188038'], contorno: '#B85A0E' },
+  { clave: 'sil-ubicacion', nombre: 'Ubicación', silueta: 'ubicacion', placa: '#FFFFFF', qr: '#8E1B1B', degradado: ['#8E1B1B', '#C5221F'], contorno: '#2B2B2B' },
+  { clave: 'sil-taza', nombre: 'Taza de café', silueta: 'taza', placa: '#4A2E1F', qr: '#4A2E1F' },
+  { clave: 'sil-flor', nombre: 'Flor', silueta: 'flor', placa: '#F2C9CF', qr: '#B5656B' },
+  { clave: 'sil-flor-tallo', nombre: 'Flor con tallo', silueta: 'flor-tallo', placa: '#CDBDF0', qr: '#4B3A7A' },
+  { clave: 'sil-rombo', nombre: 'Rombo', silueta: 'rombo', placa: '#1B2A4A', qr: '#1B2A4A' },
 ]
 
 // Colores predeterminados lisos (sin degradado): placa de un color y el QR oscuro a juego, para cualquier negocio
@@ -140,7 +157,22 @@ const inicioLanding = nombre => ({
 // Muestras de color del editor del cliente (como los círculos de la landing): primero las de la landing, luego el resto
 const MUESTRAS = TODOS_ESTILOS
 const MUESTRAS_A_LA_VISTA = 7
+// Diseños a la vista en el editor del cliente (el séptimo hueco es el + que abre el resto)
+const DISENOS_A_LA_VISTA = 6
 const FORMAS_A_LA_VISTA = 4
+// Placa en el editor del cliente: esquinas y borde, con 3 opciones cada uno (la forma la decide Jesús) (las mismas medidas que usa la IA)
+const ESQUINAS_PLACA = [
+  [0, 'Rectas'],
+  [0.06, 'Suaves'],
+  [0.14, 'Redondas'],
+]
+const BORDES_PLACA = [
+  [0.05, 'Fino'],
+  [0.08, 'Normal'],
+  [0.12, 'Ancho'],
+]
+// De una lista de opciones, el valor más cercano a uno dado (para marcar la elegida aunque no coincida justo)
+const masCercano = (opciones, valor) => opciones.reduce((a, [v]) => (Math.abs(v - valor) < Math.abs(a - valor) ? v : a), opciones[0][0])
 /* Fondo del círculo de cada muestra, como en la landing: el degradado entero en las placas blancas con degradado
    (Instagram, Facebook) y en los degradados; la doble imagen en la de TikTok; y en las demás (Rosa, Celeste, lisos),
    mitad placa y mitad color del QR */
@@ -236,6 +268,217 @@ const FIGURAS_CENTRO = {
   estrella: r => `<polygon points="50,4 61.76,35.82 95.65,37.17 69.02,58.18 78.21,90.83 50,72 21.79,90.83 30.98,58.18 4.35,37.17 38.24,35.82" fill="${r}"/>`,
   sello: r => `<polygon points="${PUNTAS_SELLO}" fill="${r}"/>`,
 }
+/* Siluetas del QR: el QR de verdad va cuadrado en el centro (es lo único que lee el móvil); alrededor, la silueta
+   rellena de puntos de adorno (del mismo tamaño, forma y color que los del QR, sin significado) y con su contorno.
+   Entre el QR y los adornos queda un margen libre, para que el móvil no se confunda.
+   Cada silueta: nombre, qr (lado del QR de verdad, en proporción al cuadro) y radio(ángulo) (su borde, en
+   proporción al cuadro, medido desde el centro) */
+/* Las siluetas se dibujan en un cuadro de 1 × 1 (medidas de 0 a 1) y se escalan al tamaño de la placa */
+const n2 = v => +v.toFixed(4)
+// Puntos de un borde en forma polar: radio(ángulo) desde un centro
+const bordePolar = (radio, cx = 0.5, cy = 0.5, n = 240) =>
+  Array.from({ length: n }, (_, i) => {
+    const a = (i / n) * Math.PI * 2
+    return [cx + radio(a) * Math.cos(a), cy + radio(a) * Math.sin(a)]
+  })
+// Camino SVG de un polígono
+const poligono = puntos => `M${puntos.map(([x, y]) => `${n2(x)},${n2(y)}`).join(' L')} Z`
+/* Una banda (como un tallo o una voluta de vapor): sigue una línea central con un grosor que puede cambiar; devuelve
+   el polígono de su contorno. centro(t) y ancho(t), con t de 0 a 1 */
+const banda = (centro, ancho, n = 60) => {
+  const izquierda = []
+  const derecha = []
+  for (let i = 0; i <= n; i++) {
+    const t = i / n
+    const [x, y] = centro(t)
+    const [x2, y2] = centro(Math.min(1, t + 0.01))
+    const [x1, y1] = centro(Math.max(0, t - 0.01))
+    const dx = x2 - x1
+    const dy = y2 - y1
+    const largo = Math.hypot(dx, dy) || 1
+    const w = ancho(t) / 2
+    izquierda.push([x - (dy / largo) * w, y + (dx / largo) * w])
+    derecha.push([x + (dy / largo) * w, y - (dx / largo) * w])
+  }
+  return [...izquierda, ...derecha.reverse()]
+}
+// Curva de Bézier cuadrática (para la línea central de las bandas)
+const bezier = (p0, p1, p2) => t => [
+  (1 - t) ** 2 * p0[0] + 2 * (1 - t) * t * p1[0] + t ** 2 * p2[0],
+  (1 - t) ** 2 * p0[1] + 2 * (1 - t) * t * p1[1] + t ** 2 * p2[1],
+]
+/* Cada silueta: nombre, qr (lado del QR de verdad), centro (dónde va el QR) y piezas: las piezas de su forma, de atrás
+   adelante, cada una con su camino SVG y su regla de relleno (evenodd para las que tienen agujero) */
+const SILUETAS = {
+  // Flor: un círculo con el borde en 10 ondas suaves
+  flor: { nombre: 'Flor', qr: 0.56, centro: [0.5, 0.5], piezas: [{ d: poligono(bordePolar(a => 0.43 + 0.035 * Math.cos(10 * a))) }] },
+  estrella: {
+    nombre: 'Estrella',
+    qr: 0.3,
+    centro: [0.5, 0.56],
+    piezas: [
+      {
+        d: poligono(
+          Array.from({ length: 10 }, (_, i) => {
+            const a = -Math.PI / 2 + (i * Math.PI) / 5
+            const r = i % 2 ? 0.27 : 0.49
+            return [0.5 + r * Math.cos(a), 0.54 + r * Math.sin(a)]
+          }),
+        ),
+      },
+    ],
+  },
+  rombo: { nombre: 'Rombo', qr: 0.44, centro: [0.5, 0.5], piezas: [{ d: poligono([[0.5, 0.02], [0.98, 0.5], [0.5, 0.98], [0.02, 0.5]]) }] },
+  // Ubicación: el pin de los mapas, con su aro en el suelo (el aro va detrás y el pin lo tapa por delante)
+  ubicacion: {
+    nombre: 'Ubicación',
+    qr: 0.38,
+    centro: [0.5, 0.36],
+    piezas: [
+      {
+        d: 'M0.08,0.86 A0.42,0.11 0 1 0 0.92,0.86 A0.42,0.11 0 1 0 0.08,0.86 Z M0.23,0.86 A0.27,0.055 0 1 0 0.77,0.86 A0.27,0.055 0 1 0 0.23,0.86 Z',
+        regla: 'evenodd',
+      },
+      { d: 'M0.266,0.5476 A0.3,0.3 0 1 1 0.734,0.5476 L0.5,0.86 Z' },
+    ],
+  },
+  // Flor con tallo: la flor de 7 pétalos arriba, el tallo curvo y una hoja (la flor tapa el principio del tallo)
+  'flor-tallo': {
+    nombre: 'Flor con tallo',
+    qr: 0.34,
+    centro: [0.47, 0.35],
+    piezas: [
+      { d: poligono(banda(bezier([0.47, 0.6], [0.43, 0.86], [0.17, 0.93]), () => 0.05)) },
+      { d: 'M0.44,0.81 Q0.5,0.63 0.74,0.66 Q0.69,0.83 0.44,0.81 Z' },
+      { d: poligono(bordePolar(a => 0.29 + 0.045 * Math.cos(7 * a), 0.47, 0.35)) },
+    ],
+  },
+  // Taza de café, de Phosphor (iconos libres, licencia MIT): la taza con su asa, su plato y el vapor
+  taza: {
+    nombre: 'Taza de café',
+    qr: 0.34,
+    centro: [0.46, 0.56],
+    piezas: [{ d: 'M208,80H32a8,8,0,0,0-8,8v48a96.3,96.3,0,0,0,32.54,72H32a8,8,0,0,0,0,16H208a8,8,0,0,0,0-16H183.46a96.59,96.59,0,0,0,27-40.09A40,40,0,0,0,248,128v-8A40,40,0,0,0,208,80Zm24,48a24,24,0,0,1-17.2,23,95.78,95.78,0,0,0,1.2-15V97.38A24,24,0,0,1,232,120ZM112,56V24a8,8,0,0,1,16,0V56a8,8,0,0,1-16,0Zm32,0V24a8,8,0,0,1,16,0V56a8,8,0,0,1-16,0ZM80,56V24a8,8,0,0,1,16,0V56a8,8,0,0,1-16,0Z', base: 256 }],
+  },
+  // Pulgar arriba ("me gusta"): el puño aparte a la izquierda y la mano con el pulgar redondeado y los cuatro dedos
+  pulgar: {
+    nombre: 'Me gusta',
+    qr: 0.38,
+    centro: [0.55, 0.63],
+    piezas: [
+      { d: 'M0.06,0.38 L0.17,0.38 Q0.2,0.38 0.2,0.41 L0.2,0.89 Q0.2,0.92 0.17,0.92 L0.06,0.92 Q0.03,0.92 0.03,0.89 L0.03,0.41 Q0.03,0.38 0.06,0.38 Z' },
+      {
+        d: 'M0.26,0.42 L0.47,0.2 C0.47,0.1 0.52,0.06 0.56,0.06 C0.62,0.06 0.66,0.12 0.64,0.22 L0.61,0.36 L0.86,0.36 C0.95,0.36 0.95,0.5 0.86,0.5 C0.93,0.5 0.93,0.63 0.85,0.63 C0.91,0.63 0.91,0.76 0.83,0.76 C0.89,0.76 0.89,0.9 0.8,0.9 L0.3,0.9 Q0.26,0.9 0.26,0.86 Z',
+      },
+    ],
+  },
+  // Corazón: el QR un poco por debajo del pico de arriba, donde es ancho
+  corazon: {
+    nombre: 'Corazón',
+    qr: 0.4,
+    centro: [0.5, 0.46],
+    piezas: [
+      {
+        d: 'M0.5,0.95 C0.2,0.72 0.02,0.52 0.02,0.3 C0.02,0.13 0.15,0.04 0.28,0.04 C0.39,0.04 0.47,0.11 0.5,0.2 C0.53,0.11 0.61,0.04 0.72,0.04 C0.85,0.04 0.98,0.13 0.98,0.3 C0.98,0.52 0.8,0.72 0.5,0.95 Z',
+      },
+    ],
+  },
+  // Bocadillo de mensaje, de Phosphor: un círculo con su pico abajo a la izquierda
+  bocadillo: {
+    nombre: 'Mensaje',
+    qr: 0.5,
+    centro: [0.5, 0.5],
+    piezas: [{ d: 'M232,128A104,104,0,0,1,79.12,219.82L45.07,231.17a16,16,0,0,1-20.24-20.24l11.35-34.05A104,104,0,1,1,232,128Z', base: 256 }],
+  },
+}
+const OPCIONES_SILUETA = [['', 'Ninguna'], ...Object.entries(SILUETAS).map(([clave, v]) => [clave, v.nombre])]
+// La silueta entera como máscara CSS (para las muestras de los diseños: la forma, rellena con sus colores)
+const mascaraSilueta = clave => {
+  const piezas = SILUETAS[clave].piezas
+    .map(p => `<path transform="scale(${1 / (p.base ?? 1)})" d="${p.d}" fill-rule="${p.regla ?? 'nonzero'}"/>`)
+    .join('')
+  return `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1">${piezas}</svg>`)}")`
+}
+
+// Módulos (cuadraditos por lado) del QR de una dirección, como lo hace la librería (corrección de errores H)
+const modulosDe = url => {
+  try {
+    const q = qrcode(0, 'H')
+    q.addData(url, 'Byte')
+    q.make()
+    return q.getModuleCount()
+  } catch {
+    return 33
+  }
+}
+
+// Azar con semilla: los adornos salen siempre iguales para la misma dirección (la vista previa y la descarga coinciden)
+const azarCon = semilla => {
+  let x = semilla >>> 0 || 1
+  return () => (x = (Math.imul(x, 1664525) + 1013904223) >>> 0) / 4294967296
+}
+const semillaDe = texto => [...texto].reduce((h, c) => (Math.imul(h, 31) + c.charCodeAt(0)) >>> 0, 7)
+
+/* Dibuja una silueta en un cuadro de lado L: devuelve el SVG de dentro (cada pieza con su fondo y su contorno, y los
+   puntos de adorno encima) y dónde va el QR de verdad (x, y y su lado) dentro del cuadro */
+const dibujarSilueta = ({ clave, L, url, fondo, colores, puntos, contorno, pre }) => {
+  const sil = SILUETAS[clave]
+  const qr = L * sil.qr
+  const qrX = sil.centro[0] * L - qr / 2
+  const qrY = sil.centro[1] * L - qr / 2
+  // El módulo, del mismo tamaño que los del QR (la librería deja un 4 % de margen dentro de su cuadro)
+  const m = (qr * 0.92) / modulosDe(url)
+  const x0 = qrX + qr * 0.04
+  const y0 = qrY + qr * 0.04
+  const grosor = L * 0.014
+  const piezas = sil.piezas
+  // ¿Un punto está dentro de la silueta? (en alguna de sus piezas, escaladas al cuadro, con su regla de relleno)
+  const ctx = document.createElement('canvas').getContext('2d')
+  // Cada pieza, escalada al cuadro (las mías miden de 0 a 1; las de Phosphor, de 0 a 256: base 256)
+  const factor = p => L / (p.base ?? 1)
+  const caminos = piezas.map(p => {
+    const camino = new Path2D()
+    camino.addPath(new Path2D(p.d), new DOMMatrix([factor(p), 0, 0, factor(p), 0, 0]))
+    return { camino, regla: p.regla ?? 'nonzero' }
+  })
+  const enLaSilueta = (x, y) => caminos.some(c => ctx.isPointInPath(c.camino, x, y, c.regla))
+  // Un adorno cabe si su cuadro entero (con aire hasta el contorno) queda dentro
+  const holgura = m * 0.5 + grosor
+  const cabe = (cx, cy) =>
+    [[0, 0], [-1, -1], [1, -1], [-1, 1], [1, 1]].every(([dx, dy]) => enLaSilueta(cx + dx * holgura, cy + dy * holgura))
+  const libre = m * 2.5
+  const enElQR = (x, y) => x > qrX - libre && x < qrX + qr + libre && y > qrY - libre && y < qrY + qr + libre
+  const azar = azarCon(semillaDe(url + clave))
+  // La forma de cada adorno, como la de los puntos del QR
+  const radio = puntos === 'dots' ? 0.5 : puntos === 'square' ? 0 : puntos === 'extra-rounded' ? 0.45 : 0.3
+  const lado = m * 0.88
+  const cuadros = []
+  for (let i = -Math.ceil(x0 / m); x0 + i * m < L; i++) {
+    for (let j = -Math.ceil(y0 / m); y0 + j * m < L; j++) {
+      const cx = x0 + i * m + m / 2
+      const cy = y0 + j * m + m / 2
+      if (enElQR(cx, cy) || azar() > 0.5 || !cabe(cx, cy)) continue
+      cuadros.push(`<rect x="${(cx - lado / 2).toFixed(2)}" y="${(cy - lado / 2).toFixed(2)}" width="${lado.toFixed(2)}" height="${lado.toFixed(2)}" rx="${(lado * radio).toFixed(2)}"/>`)
+    }
+  }
+  // El color de los adornos: el de los puntos (con su degradado, en diagonal, si lo lleva)
+  let relleno = colores[0]
+  let defs = ''
+  if (colores.length > 1) {
+    const paradas = colores.map((col, i) => `<stop offset="${i / (colores.length - 1)}" stop-color="${col}"/>`).join('')
+    defs = `<defs><linearGradient id="${pre}-sil" gradientUnits="userSpaceOnUse" x1="0" y1="${L}" x2="${L}" y2="0">${paradas}</linearGradient></defs>`
+    relleno = `url(#${pre}-sil)`
+  }
+  // Cada pieza, de atrás adelante: su fondo y su contorno (la de delante tapa a la de detrás)
+  const formas = piezas
+    .map(
+      p =>
+        `<g transform="scale(${factor(p)})"><path d="${p.d}" fill="${fondo}" fill-rule="${p.regla ?? 'nonzero'}"/><path d="${p.d}" fill="none" stroke="${contorno}" stroke-width="${(grosor / factor(p)).toFixed(5)}" stroke-linejoin="round" fill-rule="${p.regla ?? 'nonzero'}"/></g>`,
+    )
+    .join('')
+  return { dentro: `${defs}${formas}<g fill="${relleno}">${cuadros.join('')}</g>`, qrX, qrY, qrLado: qr }
+}
+
 // Recorta un elemento con una forma del centro (las muestras de color del centro, con la forma elegida)
 const mascaraForma = forma => {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">${(FIGURAS_CENTRO[forma] ?? FIGURAS_CENTRO.circulo)('#000')}</svg>`
@@ -426,6 +669,8 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
   const [borde, setBorde] = useState(ini.borde ?? 0.08)
   // Esquinas del fondo del QR (el cuadrado de detrás de los puntos): sin elegir (null), siguen a las de la placa
   const [radioFondoElegido, setRadioFondo] = useState(ini.radioFondo ?? null)
+  // Silueta del QR ('' ninguna; si no, una de SILUETAS)
+  const [silueta, setSilueta] = useState(ini.silueta ?? '')
 
   // Textos de la placa
   /* 3 campos libres, para lo que se quiera (el nombre, un eslogan, el horario...): uno encima del QR y dos debajo.
@@ -438,6 +683,8 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
   // Tipografía: '' es la de la marca (o la del sistema, sin marca); si no, una de la lista
   const [tipografia, setTipografia] = useState(ini.tipografia ?? '')
   const [escala, setEscala] = useState(ini.escala ?? 1)
+  // Tamaño del nombre (el texto de arriba), aparte de los demás: 1 pequeño (el de siempre), medio o grande
+  const [tamanoNombre, setTamanoNombre] = useState(ini.tamanoNombre ?? 1)
 
   // Editor del cliente: intentos de IA que le quedan y el envío del diseño
   const [intentos, setIntentos] = useState(intentosIniciales ?? null)
@@ -448,8 +695,9 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
   const [masColores, setMasColores] = useState(false)
   const [masFormas, setMasFormas] = useState(false)
   const [masOjos, setMasOjos] = useState(false)
-  // Editor del cliente: el editor de colores a mano, abierto o cerrado
-  const [personalizando, setPersonalizando] = useState(false)
+  // La opción de esquinas y de borde de la placa que se marca: la más cercana a la que lleva
+  const esquinasPlacaCerca = masCercano(ESQUINAS_PLACA, radioPlaca)
+  const bordeCerca = masCercano(BORDES_PLACA, borde)
   // Editor del cliente: la placa en miniatura (cuando la grande ya no se ve al bajar) y la placa abierta en grande
   const placaGrande = useRef(null)
   const [verMiniatura, setVerMiniatura] = useState(false)
@@ -475,8 +723,8 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
   const estado = {
     estilo, colorPuntos, colorEsquinas, degPuntos, degEsquinas, fondo, colorMarco, degMarco, colorLetra,
     puntos, esquinas, puntoOjo, centro, formaCentro, textoCentro, colorCentro: colorCentroElegido, degCentro: degCentroElegido, logo, tamanoCentro, doble,
-    conMarco, formaPlaca, radioPlaca, borde, radioFondo: radioFondoElegido,
-    campoArriba, campoAbajo1, campoAbajo2, lineas, tipografia, escala,
+    conMarco, formaPlaca, radioPlaca, borde, radioFondo: radioFondoElegido, silueta,
+    campoArriba, campoAbajo1, campoAbajo2, lineas, tipografia, escala, tamanoNombre,
   }
   const enviarDiseno = async () => {
     setEnviando(true)
@@ -548,10 +796,11 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
     if (fuentes?.body?.google) loadFont(fuentes.body.google)
   }, [fuentes])
 
-  // Pone un estilo de golpe (colores, degradados, doble imagen y placa); las formas se quedan como estén
+  // Pone un estilo de golpe (colores, degradados, doble imagen y placa; los diseños, también su silueta); las formas se quedan como estén
   const ponerEstilo = clave => {
     setEstilo(clave)
-    const e = TODOS_ESTILOS.find(x => x.clave === clave)
+    const e = [...TODOS_ESTILOS, ...DISENOS].find(x => x.clave === clave)
+    if (e && 'silueta' in e) setSilueta(e.silueta)
     const qr = e?.qr ?? oscuroDeMarca
     const deg = e?.degradado ? enDiagonal(e.degradado) : sinDegradado(acentoDeMarca)
     setColorPuntos(qr)
@@ -626,7 +875,8 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
     setConMarco(true)
     // Las propuestas completas (las del editor del cliente) traen también la placa, la letra y los textos
     if (p.placa) {
-      if (['rectangular', 'circular'].includes(p.placa.forma)) setFormaPlaca(p.placa.forma)
+      // La forma (rectangular o circular), solo en el panel de Jesús: en el editor del cliente la decide él
+      if (modo !== 'cliente' && ['rectangular', 'circular'].includes(p.placa.forma)) setFormaPlaca(p.placa.forma)
       const radios = { rectas: 0, suaves: 0.06, redondas: 0.14 }
       if (p.placa.esquinas in radios) setRadioPlaca(radios[p.placa.esquinas])
       const bordes = { fino: 0.05, normal: 0.08, ancho: 0.12 }
@@ -677,7 +927,7 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
   const geometria = lado => {
     const f = escala
     const letras = {
-      nombre: lado * MEDIDAS.letraNombre * f,
+      nombre: lado * MEDIDAS.letraNombre * f * tamanoNombre,
       arriba: lado * MEDIDAS.letra * f,
       linea: lado * MEDIDAS.letraLinea * f,
       icono: lado * MEDIDAS.icono * f,
@@ -702,7 +952,7 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
       }
     }
     // Encima del QR, el campo de arriba (con la letra de los títulos)
-    const altoNombre = campoArriba.trim() ? lado * MEDIDAS.nombre * f : 0
+    const altoNombre = campoArriba.trim() ? lado * MEDIDAS.nombre * f * tamanoNombre : 0
     const altoArriba = 0
     const altoLinea = lado * MEDIDAS.linea * f
     // Cada línea de abajo con su alto: la secundaria, menos, para que quede pegada a la de encima
@@ -751,12 +1001,31 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
 
   /* La placa entera como SVG (vista previa y descarga para imprenta): la placa, el fondo del QR, las capas del QR
      (cada una con sus ids propios, para que no se pisen) y los textos. pre: prefijo para los ids */
+  const siluetaPara = (lado, pre) =>
+    silueta && SILUETAS[silueta] && url.trim()
+      ? dibujarSilueta({
+          clave: silueta,
+          L: lado,
+          url,
+          fondo,
+          colores: degPuntos.activo ? coloresDegradado(colorPuntos, degPuntos) : [colorPuntos],
+          puntos,
+          contorno: DISENOS.find(d => d.clave === estilo)?.contorno ?? colorEsquinas,
+          pre,
+        })
+      : null
+
   const componerSvg = async (lado, pre) => {
     await esperarLetras()
     const g = geometria(lado)
+    // Con silueta, el QR de verdad va más pequeño, en el centro de la silueta
+    const sil = siluetaPara(lado, pre)
+    const ladoQR = sil ? sil.qrLado : lado
+    const desplX = sil ? sil.qrX : 0
+    const desplY = sil ? sil.qrY : 0
     const capas = url.trim()
       ? await Promise.all(
-          capasDe(opcionesQR, lado).map(async (capa, i) => {
+          capasDe(opcionesQR, ladoQR).map(async (capa, i) => {
             const texto = (await (await new QRCodeStyling(capa.opciones).getRawData('svg')).text()).replace(/<\?xml[^>]*\?>/, '').trim()
             // Cada pieza con su nombre propio, y sus referencias igual (la librería las escribe con y sin comillas:
             // url(#x), url('#x'), href="#x")
@@ -765,7 +1034,7 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
               .replace(/\bid="([^"]+)"/g, `id="$1${sufijo}"`)
               .replace(/url\((['"]?)#([^'")]+)\1\)/g, `url($1#$2${sufijo}$1)`)
               .replace(/href="#([^"]+)"/g, `href="#$1${sufijo}"`)
-              .replace('<svg ', `<svg x="${g.xQR + capa.dx}" y="${g.yQR + capa.dy}" `)
+              .replace('<svg ', `<svg x="${g.xQR + desplX + capa.dx}" y="${g.yQR + desplY + capa.dy}" `)
           }),
         )
       : []
@@ -788,7 +1057,8 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
           : `<rect width="${g.ancho}" height="${g.alto}" rx="${g.radio}" fill="${relleno}"/>`,
       )
     }
-    partes.push(`<rect x="${g.xQR}" y="${g.yQR}" width="${lado}" height="${lado}" rx="${lado * radioFondo}" fill="${fondo}"/>`)
+    // El fondo del QR: la silueta (con sus adornos y su contorno) o el cuadrado de siempre
+    partes.push(sil ? `<g transform="translate(${g.xQR} ${g.yQR})">${sil.dentro}</g>` : `<rect x="${g.xQR}" y="${g.yQR}" width="${lado}" height="${lado}" rx="${lado * radioFondo}" fill="${fondo}"/>`)
     partes.push(...capas)
     if (g.forma) {
       const texto = (contenido, y, tamano, familia, peso) =>
@@ -825,7 +1095,7 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
       clearTimeout(t)
     }
     // Se recompone con cualquier cosa que cambie el dibujo
-  }, [opcionesQR, fondo, colorMarco, degMarco, textoSobreMarco, conMarco, formaPlaca, radioPlaca, radioFondo, borde, campoArriba, campoAbajo1, campoAbajo2, lineas, modo, familiaTitulo, familiaTexto, escala])
+  }, [opcionesQR, fondo, colorMarco, degMarco, textoSobreMarco, conMarco, formaPlaca, radioPlaca, radioFondo, borde, silueta, colorPuntos, degPuntos, puntos, colorEsquinas, campoArriba, campoAbajo1, campoAbajo2, lineas, modo, familiaTitulo, familiaTexto, escala, tamanoNombre])
 
   const archivo = `qr-${(nombre || 'negocio').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`
   const bajar = (blob, extension) => {
@@ -879,13 +1149,25 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
         else ctx.roundRect(0, 0, g.ancho, g.alto, g.radio)
         ctx.fill()
       }
-      ctx.fillStyle = fondo
-      ctx.beginPath()
-      ctx.roundRect(g.xQR, g.yQR, lado, lado, lado * radioFondo)
-      ctx.fill()
-      for (const capa of capasDe(opcionesQR, lado)) {
+      // El fondo del QR: la silueta (dibujada desde su SVG) o el cuadrado de siempre
+      const sil = siluetaPara(lado, 'png')
+      if (sil) {
+        const imagen = new Image()
+        imagen.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="${lado}" height="${lado}" viewBox="0 0 ${lado} ${lado}">${sil.dentro}</svg>`)}`
+        await imagen.decode()
+        ctx.drawImage(imagen, g.xQR, g.yQR, lado, lado)
+      } else {
+        ctx.fillStyle = fondo
+        ctx.beginPath()
+        ctx.roundRect(g.xQR, g.yQR, lado, lado, lado * radioFondo)
+        ctx.fill()
+      }
+      const ladoQR = sil ? sil.qrLado : lado
+      const desplX = sil ? sil.qrX : 0
+      const desplY = sil ? sil.qrY : 0
+      for (const capa of capasDe(opcionesQR, ladoQR)) {
         const blob = await new QRCodeStyling({ ...capa.opciones, type: 'canvas' }).getRawData('png')
-        ctx.drawImage(await createImageBitmap(blob), g.xQR + capa.dx, g.yQR + capa.dy, lado, lado)
+        ctx.drawImage(await createImageBitmap(blob), g.xQR + desplX + capa.dx, g.yQR + desplY + capa.dy, ladoQR, ladoQR)
       }
       if (g.forma) {
         ctx.fillStyle = textoSobreMarco
@@ -1012,7 +1294,7 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
   )
 
   // Lo elegido, para el título de cada apartado plegado
-  const nombreEstilo = estilo === 'marca' ? 'Su marca' : TODOS_ESTILOS.find(e => e.clave === estilo)?.nombre ?? 'A tu gusto'
+  const nombreEstilo = estilo === 'marca' ? 'Su marca' : [...TODOS_ESTILOS, ...DISENOS].find(e => e.clave === estilo)?.nombre ?? 'A tu gusto'
   const nombreDe = (lista, clave) => lista.find(([c]) => c === clave)?.[1]
   const muestra = c => <span className="h-[1.1rem] w-[1.1rem] rounded-full ring-1 ring-zinc-300" style={{ background: c }} />
   // Campo del texto del centro (de 1 a 3 letras), el mismo dentro de "Diseño" y fuera en el editor del cliente
@@ -1082,24 +1364,44 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
       {esCliente && (
         <div className="grid gap-[0.9rem]">
           <div className="grid gap-[0.45rem]">
-            <span className={titulo}>Colores</span>
+            <span className={titulo}>Diseños</span>
             <div className="flex flex-wrap items-center gap-[0.4rem]">
-              {(masColores ? MUESTRAS : MUESTRAS.slice(0, MUESTRAS_A_LA_VISTA)).map(e => (
+              {/* Cada diseño, con su silueta rellena de sus colores */}
+              {(masColores ? DISENOS : DISENOS.slice(0, DISENOS_A_LA_VISTA)).map(e => (
                 <button
                   key={e.clave}
                   type="button"
                   title={e.nombre}
-                  aria-label={`Colores ${e.nombre}`}
+                  aria-label={`Diseño ${e.nombre}`}
                   aria-pressed={estilo === e.clave}
                   onClick={() => ponerEstilo(e.clave)}
-                  className={`h-[1.9rem] w-[1.9rem] rounded-[0.4rem] border-2 transition-transform duration-300 ${estilo === e.clave ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
-                  style={{ background: fondoMuestra(e) }}
-                />
+                  className={`flex h-[1.9rem] w-[1.9rem] items-center justify-center rounded-[0.4rem] border-2 transition-transform duration-300 ${estilo === e.clave ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
+                >
+                  {/* El clásico, sin silueta: un QR negro sobre blanco (el blanco, a mano, que el tema del cliente lo cambia) */}
+                  {!e.silueta ? (
+                    <span className="flex h-[1.35rem] w-[1.35rem] items-center justify-center rounded-[0.2rem]" style={{ background: '#FFFFFF', color: e.qr }}>
+                      <QrCode className="h-[1.05rem] w-[1.05rem]" strokeWidth={2.5} aria-hidden="true" />
+                    </span>
+                  ) : (
+                  <span
+                    className="block h-[1.35rem] w-[1.35rem]"
+                    style={{
+                      background: e.degradado ? `linear-gradient(45deg, ${e.degradado.join(', ')})` : e.qr,
+                      maskImage: mascaraSilueta(e.silueta),
+                      WebkitMaskImage: mascaraSilueta(e.silueta),
+                      maskSize: 'contain',
+                      WebkitMaskSize: 'contain',
+                      maskRepeat: 'no-repeat',
+                      WebkitMaskRepeat: 'no-repeat',
+                    }}
+                  />
+                  )}
+                </button>
               ))}
-              {/* Ver más (o menos) colores: un círculo más, una rueda de color, con un + (o un −) encima */}
+              {/* Ver más (o menos) diseños: una muestra más, una rueda de color, con un + (o un −) encima */}
               <button
                 type="button"
-                aria-label={masColores ? 'Ver menos colores' : 'Ver más colores'}
+                aria-label={masColores ? 'Ver menos diseños' : 'Ver más diseños'}
                 aria-expanded={masColores}
                 onClick={() => setMasColores(v => !v)}
                 className="flex h-[1.9rem] w-[1.9rem] items-center justify-center rounded-[0.4rem] border-2 border-zinc-300 transition-transform duration-300 hover:scale-105"
@@ -1108,34 +1410,52 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
               >
                 {masColores ? <Minus className="h-[1rem] w-[1rem]" strokeWidth={3} aria-hidden="true" /> : <Plus className="h-[1rem] w-[1rem]" strokeWidth={3} aria-hidden="true" />}
               </button>
-              {/* Personalizar: el editor de colores a mano (lisos y degradados), que se abre debajo. Solo con la lista de
-                  colores abierta (con el +) */}
-              {masColores && (
-              <button
-                type="button"
-                title="Personalizar los colores"
-                aria-label="Personalizar los colores"
-                aria-expanded={personalizando}
-                onClick={() => setPersonalizando(v => !v)}
-                className={`flex h-[1.9rem] w-[1.9rem] items-center justify-center rounded-[0.4rem] border-2 transition-transform duration-300 hover:scale-105 ${personalizando ? 'scale-110 border-zinc-900' : 'border-zinc-300'}`}
-                style={{ background: 'conic-gradient(#E5484D, #F5A524, #F2D33B, #46A758, #2E9FD9, #5B5BD6, #B04BC4, #E5484D)', color: '#141414' }}
-              >
-                <Settings className="h-[1rem] w-[1rem]" strokeWidth={2.5} aria-hidden="true" />
-              </button>
-              )}
             </div>
-            {/* El editor de colores a mano: puntos, esquinas y fondo del QR, y la placa y sus textos; cada color, liso o con
-                degradado */}
-            {masColores && personalizando && (
-              <div className="grid gap-[0.6rem] rounded-[0.1rem] bg-[#242422] p-[0.85rem] ring-1 ring-[#3a3935]">
-                {color('Puntos', colorPuntos, c => { setColorPuntos(c); setEstilo(null) })}
-                {degradado(degPuntos, d => { setDegPuntos(d); setEstilo(null) })}
-                {color('Esquinas', colorEsquinas, c => { setColorEsquinas(c); setEstilo(null) })}
-                {degradado(degEsquinas, d => { setDegEsquinas(d); setEstilo(null) })}
-                {color('Fondo del QR', fondo, c => { setFondo(c); setEstilo(null) })}
-                {color('Placa', colorMarco, c => { setColorMarco(c); setEstilo(null) })}
-                {degradado(degMarco, d => { setDegMarco(d); setEstilo(null) })}
-                {color('Textos de la placa', textoSobreMarco, setColorLetra)}
+          </div>
+          {/* Personalizar: los desplegables de los colores, los puntos, el centro, los textos y la placa, bajo su título */}
+          <div className="grid gap-[0.45rem]">
+          <span className={titulo}>Personalizar</span>
+          {/* Grupo: los colores a mano, uno por cada parte, con su color actual en la barra (liso o su degradado); dentro,
+              solo su color y, si tiene, su degradado. Los avisos, debajo, siempre a la vista */}
+          <details className="rounded-[0.1rem] bg-[#242422] ring-1 ring-[#3a3935]">
+            <summary className="flex cursor-pointer list-none items-center gap-[0.75rem] px-[0.85rem] py-[0.8rem] [&::-webkit-details-marker]:hidden">
+              <span className={tituloGrupo}>Cambiar los colores</span>
+              <span className="ml-auto text-[0.85rem] font-semibold text-acento [details[open]>summary>&]:hidden">Abrir</span>
+              <span className="ml-auto hidden text-[0.85rem] font-semibold text-acento [details[open]>summary>&]:inline">Cerrar</span>
+              <ChevronDown className="h-[1rem] w-[1rem] shrink-0 text-acento transition-transform [details[open]>summary>&]:rotate-180" aria-hidden="true" />
+            </summary>
+              <div className="grid gap-[0.5rem] px-[0.85rem] pb-[0.85rem]">
+                {[
+                  ['Puntos', colorPuntos, degPuntos, c => setColorPuntos(c), d => setDegPuntos(d)],
+                  ['Esquinas', colorEsquinas, degEsquinas, c => setColorEsquinas(c), d => setDegEsquinas(d)],
+                  ['Fondo del QR', fondo, null, c => setFondo(c)],
+                  ['Placa', colorMarco, degMarco, c => setColorMarco(c), d => setDegMarco(d)],
+                  ['Textos de la placa', textoSobreMarco, null, c => setColorLetra(c)],
+                ].map(([nombreParte, valor, deg, ponerColor, ponerDeg]) => (
+                  <details key={nombreParte} className="rounded-[0.1rem] bg-[#242422] ring-1 ring-[#3a3935]">
+                    <summary className="flex cursor-pointer list-none items-center gap-[0.75rem] px-[0.85rem] py-[0.7rem] [&::-webkit-details-marker]:hidden">
+                      <span className="text-[0.9rem] font-semibold">{nombreParte}</span>
+                      {/* Su color ahora: liso o su degradado */}
+                      <span
+                        className="ml-auto h-[1.2rem] w-[1.2rem] shrink-0 rounded-[0.25rem] ring-1 ring-zinc-300"
+                        style={{ background: deg?.activo ? `linear-gradient(45deg, ${coloresDegradado(valor, deg).join(', ')})` : valor }}
+                      />
+                      <ChevronDown className="h-[1rem] w-[1rem] shrink-0 text-acento transition-transform [details[open]>summary>&]:rotate-180" aria-hidden="true" />
+                    </summary>
+                    <div className="grid gap-[0.6rem] px-[0.85rem] pb-[0.85rem]">
+                      {/* Cambiar un color a mano desmarca el estilo predeterminado (salvo el de los textos, que no es suyo) */}
+                      {color('Color', valor, c => {
+                        ponerColor(c)
+                        if (nombreParte !== 'Textos de la placa') setEstilo(null)
+                      })}
+                      {deg &&
+                        degradado(deg, d => {
+                          ponerDeg(d)
+                          setEstilo(null)
+                        })}
+                    </div>
+                  </details>
+                ))}
                 {textoPocoVisible && <p className="text-[0.8rem] font-semibold text-amber-700">Los textos se parecen mucho a la placa: puede costar leerlos.</p>}
                 {pocoContraste && (
                   <p className="text-[0.8rem] font-semibold text-amber-700">
@@ -1143,11 +1463,7 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
                   </p>
                 )}
               </div>
-            )}
-          </div>
-          {/* Diseño: los desplegables de los puntos, el centro y los textos, bajo su título (como "Colores") */}
-          <div className="grid gap-[0.45rem]">
-          <span className={titulo}>Diseño</span>
+          </details>
           {/* Grupo: formas de los puntos (los de dentro y las esquinas) */}
           <details className="rounded-[0.1rem] bg-[#242422] ring-1 ring-[#3a3935]">
             <summary className="flex cursor-pointer list-none items-center gap-[0.75rem] px-[0.85rem] py-[0.8rem] [&::-webkit-details-marker]:hidden">
@@ -1379,6 +1695,28 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
                   <input value={campoArriba} onChange={e => setCampoArriba(e.target.value)} maxLength={24} placeholder="El nombre de tu negocio" className={campo} />
                   <span className="text-[0.75rem] text-zinc-500">Máx. 24 caracteres</span>
                 </label>
+                {/* Tamaño del nombre: pequeño (10 % del ancho del QR), medio (12 %) o grande (14 %); si es largo y no
+                    cabe, encoge lo justo */}
+                <div className="grid gap-[0.45rem]">
+                  <span className={titulo}>Tamaño del nombre</span>
+                  <div className="flex gap-[0.3rem] self-start justify-self-start rounded-[1.2rem] bg-zinc-100 p-[0.25rem]">
+                    {[
+                      [1, 'Pequeño'],
+                      [1.18, 'Medio'],
+                      [1.37, 'Grande'],
+                    ].map(([valor, texto]) => (
+                      <button
+                        key={texto}
+                        type="button"
+                        aria-pressed={tamanoNombre === valor}
+                        onClick={() => setTamanoNombre(valor)}
+                        className={`min-h-[2rem] rounded-full px-[0.8rem] text-[0.85rem] font-semibold transition-colors ${tamanoNombre === valor ? 'bg-zinc-900 text-white' : 'text-zinc-500 hover:text-tinta'}`}
+                      >
+                        {texto}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <label className="grid gap-[0.3rem]">
                   <span className={titulo}>Eslogan</span>
                   <input value={campoAbajo1} onChange={e => setCampoAbajo1(e.target.value)} maxLength={32} placeholder="Escanea y déjanos tu reseña" className={campo} />
@@ -1392,6 +1730,71 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
             </div>
           </details>
           )}
+
+          {/* Cambiar la placa: sus esquinas (solo en la rectangular) y el borde alrededor del QR. La forma (rectangular o
+              circular) la decide Jesús en su panel */}
+          <details className="rounded-[0.1rem] bg-[#242422] ring-1 ring-[#3a3935]">
+            <summary className="flex cursor-pointer list-none items-center gap-[0.75rem] px-[0.85rem] py-[0.8rem] [&::-webkit-details-marker]:hidden">
+              <span className={tituloGrupo}>Cambiar la placa</span>
+              {/* La pista, en palabra y en amarillo (la flecha sola no la entiende todo el mundo) */}
+              <span className="ml-auto text-[0.85rem] font-semibold text-acento [details[open]>summary>&]:hidden">Abrir</span>
+              <span className="ml-auto hidden text-[0.85rem] font-semibold text-acento [details[open]>summary>&]:inline">Cerrar</span>
+              <ChevronDown className="h-[1rem] w-[1rem] shrink-0 text-acento transition-transform [details[open]>summary>&]:rotate-180" aria-hidden="true" />
+            </summary>
+            <div className="grid gap-[0.9rem] px-[0.85rem] pb-[0.85rem]">
+                {/* Silueta del QR: ninguna o una forma rellena de puntos de adorno, con el QR de verdad en el centro */}
+                <div className="grid gap-[0.45rem]">
+                  <span className={titulo}>Silueta del QR</span>
+                  <div className="flex flex-wrap gap-[0.3rem] self-start justify-self-start rounded-[1.2rem] bg-zinc-100 p-[0.25rem]">
+                    {OPCIONES_SILUETA.map(([valor, texto]) => (
+                      <button
+                        key={texto}
+                        type="button"
+                        aria-pressed={silueta === valor}
+                        onClick={() => setSilueta(valor)}
+                        className={`min-h-[2rem] rounded-full px-[0.8rem] text-[0.85rem] font-semibold transition-colors ${silueta === valor ? 'bg-zinc-900 text-white' : 'text-zinc-500 hover:text-tinta'}`}
+                      >
+                        {texto}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {formaPlaca === 'rectangular' && (
+                <div className="grid gap-[0.45rem]">
+                  <span className={titulo}>Esquinas</span>
+                  <div className="flex flex-wrap gap-[0.3rem] self-start justify-self-start rounded-[1.2rem] bg-zinc-100 p-[0.25rem]">
+                    {ESQUINAS_PLACA.map(([valor, texto]) => (
+                      <button
+                        key={texto}
+                        type="button"
+                        aria-pressed={esquinasPlacaCerca === valor}
+                        onClick={() => { setRadioPlaca(valor); setRadioFondo(null) }}
+                        className={`min-h-[2rem] rounded-full px-[0.8rem] text-[0.85rem] font-semibold transition-colors ${esquinasPlacaCerca === valor ? 'bg-zinc-900 text-white' : 'text-zinc-500 hover:text-tinta'}`}
+                      >
+                        {texto}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                )}
+                <div className="grid gap-[0.45rem]">
+                  <span className={titulo}>Borde</span>
+                  <div className="flex flex-wrap gap-[0.3rem] self-start justify-self-start rounded-[1.2rem] bg-zinc-100 p-[0.25rem]">
+                    {BORDES_PLACA.map(([valor, texto]) => (
+                      <button
+                        key={texto}
+                        type="button"
+                        aria-pressed={bordeCerca === valor}
+                        onClick={() => setBorde(valor)}
+                        className={`min-h-[2rem] rounded-full px-[0.8rem] text-[0.85rem] font-semibold transition-colors ${bordeCerca === valor ? 'bg-zinc-900 text-white' : 'text-zinc-500 hover:text-tinta'}`}
+                      >
+                        {texto}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+            </div>
+          </details>
           </div>
         </div>
       )}
@@ -1640,6 +2043,10 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
           {/* 6. Placa: con o sin ella, su forma, sus esquinas y el borde alrededor del QR */}
           <Plegable titulo="Placa" elegido={!conMarco ? 'Sin placa' : formaPlaca === 'circular' ? 'Circular' : 'Rectangular'}>
             <div className="grid gap-[0.75rem]">
+              <div className="grid gap-[0.4rem]">
+                <span className={titulo}>Silueta del QR</span>
+                {botones(OPCIONES_SILUETA, silueta, setSilueta)}
+              </div>
               {casilla('Con placa alrededor del QR', conMarco, setConMarco)}
               {conMarco && (
                 <>

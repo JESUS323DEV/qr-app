@@ -72,8 +72,7 @@ export default function MiQrPage() {
             <div>
               <h1 className="font-titulo text-[clamp(1.9rem,1.5rem+2vw,2.5rem)] font-black leading-[1] tracking-tight">Diseña tu QR</h1>
               <p className="mt-[0.3rem] text-[0.92rem] leading-[1.45] text-suave">
-                Elige colores, formas y textos para la placa de {info.nombre}. Cuando te guste, dale a "Enviar mi diseño": lo revisamos, lo probamos y te avisamos
-                antes de imprimirlo.
+                Elige colores, formas y textos para la placa de {info.nombre}.
               </p>
             </div>
             <div className="min-w-0 rounded-[1.1rem] bg-crema p-[1rem]">

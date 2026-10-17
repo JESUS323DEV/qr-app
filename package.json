@@ -9,9 +9,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@phosphor-icons/core": "^2.1.1",
     "@supabase/supabase-js": "^2.117.3",
     "lucide-react": "^1.51.0",
     "qr-code-styling": "^1.9.2",
+    "qrcode-generator": "^2.0.4",
     "react": "^19.0.0",
     "react-colorful": "^5.8.1",
     "react-dom": "^19.0.0",

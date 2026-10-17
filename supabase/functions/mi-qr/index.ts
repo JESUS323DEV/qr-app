@@ -75,11 +75,10 @@ const ESQUEMA = {
           placa: {
             type: 'object',
             properties: {
-              forma: { type: 'string', enum: ['rectangular', 'circular'] },
               esquinas: { type: 'string', enum: ['rectas', 'suaves', 'redondas'] },
               borde: { type: 'string', enum: ['fino', 'normal', 'ancho'] },
             },
-            required: ['forma', 'esquinas', 'borde'],
+            required: ['esquinas', 'borde'],
             additionalProperties: false,
           },
           tipografia: { type: 'string' },
@@ -116,7 +115,7 @@ Colores (todos en #RRGGBB):
 Formas (que vayan con el estilo):
 - formaPuntos: rounded (redondeados), extra-rounded (muy redondeados), square (cuadrados), dots (puntos), classy-rounded (elegantes), classy (elegantes rectos).
 - formaEsquinas (el marco de los tres ojos de las esquinas) y puntoEsquinas (su punto de dentro): las mismas formas, más dot (círculo) y, en formaEsquinas, extra-rounded (redondeado) y square (cuadrado). Elegante: classy-rounded y dot; moderno o alegre: dots o extra-rounded; sobrio: square.
-- placa: forma rectangular o circular (circular solo para una pegatina; en ella solo cabe una línea de texto abajo); esquinas rectas, suaves o redondas; borde fino, normal o ancho alrededor del QR.
+- placa (siempre rectangular; la forma no la eliges tú): esquinas rectas, suaves o redondas; borde fino, normal o ancho alrededor del QR.
 
 Letra y textos:
 - tipografia: el id de una de la lista que te paso, la que mejor vaya con el estilo; vacío para dejar la de la marca.
