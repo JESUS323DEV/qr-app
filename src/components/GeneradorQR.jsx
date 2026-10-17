@@ -450,6 +450,23 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
   const [masOjos, setMasOjos] = useState(false)
   // Editor del cliente: el editor de colores a mano, abierto o cerrado
   const [personalizando, setPersonalizando] = useState(false)
+  // Editor del cliente: la placa en miniatura (cuando la grande ya no se ve al bajar) y la placa abierta en grande
+  const placaGrande = useRef(null)
+  const [verMiniatura, setVerMiniatura] = useState(false)
+  const [placaAbierta, setPlacaAbierta] = useState(false)
+  useEffect(() => {
+    if (modo !== 'cliente' || !placaGrande.current) return
+    const observador = new IntersectionObserver(([e]) => setVerMiniatura(!e.isIntersecting), { threshold: 0 })
+    observador.observe(placaGrande.current)
+    return () => observador.disconnect()
+  }, [modo])
+  // La placa en grande se cierra también con Escape
+  useEffect(() => {
+    if (!placaAbierta) return
+    const tecla = e => e.key === 'Escape' && setPlacaAbierta(false)
+    document.addEventListener('keydown', tecla)
+    return () => document.removeEventListener('keydown', tecla)
+  }, [placaAbierta])
   const [masFormasCentro, setMasFormasCentro] = useState(false)
   // Editor del cliente: el "Ver más" de los colores del centro
   const [masColoresCentro, setMasColoresCentro] = useState(false)
@@ -1028,12 +1045,36 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
     <div className="mx-auto grid w-full max-w-[32rem] grid-cols-[minmax(0,1fr)] gap-[1rem]">
       {/* En el editor del cliente, la placa se queda fija arriba al bajar (más pequeña en el móvil, para que quede sitio
           para las opciones); así se ve cada cambio sin volver arriba */}
-      {esCliente ? (
-        <div className="sticky top-0 z-10 -mx-[1rem] bg-white px-[1rem] py-[0.5rem]">
-          <div className="mx-auto w-full max-w-[16.5rem] sm:max-w-[18rem]">{previa}</div>
+      {esCliente ? <div ref={placaGrande}>{previa}</div> : previa}
+
+      {/* Editor del cliente: al bajar y dejar atrás la placa grande, una barra fina fija arriba con la placa en
+          miniatura (ve cada cambio sin perder sitio); al tocarla, la placa se abre en grande encima */}
+      {esCliente && verMiniatura && (
+        <button
+          type="button"
+          onClick={() => setPlacaAbierta(true)}
+          aria-label="Ver la placa en grande"
+          className="fixed inset-x-0 top-0 z-20 mx-auto flex w-full max-w-[32rem] items-center gap-[0.75rem] bg-white px-[1rem] py-[0.4rem] text-left shadow-[0_0.4rem_1rem_-0.4rem_rgb(0_0_0/0.6)] ring-1 ring-zinc-200"
+        >
+          <span className="block w-[3.2rem] shrink-0" dangerouslySetInnerHTML={{ __html: vista }} />
+          <span className="text-[0.9rem] font-semibold">Tu placa</span>
+          <span className="ml-auto text-[0.85rem] font-semibold text-acento">Ver en grande</span>
+        </button>
+      )}
+      {esCliente && placaAbierta && (
+        <div
+          className="fixed inset-0 z-30 flex items-center justify-center bg-black/75 p-[1rem]"
+          onClick={() => setPlacaAbierta(false)}
+          role="dialog"
+          aria-label="Tu placa"
+        >
+          <div className="grid w-full max-w-[20rem] gap-[0.75rem]" onClick={e => e.stopPropagation()}>
+            <div dangerouslySetInnerHTML={{ __html: vista }} />
+            <button type="button" onClick={() => setPlacaAbierta(false)} className="min-h-[2.75rem] rounded-[0.4rem] bg-zinc-900 font-semibold text-white">
+              Cerrar
+            </button>
+          </div>
         </div>
-      ) : (
-        previa
       )}
 
       {/* Editor del cliente: colores y formas de los puntos a la vista, como en la pestaña "Tu QR" de la landing.
