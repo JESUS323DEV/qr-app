@@ -400,7 +400,6 @@ const SILUETAS = {
     piezas: [{ d: 'M232,128A104,104,0,0,1,79.12,219.82L45.07,231.17a16,16,0,0,1-20.24-20.24l11.35-34.05A104,104,0,1,1,232,128Z', base: 256 }],
   },
 }
-const OPCIONES_SILUETA = [['', 'Ninguna'], ...Object.entries(SILUETAS).map(([clave, v]) => [clave, v.nombre])]
 // La silueta entera como máscara CSS (para las muestras de los diseños: la forma, rellena con sus colores)
 const mascaraSilueta = clave => {
   const piezas = SILUETAS[clave].piezas
@@ -864,10 +863,8 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
       if (!validas.length) throw new Error('Las propuestas no se leían bien. Prueba otra vez.')
       setPropuestas(validas)
       // En el editor del cliente, la primera ya puesta en la placa (y las flechas para pasar a las otras)
-      if (esCliente) {
-        ponerPropuesta(validas[0])
-        setIndicePropuesta(0)
-      }
+      ponerPropuesta(validas[0])
+      setIndicePropuesta(0)
     } catch (e) {
       setErrorIA(e.message)
     } finally {
@@ -1269,6 +1266,9 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
   const titulo = 'text-[0.8rem] font-semibold text-zinc-500'
   // Título de cada grupo del editor del cliente (más grande que el de cada fila)
   const tituloGrupo = 'text-[0.95rem] font-bold'
+  // Los desplegables y su pista (Abrir, Cerrar y la flecha): oscuros y en amarillo en el editor del cliente; claros en el panel
+  const desplegable = modo === 'cliente' ? 'rounded-[0.1rem] bg-[#242422] ring-1 ring-[#3a3935]' : 'rounded-[0.6rem] bg-white ring-1 ring-zinc-200'
+  const pista = modo === 'cliente' ? 'text-acento' : 'text-zinc-900'
   const opcion = activa => `rounded-[0.6rem] px-[0.75rem] py-[0.45rem] text-[0.9rem] font-medium ring-1 ${activa ? 'bg-zinc-900 text-white ring-zinc-900' : 'bg-white ring-zinc-300'}`
   const campo = 'block min-h-[2.75rem] w-full min-w-0 rounded-[0.6rem] border border-zinc-300 bg-white px-[0.75rem] text-[0.95rem]'
   const casilla = (texto, marcada, poner) => (
@@ -1346,9 +1346,6 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
   )
 
   // Lo elegido, para el título de cada apartado plegado
-  const nombreEstilo = estilo === 'marca' ? 'Su marca' : [...TODOS_ESTILOS, ...DISENOS].find(e => e.clave === estilo)?.nombre ?? 'A tu gusto'
-  const nombreDe = (lista, clave) => lista.find(([c]) => c === clave)?.[1]
-  const muestra = c => <span className="h-[1.1rem] w-[1.1rem] rounded-full ring-1 ring-zinc-300" style={{ background: c }} />
   // Campo del texto del centro (de 1 a 3 letras), el mismo dentro de "Diseño" y fuera en el editor del cliente
   // En columna: el campo arriba y, debajo, una etiqueta corta
   const campoTextoCentro = (
@@ -1473,13 +1470,13 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
     <div className="grid gap-[0.5rem]">
       {/* En el editor del cliente, encima del cuadro: elegir el diseño sobre el que trabaja la IA; con las propuestas
           ya hechas, también los colores, para probarlos sobre la que se ve */}
-      {esCliente && (
+      {(
         <div className="grid gap-[0.45rem]">
           <span className={titulo}>{eligiendoVarios ? 'Elige hasta 3 diseños' : 'Elige un diseño'}</span>
           {barraDisenos}
         </div>
       )}
-      {esCliente && propuestas && (
+      {propuestas && (
         <div className="grid gap-[0.45rem]">
           <span className={titulo}>Elige un color</span>
           {barraColores}
@@ -1493,7 +1490,7 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
           aria-label={esCliente ? 'Cuéntanos qué colores representan tu marca' : undefined}
           value={descripcion}
           onChange={e => setDescripcion(e.target.value)}
-          rows={esCliente ? 4 : 2}
+          rows={4}
           // Lo que lee la IA: el servidor no pasa de 600 caracteres
           maxLength={600}
           placeholder={
@@ -1540,50 +1537,19 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
         </p>
       )}
       {errorIA && <p className="text-[0.85rem] font-semibold text-red-600">{errorIA}</p>}
-      {/* En el editor del cliente no salen en lista: se pasan con las flechas en la propia placa */}
-      {!esCliente && propuestas && (
-        <div className="grid gap-[0.5rem]">
-          {propuestas.map((p, i) => (
-            <button
-              key={i}
-              type="button"
-              onClick={() => {
-                ponerPropuesta(p)
-                // En el editor del cliente, la propuesta se abre en grande, con "Enviar mi diseño" debajo
-                if (esCliente) {
-                  setConEnviar(true)
-                  setPlacaAbierta(true)
-                }
-              }} className="flex items-center gap-[0.75rem] rounded-[0.75rem] bg-white p-[0.6rem] text-left ring-1 ring-zinc-200 hover:ring-zinc-400">
-              {/* Mini placa: la placa, el cuadrado del QR con su color y el texto */}
-              <span className="flex w-[3.6rem] shrink-0 flex-col items-center gap-[0.2rem] rounded-[0.45rem] p-[0.3rem]" style={{ background: p.marco }}>
-                <span className="flex aspect-square w-full items-center justify-center rounded-[0.2rem]" style={{ background: p.fondo }}>
-                  <QrCode className="h-[70%] w-[70%]" style={{ color: p.degradado?.activo ? p.degradado.colores[0] : p.puntos }} aria-hidden="true" />
-                </span>
-                <span className="text-[0.5rem] font-bold leading-none" style={{ color: p.textoMarco }}>
-                  {(campoArriba || 'Escanéame').slice(0, 10)}
-                </span>
-              </span>
-              <span className="min-w-0">
-                <span className="block text-[0.92rem] font-semibold">{p.nombre}</span>
-                <span className="block text-[0.8rem] leading-[1.35] text-zinc-500">{p.motivo}</span>
-              </span>
-            </button>
-          ))}
-        </div>
-      )}
     </div>
   )
 
-  // En una columna, como Nuevo perfil: vista previa, dirección, asistente, el diseño plegado y las descargas (en el
-  // editor del cliente, sin dirección y con "Enviar mi diseño" en vez de las descargas)
+  /* El mismo editor en los dos (el del cliente, oscuro; el del panel, claro): las pestañas Tu QR, Asistente y
+     Personalizar con la placa siempre arriba; en el panel, además, las opciones que solo decide Jesús dentro de cada
+     desplegable y, abajo, la dirección y las descargas (en el del cliente, "Enviar mi diseño") */
   return (
     <div className="mx-auto grid w-full max-w-[32rem] grid-cols-[minmax(0,1fr)] gap-[1rem]">
       {/* En el editor del cliente, la placa se queda fija arriba al bajar (más pequeña en el móvil, para que quede sitio
           para las opciones); así se ve cada cambio sin volver arriba */}
       {/* Editor del cliente: tres pestañas arriba (Tu QR, Personalizar y Asistente); la placa sale en las tres y solo
           cambia lo de debajo */}
-      {esCliente && (
+      {(
         <div role="tablist" aria-label="Editor de tu QR" className="grid grid-cols-3 gap-[0.25rem] rounded-[1.2rem] bg-zinc-100 p-[0.25rem]">
           {[
             ['qr', 'Tu QR'],
@@ -1604,7 +1570,7 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
           ))}
         </div>
       )}
-      {esCliente ? (
+      {(
         <div ref={placaGrande}>
           {/* En la pestaña Asistente, con propuestas: la placa hace de galería (flechas para pasar de una a otra, y al
               tocarla se abre en grande con "Enviar mi diseño") */}
@@ -1614,7 +1580,8 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
                 <button
                   type="button"
                   onClick={() => {
-                    setConEnviar(true)
+                    // "Enviar mi diseño" solo en el editor del cliente
+                    setConEnviar(esCliente)
                     setPlacaAbierta(true)
                   }}
                   aria-label="Ver la propuesta en grande"
@@ -1648,8 +1615,6 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
             previa
           )}
         </div>
-      ) : (
-        previa
       )}
 
       {/* Editor del cliente: al bajar y dejar atrás la placa grande, una barra fina fija arriba con la placa en
@@ -1666,10 +1631,10 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
         >
           <span className="block w-[3.2rem] shrink-0" dangerouslySetInnerHTML={{ __html: vista }} />
           <span className="text-[0.9rem] font-semibold">Tu placa</span>
-          <span className="ml-auto text-[0.85rem] font-semibold text-acento">Ver en grande</span>
+          <span className={`ml-auto text-[0.85rem] font-semibold ${pista}`}>Ver en grande</span>
         </button>
       )}
-      {esCliente && placaAbierta && (
+      {placaAbierta && (
         <div
           className="fixed inset-0 z-30 flex items-center justify-center bg-black/75 p-[1rem]"
           onClick={() => setPlacaAbierta(false)}
@@ -1697,7 +1662,7 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
 
       {/* Editor del cliente: colores y formas de los puntos a la vista, como en la pestaña "Tu QR" de la landing.
           Primero unos pocos; con "Ver más", todos */}
-      {esCliente && (
+      {(
         <div className="grid gap-[0.9rem]">
           {/* Pestaña Tu QR: los diseños y los colores */}
           {pestana === 'qr' && (
@@ -1716,13 +1681,13 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
               textos más (por defecto, debajo): el eslogan y otro para lo que haga falta (horario, dirección...).
               Si no caben a su tamaño, la letra se hace más pequeña sola */}
           {conMarco && (
-          <details className="rounded-[0.1rem] bg-[#242422] ring-1 ring-[#3a3935]">
+          <details className={desplegable}>
             <summary className="flex cursor-pointer list-none items-center gap-[0.75rem] px-[0.85rem] py-[0.8rem] [&::-webkit-details-marker]:hidden">
               <span className={tituloGrupo}>Cambiar los textos</span>
               {/* La pista, en palabra y en amarillo (la flecha sola no la entiende todo el mundo) */}
-              <span className="ml-auto text-[0.85rem] font-semibold text-acento [details[open]>summary>&]:hidden">Abrir</span>
-              <span className="ml-auto hidden text-[0.85rem] font-semibold text-acento [details[open]>summary>&]:inline">Cerrar</span>
-              <ChevronDown className="h-[1rem] w-[1rem] shrink-0 text-acento transition-transform [details[open]>summary>&]:rotate-180" aria-hidden="true" />
+              <span className={`ml-auto text-[0.85rem] font-semibold ${pista} [details[open]>summary>&]:hidden`}>Abrir</span>
+              <span className={`ml-auto hidden text-[0.85rem] font-semibold ${pista} [details[open]>summary>&]:inline`}>Cerrar</span>
+              <ChevronDown className={`h-[1rem] w-[1rem] shrink-0 ${pista} transition-transform [details[open]>summary>&]:rotate-180`} aria-hidden="true" />
             </summary>
             <div className="grid gap-[0.9rem] px-[0.85rem] pb-[0.85rem]">
                 {/* La letra de los textos de la placa: la de la marca o una de la lista */}
@@ -1774,6 +1739,54 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
                   <input value={campoAbajo2} onChange={e => setCampoAbajo2(e.target.value)} maxLength={32} placeholder="De lunes a sábado, de 10 a 20" className={campo} />
                   <span className="text-[0.75rem] text-zinc-500">Máx. 32 caracteres</span>
                 </label>
+                {/* En el panel de Jesús: el tamaño de todos los textos y las redes con icono, debajo de todo */}
+                {!esCliente && (
+                  <>
+                    <div className="grid gap-[0.4rem]">
+                      <span className={titulo}>Tamaño de los textos</span>
+                      {botones(TAMANOS, escala, setEscala)}
+                    </div>
+                    <div className="grid gap-[0.4rem]">
+                      <span className={titulo}>Redes con icono (debajo de todo)</span>
+                      {lineas.map((l, i) => {
+                        const cambiar = cambio => setLineas(ls => ls.map((x, j) => (j === i ? { ...x, ...cambio } : x)))
+                        return (
+                          <div key={i} className="flex items-center gap-[0.4rem]">
+                            <select
+                              value={l.icono}
+                              onChange={e => cambiar({ icono: e.target.value })}
+                              aria-label="Icono"
+                              className="min-h-[2.75rem] shrink-0 rounded-[0.6rem] border border-zinc-300 bg-white px-[0.4rem] text-[0.85rem]"
+                            >
+                              {ICONOS_LINEA.map(([clave, texto]) => (
+                                <option key={clave || 'ninguno'} value={clave}>
+                                  {texto}
+                                </option>
+                              ))}
+                            </select>
+                            <input value={l.texto} onChange={e => cambiar({ texto: e.target.value })} maxLength={32} placeholder="@tunegocio" className={campo} />
+                            <button
+                              type="button"
+                              onClick={() => setLineas(ls => ls.filter((_, j) => j !== i))}
+                              className="shrink-0 text-[0.8rem] font-semibold text-zinc-500 underline underline-offset-[0.2em]"
+                            >
+                              Quitar
+                            </button>
+                          </div>
+                        )
+                      })}
+                      {lineas.length < MAX_LINEAS && (
+                        <button
+                          type="button"
+                          onClick={() => setLineas(ls => [...ls, { icono: '', texto: '' }])}
+                          className="justify-self-start text-[0.88rem] font-semibold underline underline-offset-[0.2em]"
+                        >
+                          Añadir campo
+                        </button>
+                      )}
+                    </div>
+                  </>
+                )}
             </div>
           </details>
           )}
@@ -1786,14 +1799,20 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
           <div className="grid gap-[0.45rem]">
           {/* Grupo: los colores a mano, uno por cada parte, con su color actual en la barra (liso o su degradado); dentro,
               solo su color y, si tiene, su degradado. Los avisos, debajo, siempre a la vista */}
-          <details className="rounded-[0.1rem] bg-[#242422] ring-1 ring-[#3a3935]">
+          <details className={desplegable}>
             <summary className="flex cursor-pointer list-none items-center gap-[0.75rem] px-[0.85rem] py-[0.8rem] [&::-webkit-details-marker]:hidden">
               <span className={tituloGrupo}>Cambiar los colores</span>
-              <span className="ml-auto text-[0.85rem] font-semibold text-acento [details[open]>summary>&]:hidden">Abrir</span>
-              <span className="ml-auto hidden text-[0.85rem] font-semibold text-acento [details[open]>summary>&]:inline">Cerrar</span>
-              <ChevronDown className="h-[1rem] w-[1rem] shrink-0 text-acento transition-transform [details[open]>summary>&]:rotate-180" aria-hidden="true" />
+              <span className={`ml-auto text-[0.85rem] font-semibold ${pista} [details[open]>summary>&]:hidden`}>Abrir</span>
+              <span className={`ml-auto hidden text-[0.85rem] font-semibold ${pista} [details[open]>summary>&]:inline`}>Cerrar</span>
+              <ChevronDown className={`h-[1rem] w-[1rem] shrink-0 ${pista} transition-transform [details[open]>summary>&]:rotate-180`} aria-hidden="true" />
             </summary>
               <div className="grid gap-[0.5rem] px-[0.85rem] pb-[0.85rem]">
+                {/* En el panel de Jesús, con un negocio: los colores de su marca de golpe */}
+                {!esCliente && colores && (
+                  <button type="button" aria-pressed={estilo === 'marca'} onClick={() => ponerEstilo('marca')} className={`justify-self-start ${opcion(estilo === 'marca')}`}>
+                    Los colores de su marca
+                  </button>
+                )}
                 {[
                   ['Puntos', colorPuntos, degPuntos, c => setColorPuntos(c), d => setDegPuntos(d)],
                   ['Esquinas', colorEsquinas, degEsquinas, c => setColorEsquinas(c), d => setDegEsquinas(d)],
@@ -1801,7 +1820,7 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
                   ['Placa', colorMarco, degMarco, c => setColorMarco(c), d => setDegMarco(d)],
                   ['Textos de la placa', textoSobreMarco, null, c => setColorLetra(c)],
                 ].map(([nombreParte, valor, deg, ponerColor, ponerDeg]) => (
-                  <details key={nombreParte} className="rounded-[0.1rem] bg-[#242422] ring-1 ring-[#3a3935]">
+                  <details key={nombreParte} className={desplegable}>
                     <summary className="flex cursor-pointer list-none items-center gap-[0.75rem] px-[0.85rem] py-[0.7rem] [&::-webkit-details-marker]:hidden">
                       <span className="text-[0.9rem] font-semibold">{nombreParte}</span>
                       {/* Su color ahora: liso o su degradado */}
@@ -1809,7 +1828,7 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
                         className="ml-auto h-[1.2rem] w-[1.2rem] shrink-0 rounded-[0.25rem] ring-1 ring-zinc-300"
                         style={{ background: deg?.activo ? `linear-gradient(45deg, ${coloresDegradado(valor, deg).join(', ')})` : valor }}
                       />
-                      <ChevronDown className="h-[1rem] w-[1rem] shrink-0 text-acento transition-transform [details[open]>summary>&]:rotate-180" aria-hidden="true" />
+                      <ChevronDown className={`h-[1rem] w-[1rem] shrink-0 ${pista} transition-transform [details[open]>summary>&]:rotate-180`} aria-hidden="true" />
                     </summary>
                     <div className="grid gap-[0.6rem] px-[0.85rem] pb-[0.85rem]">
                       {/* Cambiar un color a mano desmarca el estilo predeterminado (salvo el de los textos, que no es suyo) */}
@@ -1834,13 +1853,13 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
               </div>
           </details>
           {/* Grupo: formas de los puntos (los de dentro y las esquinas) */}
-          <details className="rounded-[0.1rem] bg-[#242422] ring-1 ring-[#3a3935]">
+          <details className={desplegable}>
             <summary className="flex cursor-pointer list-none items-center gap-[0.75rem] px-[0.85rem] py-[0.8rem] [&::-webkit-details-marker]:hidden">
               <span className={tituloGrupo}>Cambiar los puntos</span>
               {/* La pista, en palabra y en amarillo (la flecha sola no la entiende todo el mundo) */}
-              <span className="ml-auto text-[0.85rem] font-semibold text-acento [details[open]>summary>&]:hidden">Abrir</span>
-              <span className="ml-auto hidden text-[0.85rem] font-semibold text-acento [details[open]>summary>&]:inline">Cerrar</span>
-              <ChevronDown className="h-[1rem] w-[1rem] shrink-0 text-acento transition-transform [details[open]>summary>&]:rotate-180" aria-hidden="true" />
+              <span className={`ml-auto text-[0.85rem] font-semibold ${pista} [details[open]>summary>&]:hidden`}>Abrir</span>
+              <span className={`ml-auto hidden text-[0.85rem] font-semibold ${pista} [details[open]>summary>&]:inline`}>Cerrar</span>
+              <ChevronDown className={`h-[1rem] w-[1rem] shrink-0 ${pista} transition-transform [details[open]>summary>&]:rotate-180`} aria-hidden="true" />
             </summary>
             <div className="grid gap-[0.7rem] px-[0.85rem] pb-[0.85rem]">
           <div className="grid gap-[0.45rem]">
@@ -1911,17 +1930,30 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
               </button>
             </div>
           </div>
+          {/* En el panel de Jesús: el marco de fuera y el punto de dentro de las esquinas, por separado */}
+          {!esCliente && (
+            <>
+              <div className="grid gap-[0.4rem]">
+                <span className={titulo}>Marco de fuera de las esquinas</span>
+                {botones(MARCOS_OJO, esquinas, setEsquinas)}
+              </div>
+              <div className="grid gap-[0.4rem]">
+                <span className={titulo}>Punto de dentro de las esquinas</span>
+                {botones(PUNTOS_OJO, puntoOjo, setPuntoOjo)}
+              </div>
+            </>
+          )}
             </div>
           </details>
 
           {/* Centro: nada, un texto (la inicial o hasta 3 letras) o el logo (al tocarlo, se elige o se hace la foto) */}
-          <details className="rounded-[0.1rem] bg-[#242422] ring-1 ring-[#3a3935]">
+          <details className={desplegable}>
             <summary className="flex cursor-pointer list-none items-center gap-[0.75rem] px-[0.85rem] py-[0.8rem] [&::-webkit-details-marker]:hidden">
               <span className={tituloGrupo}>Cambiar el centro</span>
               {/* La pista, en palabra y en amarillo (la flecha sola no la entiende todo el mundo) */}
-              <span className="ml-auto text-[0.85rem] font-semibold text-acento [details[open]>summary>&]:hidden">Abrir</span>
-              <span className="ml-auto hidden text-[0.85rem] font-semibold text-acento [details[open]>summary>&]:inline">Cerrar</span>
-              <ChevronDown className="h-[1rem] w-[1rem] shrink-0 text-acento transition-transform [details[open]>summary>&]:rotate-180" aria-hidden="true" />
+              <span className={`ml-auto text-[0.85rem] font-semibold ${pista} [details[open]>summary>&]:hidden`}>Abrir</span>
+              <span className={`ml-auto hidden text-[0.85rem] font-semibold ${pista} [details[open]>summary>&]:inline`}>Cerrar</span>
+              <ChevronDown className={`h-[1rem] w-[1rem] shrink-0 ${pista} transition-transform [details[open]>summary>&]:rotate-180`} aria-hidden="true" />
             </summary>
             <div className="grid gap-[0.7rem] px-[0.85rem] pb-[0.85rem]">
             {/* Forma del centro: 3 a la vista y el resto con el + */}
@@ -2031,21 +2063,57 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
             </div>
             <input ref={entradaLogo} type="file" accept="image/*" onChange={e => subirLogo(e.target.files?.[0])} className="sr-only" tabIndex={-1} aria-hidden="true" />
             {errorLogo && <p className="text-[0.8rem] font-semibold text-red-600">{errorLogo}</p>}
+            {/* En el panel de Jesús: el tamaño del centro, entre un mínimo y un máximo para que el QR se siga leyendo */}
+            {!esCliente && centro !== 'nada' && deslizador('Tamaño', tamanoCentro, setTamanoCentro, TAMANO_CENTRO.min, TAMANO_CENTRO.max, 0.01)}
             </div>
           </details>
 
           {/* Cambiar la placa: sus esquinas (solo en la rectangular) y el borde alrededor del QR. La forma (rectangular o
               circular) la decide Jesús en su panel */}
-          <details className="rounded-[0.1rem] bg-[#242422] ring-1 ring-[#3a3935]">
+          <details className={desplegable}>
             <summary className="flex cursor-pointer list-none items-center gap-[0.75rem] px-[0.85rem] py-[0.8rem] [&::-webkit-details-marker]:hidden">
               <span className={tituloGrupo}>Cambiar la placa</span>
               {/* La pista, en palabra y en amarillo (la flecha sola no la entiende todo el mundo) */}
-              <span className="ml-auto text-[0.85rem] font-semibold text-acento [details[open]>summary>&]:hidden">Abrir</span>
-              <span className="ml-auto hidden text-[0.85rem] font-semibold text-acento [details[open]>summary>&]:inline">Cerrar</span>
-              <ChevronDown className="h-[1rem] w-[1rem] shrink-0 text-acento transition-transform [details[open]>summary>&]:rotate-180" aria-hidden="true" />
+              <span className={`ml-auto text-[0.85rem] font-semibold ${pista} [details[open]>summary>&]:hidden`}>Abrir</span>
+              <span className={`ml-auto hidden text-[0.85rem] font-semibold ${pista} [details[open]>summary>&]:inline`}>Cerrar</span>
+              <ChevronDown className={`h-[1rem] w-[1rem] shrink-0 ${pista} transition-transform [details[open]>summary>&]:rotate-180`} aria-hidden="true" />
             </summary>
             <div className="grid gap-[0.9rem] px-[0.85rem] pb-[0.85rem]">
-                {formaPlaca === 'rectangular' && (
+                {/* En el panel de Jesús: con o sin placa, su forma, las medidas finas y las esquinas del fondo del QR */}
+                {!esCliente && (
+                  <div className="grid gap-[0.75rem]">
+                    {casilla('Con placa alrededor del QR', conMarco, setConMarco)}
+                    {conMarco && (
+                      <>
+                        {botones(
+                          [
+                            ['rectangular', 'Rectangular'],
+                            ['circular', 'Circular (pegatina)'],
+                          ],
+                          formaPlaca,
+                          setFormaPlaca,
+                        )}
+                        {formaPlaca === 'rectangular' && deslizador('Esquinas redondeadas', radioPlaca, setRadioPlaca, 0, 0.2, 0.01)}
+                        {deslizador('Borde alrededor del QR', borde, setBorde, 0.03, 0.16, 0.01)}
+                      </>
+                    )}
+                    <div className="grid gap-[0.3rem]">
+                      {deslizador('Esquinas del fondo del QR', radioFondo, setRadioFondo, 0, RADIO_FONDO_MAX, 0.01)}
+                      {radioFondoElegido !== null ? (
+                        <button
+                          type="button"
+                          onClick={() => setRadioFondo(null)}
+                          className="justify-self-start text-[0.8rem] font-semibold text-zinc-500 underline underline-offset-[0.2em]"
+                        >
+                          Que siga a la placa
+                        </button>
+                      ) : (
+                        <p className="text-[0.8rem] text-zinc-500">Ahora sigue a la placa.</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+                {esCliente && formaPlaca === 'rectangular' && (
                 <div className="grid gap-[0.45rem]">
                   <span className={titulo}>Esquinas</span>
                   <div className="flex flex-wrap gap-[0.3rem] self-start justify-self-start rounded-[1.2rem] bg-zinc-100 p-[0.25rem]">
@@ -2063,6 +2131,7 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
                   </div>
                 </div>
                 )}
+                {esCliente && (
                 <div className="grid gap-[0.45rem]">
                   <span className={titulo}>Borde</span>
                   <div className="flex flex-wrap gap-[0.3rem] self-start justify-self-start rounded-[1.2rem] bg-zinc-100 p-[0.25rem]">
@@ -2079,303 +2148,33 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
                     ))}
                   </div>
                 </div>
+                )}
             </div>
           </details>
+
+          {/* Doble imagen, como el logo de TikTok (solo en el panel de Jesús): dos copias de colores desplazadas */}
+          {!esCliente && (
+            <details className={desplegable}>
+              <summary className="flex cursor-pointer list-none items-center gap-[0.75rem] px-[0.85rem] py-[0.8rem] [&::-webkit-details-marker]:hidden">
+                <span className={tituloGrupo}>Doble imagen</span>
+                <span className={`ml-auto text-[0.85rem] font-semibold ${pista} [details[open]>summary>&]:hidden`}>Abrir</span>
+                <span className={`ml-auto hidden text-[0.85rem] font-semibold ${pista} [details[open]>summary>&]:inline`}>Cerrar</span>
+                <ChevronDown className={`h-[1rem] w-[1rem] shrink-0 ${pista} transition-transform [details[open]>summary>&]:rotate-180`} aria-hidden="true" />
+              </summary>
+              <div className="grid gap-[0.6rem] px-[0.85rem] pb-[0.85rem]">
+                {casilla('Doble imagen (como TikTok)', doble.activo, activo => setDoble(d => ({ ...d, activo })))}
+                {doble.activo && (
+                  <div className="grid gap-[0.5rem] border-l-2 border-zinc-200 pl-[0.75rem]">
+                    {color('Copia de arriba', doble.colores[0], c => setDoble(d => ({ ...d, colores: [c, d.colores[1]] })))}
+                    {color('Copia de abajo', doble.colores[1], c => setDoble(d => ({ ...d, colores: [d.colores[0], c] })))}
+                  </div>
+                )}
+              </div>
+            </details>
+          )}
           </div>
           )}
         </div>
-      )}
-
-      {!esCliente && (
-        <label className="grid gap-[0.3rem]">
-          <span className={titulo}>Dirección que abre</span>
-          <input value={url} onChange={e => setUrl(e.target.value)} className={`${campo} text-[0.88rem]`} />
-          {/localhost|127\.0\.0\.1/.test(url) && (
-            <span className="text-[0.8rem] font-semibold text-amber-700">Es la dirección de tu ordenador: el móvil no la abrirá. Pon la de la web publicada.</span>
-          )}
-        </label>
-      )}
-
-      {/* El asistente: en el editor del cliente va en su desplegable, encima de Personalizar */}
-      {!esCliente && asistente}
-
-      {/* Todo el diseño del QR en un apartado que se pliega, cada parte en su desplegable */}
-      {/* En el editor del cliente no sale: lo que necesita ya está fuera, y lo de dentro (placa, borde, tamaños...) lo
-          decide Jesús */}
-      {!esCliente && (
-      <details open className="group/diseno rounded-[0.75rem] ring-1 ring-zinc-200">
-        <summary className="flex cursor-pointer list-none items-center gap-[0.75rem] px-[0.85rem] py-[0.8rem] [&::-webkit-details-marker]:hidden">
-          <span className="text-[1rem] font-bold">Diseño</span>
-          <ChevronDown className="ml-auto h-[1rem] w-[1rem] shrink-0 text-zinc-500 transition-transform group-open/diseno:rotate-180" aria-hidden="true" />
-        </summary>
-        <div className="grid grid-cols-[minmax(0,1fr)] gap-[0.75rem] px-[0.85rem] pb-[0.85rem] pt-[0.2rem]">
-          {/* 1. Estilo: los de la marca y los de la placa de la landing (en el editor del cliente, ya están a la vista
-              en las muestras de colores) */}
-          {!esCliente && (
-          <Plegable titulo="Estilo" elegido={nombreEstilo}>
-            <div className="flex flex-wrap gap-[0.4rem]">
-              {/* "Su marca" solo con los colores de un negocio */}
-              {[...(colores ? [{ clave: 'marca', nombre: 'Su marca' }] : []), ...ESTILOS].map(e => (
-                <button key={e.clave} type="button" aria-pressed={estilo === e.clave} onClick={() => ponerEstilo(e.clave)} className={opcion(estilo === e.clave)}>
-                  {e.nombre}
-                </button>
-              ))}
-            </div>
-          </Plegable>
-          )}
-
-          {/* 2. Colores: los predeterminados, los del QR a mano y los de la placa */}
-          <Plegable
-            titulo="Colores"
-            elegido={<span className="flex justify-end gap-[0.25rem]">{[colorPuntos, colorEsquinas, fondo, colorMarco].map((c, i) => <span key={i}>{muestra(c)}</span>)}</span>}
-          >
-            <div className="grid gap-[0.6rem]">
-              {/* En el editor del cliente, los predeterminados están a la vista en las muestras de colores */}
-              {!esCliente && (
-              <Plegable titulo="Predeterminados">
-                <div className="grid gap-[0.9rem]">
-                  {/* Lisos: cada botón con su muestra (la placa y, dentro, el color del QR) */}
-                  <div className="grid gap-[0.4rem]">
-                    <span className={titulo}>Lisos</span>
-                    <div className="flex flex-wrap gap-[0.4rem]">
-                      {LISOS.map(e => (
-                        <button key={e.clave} type="button" aria-pressed={estilo === e.clave} onClick={() => ponerEstilo(e.clave)} className={`${opcion(estilo === e.clave)} inline-flex items-center gap-[0.4rem]`}>
-                          <span className="flex h-[1rem] w-[1rem] items-center justify-center rounded-[0.25rem] ring-1 ring-zinc-300" style={{ background: e.placa }}>
-                            <span className="h-[0.4rem] w-[0.4rem] rounded-[0.1rem]" style={{ background: e.placa === e.qr ? '#FFFFFF' : e.qr }} />
-                          </span>
-                          {e.nombre}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  {/* Degradados: cada botón con su muestra (el degradado en diagonal) */}
-                  <div className="grid gap-[0.4rem]">
-                    <span className={titulo}>Degradados</span>
-                    <div className="flex flex-wrap gap-[0.4rem]">
-                      {DEGRADADOS.map(e => (
-                        <button key={e.clave} type="button" aria-pressed={estilo === e.clave} onClick={() => ponerEstilo(e.clave)} className={`${opcion(estilo === e.clave)} inline-flex items-center gap-[0.4rem]`}>
-                          <span className="h-[1rem] w-[1rem] rounded-[0.25rem]" style={{ background: `linear-gradient(45deg, ${e.colores.join(', ')})` }} />
-                          {e.nombre}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </Plegable>
-              )}
-              <Plegable titulo="Personalizado">
-                <div className="grid gap-[0.6rem]">
-                  {color('Puntos', colorPuntos, setColorPuntos)}
-                  {degradado(degPuntos, setDegPuntos)}
-                  {color('Esquinas', colorEsquinas, setColorEsquinas)}
-                  {degradado(degEsquinas, setDegEsquinas)}
-                  {color('Fondo', fondo, setFondo)}
-                </div>
-              </Plegable>
-              <Plegable titulo="Placa">
-                <div className="grid gap-[0.6rem]">
-                  {color('Color de la placa', colorMarco, setColorMarco)}
-                  {degradado(degMarco, setDegMarco)}
-                  {color('Color de los textos', textoSobreMarco, setColorLetra)}
-                  {textoPocoVisible && <p className="text-[0.8rem] font-semibold text-amber-700">Los textos se parecen mucho a la placa: puede costar leerlos.</p>}
-                </div>
-              </Plegable>
-            </div>
-          </Plegable>
-          {pocoContraste && (
-            <p className="text-[0.8rem] font-semibold text-amber-700">
-              Poco contraste: para que lo lean todos los móviles, puntos y esquinas oscuros (también los colores de los degradados) sobre fondo claro.
-            </p>
-          )}
-
-          {/* 3. Formas del QR (en el editor del cliente, la de los puntos está a la vista, arriba) */}
-          {!esCliente && (
-            <Plegable titulo="Puntos" elegido={nombreDe(PUNTOS, puntos)}>
-              {botones(PUNTOS, puntos, setPuntos)}
-            </Plegable>
-          )}
-
-          <Plegable titulo="Esquinas" elegido={`${nombreDe(MARCOS_OJO, esquinas)} · ${nombreDe(PUNTOS_OJO, puntoOjo)}`}>
-            <div className="grid gap-[0.75rem]">
-              <div className="grid gap-[0.4rem]">
-                <span className={titulo}>Marco de fuera</span>
-                {botones(MARCOS_OJO, esquinas, setEsquinas)}
-              </div>
-              <div className="grid gap-[0.4rem]">
-                <span className={titulo}>Punto de dentro</span>
-                {botones(PUNTOS_OJO, puntoOjo, setPuntoOjo)}
-              </div>
-            </div>
-          </Plegable>
-
-          {/* 4. Centro: nada, un texto (la inicial o hasta 3 letras) o un logo */}
-          <Plegable titulo="Centro" elegido={centro === 'logo' ? 'Logo' : centro === 'inicial' && letrasCentro ? `Texto (${letrasCentro})` : 'Nada'}>
-            <div className="grid gap-[0.75rem]">
-              {botones(
-                [
-                  ['nada', 'Nada'],
-                  ['inicial', 'Texto'],
-                  ['logo', 'Logo'],
-                ],
-                centro,
-                setCentro,
-              )}
-              {centro === 'inicial' && (
-                <>
-                  {campoTextoCentro}
-                  {botones(FORMAS_CENTRO, formaCentro, setFormaCentro)}
-                  {color('Color de la forma', colorCentro, ponerColorCentroAMano)}
-                </>
-              )}
-              {centro === 'logo' && (
-                <div className="grid gap-[0.4rem]">
-                  {logo && <img src={logo} alt="Logo" className="h-[3.5rem] w-[3.5rem] rounded-[0.5rem] object-contain ring-1 ring-zinc-200" />}
-                  <label className="inline-flex min-h-[2.5rem] w-fit cursor-pointer items-center rounded-[0.6rem] bg-white px-[0.9rem] text-[0.9rem] font-semibold ring-1 ring-zinc-300">
-                    {logo ? 'Cambiar logo' : 'Subir logo'}
-                    <input type="file" accept="image/*" onChange={e => subirLogo(e.target.files?.[0])} className="sr-only" />
-                  </label>
-                  {errorLogo && <p className="text-[0.8rem] font-semibold text-red-600">{errorLogo}</p>}
-                  <p className="text-[0.8rem] text-zinc-500">Mejor un logo cuadrado y con fondo, que se vea bien en pequeño.</p>
-                </div>
-              )}
-              {/* Tamaño del centro, entre un mínimo y un máximo para que el QR se siga leyendo */}
-              {centro !== 'nada' && deslizador('Tamaño', tamanoCentro, setTamanoCentro, TAMANO_CENTRO.min, TAMANO_CENTRO.max, 0.01)}
-            </div>
-          </Plegable>
-
-          {/* 5. Doble imagen, como el logo de TikTok: dos copias de colores un poco desplazadas por debajo */}
-          <Plegable titulo="Doble imagen" elegido={doble.activo ? 'Sí' : 'No'}>
-            <div className="grid gap-[0.6rem]">
-              {casilla('Doble imagen (como TikTok)', doble.activo, activo => setDoble(d => ({ ...d, activo })))}
-              {doble.activo && (
-                <div className="grid gap-[0.5rem] border-l-2 border-zinc-200 pl-[0.75rem]">
-                  {color('Copia de arriba', doble.colores[0], c => setDoble(d => ({ ...d, colores: [c, d.colores[1]] })))}
-                  {color('Copia de abajo', doble.colores[1], c => setDoble(d => ({ ...d, colores: [d.colores[0], c] })))}
-                </div>
-              )}
-            </div>
-          </Plegable>
-
-          {/* 6. Placa: con o sin ella, su forma, sus esquinas y el borde alrededor del QR */}
-          <Plegable titulo="Placa" elegido={!conMarco ? 'Sin placa' : formaPlaca === 'circular' ? 'Circular' : 'Rectangular'}>
-            <div className="grid gap-[0.75rem]">
-              <div className="grid gap-[0.4rem]">
-                <span className={titulo}>Silueta del QR</span>
-                {botones(OPCIONES_SILUETA, silueta, setSilueta)}
-              </div>
-              {casilla('Con placa alrededor del QR', conMarco, setConMarco)}
-              {conMarco && (
-                <>
-                  {botones(
-                    [
-                      ['rectangular', 'Rectangular'],
-                      ['circular', 'Circular (pegatina)'],
-                    ],
-                    formaPlaca,
-                    setFormaPlaca,
-                  )}
-                  {formaPlaca === 'rectangular' && deslizador('Esquinas redondeadas', radioPlaca, setRadioPlaca, 0, 0.2, 0.01)}
-                  {deslizador('Borde alrededor del QR', borde, setBorde, 0.03, 0.16, 0.01)}
-                </>
-              )}
-              {/* Esquinas del fondo del QR: siguen a la placa hasta que se tocan */}
-              <div className="grid gap-[0.3rem]">
-                {deslizador('Esquinas del fondo del QR', radioFondo, setRadioFondo, 0, RADIO_FONDO_MAX, 0.01)}
-                {radioFondoElegido !== null ? (
-                  <button
-                    type="button"
-                    onClick={() => setRadioFondo(null)}
-                    className="justify-self-start text-[0.8rem] font-semibold text-zinc-500 underline underline-offset-[0.2em]"
-                  >
-                    Que siga a la placa
-                  </button>
-                ) : (
-                  <p className="text-[0.8rem] text-zinc-500">Ahora sigue a la placa.</p>
-                )}
-              </div>
-            </div>
-          </Plegable>
-
-          {/* 7. Textos de la placa */}
-          {conMarco && (
-            <Plegable titulo="Textos" elegido={campoArriba || campoAbajo1 || 'Sin textos'}>
-              <div className="grid gap-[0.9rem]">
-                {/* 3 campos libres: el nombre, un eslogan, el horario... donde se quiera; los vacíos no salen */}
-                <label className="grid gap-[0.3rem]">
-                  <span className={titulo}>Encima del QR</span>
-                  <input value={campoArriba} onChange={e => setCampoArriba(e.target.value)} maxLength={32} placeholder="El nombre, un eslogan..." className={campo} />
-                </label>
-                <label className="grid gap-[0.3rem]">
-                  <span className={titulo}>Debajo del QR</span>
-                  <input value={campoAbajo1} onChange={e => setCampoAbajo1(e.target.value)} maxLength={32} placeholder="Escanea y déjanos tu reseña" className={campo} />
-                </label>
-                <label className="grid gap-[0.3rem]">
-                  <span className={titulo}>Debajo del QR, segunda línea{formaPlaca === 'circular' ? ' (en la circular no cabe)' : ''}</span>
-                  <input value={campoAbajo2} onChange={e => setCampoAbajo2(e.target.value)} maxLength={32} placeholder="Horario, dirección..." className={campo} />
-                </label>
-                {/* Redes con icono: solo en el panel de Jesús (el QR ya lleva a las redes del negocio). Cada línea con su
-                    icono (o ninguno) y su texto; las vacías no salen */}
-                {modo !== 'cliente' && (
-                <div className="grid gap-[0.4rem]">
-                  <span className={titulo}>Redes con icono (debajo de todo)</span>
-                  {lineas.map((l, i) => {
-                    const cambiar = cambio => setLineas(ls => ls.map((x, j) => (j === i ? { ...x, ...cambio } : x)))
-                    return (
-                      <div key={i} className="flex items-center gap-[0.4rem]">
-                        <select
-                          value={l.icono}
-                          onChange={e => cambiar({ icono: e.target.value })}
-                          aria-label="Icono"
-                          className="min-h-[2.75rem] shrink-0 rounded-[0.6rem] border border-zinc-300 bg-white px-[0.4rem] text-[0.85rem]"
-                        >
-                          {ICONOS_LINEA.map(([clave, texto]) => (
-                            <option key={clave || 'ninguno'} value={clave}>
-                              {texto}
-                            </option>
-                          ))}
-                        </select>
-                        <input value={l.texto} onChange={e => cambiar({ texto: e.target.value })} maxLength={32} placeholder="@tunegocio" className={campo} />
-                        <button
-                          type="button"
-                          onClick={() => setLineas(ls => ls.filter((_, j) => j !== i))}
-                          className="shrink-0 text-[0.8rem] font-semibold text-zinc-500 underline underline-offset-[0.2em]"
-                        >
-                          Quitar
-                        </button>
-                      </div>
-                    )
-                  })}
-                  {lineas.length < MAX_LINEAS && (
-                    <button
-                      type="button"
-                      onClick={() => setLineas(ls => [...ls, { icono: '', texto: '' }])}
-                      className="justify-self-start text-[0.88rem] font-semibold underline underline-offset-[0.2em]"
-                    >
-                      Añadir campo
-                    </button>
-                  )}
-                </div>
-                )}
-                <label className="grid gap-[0.3rem]">
-                  <span className={titulo}>Tipografía</span>
-                  <select value={tipografia} onChange={e => setTipografia(e.target.value)} className={campo}>
-                    <option value="">{fuentesMarca ? 'La de la marca' : 'La del sistema'}</option>
-                    {TIPOGRAFIAS.map(t => (
-                      <option key={t.id} value={t.id}>
-                        {t.nombre}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <div className="grid gap-[0.4rem]">
-                  <span className={titulo}>Tamaño de los textos</span>
-                  {botones(TAMANOS, escala, setEscala)}
-                </div>
-              </div>
-            </Plegable>
-          )}
-        </div>
-      </details>
       )}
 
       {esCliente ? (
@@ -2389,7 +2188,15 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-[0.5rem]">
+          {/* La dirección que abre el QR, encima de las descargas */}
+  <label className="grid gap-[0.3rem]">
+            <span className={titulo}>Dirección que abre</span>
+            <input value={url} onChange={e => setUrl(e.target.value)} className={`${campo} text-[0.88rem]`} />
+            {/localhost|127\.0\.0\.1/.test(url) && (
+              <span className="text-[0.8rem] font-semibold text-amber-700">Es la dirección de tu ordenador: el móvil no la abrirá. Pon la de la web publicada.</span>
+            )}
+          </label>
+          <div className="mt-[0.75rem] grid grid-cols-2 gap-[0.5rem]">
             <button type="button" onClick={descargarPng} disabled={descargando || !url.trim()} className="min-h-[2.9rem] rounded-[0.75rem] bg-zinc-900 font-semibold text-white disabled:opacity-50">
               Descargar PNG
             </button>
@@ -2404,20 +2211,5 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
         </>
       )}
     </div>
-  )
-}
-
-// Apartado que se pliega: cerrado, el título y lo elegido; al tocarlo, las opciones
-function Plegable({ titulo, elegido, children }) {
-  return (
-    // La flecha gira solo con su propio desplegable abierto (no con uno de fuera: los hay uno dentro de otro)
-    <details className="rounded-[0.75rem] ring-1 ring-zinc-200">
-      <summary className="flex cursor-pointer list-none items-center gap-[0.75rem] px-[0.85rem] py-[0.7rem] [&::-webkit-details-marker]:hidden">
-        <span className="text-[0.85rem] font-semibold text-zinc-500">{titulo}</span>
-        <span className="ml-auto min-w-0 truncate text-[0.9rem] font-semibold">{elegido}</span>
-        <ChevronDown className="h-[1rem] w-[1rem] shrink-0 text-zinc-500 transition-transform [details[open]>summary>&]:rotate-180" aria-hidden="true" />
-      </summary>
-      <div className="px-[0.85rem] pb-[0.85rem] pt-[0.2rem]">{children}</div>
-    </details>
   )
 }

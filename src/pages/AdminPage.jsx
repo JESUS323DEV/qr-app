@@ -1868,8 +1868,16 @@ function QRSuelto({ copias }) {
         nombre={pagina?.nombre ?? ''}
         colores={pagina?.colores}
         fuentes={pagina?.fuentes}
-        proponer={descripcion =>
-          llamar('asistente', { paso: 'colores-qr', descripcion, nombre: pagina?.nombre ?? '', sector: pagina?.marca?.sector ?? '', colores: pagina?.colores })
+        proponer={(descripcion, siluetas) =>
+          llamar('asistente', {
+            paso: 'colores-qr',
+            descripcion,
+            siluetas,
+            tipografias: TIPOGRAFIAS.map(({ id, nombre, estilo }) => ({ id, nombre, estilo })),
+            nombre: pagina?.nombre ?? '',
+            sector: pagina?.marca?.sector ?? '',
+            colores: pagina?.colores,
+          })
         }
       />
     </div>
