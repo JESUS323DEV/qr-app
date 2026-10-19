@@ -8,6 +8,7 @@ import BotonCompartir from '../components/BotonCompartir'
 import Escena, { fotoDeRespaldo, fotosDe, tipoComun } from '../fichas/escenas'
 import BarraPestanas from '../fichas/barras'
 import { useRol } from '../components/ColoresPortada'
+import { galeriaDe } from '../lib/galerias'
 
 /* Galería (inspirado en la carta Galería de Tumi). Hero por piezas: acepta cualquier pestaña común y cualquier
    barra (hero.barra; la suya son las pastillas).
@@ -23,7 +24,7 @@ const DEGRADADO = 'bg-gradient-to-t from-black/70 via-black/10 to-transparent'
 // fuera de ella, la descripción y el botón. Solo cambia la foto de fondo, que pasa sola cada 4 s o al tocar una flecha;
 // el titular no se mueve
 const TURNO_GALERIA_MS = 4000
-function GaleriaMiniweb({ fotos, inicio, irA, nombre }) {
+function GaleriaMiniweb({ fotos, inicio, irA, nombre, estilo }) {
   const rolTitular = useRol('titular')
   const rolDescripcion = useRol('descripcion')
   const rolBoton = useRol('boton')
@@ -46,21 +47,70 @@ function GaleriaMiniweb({ fotos, inicio, irA, nombre }) {
       <Icono className="h-[1.2rem] w-[1.2rem]" strokeWidth={2.5} aria-hidden="true" />
     </button>
   )
+  // El titular (en líneas), sobre la foto o debajo de ella según el estilo
+  const titularEl = (clase, tamano) =>
+    inicio.titular?.length > 0 && (
+      <h2 style={rolTitular} className={clase}>
+        {inicio.titular.map((l, i) => (
+          <span key={i} className={`block font-demo-heading font-bold leading-[1.05] ${tamano}`}>{l}</span>
+        ))}
+      </h2>
+    )
+  const descripcionEl = inicio.descripcion && <p style={rolDescripcion} className="text-[0.9rem] leading-[1.4] opacity-85">{inicio.descripcion}</p>
+  const botonEl = inicio.boton && inicio.botonA && (
+    <div className={`flex flex-wrap items-center gap-[0.75rem] ${inicio.descripcion ? 'mt-[0.6rem]' : ''}`}>
+      <button
+        type="button"
+        onClick={() => irA?.(inicio.botonA)}
+        style={rolBoton} className="inline-flex min-h-[2.5rem] items-center rounded-[0.6rem] bg-demo-accent px-[1.1rem] text-[0.92rem] font-semibold text-demo-text"
+      >
+        {inicio.boton}
+      </button>
+      <CompartirJuntoAlBoton titulo={nombre} />
+    </div>
+  )
+  // El titular pegado abajo sobre un degradado oscuro (y, en 'sobre', también la descripción y el botón)
+  const textoSobreFoto = (
+    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/45 to-transparent px-[0.9rem] pb-[0.8rem] pt-[3rem] text-left text-white">
+      {estilo.titularSobre && titularEl('pointer-events-none', 'text-[1.5rem]')}
+      {estilo.textoSobre && (
+        <>
+          {inicio.descripcion && <p style={rolDescripcion} className="mt-[0.35rem] text-[0.85rem] leading-[1.35] opacity-90">{inicio.descripcion}</p>}
+          {botonEl}
+        </>
+      )}
+    </div>
+  )
+  const hayTextoFuera = !estilo.titularSobre || (!estilo.textoSobre && (inicio.descripcion || (inicio.boton && inicio.botonA)))
   return (
     <div className="flex h-full flex-col">
-      {/* La foto, con el titular pegado abajo sobre un degradado oscuro */}
-      <div className="relative min-h-0 flex-1 overflow-hidden rounded-[0.9rem] bg-demo-surface">
-        {fotos.map((f, i) => (
-          <div key={i} className={`absolute inset-0 transition-opacity duration-700 ${i === actual ? 'opacity-100' : 'opacity-0'}`}>
-            <Img src={f.src} alt={f.alt} className="h-full w-full object-cover" />
-          </div>
-        ))}
-        {inicio.titular?.length > 0 && (
-          <h2 style={rolTitular} className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/45 to-transparent px-[0.9rem] pb-[0.8rem] pt-[3rem] text-left text-white">
-            {inicio.titular.map((l, i) => (
-              <span key={i} className="block font-demo-heading text-[1.5rem] font-bold leading-[1.05]">{l}</span>
+      {/* La foto (una sola, o en carrusel con un trozo de las de al lado), con el texto sobre ella según el estilo */}
+      <div className={`relative min-h-0 flex-1 overflow-hidden bg-demo-surface ${estilo.carrusel ? 'rounded-[0.9rem] bg-transparent!' : estilo.foto}`}>
+        {estilo.carrusel ? (
+          <div
+            className="flex h-full gap-[0.5rem] transition-transform duration-500"
+            style={{ transform: `translateX(calc(10% - ${actual} * (80% + 0.5rem)))` }}
+          >
+            {fotos.map((f, i) => (
+              <div key={i} className={`relative h-full w-[80%] shrink-0 overflow-hidden rounded-[0.9rem] bg-demo-surface transition-opacity duration-500 ${i === actual ? 'opacity-100' : 'opacity-60'}`}>
+                <Img src={f.src} alt={f.alt} className="h-full w-full object-cover" />
+                {estilo.titularSobre && inicio.titular?.length > 0 && (
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/45 to-transparent px-[0.9rem] pb-[0.8rem] pt-[3rem] text-white">
+                    {titularEl('pointer-events-none text-left', 'text-[1.35rem]')}
+                  </div>
+                )}
+              </div>
             ))}
-          </h2>
+          </div>
+        ) : (
+          <>
+            {fotos.map((f, i) => (
+              <div key={i} className={`absolute inset-0 transition-opacity duration-700 ${i === actual ? 'opacity-100' : 'opacity-0'}`}>
+                <Img src={f.src} alt={f.alt} className="h-full w-full object-cover" />
+              </div>
+            ))}
+            {(estilo.titularSobre || estilo.textoSobre) && textoSobreFoto}
+          </>
         )}
         {n > 1 && (
           <>
@@ -69,21 +119,15 @@ function GaleriaMiniweb({ fotos, inicio, irA, nombre }) {
           </>
         )}
       </div>
-      {/* Fuera de la foto: la descripción y el botón */}
-      {(inicio.descripcion || (inicio.boton && inicio.botonA)) && (
+      {/* Fuera de la foto: el titular (si no va sobre ella), la descripción y el botón */}
+      {hayTextoFuera && (
         <div className="shrink-0 pt-[0.7rem] text-demo-text">
-          {inicio.descripcion && <p style={rolDescripcion} className="text-[0.9rem] leading-[1.4] opacity-85">{inicio.descripcion}</p>}
-          {inicio.boton && inicio.botonA && (
-            <div className={`flex flex-wrap items-center gap-[0.75rem] ${inicio.descripcion ? 'mt-[0.6rem]' : ''}`}>
-              <button
-                type="button"
-                onClick={() => irA?.(inicio.botonA)}
-                style={rolBoton} className="inline-flex min-h-[2.5rem] items-center rounded-[0.6rem] bg-demo-accent px-[1.1rem] text-[0.92rem] font-semibold text-demo-text"
-              >
-                {inicio.boton}
-              </button>
-              <CompartirJuntoAlBoton titulo={nombre} />
-            </div>
+          {!estilo.titularSobre && titularEl('', 'text-[1.5rem]')}
+          {!estilo.textoSobre && (
+            <>
+              {descripcionEl}
+              {botonEl}
+            </>
           )}
         </div>
       )}
@@ -217,7 +261,7 @@ export default function HeroGaleria({ hero, nombre, lema, sinBarra = false, inic
             className={`absolute inset-0 transition-opacity duration-500 ${i === activa ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
           >
             {tipoComun(p.tipo) === 'fotos' && galeriaMiniweb ? (
-              <GaleriaMiniweb fotos={fotosDe(p)} inicio={inicio} irA={irA} nombre={nombre} />
+              <GaleriaMiniweb fotos={fotosDe(p)} inicio={inicio} irA={irA} nombre={nombre} estilo={galeriaDe(hero.pase)} />
             ) : tipoComun(p.tipo) === 'fotos' ? (
               <Mosaico fotos={fotosDe(p)} abrir={setVisor} />
             ) : (

@@ -19,6 +19,8 @@ import { FORMATOS } from '../lib/formatos'
 import { DISPOSICIONES } from '../lib/disposiciones'
 import { COMPOSICIONES } from '../lib/composiciones'
 import { DISTRIBUCIONES } from '../lib/distribuciones'
+import { GALERIAS } from '../lib/galerias'
+import { MONTAJES } from '../lib/montajes'
 import { pestanasDeMiniweb } from '../lib/miniweb'
 import { tipoDe } from '../lib/tematicas'
 import { HEROS } from '../heros'
@@ -1041,6 +1043,28 @@ function Diseno({ tipo, slug, vista, original, cambiar, abrir }) {
                 </select>
               </Etiqueta>
             )}
+            {hero.portada === 'polaroid' && (
+              <Etiqueta texto="Montaje de las polaroids">
+                <select value={hero.montaje ?? 'clasica'} onChange={e => cambiar('hero.montaje', e.target.value === 'clasica' ? undefined : e.target.value)} className={CAMPO}>
+                  {MONTAJES.map(m => (
+                    <option key={m.clave} value={m.clave}>
+                      {m.nombre}
+                    </option>
+                  ))}
+                </select>
+              </Etiqueta>
+            )}
+            {hero.portada === 'galeria' && (
+              <Etiqueta texto="Estilo de la galería">
+                <select value={hero.pase ?? 'clasica'} onChange={e => cambiar('hero.pase', e.target.value === 'clasica' ? undefined : e.target.value)} className={CAMPO}>
+                  {GALERIAS.map(g => (
+                    <option key={g.clave} value={g.clave}>
+                      {g.nombre}
+                    </option>
+                  ))}
+                </select>
+              </Etiqueta>
+            )}
             {hero.portada === 'retrato' && (
               <Etiqueta texto="Distribución de las fotos (Distribuciones)">
                 <select value={hero.distribucion ?? 'clasica'} onChange={e => cambiar('hero.distribucion', e.target.value === 'clasica' ? undefined : e.target.value)} className={CAMPO}>
@@ -1765,6 +1789,10 @@ function NuevoPerfil({ filas, recargar, abrir }) {
   const [composicion, setComposicion] = useState('clasica')
   // La distribución de las fotos de Retrato ('clasica' es la de siempre)
   const [distribucion, setDistribucion] = useState('clasica')
+  // El estilo de Galería ('clasica' es el de siempre)
+  const [pase, setPase] = useState('clasica')
+  // El montaje de Polaroid ('clasica' es el de siempre)
+  const [montaje, setMontaje] = useState('clasica')
   // El tamaño del nombre del negocio arriba: 'xs', 'md' (el de cada diseño) o 'xl'
   const [tamanoNombre, setTamanoNombre] = useState('md')
   const lugares = Object.entries(estructura).filter(([clave, valor]) => valor !== ESTRUCTURA_DEFECTO[clave])
@@ -1837,6 +1865,8 @@ function NuevoPerfil({ filas, recargar, abrir }) {
     !esCarta && hero === 'fullbleed' && disposicion !== 'clasica' && `disposicion=${disposicion}`,
     !esCarta && hero === 'mosaico' && composicion !== 'clasica' && `composicion=${composicion}`,
     !esCarta && hero === 'retrato' && distribucion !== 'clasica' && `distribucion=${distribucion}`,
+    !esCarta && hero === 'galeria' && pase !== 'clasica' && `pase=${pase}`,
+    !esCarta && hero === 'polaroid' && montaje !== 'clasica' && `montaje=${montaje}`,
     ...(producto === 'miniweb' ? lugares.map(([clave, valor]) => `${clave.toLowerCase()}=${valor}`) : []),
     producto === 'miniweb' && barra && `barra=${barra}`,
     conCabecera && cabecera && `cabecera=${cabecera.slice(1)}`,
@@ -1889,6 +1919,8 @@ function NuevoPerfil({ filas, recargar, abrir }) {
         ...(!esCarta && hero === 'fullbleed' && disposicion !== 'clasica' ? { 'hero.disposicion': disposicion } : {}),
         ...(!esCarta && hero === 'mosaico' && composicion !== 'clasica' ? { 'hero.composicion': composicion } : {}),
         ...(!esCarta && hero === 'retrato' && distribucion !== 'clasica' ? { 'hero.distribucion': distribucion } : {}),
+        ...(!esCarta && hero === 'galeria' && pase !== 'clasica' ? { 'hero.pase': pase } : {}),
+        ...(!esCarta && hero === 'polaroid' && montaje !== 'clasica' ? { 'hero.montaje': montaje } : {}),
         // Los colores uno por uno que se han elegido (los demás, en automático)
         ...(producto === 'miniweb' && Object.keys(coloresMini).length ? { 'hero.colores': coloresMini } : {}),
         ...(producto === 'miniweb' ? Object.fromEntries(lugares.map(([clave, valor]) => [`hero.${clave}`, valor])) : {}),
@@ -1922,7 +1954,7 @@ function NuevoPerfil({ filas, recargar, abrir }) {
           ...(conCabecera ? { 'theme.colors.header': colorCabecera } : {}),
           ...(tipografia ? { 'theme.fonts': tipografia.fonts } : {}),
           ...(producto === 'ficha'
-            ? { 'hero.diseno': hero, ...(barra ? { 'hero.barra': barra } : {}), ...(hero === 'diagonal' && corte !== 'diagonal' ? { 'hero.corte': corte } : {}), ...(hero === 'editorial' && formato !== 'clasica' ? { 'hero.formato': formato } : {}), ...(hero === 'fullbleed' && disposicion !== 'clasica' ? { 'hero.disposicion': disposicion } : {}), ...(hero === 'mosaico' && composicion !== 'clasica' ? { 'hero.composicion': composicion } : {}), ...(hero === 'retrato' && distribucion !== 'clasica' ? { 'hero.distribucion': distribucion } : {}) }
+            ? { 'hero.diseno': hero, ...(barra ? { 'hero.barra': barra } : {}), ...(hero === 'diagonal' && corte !== 'diagonal' ? { 'hero.corte': corte } : {}), ...(hero === 'editorial' && formato !== 'clasica' ? { 'hero.formato': formato } : {}), ...(hero === 'fullbleed' && disposicion !== 'clasica' ? { 'hero.disposicion': disposicion } : {}), ...(hero === 'mosaico' && composicion !== 'clasica' ? { 'hero.composicion': composicion } : {}), ...(hero === 'retrato' && distribucion !== 'clasica' ? { 'hero.distribucion': distribucion } : {}), ...(hero === 'galeria' && pase !== 'clasica' ? { 'hero.pase': pase } : {}), ...(hero === 'polaroid' && montaje !== 'clasica' ? { 'hero.montaje': montaje } : {}) }
             : deChalaquita
               ? { 'hero.portada': hero, ...inicioCambio, ...Object.fromEntries(Object.entries(textosEscritos).map(([clave, valor]) => [`hero.pestanas.0.${clave}`, valor])) }
               : {
@@ -2164,6 +2196,48 @@ function NuevoPerfil({ filas, recargar, abrir }) {
                     ))}
                   </div>
                   <p className="text-[0.8rem] text-zinc-500">{FORMATOS.find(f => f.clave === formato)?.nombre}</p>
+                </div>
+              )}
+              {/* Con Polaroid elegido, sus montajes con icono: el Clásico de siempre primero */}
+              {hero === 'polaroid' && subAbierta && (
+                <div className="grid gap-[0.4rem]">
+                  <div className="flex flex-wrap gap-[0.4rem]">
+                    {MONTAJES.map(m => (
+                      <button
+                        key={m.clave}
+                        type="button"
+                        title={m.nombre}
+                        aria-label={`Montaje ${m.nombre}`}
+                        aria-pressed={montaje === m.clave}
+                        onClick={() => setMontaje(m.clave)}
+                        className={`flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 bg-white transition-transform duration-300 ${montaje === m.clave ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
+                      >
+                        <svg viewBox="0 0 24 24" className="h-[1.4rem] w-[1.4rem]" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: m.dibujo }} />
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-[0.8rem] text-zinc-500">{MONTAJES.find(m => m.clave === montaje)?.nombre}</p>
+                </div>
+              )}
+              {/* Con una galería elegida, sus estilos con icono: la Clásica de siempre primero */}
+              {hero === 'galeria' && subAbierta && (
+                <div className="grid gap-[0.4rem]">
+                  <div className="flex flex-wrap gap-[0.4rem]">
+                    {GALERIAS.map(g => (
+                      <button
+                        key={g.clave}
+                        type="button"
+                        title={g.nombre}
+                        aria-label={`Estilo ${g.nombre}`}
+                        aria-pressed={pase === g.clave}
+                        onClick={() => setPase(g.clave)}
+                        className={`flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 bg-white transition-transform duration-300 ${pase === g.clave ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
+                      >
+                        <svg viewBox="0 0 24 24" className="h-[1.4rem] w-[1.4rem]" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: g.dibujo }} />
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-[0.8rem] text-zinc-500">{GALERIAS.find(g => g.clave === pase)?.nombre}</p>
                 </div>
               )}
               {/* Con Distribuciones (Retrato) elegido, sus distribuciones con icono: la Clásica de siempre primero */}

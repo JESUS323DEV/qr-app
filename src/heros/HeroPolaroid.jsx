@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { CompartirJuntoAlBoton } from '../components/BotonCompartir'
 import NombreMarca from '../components/NombreMarca'
-import { X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 import Img from '../components/Img'
 import useVueltaPestanas from '../lib/useVueltaPestanas'
 import BotonCompartir from '../components/BotonCompartir'
@@ -9,6 +9,7 @@ import { loadFont } from '../lib/applyTheme'
 import Escena, { fotoDeRespaldo, fotosDe, tipoComun } from '../fichas/escenas'
 import BarraPestanas from '../fichas/barras'
 import { useRol } from '../components/ColoresPortada'
+import { montajeDe } from '../lib/montajes'
 
 /* Polaroid (inspirado en la carta Polaroid de Forno Nonna). Hero por piezas: acepta cualquier pestaña común y
    cualquier barra (hero.barra; la suya son las pastillas, sobre el color de la marca).
@@ -24,7 +25,9 @@ const FUENTE = 'https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&dis
 
 // Inclinación de cada polaroid según su sitio, para que parezcan pegadas a mano
 const GIROS = ['-rotate-[2.5deg]', 'rotate-[2deg]', 'rotate-[1.5deg]', '-rotate-[2deg]']
-const SOMBRA = 'shadow-[0_0.5rem_1.2rem_-0.3rem_rgb(0_0_0/0.45)]'
+// Inclinación (en grados) de cada foto del montón según su puesto: la de arriba casi recta y las de atrás torcidas
+const PUESTOS_MONTON = [1, -6, 6]
+const SOMBRA ='shadow-[0_0.5rem_1.2rem_-0.3rem_rgb(0_0_0/0.45)]'
 
 function Polaroid({ foto, giro, abrir }) {
   return (
@@ -86,6 +89,50 @@ export default function HeroPolaroid({ hero, nombre, lema, sinBarra = false, ini
   // En una miniweb con texto de Inicio: el titular, la descripción y el botón debajo de las polaroids
   const textoMiniweb = Boolean(sinBarra && (inicio?.titular?.length || inicio?.descripcion))
 
+  // El montaje (hero.montaje): cómo se colocan las polaroids y dónde va el texto
+  const montaje = montajeDe(hero.montaje)
+  // En el montón: la foto de arriba (cima) y, mientras sale volando, hacia qué lado (1 derecha, -1 izquierda)
+  const [cima, setCima] = useState(0)
+  const [saliendo, setSaliendo] = useState(0)
+  const pasarMonton = (paso, n) => {
+    if (saliendo) return
+    if (paso > 0) {
+      // La de arriba sale volando y, al acabar, pasa al fondo
+      setSaliendo(1)
+      setTimeout(() => {
+        setCima(c => (c + 1) % n)
+        setSaliendo(0)
+      }, 300)
+    } else {
+      setCima(c => (c - 1 + n) % n)
+    }
+  }
+  // Titular, descripción y botón, sobre el fondo de la cabecera: debajo de las polaroids o, en 'arriba', encima
+  const textoInicio = clase => (
+    <div className={clase}>
+      {inicio.titular?.length > 0 && (
+        <h2 style={rolTitular} className="font-demo-heading text-[clamp(1.7rem,1.4rem+1.6vw,2.1rem)] font-bold leading-[1.05]">
+          {inicio.titular.map((l, i) => (
+            <span key={i} className="block">{l}</span>
+          ))}
+        </h2>
+      )}
+      {inicio.descripcion && <p style={rolDescripcion} className="mt-[0.4rem] max-w-[22rem] text-[0.88rem] leading-[1.4] text-white/85">{inicio.descripcion}</p>}
+      {inicio.boton && inicio.botonA && (
+        <div className="mt-[0.65rem] flex flex-wrap items-center gap-[0.75rem]">
+          <button
+            type="button"
+            onClick={() => irA?.(inicio.botonA)}
+            style={rolBoton} className="inline-flex min-h-[2.5rem] items-center rounded-[0.6rem] bg-demo-accent px-[1.1rem] text-[0.92rem] font-semibold text-demo-text"
+          >
+            {inicio.boton}
+          </button>
+          <CompartirJuntoAlBoton titulo={nombre} />
+        </div>
+      )}
+    </div>
+  )
+
   useEffect(() => loadFont(FUENTE), [])
 
   const tocar = i => {
@@ -108,6 +155,8 @@ export default function HeroPolaroid({ hero, nombre, lema, sinBarra = false, ini
         <BotonCompartir titulo={nombre} className="mt-[0.4rem] shrink-0" />
       </div>
 
+      {textoMiniweb && montaje.textoArriba && textoInicio('px-[1.25rem] pt-[0.8rem]')}
+
       {/* Lo que cambia con cada pestaña: ocupa el alto que sobra, para que todo quepa en una pantalla */}
       <div className="relative mx-[1.25rem] mt-[0.7rem] min-h-[9rem] flex-1">
         {pestanas.map((p, i) => {
@@ -118,14 +167,42 @@ export default function HeroPolaroid({ hero, nombre, lema, sinBarra = false, ini
               aria-hidden={i !== activa}
               className={`absolute inset-0 transition-opacity duration-500 ${i === activa ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
             >
-              {fotos ? (
+              {fotos && sinBarra && montaje.monton ? (
+                // Las fotos apiladas: la de arriba recta, las otras asomando torcidas por detrás. Con las flechas, la de arriba
+                // sale volando a un lado y pasa al fondo (o vuelve desde el fondo); las demás suben un puesto
+                <div className="relative h-full">
+                  {fotos.map((f, k) => {
+                    const n = fotos.length
+                    const puesto = (k - cima + n) % n
+                    const sale = saliendo && puesto === 0
+                    const estilo = sale
+                      ? { transform: `translateX(${saliendo * 75}%) rotate(${saliendo * 14}deg)`, opacity: 0.85 }
+                      : { transform: `rotate(${PUESTOS_MONTON[puesto] ?? 0}deg)${puesto > 2 ? ' scale(0.9)' : ''}`, opacity: puesto > 2 ? 0 : 1 }
+                    return (
+                      <div key={k} className="absolute inset-x-[14%] inset-y-[0.3rem] transition-[transform,opacity] duration-300 ease-out" style={{ zIndex: n - puesto, ...estilo }}>
+                        <Polaroid foto={f} giro="" abrir={() => setAbierta(f)} />
+                      </div>
+                    )
+                  })}
+                  {fotos.length > 1 && (
+                    <>
+                      <button type="button" aria-label="Foto anterior" onClick={() => pasarMonton(-1, fotos.length)} className="absolute left-0 top-1/2 z-10 flex h-[2.2rem] w-[2.2rem] -translate-y-1/2 items-center justify-center rounded-full bg-black/35 text-white backdrop-blur-sm transition-colors hover:bg-black/55">
+                        <ChevronLeft className="h-[1.2rem] w-[1.2rem]" strokeWidth={2.5} aria-hidden="true" />
+                      </button>
+                      <button type="button" aria-label="Foto siguiente" onClick={() => pasarMonton(1, fotos.length)} className="absolute right-0 top-1/2 z-10 flex h-[2.2rem] w-[2.2rem] -translate-y-1/2 items-center justify-center rounded-full bg-black/35 text-white backdrop-blur-sm transition-colors hover:bg-black/55">
+                        <ChevronRight className="h-[1.2rem] w-[1.2rem]" strokeWidth={2.5} aria-hidden="true" />
+                      </button>
+                    </>
+                  )}
+                </div>
+              ) : fotos ? (
                 // Polaroids de dos en dos (con una sola, sola y centrada)
                 <div
                   className={`grid h-full gap-x-[0.7rem] gap-y-[0.7rem] p-[0.25rem] ${fotos.length === 1 ? 'grid-cols-1 px-[12%]' : 'grid-cols-2'}`}
                   style={{ gridTemplateRows: `repeat(${Math.ceil(fotos.length / 2) || 1}, minmax(0, 1fr))` }}
                 >
                   {fotos.map((f, k) => (
-                    <Polaroid key={k} foto={f} giro={GIROS[k % GIROS.length]} abrir={() => setAbierta(f)} />
+                    <Polaroid key={k} foto={f} giro={(sinBarra && montaje.giros ? montaje.giros : GIROS)[k % GIROS.length]} abrir={() => setAbierta(f)} />
                   ))}
                 </div>
               ) : (
@@ -141,30 +218,8 @@ export default function HeroPolaroid({ hero, nombre, lema, sinBarra = false, ini
         })}
       </div>
 
-      {textoMiniweb ? (
-        // Debajo de las polaroids, sobre el fondo de la cabecera: titular, descripción y botón
-        <div className="px-[1.25rem] pb-[1rem] pt-[0.9rem]">
-          {inicio.titular?.length > 0 && (
-            <h2 style={rolTitular} className="font-demo-heading text-[clamp(1.7rem,1.4rem+1.6vw,2.1rem)] font-bold leading-[1.05]">
-              {inicio.titular.map((l, i) => (
-                <span key={i} className="block">{l}</span>
-              ))}
-            </h2>
-          )}
-          {inicio.descripcion && <p style={rolDescripcion} className="mt-[0.4rem] max-w-[22rem] text-[0.88rem] leading-[1.4] text-white/85">{inicio.descripcion}</p>}
-          {inicio.boton && inicio.botonA && (
-            <div className="mt-[0.65rem] flex flex-wrap items-center gap-[0.75rem]">
-              <button
-                type="button"
-                onClick={() => irA?.(inicio.botonA)}
-                style={rolBoton} className="inline-flex min-h-[2.5rem] items-center rounded-[0.6rem] bg-demo-accent px-[1.1rem] text-[0.92rem] font-semibold text-demo-text"
-              >
-                {inicio.boton}
-              </button>
-              <CompartirJuntoAlBoton titulo={nombre} />
-            </div>
-          )}
-        </div>
+      {textoMiniweb && !montaje.textoArriba ? (
+        textoInicio('px-[1.25rem] pb-[1rem] pt-[0.9rem]')
       ) : sinBarra ? (
         <div className="h-[1rem]" />
       ) : (
