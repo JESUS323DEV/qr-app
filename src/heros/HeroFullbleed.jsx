@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import NombreMarca from '../components/NombreMarca'
 import { Phone } from 'lucide-react'
 import Img from '../components/Img'
 import useVueltaPestanas from '../lib/useVueltaPestanas'
@@ -220,7 +221,7 @@ export default function HeroFullbleed({ hero, nombre, sinBarra = false }) {
 
         {/* Marca arriba y, a la derecha, compartir (en el mapa se desvanecen) */}
         <div className={`pointer-events-none absolute inset-x-0 top-0 flex items-center justify-between px-[1.25rem] pt-[1rem] text-white transition-opacity duration-700 ${enMapa ? 'opacity-0' : 'opacity-100'}`}>
-          <p className="font-demo-heading text-[1.5rem] leading-none">{nombre}</p>
+          <p className="font-demo-heading text-[1.5rem] leading-none"><NombreMarca nombre={nombre} /></p>
           {!enMapa && <BotonCompartir titulo={nombre} className="pointer-events-auto" />}
         </div>
       </div>

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import NombreMarca from '../components/NombreMarca'
 import { Phone } from 'lucide-react'
 import Img from '../components/Img'
 import BotonCompartir from '../components/BotonCompartir'
@@ -223,7 +224,7 @@ export default function HeroHistorias({ hero, nombre, lema, sinBarra = false }) 
         } ${enMapa ? 'opacity-0' : 'opacity-100'}`}
       >
         <div className="min-w-0">
-          <p className="font-demo-heading text-[1.6rem] leading-none">{nombre}</p>
+          <p className="font-demo-heading text-[1.6rem] leading-none"><NombreMarca nombre={nombre} /></p>
           {lema && <p className="mt-[0.25rem] text-[0.8rem] text-white/80">{lema}</p>}
           {/* Compartir, debajo del nombre */}
           {!enMapa && <BotonCompartir titulo={nombre} className="pointer-events-auto mt-[0.6rem]" />}

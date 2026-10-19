@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import NombreMarca from '../components/NombreMarca'
 import { Mail, MessageCircle, Phone, Play } from 'lucide-react'
 import Img from '../components/Img'
 import { SocialIcon } from '../components/SocialIcons'
@@ -234,7 +235,7 @@ export default function HeroFicha({ hero, nombre, redes, redesTexto, sinBarra = 
       {/* Nombre y profesión a la izquierda; redes en pequeño a la derecha (hero.redesArriba) */}
       <div className="flex items-end justify-between gap-[0.75rem]">
         <div className="min-w-0">
-          <p className="font-demo-heading text-[2rem] font-bold leading-none">{nombre}</p>
+          <p className="font-demo-heading text-[2rem] font-bold leading-none"><NombreMarca nombre={nombre} /></p>
           {hero.profesion && <p className="mt-[0.3rem] text-[0.92rem] text-demo-muted">{hero.profesion}</p>}
         </div>
         {hero.redesArriba && redes?.length > 0 && (

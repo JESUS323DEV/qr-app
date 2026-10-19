@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import NombreMarca from '../components/NombreMarca'
 import { MessageCircle, Phone } from 'lucide-react'
 import Img from '../components/Img'
 import BotonCompartir from '../components/BotonCompartir'
@@ -215,7 +216,7 @@ export default function HeroRetrato({ hero, nombre, sinBarra = false }) {
           </span>
         )}
         <div className="leading-tight">
-          <p className="font-demo-heading text-[1.35rem] font-bold">{nombre}</p>
+          <p className="font-demo-heading text-[1.35rem] font-bold"><NombreMarca nombre={nombre} /></p>
           {hero.profesion && <p className="text-[0.85rem] text-white/75">{hero.profesion}</p>}
         </div>
       </div>

@@ -55,7 +55,8 @@ export default function CatalogoPage({ soloMiniwebs = false }) {
   const infoTipo = tipos.find(t => t.key === tipo)
 
   useEffect(() => {
-    document.title = `${catalogo.titulo} · ${marca.nombre}`
+    // En la pestaña del navegador, "Catálogo" (el título de la página es una frase)
+    document.title = `Catálogo · ${marca.nombre}`
   }, [])
 
   // Al cambiar de tipo se quita la temática (puede que ese tipo no la tenga)

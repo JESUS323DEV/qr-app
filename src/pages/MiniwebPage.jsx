@@ -14,6 +14,7 @@ import Carrusel from '../components/Carrusel'
 import GaleriaVideos from '../components/GaleriaVideos'
 import { COLORES_REDES } from '../lib/coloresRedes'
 import { secuenciaDemos, tipoDe } from '../lib/tematicas'
+import { LogoNegocio } from '../components/NombreMarca'
 
 function LogoGoogle({ compacta }) {
   return (
@@ -61,9 +62,10 @@ function TarjetaDestacada({ tarjeta, compacta }) {
 // Cuerpo de la miniweb (debajo del hero): reseña, redes y extras. Los diseños de página completa
 // (paginaCompleta en heros/index.js) lo reciben como prop y deciden en qué pestaña va.
 // soloResena: solo la card de arriba (reseña), sin el carrusel de redes; lo usan los diseños que ponen las redes en otro sitio
-function Cuerpo({ negocio, soloResena = false }) {
-  // Card de Google más pequeña para los diseños que necesitan más alto (resena.compacta en el archivo del negocio)
-  const compacta = Boolean(negocio.resena?.compacta)
+function Cuerpo({ negocio, soloResena = false, compacta: forzada = false }) {
+  // Card de Google más pequeña para los diseños que necesitan más alto (resena.compacta en el archivo del negocio,
+  // o el diseño que la pide: forzada)
+  const compacta = forzada || Boolean(negocio.resena?.compacta)
   const Resena = negocio.resena?.url ? 'a' : 'div'
   // Redes en el hero (hero.redesArriba): entonces no se repiten en el carrusel del cuerpo
   const redesArriba = Boolean(negocio.hero.redesArriba)
@@ -263,10 +265,13 @@ export default function MiniwebPage({ demo = false }) {
         </>
       )}
       {/* key: al pasar a otra demo el hero empieza de cero */}
-      <main key={negocio.slug} className="mx-auto flex min-h-svh w-full max-w-[30rem] flex-col bg-demo-bg">
-        <Hero hero={negocio.hero} nombre={negocio.nombre} lema={negocio.lema} redes={negocio.redes} redesTexto={negocio.redesTexto} cuerpo={<Cuerpo negocio={negocio} soloResena={Boolean(negocio.hero.redesArriba)} />} />
-        {!paginaCompleta && <Cuerpo negocio={negocio} />}
-      </main>
+      {/* El logo del negocio (si tiene): los diseños de arriba lo ponen en lugar del nombre escrito */}
+      <LogoNegocio.Provider value={negocio.logo ?? null}>
+        <main key={negocio.slug} className="mx-auto flex min-h-svh w-full max-w-[30rem] flex-col bg-demo-bg">
+          <Hero hero={negocio.hero} nombre={negocio.nombre} lema={negocio.lema} redes={negocio.redes} redesTexto={negocio.redesTexto} cuerpo={<Cuerpo negocio={negocio} soloResena={Boolean(negocio.hero.redesArriba)} compacta={negocio.hero.portada === 'retrato'} />} />
+          {!paginaCompleta && <Cuerpo negocio={negocio} />}
+        </main>
+      </LogoNegocio.Provider>
     </div>
   )
 }

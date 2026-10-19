@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import NombreMarca from '../components/NombreMarca'
 import { Phone } from 'lucide-react'
 import Img from '../components/Img'
 import useVueltaPestanas from '../lib/useVueltaPestanas'
@@ -198,7 +199,7 @@ export default function HeroBanner({ hero, nombre, lema, sinBarra = false }) {
             {siglas}
           </span>
           <div className="leading-tight">
-            <p className="font-demo-heading text-[1rem]">{nombre}</p>
+            <p className="font-demo-heading text-[1rem]"><NombreMarca nombre={nombre} tamano="pequeno" /></p>
             {lema && <p className="text-[0.8rem] text-white/80">{lema}</p>}
           </div>
           {/* Compartir, arriba a la derecha; en todas las pestañas menos en la del mapa ("Compartir" es igual en catalán) */}

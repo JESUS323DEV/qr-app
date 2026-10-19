@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import NombreMarca from '../components/NombreMarca'
 import useVueltaPestanas from '../lib/useVueltaPestanas'
 import BotonCompartir from '../components/BotonCompartir'
 import Escena, { fotoDeRespaldo, tipoComun } from '../fichas/escenas'
@@ -36,7 +37,7 @@ export default function HeroMosaico({ hero, nombre, lema, sinBarra = false }) {
     <div className="flex flex-1 flex-col" onPointerDown={parar}>
       <div className="px-[1.25rem] pt-[1rem]">
         <div className="flex items-baseline justify-between gap-[1rem]">
-          <p className="font-demo-heading text-[1.05rem] font-semibold text-demo-primary">{nombre}</p>
+          <p className="font-demo-heading text-[1.05rem] font-semibold text-demo-primary"><NombreMarca nombre={nombre} tamano="pequeno" /></p>
           {lema && <p className="text-[0.78rem] text-demo-muted">{lema}</p>}
         </div>
         <h1 className="mt-[0.6rem] font-demo-heading text-[clamp(2.2rem,1.7rem+2.4vw,2.8rem)] font-semibold leading-[1.02]">

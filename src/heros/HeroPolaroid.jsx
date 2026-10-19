@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import NombreMarca from '../components/NombreMarca'
 import { X } from 'lucide-react'
 import Img from '../components/Img'
 import useVueltaPestanas from '../lib/useVueltaPestanas'
@@ -92,7 +93,7 @@ export default function HeroPolaroid({ hero, nombre, lema, sinBarra = false }) {
       <div className="flex items-start justify-between gap-[1rem] px-[1.25rem] pt-[0.8rem]">
         <div className="min-w-0">
           <h1 className="text-[clamp(2.2rem,1.8rem+2vw,2.8rem)] font-bold leading-[0.85]" style={{ fontFamily: A_MANO }}>
-            {nombre}
+            <NombreMarca nombre={nombre} tamano="grande" />
           </h1>
           {lema && <p className="mt-[0.2rem] text-[0.85rem] text-white/80">{lema}</p>}
         </div>

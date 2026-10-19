@@ -772,6 +772,52 @@ function BuscarFoto({ sugerencia, orientacion, elegir, cerrar }) {
   )
 }
 
+/* Logo del negocio: se sube tal cual (sin pasarlo a JPG, para que no pierda el fondo transparente), a la carpeta logos
+   del almacén de fotos. PNG, SVG, WebP o JPG, de 1 MB como mucho */
+const TIPOS_LOGO = { 'image/png': 'png', 'image/svg+xml': 'svg', 'image/webp': 'webp', 'image/jpeg': 'jpg' }
+function CampoLogo({ valor, cambiar }) {
+  const [subiendo, setSubiendo] = useState(false)
+  const [error, setError] = useState('')
+
+  const subir = async e => {
+    const archivo = e.target.files?.[0]
+    e.target.value = ''
+    if (!archivo) return
+    const extension = TIPOS_LOGO[archivo.type]
+    if (!extension) return setError('Tiene que ser PNG, SVG, WebP o JPG.')
+    if (archivo.size > 1024 * 1024) return setError('Pesa demasiado: como mucho 1 MB.')
+    setSubiendo(true)
+    setError('')
+    try {
+      const ruta = `logos/${Date.now()}.${extension}`
+      const { error } = await supabase.storage.from('fotos').upload(ruta, archivo, { contentType: archivo.type })
+      if (error) throw error
+      cambiar(supabase.storage.from('fotos').getPublicUrl(ruta).data.publicUrl)
+    } catch {
+      setError('No se ha podido subir el logo. Prueba otra vez.')
+    } finally {
+      setSubiendo(false)
+    }
+  }
+
+  return (
+    <div className="grid gap-[0.4rem]">
+      <div className="flex items-center gap-[0.75rem]">
+        {/* Sobre cuadros, para ver si tiene fondo transparente */}
+        <div className="flex h-[4.5rem] w-[7rem] shrink-0 items-center justify-center rounded-[0.6rem] bg-[repeating-conic-gradient(#e4e4e7_0_25%,#fff_0_50%)] bg-[length:0.75rem_0.75rem] p-[0.4rem] ring-1 ring-zinc-200">
+          {valor ? <img src={valor} alt="Logo" className="max-h-full max-w-full object-contain" /> : <span className="text-[0.75rem] text-zinc-400">Sin logo</span>}
+        </div>
+        <label className={`inline-flex min-h-[2.5rem] cursor-pointer items-center rounded-[0.6rem] bg-white px-[0.9rem] text-[0.9rem] font-semibold ring-1 ring-zinc-300 ${subiendo ? 'pointer-events-none opacity-50' : ''}`}>
+          {subiendo ? 'Subiendo...' : valor ? 'Cambiar logo' : 'Subir logo'}
+          <input type="file" accept="image/png,image/svg+xml,image/webp,image/jpeg" onChange={subir} className="sr-only" />
+        </label>
+      </div>
+      {error && <p className="text-[0.8rem] font-semibold text-red-600">{error}</p>}
+      <p className="text-[0.8rem] text-zinc-500">Mejor en PNG o SVG con fondo transparente. Sale en lugar del nombre, a un tamaño fijo según el diseño.</p>
+    </div>
+  )
+}
+
 function CampoFoto({ valor, cambiar, carpeta, sugerencia, orientacion }) {
   const [subiendo, setSubiendo] = useState(false)
   const [error, setError] = useState('')
@@ -1461,6 +1507,9 @@ function NuevoPerfil({ filas, recargar, abrir }) {
   const [barra, setBarra] = useState('')
   const [estilo, setEstilo] = useState('revista')
   const [nombre, setNombre] = useState('')
+  // Cómo sale el nombre arriba (fichas y miniwebs): escrito ('texto', lo de siempre) o con su logo ('logo')
+  const [marcaCon, setMarcaCon] = useState('texto')
+  const [logo, setLogo] = useState('')
   const [principal, setPrincipal] = useState('')
   const [acento, setAcento] = useState('')
   const [colorTexto, setColorTexto] = useState('')
@@ -1491,6 +1540,9 @@ function NuevoPerfil({ filas, recargar, abrir }) {
   // Diseños con cabecera de color: Polaroid y Banner, y todas las miniwebs (su menú de arriba)
   const conCabecera = producto === 'miniweb' || (producto === 'ficha' && ['polaroid', 'banner'].includes(hero))
 
+  // El logo solo cuenta con "Logo" elegido, uno subido y en una ficha o una miniweb (las cartas llevan el nombre)
+  const logoElegido = !esCarta && marcaCon === 'logo' && logo ? logo : ''
+
   const heros = Object.entries(HEROS).filter(([, h]) => h.piezas && !h.paginaCompleta)
   const estilos = Object.values(FAMILIAS).filter(f => f.carta)
 
@@ -1510,6 +1562,7 @@ function NuevoPerfil({ filas, recargar, abrir }) {
     letra && `letra=${letra}`,
     producto === 'miniweb' && redesColor && `redes=${redesColor.slice(1)}`,
     conCabecera && cabecera && `cabecera=${cabecera.slice(1)}`,
+    logoElegido && `logo=${encodeURIComponent(logoElegido)}`,
   ]
     .filter(Boolean)
     .map(p => `&${p}`)
@@ -1563,6 +1616,7 @@ function NuevoPerfil({ filas, recargar, abrir }) {
         base = deChalaquita ? plantilla.miniweb : plantilla.ficha
         cambios = {
           nombre: nombre.trim(),
+          ...(logoElegido ? { logo: logoElegido } : {}),
           ...(principal ? { 'theme.colors.primary': principal } : {}),
           ...(acento ? { 'theme.colors.accent': acento } : {}),
           ...(colorTexto ? { 'theme.colors.text': colorTexto } : {}),
@@ -1745,6 +1799,29 @@ function NuevoPerfil({ filas, recargar, abrir }) {
           <Etiqueta texto="Nombre del negocio">
             <input value={nombre} onChange={e => setNombre(e.target.value)} className={CAMPO} placeholder="Peluquería Ranita" />
           </Etiqueta>
+          {/* Cómo sale el nombre arriba: escrito (por defecto) o su logo, que se sube aquí (fichas y miniwebs) */}
+          {!esCarta && (
+            <div className="grid gap-[0.4rem]">
+              <span className={titulo}>Arriba sale</span>
+              <div className="grid grid-cols-2 gap-[0.3rem] rounded-[0.75rem] bg-zinc-200 p-[0.25rem]">
+                {[
+                  ['texto', 'Texto'],
+                  ['logo', 'Logo'],
+                ].map(([clave, texto]) => (
+                  <button
+                    key={clave}
+                    type="button"
+                    aria-pressed={marcaCon === clave}
+                    onClick={() => setMarcaCon(clave)}
+                    className={`rounded-[0.55rem] py-[0.5rem] text-[0.95rem] font-semibold ${marcaCon === clave ? 'bg-white shadow-[0_0.05rem_0.2rem_rgb(0_0_0/0.15)]' : 'text-zinc-600'}`}
+                  >
+                    {texto}
+                  </button>
+                ))}
+              </div>
+              {marcaCon === 'logo' && <CampoLogo valor={logo} cambiar={setLogo} />}
+            </div>
+          )}
           {/* Colores: cada uno en su fila, con para qué sirve; cerrado, las cuatro muestras */}
           <Plegable
             titulo="Colores"

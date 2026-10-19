@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import NombreMarca from '../components/NombreMarca'
 import { Phone } from 'lucide-react'
 import Img from '../components/Img'
 import useVueltaPestanas from '../lib/useVueltaPestanas'
@@ -191,9 +192,11 @@ export default function HeroPortada({ hero, nombre, sinBarra = false }) {
         </div>
 
         <h1 className="mt-[0.7rem] text-center font-demo-heading text-[clamp(2.6rem,2rem+3vw,3.4rem)] uppercase leading-[0.9] tracking-tight">
-          {partes.length === 2
-            ? <>{partes[0]} <em className="font-normal italic">&amp;</em> {partes[1]}</>
-            : nombre}
+          <NombreMarca nombre={nombre} tamano="grande">
+            {partes.length === 2
+              ? <>{partes[0]} <em className="font-normal italic">&amp;</em> {partes[1]}</>
+              : nombre}
+          </NombreMarca>
         </h1>
       </div>
 

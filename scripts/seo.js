@@ -43,12 +43,12 @@ const html = readFileSync(`${DIST}/index.html`, 'utf8')
 writeFileSync(`${DIST}/app.html`, html)
 writeFileSync(`${DIST}/_redirects`, '/*  /app.html  200\n')
 
-const titulo = html.match(/<title>([^<]*)<\/title>/)?.[1] ?? 'Mostrador'
+const titulo = html.match(/<title>([^<]*)<\/title>/)?.[1] ?? 'Mostraq'
 const descripcion = html.match(/<meta name="description" content="([^"]*)"/)?.[1] ?? ''
 const datos = {
   '@context': 'https://schema.org',
   '@type': 'ProfessionalService',
-  name: 'Mostrador',
+  name: 'Mostraq',
   url: `${dominio}/`,
   description: descripcion,
   areaServed: { '@type': 'City', name: 'Barcelona' },

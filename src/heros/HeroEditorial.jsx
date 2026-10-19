@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import NombreMarca from '../components/NombreMarca'
 import { Phone } from 'lucide-react'
 import Img from '../components/Img'
 import useVueltaPestanas from '../lib/useVueltaPestanas'
@@ -264,7 +265,7 @@ export default function HeroEditorial({ hero, nombre, lema, sinBarra = false }) 
             tipoComun(pestanas[activa]?.tipo) === 'ubicacion' ? 'opacity-0' : 'opacity-100'
           }`}
         >
-          <p className="font-demo-heading text-[1.6rem] leading-none">{nombre}</p>
+          <p className="font-demo-heading text-[1.6rem] leading-none"><NombreMarca nombre={nombre} /></p>
           {lema && <p className="mt-[0.3rem] text-[0.85rem] text-white/80">{lema}</p>}
           {/* Compartir, en todas las pestañas menos en la del mapa (ahí la marca se oculta) */}
           {tipoComun(pestanas[activa]?.tipo) !== 'ubicacion' && <BotonCompartir titulo={nombre} className="pointer-events-auto mt-[0.6rem]" />}

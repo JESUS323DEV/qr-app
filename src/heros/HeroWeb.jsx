@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import NombreMarca from '../components/NombreMarca'
 import { ArrowUpRight, CalendarDays, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
 import Img from '../components/Img'
 import { SocialIcon } from '../components/SocialIcons'
@@ -9,6 +10,7 @@ import useVueltaPestanas from '../lib/useVueltaPestanas'
 import { fotoDeRespaldo, fotosDe, tipoComun } from '../fichas/escenas'
 import BarraPestanas from '../fichas/barras'
 import { HEROS } from './index'
+import HeroRetratoWeb from './HeroRetratoWeb'
 import Ofertas from '../components/carta/Ofertas'
 
 /* Web (plan premium). Parece una web de verdad dentro del móvil: arriba una barra de navegación del color de la marca,
@@ -34,7 +36,7 @@ function PaginaInicio({ pestana, irA, cuerpo, negocio }) {
         {/* Anclado abajo: lo que se añade crece hacia arriba y el botón no se mueve */}
         <div className="absolute inset-x-0 bottom-0 px-[1.25rem] pb-[1rem] text-white">
           {/* Nombre de la marca, en pequeño, encima del titular */}
-          <p className="mb-[0.45rem] text-[0.9rem] font-semibold text-white/85">{negocio}</p>
+          <p className="mb-[0.45rem] text-[0.9rem] font-semibold text-white/85"><NombreMarca nombre={negocio} tamano="pequeno" /></p>
           <h1 className="font-demo-heading text-[clamp(2.5rem,2rem+2.6vw,3.2rem)] font-extrabold leading-[0.95]">
             {pestana.titular[0]}
             <br />
@@ -593,12 +595,13 @@ function PaginaVacia() {
    sin su barra, con el cuerpo (reseña y redes) debajo. */
 
 // Portada: el hero de ficha elegido (hero.portada), solo con sus fotos, y el cuerpo debajo
-function PaginaPortada({ pestana, cuerpo, negocio, lema, portada, heroBase }) {
-  const Portada = HEROS[portada]?.Componente
+function PaginaPortada({ pestana, cuerpo, negocio, lema, portada, heroBase, inicio, irA }) {
+  // Retrato tiene su versión para miniwebs (con los textos del Inicio y siempre tres fotos); el de fichas no se toca
+  const Portada = portada === 'retrato' ? HeroRetratoWeb : HEROS[portada]?.Componente
   return (
     <div className="flex h-full flex-col overflow-y-auto [scrollbar-width:none]">
       <div className="flex min-h-[22rem] flex-1 flex-col">
-        {Portada && <Portada hero={{ ...heroBase, diseno: portada, pestanas: [pestana] }} nombre={negocio} lema={lema} sinBarra />}
+        {Portada && <Portada hero={{ ...heroBase, diseno: portada, pestanas: [pestana] }} nombre={negocio} lema={lema} inicio={inicio} irA={irA} sinBarra />}
       </div>
       {cuerpo}
     </div>
@@ -807,7 +810,7 @@ export default function HeroWeb({ hero, nombre, lema, cuerpo, redes, redesTexto 
                 i === activa ? 'opacity-100 transition-opacity duration-[250ms] ease-out' : 'pointer-events-none opacity-0 transition-none'
               }`}
             >
-              <Pagina pestana={p.tipo === 'inicio' && portada ? { tipo: 'fotos', texto: p.texto, fotos: fotosPortada } : p} irA={irA} cuerpo={cuerpo} negocio={nombre} lema={lema} cargarMapa portada={portada} heroBase={hero} respaldo={respaldo} />
+              <Pagina pestana={p.tipo === 'inicio' && portada ? { tipo: 'fotos', texto: p.texto, fotos: fotosPortada } : p} inicio={p} irA={irA} cuerpo={cuerpo} negocio={nombre} lema={lema} cargarMapa portada={portada} heroBase={hero} respaldo={respaldo} />
             </div>
           )
         })}

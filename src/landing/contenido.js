@@ -2,10 +2,10 @@
 // Provisional: nombre de la marca, número de WhatsApp y precios.
 
 export const marca = {
-  nombre: 'Mostrador',
+  nombre: 'Mostraq',
   ciudad: 'Barcelona',
   whatsapp: '34600000000',
-  mensajeWhatsapp: 'Hola, he visto Mostrador y me interesa para mi negocio.',
+  mensajeWhatsapp: 'Hola, he visto Mostraq y me interesa para mi negocio.',
 }
 
 export const hero = {
@@ -26,7 +26,7 @@ export const hero = {
     ],
   },
   // Pestaña Inicio del hero (los móviles con las demos)
-  titulo: 'Tu negocio entero, en una pantalla de móvil.',
+  titulo: 'Tu negocio entero, a un escaneo.',
   pista: 'Ver demo',
   texto:
     'Una placa en tu mostrador. Tus clientes la escanean y lo tienen todo: reseñas, horario, cómo llegar y reservas. Yo la monto y la mantengo.',
@@ -331,8 +331,8 @@ export const planesDetalle = {
 
 // Catálogo completo (/catalogo): todas las demos, separadas por tipo y filtrables por temática
 export const catalogo = {
-  titulo: 'Catálogo',
-  texto: 'Todas las demos. Ábrelas en tu móvil y tócalas como lo haría tu cliente.',
+  titulo: 'Así quedaría tu negocio.',
+  texto: 'Diseños cuidados y todo a un escaneo: reseñas, WhatsApp, carta y redes. Ábrelas en tu móvil y pruébalas como lo haría tu cliente; la tuya, con tu marca y tus fotos.',
   tipos: [
     { key: 'ficha', texto: 'Fichas', descripcion: 'Una pantalla con lo esencial de tu negocio.' },
     { key: 'carta', texto: 'Cartas', descripcion: 'Tu carta y tu menú del día, con QR para las mesas.' },
@@ -358,7 +358,7 @@ export const menu = {
     { texto: 'Aviso legal', url: '/aviso-legal' },
   ],
   boton: 'Escríbeme por WhatsApp',
-  firma: 'Mostrador · Hecho por JesúsDev',
+  firma: 'Mostraq · Hecho por JesúsDev',
 }
 
 /* Textos legales (/aviso-legal y /privacidad). Plantilla básica: conviene que la revise una gestoría al darse de alta.
