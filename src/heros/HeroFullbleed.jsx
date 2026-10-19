@@ -7,6 +7,7 @@ import useVueltaPestanas from '../lib/useVueltaPestanas'
 import BotonCompartir from '../components/BotonCompartir'
 import Escena, { fotoDeRespaldo, fotosDe, tipoComun } from '../fichas/escenas'
 import BarraPestanas from '../fichas/barras'
+import { disposicionDe } from '../lib/disposiciones'
 
 /* Fullbleed (adaptado de platform). Foto a todo el ancho con velo oscuro y la marca arriba.
    Pestañas en una barra segmentada (solo cambian al tocarlas):
@@ -175,6 +176,7 @@ const ESCENAS = {
 }
 
 // sinBarra: sin barra de pestañas, cuando hace de portada de una miniweb (la miniweb lleva su propio menú)
+// La disposición del texto sobre la foto (hero.disposicion) solo cuenta en la portada de una miniweb
 export default function HeroFullbleed({ hero, nombre, sinBarra = false, inicio, irA }) {
   // Solo las pestañas que sabe pintar (las comunes)
   const pestanas = useMemo(() => (hero.pestanas ?? []).filter(p => tipoComun(p.tipo)), [hero.pestanas])
@@ -194,12 +196,13 @@ export default function HeroFullbleed({ hero, nombre, sinBarra = false, inicio, 
   }
 
   const enMapa = tipoComun(pestanas[activa]?.tipo) === 'ubicacion'
+  const disposicion = disposicionDe(hero.disposicion)
 
   return (
     // Cualquier toque en el hero para la vuelta de presentación
     <div className="flex flex-1 flex-col" onPointerDown={parar}>
       {/* La foto ocupa el alto que sobra, para que todo quepa en una pantalla */}
-      <div className="relative min-h-[14rem] flex-1 overflow-hidden bg-demo-text">
+      <div className={`relative min-h-[14rem] flex-1 overflow-hidden bg-demo-text ${sinBarra ? disposicion.foto : ''}`}>
         {pestanas.map((p, i) => {
           const tipo = tipoComun(p.tipo)
           const Propia = ESCENAS[tipo]
@@ -220,6 +223,8 @@ export default function HeroFullbleed({ hero, nombre, sinBarra = false, inicio, 
           )
         })}
 
+        {sinBarra && disposicion.velo && <div className={`pointer-events-none absolute inset-0 ${disposicion.velo}`} />}
+
         {/* Marca arriba y, a la derecha, compartir (en el mapa se desvanecen) */}
         <div className={`pointer-events-none absolute inset-x-0 top-0 flex flex-wrap items-center justify-between px-[1.25rem] pt-[1rem] text-white transition-opacity duration-700 ${enMapa ? 'opacity-0' : 'opacity-100'}`}>
           <p className={`font-demo-heading leading-none ${sinBarra ? 'text-[2.1rem]' : 'text-[1.5rem]'}`}><NombreMarca nombre={nombre} tamano={sinBarra ? 'grande' : 'normal'} /></p>
@@ -228,7 +233,7 @@ export default function HeroFullbleed({ hero, nombre, sinBarra = false, inicio, 
 
         {/* Portada de una miniweb: el texto de Inicio (texto grande, pequeño y el botón) encima de la foto, abajo, sobre un degradado oscuro para que se lea */}
         {sinBarra && (
-          <TextoInicio inicio={inicio} irA={irA} nombre={nombre} color="text-white" className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/55 to-transparent px-[1.25rem] pb-[0.4rem] pt-[3rem]" />
+          <TextoInicio inicio={inicio} irA={irA} nombre={nombre} color="text-white" className={disposicion.texto} />
         )}
       </div>
 

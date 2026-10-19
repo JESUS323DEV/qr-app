@@ -16,6 +16,9 @@ import Movil from '../components/Movil'
 import { COLORES_MINIWEB } from '../lib/coloresMiniweb'
 import { CORTES, puntosDeCorte } from '../lib/cortes'
 import { FORMATOS } from '../lib/formatos'
+import { DISPOSICIONES } from '../lib/disposiciones'
+import { COMPOSICIONES } from '../lib/composiciones'
+import { DISTRIBUCIONES } from '../lib/distribuciones'
 import { pestanasDeMiniweb } from '../lib/miniweb'
 import { tipoDe } from '../lib/tematicas'
 import { HEROS } from '../heros'
@@ -1038,6 +1041,39 @@ function Diseno({ tipo, slug, vista, original, cambiar, abrir }) {
                 </select>
               </Etiqueta>
             )}
+            {hero.portada === 'retrato' && (
+              <Etiqueta texto="Distribución de las fotos (Distribuciones)">
+                <select value={hero.distribucion ?? 'clasica'} onChange={e => cambiar('hero.distribucion', e.target.value === 'clasica' ? undefined : e.target.value)} className={CAMPO}>
+                  {DISTRIBUCIONES.map(d => (
+                    <option key={d.clave} value={d.clave}>
+                      {d.nombre}
+                    </option>
+                  ))}
+                </select>
+              </Etiqueta>
+            )}
+            {hero.portada === 'mosaico' && (
+              <Etiqueta texto="Composición (Composiciones)">
+                <select value={hero.composicion ?? 'clasica'} onChange={e => cambiar('hero.composicion', e.target.value === 'clasica' ? undefined : e.target.value)} className={CAMPO}>
+                  {COMPOSICIONES.map(c => (
+                    <option key={c.clave} value={c.clave}>
+                      {c.nombre}
+                    </option>
+                  ))}
+                </select>
+              </Etiqueta>
+            )}
+            {hero.portada === 'fullbleed' && (
+              <Etiqueta texto="Disposición del texto (Disposiciones)">
+                <select value={hero.disposicion ?? 'clasica'} onChange={e => cambiar('hero.disposicion', e.target.value === 'clasica' ? undefined : e.target.value)} className={CAMPO}>
+                  {DISPOSICIONES.map(d => (
+                    <option key={d.clave} value={d.clave}>
+                      {d.nombre}
+                    </option>
+                  ))}
+                </select>
+              </Etiqueta>
+            )}
             {hero.portada === 'diagonal' && (
               <Etiqueta texto="Forma del corte (Cortes)">
                 <select value={hero.corte ?? 'diagonal'} onChange={e => cambiar('hero.corte', e.target.value === 'diagonal' ? undefined : e.target.value)} className={CAMPO}>
@@ -1621,11 +1657,11 @@ const TEXTO_EXTRA_EJEMPLO = 'De martes a domingo, de 13:00 a 23:00'
 
 // Las piezas que se pueden mover en una miniweb (hero.redesEn, hero.menuEn y hero.compartirEn), con su valor de siempre primero
 const ESTRUCTURA_MINIWEB = [
-  ['redesEn', 'Redes', [['barra', 'Barra arriba'], ['lateral', 'Lateral'], ['boton', 'Bajo el botón']]],
+  ['redesEn', 'Redes', [['arriba', 'Arriba'], ['lateral', 'Lateral'], ['medio', 'Medio'], ['abajo', 'Abajo']]],
   ['menuEn', 'Menú de navegación (Inicio, Menú, Horario...)', [['arriba', 'Arriba'], ['abajo', 'Abajo']]],
   ['compartirEn', 'Compartir', [['diseno', 'Como el diseño'], ['abajo', 'Junto al botón'], ['redes', 'En las redes']]],
 ]
-const ESTRUCTURA_DEFECTO = { redesEn: 'barra', menuEn: 'arriba', compartirEn: 'diseno' }
+const ESTRUCTURA_DEFECTO = { redesVinculadas: false, redesEn: 'arriba', menuEn: 'arriba', compartirEn: 'diseno' }
 
 // Esas piezas, cada una con sus opciones. valores: lo elegido (sin elegir, lo de siempre); cambiar(clave, valor)
 function EstructuraMiniweb({ valores, cambiar }) {
@@ -1633,7 +1669,8 @@ function EstructuraMiniweb({ valores, cambiar }) {
     <div className="grid gap-[0.7rem]">
       <span className="text-[0.8rem] font-semibold text-zinc-500">Estructura: dónde va cada pieza</span>
       {ESTRUCTURA_MINIWEB.map(([clave, texto, opciones]) => {
-        const actual = valores[clave] ?? ESTRUCTURA_DEFECTO[clave]
+        // Los valores viejos de las redes ('barra' y 'boton') son 'arriba' y 'medio'
+        const actual = ({ barra: 'arriba', boton: 'medio' })[valores[clave]] ?? valores[clave] ?? ESTRUCTURA_DEFECTO[clave]
         return (
           <div key={clave} className="grid gap-[0.3rem]">
             <span className="text-[0.8rem] text-zinc-500">{texto}</span>
@@ -1650,6 +1687,13 @@ function EstructuraMiniweb({ valores, cambiar }) {
                 </button>
               ))}
             </div>
+            {/* Redes: pegarlas siempre al menú de navegación (debajo de él si está arriba y encima si está abajo) */}
+            {clave === 'redesEn' && (
+              <label className="flex cursor-pointer items-center gap-[0.5rem] text-[0.85rem] font-semibold">
+                <input type="checkbox" checked={Boolean(valores.redesVinculadas)} onChange={e => cambiar('redesVinculadas', e.target.checked)} className="h-[1.1rem] w-[1.1rem]" />
+                Vincular al menú de navegación
+              </label>
+            )}
           </div>
         )
       })}
@@ -1715,6 +1759,12 @@ function NuevoPerfil({ filas, recargar, abrir }) {
   const [subAbierta, setSubAbierta] = useState(true)
   // El formato de Editorial ('clasica' es el de siempre)
   const [formato, setFormato] = useState('clasica')
+  // La disposición del texto de Fullbleed ('clasica' es la de siempre)
+  const [disposicion, setDisposicion] = useState('clasica')
+  // La composición de Mosaico ('clasica' es la de siempre)
+  const [composicion, setComposicion] = useState('clasica')
+  // La distribución de las fotos de Retrato ('clasica' es la de siempre)
+  const [distribucion, setDistribucion] = useState('clasica')
   // El tamaño del nombre del negocio arriba: 'xs', 'md' (el de cada diseño) o 'xl'
   const [tamanoNombre, setTamanoNombre] = useState('md')
   const lugares = Object.entries(estructura).filter(([clave, valor]) => valor !== ESTRUCTURA_DEFECTO[clave])
@@ -1784,6 +1834,9 @@ function NuevoPerfil({ filas, recargar, abrir }) {
     !esCarta && tamanoNombre !== 'md' && `tamano=${tamanoNombre}`,
     !esCarta && hero === 'diagonal' && corte !== 'diagonal' && `corte=${corte}`,
     !esCarta && hero === 'editorial' && formato !== 'clasica' && `formato=${formato}`,
+    !esCarta && hero === 'fullbleed' && disposicion !== 'clasica' && `disposicion=${disposicion}`,
+    !esCarta && hero === 'mosaico' && composicion !== 'clasica' && `composicion=${composicion}`,
+    !esCarta && hero === 'retrato' && distribucion !== 'clasica' && `distribucion=${distribucion}`,
     ...(producto === 'miniweb' ? lugares.map(([clave, valor]) => `${clave.toLowerCase()}=${valor}`) : []),
     producto === 'miniweb' && barra && `barra=${barra}`,
     conCabecera && cabecera && `cabecera=${cabecera.slice(1)}`,
@@ -1833,6 +1886,9 @@ function NuevoPerfil({ filas, recargar, abrir }) {
         ...(!esCarta && tamanoNombre !== 'md' ? { 'hero.tamanoNombre': tamanoNombre } : {}),
         ...(!esCarta && hero === 'diagonal' && corte !== 'diagonal' ? { 'hero.corte': corte } : {}),
         ...(!esCarta && hero === 'editorial' && formato !== 'clasica' ? { 'hero.formato': formato } : {}),
+        ...(!esCarta && hero === 'fullbleed' && disposicion !== 'clasica' ? { 'hero.disposicion': disposicion } : {}),
+        ...(!esCarta && hero === 'mosaico' && composicion !== 'clasica' ? { 'hero.composicion': composicion } : {}),
+        ...(!esCarta && hero === 'retrato' && distribucion !== 'clasica' ? { 'hero.distribucion': distribucion } : {}),
         // Los colores uno por uno que se han elegido (los demás, en automático)
         ...(producto === 'miniweb' && Object.keys(coloresMini).length ? { 'hero.colores': coloresMini } : {}),
         ...(producto === 'miniweb' ? Object.fromEntries(lugares.map(([clave, valor]) => [`hero.${clave}`, valor])) : {}),
@@ -1866,7 +1922,7 @@ function NuevoPerfil({ filas, recargar, abrir }) {
           ...(conCabecera ? { 'theme.colors.header': colorCabecera } : {}),
           ...(tipografia ? { 'theme.fonts': tipografia.fonts } : {}),
           ...(producto === 'ficha'
-            ? { 'hero.diseno': hero, ...(barra ? { 'hero.barra': barra } : {}), ...(hero === 'diagonal' && corte !== 'diagonal' ? { 'hero.corte': corte } : {}), ...(hero === 'editorial' && formato !== 'clasica' ? { 'hero.formato': formato } : {}) }
+            ? { 'hero.diseno': hero, ...(barra ? { 'hero.barra': barra } : {}), ...(hero === 'diagonal' && corte !== 'diagonal' ? { 'hero.corte': corte } : {}), ...(hero === 'editorial' && formato !== 'clasica' ? { 'hero.formato': formato } : {}), ...(hero === 'fullbleed' && disposicion !== 'clasica' ? { 'hero.disposicion': disposicion } : {}), ...(hero === 'mosaico' && composicion !== 'clasica' ? { 'hero.composicion': composicion } : {}), ...(hero === 'retrato' && distribucion !== 'clasica' ? { 'hero.distribucion': distribucion } : {}) }
             : deChalaquita
               ? { 'hero.portada': hero, ...inicioCambio, ...Object.fromEntries(Object.entries(textosEscritos).map(([clave, valor]) => [`hero.pestanas.0.${clave}`, valor])) }
               : {
@@ -2108,6 +2164,69 @@ function NuevoPerfil({ filas, recargar, abrir }) {
                     ))}
                   </div>
                   <p className="text-[0.8rem] text-zinc-500">{FORMATOS.find(f => f.clave === formato)?.nombre}</p>
+                </div>
+              )}
+              {/* Con Distribuciones (Retrato) elegido, sus distribuciones con icono: la Clásica de siempre primero */}
+              {hero === 'retrato' && subAbierta && (
+                <div className="grid gap-[0.4rem]">
+                  <div className="flex flex-wrap gap-[0.4rem]">
+                    {DISTRIBUCIONES.map(d => (
+                      <button
+                        key={d.clave}
+                        type="button"
+                        title={d.nombre}
+                        aria-label={`Distribución ${d.nombre}`}
+                        aria-pressed={distribucion === d.clave}
+                        onClick={() => setDistribucion(d.clave)}
+                        className={`flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 bg-white transition-transform duration-300 ${distribucion === d.clave ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
+                      >
+                        <svg viewBox="0 0 24 24" className="h-[1.4rem] w-[1.4rem]" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: d.dibujo }} />
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-[0.8rem] text-zinc-500">{DISTRIBUCIONES.find(d => d.clave === distribucion)?.nombre}</p>
+                </div>
+              )}
+              {/* Con Composiciones (Mosaico) elegido, sus composiciones con icono: la Clásica de siempre primero */}
+              {hero === 'mosaico' && subAbierta && (
+                <div className="grid gap-[0.4rem]">
+                  <div className="flex flex-wrap gap-[0.4rem]">
+                    {COMPOSICIONES.map(c => (
+                      <button
+                        key={c.clave}
+                        type="button"
+                        title={c.nombre}
+                        aria-label={`Composición ${c.nombre}`}
+                        aria-pressed={composicion === c.clave}
+                        onClick={() => setComposicion(c.clave)}
+                        className={`flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 bg-white transition-transform duration-300 ${composicion === c.clave ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
+                      >
+                        <svg viewBox="0 0 24 24" className="h-[1.4rem] w-[1.4rem]" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: c.dibujo }} />
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-[0.8rem] text-zinc-500">{COMPOSICIONES.find(c => c.clave === composicion)?.nombre}</p>
+                </div>
+              )}
+              {/* Con Disposiciones (Fullbleed) elegido, sus disposiciones con icono: la Clásica de siempre primero */}
+              {hero === 'fullbleed' && subAbierta && (
+                <div className="grid gap-[0.4rem]">
+                  <div className="flex flex-wrap gap-[0.4rem]">
+                    {DISPOSICIONES.map(d => (
+                      <button
+                        key={d.clave}
+                        type="button"
+                        title={d.nombre}
+                        aria-label={`Disposición ${d.nombre}`}
+                        aria-pressed={disposicion === d.clave}
+                        onClick={() => setDisposicion(d.clave)}
+                        className={`flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 bg-white transition-transform duration-300 ${disposicion === d.clave ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
+                      >
+                        <svg viewBox="0 0 24 24" className="h-[1.4rem] w-[1.4rem]" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: d.dibujo }} />
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-[0.8rem] text-zinc-500">{DISPOSICIONES.find(d => d.clave === disposicion)?.nombre}</p>
                 </div>
               )}
               {/* Con Cortes (Diagonal) elegido, la lista de cortes: la Diagonal de siempre primero */}

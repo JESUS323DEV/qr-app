@@ -5,7 +5,7 @@ import { CompartirJuntoAlBoton } from './BotonCompartir'
    y, si la miniweb lo pide, compartir a su lado. inicio: la página de Inicio con boton y botonA; irA: lleva a otra página */
 export default function CtaPortada({ inicio, irA, nombre, className = '' }) {
   const rolBoton = useRol('boton')
-  const rolDescripcion = useRol('descripcion')
+  const rolExtra = useRol('extra')
   const hayBoton = Boolean(inicio?.boton && inicio?.botonA)
   if (!hayBoton && !inicio?.info) return null
   return (
@@ -24,7 +24,7 @@ export default function CtaPortada({ inicio, irA, nombre, className = '' }) {
         </div>
       )}
       {/* El texto extra (inicio.info): un horario o lo que se quiera, debajo del botón */}
-      {inicio.info && <p style={rolDescripcion} className="mt-[0.5rem] max-w-[22rem] text-[0.85rem] leading-[1.35] text-white/85">{inicio.info}</p>}
+      {inicio.info && <p style={rolExtra} className="mt-[0.5rem] max-w-[22rem] text-[0.85rem] leading-[1.35] text-white/85">{inicio.info}</p>}
     </div>
   )
 }

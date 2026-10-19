@@ -11,6 +11,7 @@ export default function TextoInicio({ inicio, irA, color = '', className = '', f
   const rolTitular = useRol('titular')
   const rolDescripcion = useRol('descripcion')
   const rolBoton = useRol('boton')
+  const rolExtra = useRol('extra')
   if (!inicio?.titular?.length && !inicio?.descripcion) return null
   return (
     <div className={`${color} ${className}`} style={fondo ? { background: fondo } : undefined}>
@@ -51,7 +52,7 @@ export default function TextoInicio({ inicio, irA, color = '', className = '', f
       )}
       {/* El texto extra (inicio.info): un horario o lo que se quiera, debajo del botón. Con el botón fuera (sinBoton), lo pinta
           CtaPortada debajo de él */}
-      {!sinBoton && inicio.info && <p style={rolDescripcion} className="mt-[0.1rem] max-w-[22rem] text-[0.85rem] leading-[1.35] opacity-80">{inicio.info}</p>}
+      {!sinBoton && inicio.info && <p style={rolExtra} className="mt-[0.1rem] max-w-[22rem] text-[0.85rem] leading-[1.35] opacity-80">{inicio.info}</p>}
     </div>
   )
 }

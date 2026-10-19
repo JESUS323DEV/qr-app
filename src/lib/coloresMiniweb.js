@@ -35,6 +35,7 @@ export const COLORES_MINIWEB = [
       { clave: 'subtitulo', nombre: 'Subtítulo', ayuda: 'El lema, debajo del nombre.' },
       { clave: 'titular', nombre: 'Texto grande', ayuda: 'El titular de la portada ("Sabor de Lima en el centro de Sants").' },
       { clave: 'descripcion', nombre: 'Texto pequeño', ayuda: 'La descripción, debajo del titular.' },
+      { clave: 'extra', nombre: 'Texto extra', ayuda: 'El horario o lo que se escriba debajo del botón (solo Editorial, Cortes y Fullbleed). Sin elegir, el del texto pequeño.' },
       { clave: 'boton', nombre: 'Texto del botón', ayuda: 'Solo las letras del botón, no su fondo. Sin elegir, blanco u oscuro solo según el color del botón.' },
     ],
   },

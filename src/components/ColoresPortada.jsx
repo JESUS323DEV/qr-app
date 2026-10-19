@@ -16,7 +16,8 @@ export const esClaroHex = color => {
    según el color del botón (el acento), para que nunca quede ilegible */
 export function useRol(rol) {
   const { colores, acento } = useContext(ColoresMiniweb)
-  const elegido = colores?.[rol]
+  // El texto extra, sin color propio, usa el del texto pequeño
+  const elegido = colores?.[rol] ?? (rol === 'extra' ? colores?.descripcion : undefined)
   if (elegido) return { color: elegido }
   if (rol === 'boton' && acento) return { color: esClaroHex(acento) ? '#141414' : '#FFFFFF' }
   return undefined

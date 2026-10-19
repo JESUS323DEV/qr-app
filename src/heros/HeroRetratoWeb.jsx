@@ -5,6 +5,7 @@ import BotonCompartir from '../components/BotonCompartir'
 import { LogoNegocio, useFactorNombre } from '../components/NombreMarca'
 import { fotosDe } from '../fichas/escenas'
 import { useRol } from '../components/ColoresPortada'
+import { distribucionDe } from '../lib/distribuciones'
 
 // Líneas de ejemplo para el pie de la foto abierta (inventadas, para un restaurante), mientras las fotos no traigan
 // las suyas (etiqueta). Se reparten en orden
@@ -54,6 +55,17 @@ export default function HeroRetratoWeb({ hero, nombre, lema, inicio, irA }) {
   const iniciales = (nombre ?? '').split(/\s+/).filter(Boolean).slice(0, 2).map(x => x[0]).join('').toUpperCase()
   const titular = inicio?.titular ?? (lema ? [lema] : [])
   const circulo = hero.retrato ?? logo
+  // La distribución de las tres fotos (hero.distribucion): al final (siempre tres, tocando una se abre en grande) o bajo el nombre
+  const distribucion = distribucionDe(hero.distribucion)
+  const filaFotos = fila.length > 0 && (
+    <div className={`relative mx-[1.25rem] ${distribucion.arriba ? 'mt-[0.9rem]' : 'mb-[1rem] mt-[0.9rem]'} grid ${distribucion.rejilla}`}>
+      {fila.map((src, i) => (
+        <button key={i} type="button" onClick={() => setAbierta(i)} aria-label={`Ver la foto ${i + 1} en grande`} className={`block overflow-hidden ${distribucion.boton(i)}`}>
+          <Img src={src} alt="" className={`w-full object-cover transition-transform duration-300 hover:scale-105 ${distribucion.imagen(i)}`} />
+        </button>
+      ))}
+    </div>
+  )
 
   return (
     // Crece con lo que lleva (sin recortarlo): si el texto es largo, la página baja con scroll en vez de montarse
@@ -87,8 +99,10 @@ export default function HeroRetratoWeb({ hero, nombre, lema, inicio, irA }) {
         </div>
       </div>
 
+      {distribucion.arriba && filaFotos}
+
       {/* Centro: lo que cuenta el negocio, anclado abajo (lo que se añade crece hacia arriba) */}
-      <div className="relative flex min-h-[9rem] flex-1 flex-col justify-end px-[1.25rem] pt-[1rem]">
+      <div className={`relative flex min-h-[9rem] flex-1 flex-col justify-end px-[1.25rem] pt-[1rem] ${distribucion.arriba ? 'pb-[1.4rem]' : ''}`}>
         {titular.length > 0 && (
           <h1 style={rolTitular} className="font-demo-heading text-[clamp(2rem,1.6rem+2vw,2.5rem)] font-bold leading-[1.02] text-white">
             {titular.map((l, i) => (
@@ -111,16 +125,7 @@ export default function HeroRetratoWeb({ hero, nombre, lema, inicio, irA }) {
         </div>
       </div>
 
-      {/* Abajo: siempre tres fotos en tercios */}
-      {fila.length > 0 && (
-        <div className="relative mx-[1.25rem] mb-[1rem] mt-[0.9rem] grid grid-cols-3 gap-[0.4rem]">
-          {fila.map((src, i) => (
-            <button key={i} type="button" onClick={() => setAbierta(i)} aria-label={`Ver la foto ${i + 1} en grande`} className="block overflow-hidden rounded-[0.4rem]">
-              <Img src={src} alt="" className="aspect-[3/4] w-full object-cover transition-transform duration-300 hover:scale-105" />
-            </button>
-          ))}
-        </div>
-      )}
+      {!distribucion.arriba && filaFotos}
 
       {/* La foto abierta en grande, con su título y una línea de información; se cierra tocando fuera o con la X */}
       {abierta !== null && fila[abierta] && (

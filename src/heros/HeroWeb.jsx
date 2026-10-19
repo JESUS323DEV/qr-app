@@ -600,14 +600,14 @@ function PaginaVacia() {
 function PaginaPortada({ pestana, cuerpo, negocio, lema, portada, heroBase, inicio, irA, redes }) {
   // Retrato tiene su versión para miniwebs (con los textos del Inicio y siempre tres fotos); el de fichas no se toca
   const Portada = portada === 'retrato' ? HeroRetratoWeb : HEROS[portada]?.Componente
-  const redesEn = heroBase.redesEn ?? 'barra'
+  const redesEn = lugarRedes(heroBase)
   // Compartir abajo: al lado del botón de la portada (cada diseño lo pone ahí); el suyo de siempre no se pinta
   const lugarCompartir = heroBase.compartirEn === 'abajo' ? 'boton' : heroBase.compartirEn === 'redes' ? 'redes' : 'diseno'
   const compartirEnRedes = heroBase.compartirEn === 'redes'
   const hayRedes = redes?.length > 0
   // Con las redes bajo el botón, la fila es una barra con el color de la barra de redes (hero.colorRedes o, sin él, el del
   // texto), con los iconos en blanco u oscuro según ese color, como la barra de arriba
-  const conBarra = redesEn === 'boton' && hayRedes
+  const conBarra = redesEn === 'medio' && hayRedes
   const { fondo: fondoRedes, iconos: colorIconos } = coloresRedes(heroBase)
   // El fondo de toda la portada (hero.colores.fondoPortada; el antiguo fondoInicio): en Polaroid pinta todo, en Galería y
   // Mosaico el fondo de alrededor, y en Editorial y Diagonal el bloque del texto, porque la foto tapa el resto
@@ -752,6 +752,12 @@ const esClaro = color => {
   return 0.299 * r + 0.587 * g + 0.114 * b > 160
 }
 
+// Dónde van las redes (hero.redesEn): 'arriba' (la barra, de siempre), 'lateral' (una columna al lado de la portada), 'medio'
+// (una barra entre la portada y la reseña) o 'abajo' (la barra al final). Los valores viejos, 'barra' y 'boton', son 'arriba' y 'medio'
+// Con hero.redesVinculadas, la barra va siempre pegada al menú de navegación ('vinculada'): debajo de él si está arriba y
+// encima de él si está abajo, sea cual sea el sitio elegido
+const lugarRedes = hero => (hero.redesVinculadas ? 'vinculada' : ({ barra: 'arriba', boton: 'medio' })[hero.redesEn] ?? hero.redesEn ?? 'arriba')
+
 // Los colores de la barra de redes: el fondo elegido (hero.colores.redesFondo o el antiguo hero.colorRedes) o, sin él, el
 // de la cabecera; y los iconos, el elegido (hero.colores.redesIconos) o blanco u oscuro solos según ese fondo
 function coloresRedes(hero) {
@@ -763,8 +769,8 @@ function coloresRedes(hero) {
 
 // La barra de redes, debajo del menú: hero.redesArriba
 function BarraRedes({ hero, redes, redesTexto, nombre, className = '' }) {
-  // Con las redes en lateral o bajo el botón, no hay barra
-  if (!hero.redesArriba || !redes?.length || ['lateral', 'boton'].includes(hero.redesEn)) return null
+  // Con las redes en lateral o en medio, no hay barra aquí (la pintan la portada)
+  if (!hero.redesArriba || !redes?.length || ['lateral', 'medio'].includes(lugarRedes(hero))) return null
   const { fondo, clara, iconos } = coloresRedes(hero)
   return (
     <div
@@ -812,6 +818,10 @@ export default function HeroWeb({ hero, nombre, lema, cuerpo, redes, redesTexto 
 
   // El menú, arriba (como siempre) o abajo del todo, como una app (hero.menuEn)
   const menuAbajo = hero.menuEn === 'abajo'
+  // Dónde va la barra de redes, según el menú: arriba (bajo el menú, o arriba del todo si el menú está abajo) o abajo (sobre el
+  // menú si está abajo y, si no, al final de la página). Los números son el orden de las piezas en la columna
+  const redesAbajo = lugarRedes(hero) === 'abajo'
+  const ordenRedes = lugarRedes(hero) === 'vinculada' ? 'order-2' : menuAbajo ? (redesAbajo ? 'order-2' : 'order-0') : redesAbajo ? 'order-4' : 'order-2'
   // Colores del menú: su fondo (hero.colores.menuFondo) y el color del subrayado o de la pestaña activa (menuSubrayado); con
   // un fondo claro, las letras pasan a oscuro
   const coloresMenu = hero.colores ?? {}
@@ -856,7 +866,7 @@ export default function HeroWeb({ hero, nombre, lema, cuerpo, redes, redesTexto 
       )}
 
       {/* Redes en una barra debajo del menú (hero.redesArriba), en todas las páginas */}
-      <BarraRedes hero={hero} redes={redes} redesTexto={redesTexto} nombre={nombre} className="order-2" />
+      <BarraRedes hero={hero} redes={redes} redesTexto={redesTexto} nombre={nombre} className={ordenRedes} />
 
       {/* Páginas completas: ocupan el resto de la pantalla. Como al navegar en una web, la vieja desaparece
           al instante y la nueva aparece con un fundido rápido, sin cruzarse.

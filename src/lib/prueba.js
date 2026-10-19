@@ -2,15 +2,21 @@ import { TIPOGRAFIAS } from '../asistente/tipografias'
 import { CLAVES_COLORES_MINIWEB } from './coloresMiniweb'
 import { CLAVES_CORTES } from './cortes'
 import { CLAVES_FORMATOS } from './formatos'
+import { CLAVES_DISPOSICIONES } from './disposiciones'
+import { CLAVES_COMPOSICIONES } from './composiciones'
+import { CLAVES_DISTRIBUCIONES } from './distribuciones'
 
 /* Marca de prueba desde la dirección, solo para las demos (vista previa del "Nuevo perfil" de /admin):
    ?nombre=Ranita&principal=E91E63&acento=F4B63E&texto=2B1A1F&letra=calida
    cambia el nombre, el color principal, el de acento, el del texto y la tipografía (una de asistente/tipografias.js).
    &redes=F2EDE4: el fondo de la barra de redes de las miniwebs. &cabecera=3D5A40: el fondo de cabecera.
    &logo=<dirección>: el logo en lugar del nombre escrito.
-   &redesen=lateral|boton, &menuen=abajo, &compartiren=abajo|redes: dónde van las redes, el menú y compartir en las miniwebs.
+   &redesen=lateral|medio|abajo, &menuen=abajo, &compartiren=abajo|redes: dónde van las redes, el menú y compartir en las miniwebs.
    &col=menuFondo-3E5A3B,titulo-FFFFFF,...: los colores uno por uno de la miniweb (hero.colores, claves de lib/coloresMiniweb.js).
    &corte=punta|onda|...: el corte del borde de abajo de la foto de Diagonal (claves de lib/cortes.js).
+   &disposicion=centrada|tarjeta|...: la disposición del texto de Fullbleed (claves de lib/disposiciones.js).
+   &composicion=arriba|abajo|panel: la composición de Mosaico (claves de lib/composiciones.js).
+   &distribucion=redondas|destacada|arriba: la distribución de las fotos de Retrato (claves de lib/distribuciones.js).
    &formato=tarjeta|marco|...: el formato de Editorial (claves de lib/formatos.js).
    &tg1=...&tp=...&ti=...: el texto grande, el pequeño y el extra (info) de la portada de Inicio de la miniweb.
    &tamano=xs|xl: el tamaño del nombre del negocio (sin él, md, el de cada diseño).
@@ -50,6 +56,12 @@ export function marcaDePrueba(marca, params) {
   )
   // Corte de la foto de Diagonal (hero.corte)
   const corte = CLAVES_CORTES.includes(params.get('corte')) ? params.get('corte') : null
+  // Disposición del texto de Fullbleed (hero.disposicion)
+  const disposicion = CLAVES_DISPOSICIONES.includes(params.get('disposicion')) ? params.get('disposicion') : null
+  // Composición de Mosaico (hero.composicion)
+  const composicion = CLAVES_COMPOSICIONES.includes(params.get('composicion')) ? params.get('composicion') : null
+  // Distribución de las fotos de Retrato (hero.distribucion)
+  const distribucion = CLAVES_DISTRIBUCIONES.includes(params.get('distribucion')) ? params.get('distribucion') : null
   // Formato de Editorial (hero.formato)
   const formato = CLAVES_FORMATOS.includes(params.get('formato')) ? params.get('formato') : null
   // Texto grande (titular, un solo texto) y texto pequeño (descripción) de la portada de Inicio: van en la primera pestaña
@@ -61,17 +73,18 @@ export function marcaDePrueba(marca, params) {
   const tamanoNombre = ['xs', 'xl'].includes(params.get('tamano')) ? params.get('tamano') : null
   // Dónde van las redes, el menú y compartir (solo los valores que existen)
   const lugares = {
-    ...(['lateral', 'boton'].includes(params.get('redesen')) ? { redesEn: params.get('redesen') } : {}),
+    ...(['lateral', 'medio', 'abajo'].includes(params.get('redesen')) ? { redesEn: params.get('redesen') } : {}),
     ...(params.get('menuen') === 'abajo' ? { menuEn: 'abajo' } : {}),
+    ...(params.get('redesvinculadas') === 'true' ? { redesVinculadas: true } : {}),
     ...(['abajo', 'redes'].includes(params.get('compartiren')) ? { compartirEn: params.get('compartiren') } : {}),
   }
-  if (!nombre && !principal && !acento && !texto && !fondo && !letra && !redes && !cabecera && !logo && !resena && !inicio && !tamanoNombre && !corte && !formato && !Object.keys(textos).length && !Object.keys(coloresElegidos).length && !Object.keys(lugares).length) return marca
+  if (!nombre && !principal && !acento && !texto && !fondo && !letra && !redes && !cabecera && !logo && !resena && !inicio && !tamanoNombre && !corte && !formato && !disposicion && !composicion && !distribucion && !Object.keys(textos).length && !Object.keys(coloresElegidos).length && !Object.keys(lugares).length) return marca
   return {
     ...marca,
     ...(nombre ? { nombre } : {}),
     ...(logo ? { logo } : {}),
     ...(resena ? { cuerpo: { ...marca.cuerpo, fondo: resena, card: `color-mix(in srgb, ${resena} 90%, black)` } } : {}),
-    ...((redes || inicio || tamanoNombre || corte || formato || Object.keys(textos).length || Object.keys(coloresElegidos).length || Object.keys(lugares).length) && marca.hero ? { hero: { ...marca.hero, ...(Object.keys(coloresElegidos).length ? { colores: { ...marca.hero.colores, ...coloresElegidos } } : {}), ...(redes ? { colorRedes: redes } : {}), ...(inicio ? { fondoInicio: inicio } : {}), ...(tamanoNombre ? { tamanoNombre } : {}), ...(corte ? { corte } : {}), ...(formato ? { formato } : {}), ...(Object.keys(textos).length && marca.hero.pestanas ? { pestanas: marca.hero.pestanas.map((p, i) => (i === 0 ? { ...p, ...textos } : p)) } : {}), ...lugares } } : {}),
+    ...((redes || inicio || tamanoNombre || corte || formato || disposicion || composicion || distribucion || Object.keys(textos).length || Object.keys(coloresElegidos).length || Object.keys(lugares).length) && marca.hero ? { hero: { ...marca.hero, ...(Object.keys(coloresElegidos).length ? { colores: { ...marca.hero.colores, ...coloresElegidos } } : {}), ...(redes ? { colorRedes: redes } : {}), ...(inicio ? { fondoInicio: inicio } : {}), ...(tamanoNombre ? { tamanoNombre } : {}), ...(corte ? { corte } : {}), ...(formato ? { formato } : {}), ...(disposicion ? { disposicion } : {}), ...(composicion ? { composicion } : {}), ...(distribucion ? { distribucion } : {}), ...(Object.keys(textos).length && marca.hero.pestanas ? { pestanas: marca.hero.pestanas.map((p, i) => (i === 0 ? { ...p, ...textos } : p)) } : {}), ...lugares } } : {}),
     theme: {
       ...marca.theme,
       colors: { ...marca.theme?.colors, ...(principal ? { primary: principal } : {}), ...(acento ? { accent: acento } : {}), ...(texto ? { text: texto } : {}), ...(fondo ? { bg: fondo } : {}), ...(cabecera ? { header: cabecera } : {}) },

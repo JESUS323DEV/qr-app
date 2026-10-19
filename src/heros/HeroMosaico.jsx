@@ -6,6 +6,7 @@ import BotonCompartir from '../components/BotonCompartir'
 import Escena, { fotoDeRespaldo, tipoComun } from '../fichas/escenas'
 import BarraPestanas from '../fichas/barras'
 import { useRol } from '../components/ColoresPortada'
+import { composicionDe } from '../lib/composiciones'
 
 /* Mosaico (inspirado en el Split de Dulce Lima en platform). Hero por piezas: el marco es suyo y las escenas y la
    barra de pestañas son piezas comunes (src/fichas), en forma de tarjeta; acepta cualquier pestaña común (fotos,
@@ -33,6 +34,28 @@ export default function HeroMosaico({ hero, nombre, lema, sinBarra = false, inic
   const brillo = hero.brillo ?? hero.destacado ?? pestanas[0]?.destacado
   // En una miniweb con texto de Inicio: el titular grande arriba, las fotos y, debajo, la descripción y el botón
   const textoMiniweb = Boolean(sinBarra && (inicio?.titular?.length || inicio?.descripcion))
+  // La composición (hero.composicion): dónde va el texto respecto a las fotos y cómo se enmarcan
+  const composicion = composicionDe(hero.composicion)
+  const titularMini = clase => (
+    <h1 style={rolTitular} className={`${clase} font-demo-heading text-[clamp(2rem,1.6rem+2vw,2.5rem)] font-semibold leading-[1.02]`}>
+      {inicio?.titular?.map((l, i) => (
+        <span key={i} className="block">{l}</span>
+      ))}
+    </h1>
+  )
+  const descripcionMini = inicio?.descripcion && <p style={rolDescripcion} className="max-w-[22rem] text-[0.9rem] leading-[1.4] opacity-85">{inicio.descripcion}</p>
+  const botonMini = inicio?.boton && inicio?.botonA && (
+    <div className={`flex flex-wrap items-center gap-[0.75rem] ${inicio.descripcion ? 'mt-[0.6rem]' : ''}`}>
+      <button
+        type="button"
+        onClick={() => irA?.(inicio.botonA)}
+        style={rolBoton} className="inline-flex min-h-[2.5rem] items-center rounded-[0.6rem] bg-demo-accent px-[1.1rem] text-[0.92rem] font-semibold text-demo-text"
+      >
+        {inicio.boton}
+      </button>
+      <CompartirJuntoAlBoton titulo={nombre} />
+    </div>
+  )
 
   const tocar = i => {
     parar()
@@ -50,11 +73,13 @@ export default function HeroMosaico({ hero, nombre, lema, sinBarra = false, inic
         </div>
         {textoMiniweb ? (
           <>
-            <h1 style={rolTitular} className="mt-[0.6rem] font-demo-heading text-[clamp(2rem,1.6rem+2vw,2.5rem)] font-semibold leading-[1.02]">
-              {inicio.titular?.map((l, i) => (
-                <span key={i} className="block">{l}</span>
-              ))}
-            </h1>
+            {composicion.texto !== 'abajo' && titularMini('mt-[0.6rem]')}
+            {composicion.texto === 'arriba' && (
+              <div className="mt-[0.5rem]">
+                {descripcionMini}
+                {botonMini}
+              </div>
+            )}
           </>
         ) : (
         <h1 className="mt-[0.6rem] font-demo-heading text-[clamp(2.2rem,1.7rem+2.4vw,2.8rem)] font-semibold leading-[1.02]">
@@ -70,7 +95,8 @@ export default function HeroMosaico({ hero, nombre, lema, sinBarra = false, inic
       </div>
 
       {/* El escaparate ocupa el alto que sobra, para que todo quepa en una pantalla */}
-      <div className="relative mx-[1.25rem] mt-[0.9rem] min-h-[8rem] flex-1">
+      <div className={`relative mx-[1.25rem] mt-[0.9rem] min-h-[8rem] flex-1 ${sinBarra ? composicion.marco : ''}`}>
+       <div className={`absolute ${sinBarra ? composicion.margen : 'inset-0'}`}>
         {pestanas.map((p, i) => (
           <div
             key={`${p.tipo}-${i}`}
@@ -83,24 +109,15 @@ export default function HeroMosaico({ hero, nombre, lema, sinBarra = false, inic
 
         {/* Compartir, arriba a la izquierda dentro de la foto grande; en todas las pestañas menos en la del mapa */}
         {tipoComun(pestanas[activa]?.tipo) !== 'ubicacion' && <BotonCompartir titulo={nombre} className="absolute left-[0.6rem] top-[0.6rem]" />}
+       </div>
       </div>
 
-      {textoMiniweb ? (
-        // Debajo de las fotos: la descripción pequeña y el botón
+      {textoMiniweb && composicion.texto !== 'arriba' ? (
+        // Debajo de las fotos: la descripción pequeña y el botón (y, en 'abajo', también el titular)
         <div className="px-[1.25rem] pb-[1rem] pt-[0.7rem]">
-          {inicio.descripcion && <p style={rolDescripcion} className="max-w-[22rem] text-[0.9rem] leading-[1.4] opacity-85">{inicio.descripcion}</p>}
-          {inicio.boton && inicio.botonA && (
-            <div className={`flex flex-wrap items-center gap-[0.75rem] ${inicio.descripcion ? 'mt-[0.6rem]' : ''}`}>
-              <button
-                type="button"
-                onClick={() => irA?.(inicio.botonA)}
-                style={rolBoton} className="inline-flex min-h-[2.5rem] items-center rounded-[0.6rem] bg-demo-accent px-[1.1rem] text-[0.92rem] font-semibold text-demo-text"
-              >
-                {inicio.boton}
-              </button>
-              <CompartirJuntoAlBoton titulo={nombre} />
-            </div>
-          )}
+          {composicion.texto === 'abajo' && titularMini('mb-[0.45rem]')}
+          {descripcionMini}
+          {botonMini}
         </div>
       ) : sinBarra ? (
         <div className="h-[1rem]" />
