@@ -8,6 +8,7 @@ import BotonCompartir from '../components/BotonCompartir'
 import { loadFont } from '../lib/applyTheme'
 import Escena, { fotoDeRespaldo, fotosDe, tipoComun } from '../fichas/escenas'
 import BarraPestanas from '../fichas/barras'
+import { useRol } from '../components/ColoresPortada'
 
 /* Polaroid (inspirado en la carta Polaroid de Forno Nonna). Hero por piezas: acepta cualquier pestaña común y
    cualquier barra (hero.barra; la suya son las pastillas, sobre el color de la marca).
@@ -71,6 +72,10 @@ function PolaroidAbierta({ foto, cerrar }) {
 
 // sinBarra: sin barra de pestañas, cuando hace de portada de una miniweb (la miniweb lleva su propio menú)
 export default function HeroPolaroid({ hero, nombre, lema, sinBarra = false, inicio, irA }) {
+  const rolSub = useRol('subtitulo')
+  const rolTitular = useRol('titular')
+  const rolDescripcion = useRol('descripcion')
+  const rolBoton = useRol('boton')
   // Solo las pestañas que sabe pintar (las comunes)
   const pestanas = useMemo(() => (hero.pestanas ?? []).filter(p => tipoComun(p.tipo)), [hero.pestanas])
   const [activa, setActiva] = useState(0)
@@ -98,7 +103,7 @@ export default function HeroPolaroid({ hero, nombre, lema, sinBarra = false, ini
           <h1 className="text-[clamp(2.2rem,1.8rem+2vw,2.8rem)] font-bold leading-[0.85]" style={{ fontFamily: A_MANO }}>
             <NombreMarca nombre={nombre} tamano="grande" />
           </h1>
-          {lema && <p className="mt-[0.2rem] text-[0.85rem] text-white/80">{lema}</p>}
+          {lema && <p style={rolSub} className="mt-[0.2rem] text-[0.85rem] text-white/80">{lema}</p>}
         </div>
         <BotonCompartir titulo={nombre} className="mt-[0.4rem] shrink-0" />
       </div>
@@ -140,19 +145,19 @@ export default function HeroPolaroid({ hero, nombre, lema, sinBarra = false, ini
         // Debajo de las polaroids, sobre el fondo de la cabecera: titular, descripción y botón
         <div className="px-[1.25rem] pb-[1rem] pt-[0.9rem]">
           {inicio.titular?.length > 0 && (
-            <h2 className="font-demo-heading text-[clamp(1.7rem,1.4rem+1.6vw,2.1rem)] font-bold leading-[1.05]">
+            <h2 style={rolTitular} className="font-demo-heading text-[clamp(1.7rem,1.4rem+1.6vw,2.1rem)] font-bold leading-[1.05]">
               {inicio.titular.map((l, i) => (
                 <span key={i} className="block">{l}</span>
               ))}
             </h2>
           )}
-          {inicio.descripcion && <p className="mt-[0.4rem] max-w-[22rem] text-[0.88rem] leading-[1.4] text-white/85">{inicio.descripcion}</p>}
+          {inicio.descripcion && <p style={rolDescripcion} className="mt-[0.4rem] max-w-[22rem] text-[0.88rem] leading-[1.4] text-white/85">{inicio.descripcion}</p>}
           {inicio.boton && inicio.botonA && (
             <div className="mt-[0.65rem] flex flex-wrap items-center gap-[0.75rem]">
               <button
                 type="button"
                 onClick={() => irA?.(inicio.botonA)}
-                className="inline-flex min-h-[2.5rem] items-center rounded-[0.6rem] bg-demo-accent px-[1.1rem] text-[0.92rem] font-semibold text-demo-text"
+                style={rolBoton} className="inline-flex min-h-[2.5rem] items-center rounded-[0.6rem] bg-demo-accent px-[1.1rem] text-[0.92rem] font-semibold text-demo-text"
               >
                 {inicio.boton}
               </button>

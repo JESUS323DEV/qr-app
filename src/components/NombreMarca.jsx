@@ -1,4 +1,5 @@
 import { createContext, useContext } from 'react'
+import { useRol } from './ColoresPortada'
 
 /* El logo del negocio, si tiene (campo opcional `logo` en su archivo). La página lo pone con LogoNegocio y cada diseño
    de arriba lo recoge en NombreMarca, sin tener que pasarlo de pieza en pieza */
@@ -23,9 +24,12 @@ const TAMANOS = {
 export default function NombreMarca({ nombre, tamano = 'normal', children }) {
   const logo = useContext(LogoNegocio)
   const factor = useFactorNombre()
+  const rolTitulo = useRol('titulo')
   const contenido = children ?? nombre
   // Con otro tamaño, el texto se escala respecto al del diseño
-  const texto = factor === 1 ? contenido : <span style={{ fontSize: `${factor}em` }}>{contenido}</span>
+  const escalado = factor === 1 ? contenido : <span style={{ fontSize: `${factor}em` }}>{contenido}</span>
+  // Con el color del título elegido, el nombre va de ese color
+  const texto = rolTitulo ? <span style={rolTitulo}>{escalado}</span> : escalado
   if (!logo) return texto
   const [alto, ancho] = TAMANOS[tamano]
   return (

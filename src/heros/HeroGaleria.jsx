@@ -7,6 +7,7 @@ import useVueltaPestanas from '../lib/useVueltaPestanas'
 import BotonCompartir from '../components/BotonCompartir'
 import Escena, { fotoDeRespaldo, fotosDe, tipoComun } from '../fichas/escenas'
 import BarraPestanas from '../fichas/barras'
+import { useRol } from '../components/ColoresPortada'
 
 /* Galería (inspirado en la carta Galería de Tumi). Hero por piezas: acepta cualquier pestaña común y cualquier
    barra (hero.barra; la suya son las pastillas).
@@ -23,6 +24,9 @@ const DEGRADADO = 'bg-gradient-to-t from-black/70 via-black/10 to-transparent'
 // el titular no se mueve
 const TURNO_GALERIA_MS = 4000
 function GaleriaMiniweb({ fotos, inicio, irA, nombre }) {
+  const rolTitular = useRol('titular')
+  const rolDescripcion = useRol('descripcion')
+  const rolBoton = useRol('boton')
   const [actual, setActual] = useState(0)
   const n = fotos.length
   // Cada cambio, también el manual, reinicia los 4 s
@@ -52,7 +56,7 @@ function GaleriaMiniweb({ fotos, inicio, irA, nombre }) {
           </div>
         ))}
         {inicio.titular?.length > 0 && (
-          <h2 className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/45 to-transparent px-[0.9rem] pb-[0.8rem] pt-[3rem] text-left text-white">
+          <h2 style={rolTitular} className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/45 to-transparent px-[0.9rem] pb-[0.8rem] pt-[3rem] text-left text-white">
             {inicio.titular.map((l, i) => (
               <span key={i} className="block font-demo-heading text-[1.5rem] font-bold leading-[1.05]">{l}</span>
             ))}
@@ -68,13 +72,13 @@ function GaleriaMiniweb({ fotos, inicio, irA, nombre }) {
       {/* Fuera de la foto: la descripción y el botón */}
       {(inicio.descripcion || (inicio.boton && inicio.botonA)) && (
         <div className="shrink-0 pt-[0.7rem] text-demo-text">
-          {inicio.descripcion && <p className="text-[0.9rem] leading-[1.4] opacity-85">{inicio.descripcion}</p>}
+          {inicio.descripcion && <p style={rolDescripcion} className="text-[0.9rem] leading-[1.4] opacity-85">{inicio.descripcion}</p>}
           {inicio.boton && inicio.botonA && (
             <div className={`flex flex-wrap items-center gap-[0.75rem] ${inicio.descripcion ? 'mt-[0.6rem]' : ''}`}>
               <button
                 type="button"
                 onClick={() => irA?.(inicio.botonA)}
-                className="inline-flex min-h-[2.5rem] items-center rounded-[0.6rem] bg-demo-accent px-[1.1rem] text-[0.92rem] font-semibold text-demo-text"
+                style={rolBoton} className="inline-flex min-h-[2.5rem] items-center rounded-[0.6rem] bg-demo-accent px-[1.1rem] text-[0.92rem] font-semibold text-demo-text"
               >
                 {inicio.boton}
               </button>
@@ -173,6 +177,7 @@ function Visor({ fotos, inicio, cerrar }) {
 
 // sinBarra: sin barra de pestañas, cuando hace de portada de una miniweb (la miniweb lleva su propio menú)
 export default function HeroGaleria({ hero, nombre, lema, sinBarra = false, inicio, irA }) {
+  const rolSub = useRol('subtitulo')
   // Solo las pestañas que sabe pintar (las comunes)
   const pestanas = useMemo(() => (hero.pestanas ?? []).filter(p => tipoComun(p.tipo)), [hero.pestanas])
   const [activa, setActiva] = useState(0)
@@ -198,7 +203,7 @@ export default function HeroGaleria({ hero, nombre, lema, sinBarra = false, inic
       <div className="flex items-start justify-between gap-[1rem] px-[1.25rem] pt-[1rem]">
         <div className="min-w-0">
           <h1 className="font-demo-heading text-[clamp(2.3rem,1.8rem+2.4vw,2.9rem)] font-bold leading-[0.95] tracking-[-0.02em]"><NombreMarca nombre={nombre} tamano="grande" /></h1>
-          {lema && <p className="mt-[0.3rem] text-[0.9rem] text-demo-muted">{lema}</p>}
+          {lema && <p style={rolSub} className="mt-[0.3rem] text-[0.9rem] text-demo-muted">{lema}</p>}
         </div>
         <BotonCompartir titulo={nombre} className="mt-[0.3rem] shrink-0" />
       </div>

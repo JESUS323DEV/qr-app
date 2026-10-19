@@ -7,6 +7,9 @@ import useVueltaPestanas from '../lib/useVueltaPestanas'
 import BotonCompartir from '../components/BotonCompartir'
 import Escena, { fotoDeRespaldo, fotosDe, tipoComun } from '../fichas/escenas'
 import BarraPestanas from '../fichas/barras'
+import { useRol } from '../components/ColoresPortada'
+import { formatoDe } from '../lib/formatos'
+import CtaPortada from '../components/CtaPortada'
 
 /* Editorial (adaptado del Apetece de platform). La foto grande cambia según la pestaña:
    - platos: las fotos van pasando solas con una cortina de tiras.
@@ -221,6 +224,11 @@ const ESCENAS = {
 
 // sinBarra: sin barra de pestañas, cuando hace de portada de una miniweb (la miniweb lleva su propio menú)
 export default function HeroEditorial({ hero, nombre, lema, sinBarra = false, inicio, irA }) {
+  const rolSub = useRol('subtitulo')
+  // El formato (hero.formato): cómo se une la foto con el texto de abajo
+  const formato = formatoDe(hero.formato)
+  // En una miniweb con botón de portada: el botón va encima de la foto, debajo del nombre, y no abajo con el texto
+  const ctaArriba = Boolean(sinBarra && inicio?.boton && inicio?.botonA)
   // Solo las pestañas que sabe pintar (las comunes)
   const pestanas = useMemo(() => (hero.pestanas ?? []).filter(p => tipoComun(p.tipo)), [hero.pestanas])
   const respaldo = fotoDeRespaldo(pestanas)
@@ -239,7 +247,7 @@ export default function HeroEditorial({ hero, nombre, lema, sinBarra = false, in
     // Cualquier toque en el hero para la vuelta de presentación
     <div className="flex flex-1 flex-col" onPointerDown={parar}>
       {/* La foto ocupa el alto que sobra, para que todo quepa en una pantalla */}
-      <div className="relative min-h-[12.5rem] flex-1 overflow-hidden bg-demo-surface">
+      <div className={`relative min-h-[12.5rem] flex-1 overflow-hidden bg-demo-surface ${formato.foto}`}>
         {pestanas.map((p, i) => {
           const tipo = tipoComun(p.tipo)
           const Propia = ESCENAS[tipo]
@@ -264,18 +272,26 @@ export default function HeroEditorial({ hero, nombre, lema, sinBarra = false, in
         <div
           className={`pointer-events-none absolute inset-x-0 top-0 bg-gradient-to-b from-black/55 to-transparent px-[1.25rem] pb-[2.5rem] pt-[1.1rem] text-white transition-opacity duration-500 ${
             tipoComun(pestanas[activa]?.tipo) === 'ubicacion' ? 'opacity-0' : 'opacity-100'
-          }`}
+          } ${formato.encima ?? ''}`}
         >
-          <p className={`font-demo-heading leading-none ${sinBarra ? 'text-[2.2rem]' : 'text-[1.6rem]'}`}><NombreMarca nombre={nombre} tamano={sinBarra ? 'grande' : 'normal'} /></p>
-          {lema && <p className="mt-[0.3rem] text-[0.85rem] text-white/80">{lema}</p>}
+          <p className={`font-demo-heading leading-none ${formato.tamanoNombre ?? (sinBarra ? 'text-[2.2rem]' : 'text-[1.6rem]')}`}><NombreMarca nombre={nombre} tamano={sinBarra ? 'grande' : 'normal'} /></p>
+          {lema && <p style={rolSub} className="mt-[0.3rem] text-[0.85rem] text-white/80">{lema}</p>}
           {/* Compartir, en todas las pestañas menos en la del mapa (ahí la marca se oculta) */}
-          {tipoComun(pestanas[activa]?.tipo) !== 'ubicacion' && <BotonCompartir titulo={nombre} className="pointer-events-auto mt-[0.6rem]" />}
+          {tipoComun(pestanas[activa]?.tipo) !== 'ubicacion' &&
+            (ctaArriba ? (
+              <>
+                <CtaPortada inicio={inicio} irA={irA} nombre={nombre} className="pointer-events-auto mt-[0.7rem]" />
+                <BotonCompartir titulo={nombre} className="pointer-events-auto absolute right-[1.25rem] top-[1.1rem]" />
+              </>
+            ) : (
+              <BotonCompartir titulo={nombre} className="pointer-events-auto mt-[0.6rem]" />
+            ))}
         </div>
       </div>
 
-      {sinBarra && <TextoInicio inicio={inicio} irA={irA} nombre={nombre} fondo={hero.fondoInicio} color="text-demo-text" className="px-[1.25rem] pt-[1.1rem]" />}
+      {sinBarra && <TextoInicio inicio={inicio} irA={irA} nombre={nombre} sinBoton={ctaArriba} fondo={hero.fondoInicio} color="text-demo-text" className={`${formato.bloque} pb-[1.6rem]! pt-[1.6rem]!`} />}
       {!sinBarra && (
-        <div className="px-[1.25rem] pt-[1.1rem]">
+        <div className={formato.bloque}>
           <BarraPestanas estilo={hero.barra ?? 'revista'} pestanas={pestanas} activa={activa} tocar={tocar} />
         </div>
       )}

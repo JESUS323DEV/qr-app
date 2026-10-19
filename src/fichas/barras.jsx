@@ -1,4 +1,4 @@
-import { Clock, House, Images, ListChecks, MapPin, MessageCircle, UserRound } from 'lucide-react'
+import { Clock, House, Images, ListChecks, MapPin, MessageCircle, UserRound, UtensilsCrossed } from 'lucide-react'
 import { tipoComun } from './escenas'
 
 /* Barras de pestañas de las fichas, como piezas sueltas: cualquier hero por piezas puede usar cualquiera
@@ -38,7 +38,7 @@ function Onda({ visible }) {
 }
 
 // Iconos de la barra tipo app, por tipo de pestaña
-const ICONOS = { fotos: Images, inicio: House, horario: Clock, contacto: MessageCircle, ubicacion: MapPin, precios: ListChecks, servicios: ListChecks, sobremi: UserRound }
+const ICONOS = { fotos: Images, inicio: House, horario: Clock, contacto: MessageCircle, ubicacion: MapPin, precios: ListChecks, servicios: ListChecks, sobremi: UserRound, menu: UtensilsCrossed }
 
 export default function BarraPestanas({ estilo = 'subrayado', pestanas, activa, tocar, sobre = 'claro' }) {
   // 'primario' (el bloque del color principal) se trata como oscuro, salvo en los bloques, que tienen su versión

@@ -15,6 +15,7 @@ import GaleriaVideos from '../components/GaleriaVideos'
 import { COLORES_REDES } from '../lib/coloresRedes'
 import { secuenciaDemos, tipoDe } from '../lib/tematicas'
 import { LogoNegocio, TamanoNombre } from '../components/NombreMarca'
+import { ColoresMiniweb } from '../components/ColoresPortada'
 
 function LogoGoogle({ compacta }) {
   return (
@@ -66,6 +67,10 @@ function Cuerpo({ negocio, soloResena = false, compacta: forzada = false }) {
   // Card de Google más pequeña para los diseños que necesitan más alto (resena.compacta en el archivo del negocio,
   // o el diseño que la pide: forzada)
   const compacta = forzada || Boolean(negocio.resena?.compacta)
+  // El fondo de la zona de la reseña: el elegido en hero.colores (y las tarjetas, un tono más oscuro) o el del archivo
+  const fondoResena = negocio.hero?.colores?.fondoResena
+  const fondoCuerpo = fondoResena ?? negocio.cuerpo?.fondo
+  const cardCuerpo = fondoResena ? `color-mix(in srgb, ${fondoResena} 90%, black)` : negocio.cuerpo?.card
   const Resena = negocio.resena?.url ? 'a' : 'div'
   // Redes en el hero (hero.redesArriba): entonces no se repiten en el carrusel del cuerpo
   const redesArriba = Boolean(negocio.hero.redesArriba)
@@ -74,7 +79,7 @@ function Cuerpo({ negocio, soloResena = false, compacta: forzada = false }) {
     // Cada negocio puede darle su propio fondo (cuerpo.fondo / cuerpo.card)
     <div
       className="px-[1.25rem] pb-[1.25rem] pt-[1.25rem]"
-      style={negocio.cuerpo?.fondo ? { background: negocio.cuerpo.fondo } : undefined}
+      style={fondoCuerpo ? { background: fondoCuerpo } : undefined}
     >
       {/* Con galeriaVideos, el cuerpo es la galería de vídeos en lugar de la card destacada y el carrusel */}
       {negocio.galeriaVideos ? (
@@ -141,7 +146,7 @@ function Cuerpo({ negocio, soloResena = false, compacta: forzada = false }) {
       {!soloResena && ((!redesArriba && negocio.redes?.length > 0) || negocio.carrusel?.length > 0) && (
         <Carrusel
           className="mt-[0.9rem]"
-          style={negocio.cuerpo?.card ? { background: negocio.cuerpo.card } : undefined}
+          style={cardCuerpo ? { background: cardCuerpo } : undefined}
           tarjetas={[
             ...(!redesArriba && negocio.redes?.length > 0
               ? [
@@ -216,12 +221,15 @@ export default function MiniwebPage({ demo = false }) {
     if (!n?.demo || (!pruebaDiseno && !pruebaBarra && !pruebaMiniweb)) return n
     // Una miniweb (Chalaquita): el diseño pedido es su portada
     if (HEROS[n.hero.diseno]?.paginaCompleta) {
-      return HEROS[pruebaDiseno]?.piezas ? { ...n, hero: { ...n.hero, portada: pruebaDiseno } } : n
+      // y, si se pide, con el estilo de pestañas del menú (el de las fichas)
+      const menu = BARRAS[pruebaBarra] ? { barra: pruebaBarra } : {}
+      return HEROS[pruebaDiseno]?.piezas ? { ...n, hero: { ...n.hero, portada: pruebaDiseno, ...menu } } : { ...n, hero: { ...n.hero, ...menu } }
     }
     const diseno = HEROS[pruebaDiseno]?.piezas ? pruebaDiseno : n.hero.diseno
     if (pruebaMiniweb) {
       // La ficha como miniweb, con la estructura de Chalaquita y el diseño de portada (si no va por piezas, Galería)
-      return fichaAMiniweb(n, HEROS[diseno]?.piezas ? diseno : 'galeria')
+      const miniweb = fichaAMiniweb(n, HEROS[diseno]?.piezas ? diseno : 'galeria')
+      return BARRAS[pruebaBarra] ? { ...miniweb, hero: { ...miniweb.hero, barra: pruebaBarra } } : miniweb
     }
     // La barra solo cambia en los diseños por piezas
     const barra = HEROS[diseno]?.piezas && BARRAS[pruebaBarra] ? pruebaBarra : n.hero.barra
@@ -268,10 +276,12 @@ export default function MiniwebPage({ demo = false }) {
       {/* El logo del negocio (si tiene): los diseños de arriba lo ponen en lugar del nombre escrito */}
       <LogoNegocio.Provider value={negocio.logo ?? null}>
         <TamanoNombre.Provider value={negocio.hero?.tamanoNombre ?? 'md'}>
+        <ColoresMiniweb.Provider value={{ colores: negocio.hero?.colores ?? {}, acento: negocio.theme?.colors?.accent ?? null }}>
         <main key={negocio.slug} className="mx-auto flex min-h-svh w-full max-w-[30rem] flex-col bg-demo-bg">
           <Hero hero={negocio.hero} nombre={negocio.nombre} lema={negocio.lema} redes={negocio.redes} redesTexto={negocio.redesTexto} cuerpo={<Cuerpo negocio={negocio} soloResena={Boolean(negocio.hero.redesArriba)} compacta />} />
           {!paginaCompleta && <Cuerpo negocio={negocio} />}
         </main>
+        </ColoresMiniweb.Provider>
         </TamanoNombre.Provider>
       </LogoNegocio.Provider>
     </div>

@@ -5,6 +5,8 @@ import useVueltaPestanas from '../lib/useVueltaPestanas'
 import BotonCompartir from '../components/BotonCompartir'
 import Escena, { fotoDeRespaldo, tipoComun } from '../fichas/escenas'
 import BarraPestanas from '../fichas/barras'
+import { clipDeCorte } from '../lib/cortes'
+import CtaPortada from '../components/CtaPortada'
 
 /* Diagonal (adaptado del Editorial de platform). Hero por piezas: el marco es suyo y las escenas y la barra de
    pestañas son piezas comunes (src/fichas), así que acepta cualquier pestaña común (fotos, horario, contacto,
@@ -34,6 +36,8 @@ export default function HeroDiagonal({ hero, nombre, sinBarra = false, inicio, i
   }
 
   const enMapa = tipoComun(pestanas[activa]?.tipo) === 'ubicacion'
+  // En una miniweb con botón de portada: el botón va encima de la foto, debajo del nombre, y no abajo con el texto
+  const ctaArriba = Boolean(sinBarra && inicio?.boton && inicio?.botonA)
 
   return (
     // Cualquier toque en el hero para la vuelta de presentación
@@ -41,7 +45,7 @@ export default function HeroDiagonal({ hero, nombre, sinBarra = false, inicio, i
       {/* La foto ocupa el alto que sobra, para que todo quepa en una pantalla */}
       <div className={`relative flex-1 ${sinBarra && inicio ? 'min-h-[8rem]' : 'min-h-[15rem]'}`}>
         {/* El corte diagonal solo recorta la foto; el texto va fuera para que no lo corte */}
-        <div className="absolute inset-0 overflow-hidden bg-demo-surface" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0 86%)' }}>
+        <div className="absolute inset-0 overflow-hidden bg-demo-surface" style={{ clipPath: clipDeCorte(hero.corte) }}>
           {pestanas.map((p, i) => (
             <div
               key={`${p.tipo}-${i}`}
@@ -58,13 +62,19 @@ export default function HeroDiagonal({ hero, nombre, sinBarra = false, inicio, i
         {sinBarra && (
           <div className="pointer-events-none absolute inset-x-0 top-0 bg-gradient-to-b from-black/55 to-transparent px-[1.25rem] pb-[2.5rem] pt-[1rem] font-demo-heading text-[2rem] font-semibold leading-none text-white">
             <NombreMarca nombre={nombre} tamano="grande" />
+            {ctaArriba && !enMapa && (
+              <>
+                <CtaPortada inicio={inicio} irA={irA} nombre={nombre} className="pointer-events-auto mt-[0.7rem] font-sans" />
+                <BotonCompartir titulo={nombre} className="pointer-events-auto absolute right-[1.25rem] top-[1rem] font-sans" />
+              </>
+            )}
           </div>
         )}
 
         {/* Nombre y frase encima de la foto, abajo a la izquierda (en el mapa se desvanecen) */}
         <div className={`pointer-events-none absolute inset-x-0 bottom-0 px-[1.25rem] pb-[1rem] text-demo-text transition-opacity duration-700 ${enMapa ? 'opacity-0' : 'opacity-100'}`}>
           {/* Compartir, encima del título; en todas las pestañas menos en la del mapa */}
-          {!enMapa && <BotonCompartir titulo={nombre} className="pointer-events-auto mb-[0.6rem]" />}
+          {!enMapa && !ctaArriba && <BotonCompartir titulo={nombre} className="pointer-events-auto mb-[0.6rem]" />}
           <h1 className="font-demo-heading text-[clamp(2.9rem,2.3rem+2.8vw,3.6rem)] font-semibold leading-[1.02] [text-shadow:0_0_1.25rem_color-mix(in_srgb,var(--demo-bg)_70%,transparent)]">
             {titulo}
             {destacado && (
@@ -78,7 +88,7 @@ export default function HeroDiagonal({ hero, nombre, sinBarra = false, inicio, i
         </div>
       </div>
 
-      {sinBarra && <TextoInicio inicio={inicio} irA={irA} nombre={nombre} fondo={hero.fondoInicio} color="text-demo-text" className="px-[1.25rem] pb-[1rem] pt-[1rem]" />}
+      {sinBarra && <TextoInicio inicio={inicio} irA={irA} nombre={nombre} sinBoton={ctaArriba} fondo={hero.fondoInicio} color="text-demo-text" className="px-[1.25rem] pb-[1.6rem] pt-[1.6rem]" />}
       {!sinBarra && (
         <div className="px-[1.25rem] pt-[1.4rem]">
           <BarraPestanas estilo={hero.barra ?? 'subrayado'} pestanas={pestanas} activa={activa} tocar={tocar} />

@@ -608,23 +608,26 @@ function PaginaPortada({ pestana, cuerpo, negocio, lema, portada, heroBase, inic
   // Con las redes bajo el botón, la fila es una barra con el color de la barra de redes (hero.colorRedes o, sin él, el del
   // texto), con los iconos en blanco u oscuro según ese color, como la barra de arriba
   const conBarra = redesEn === 'boton' && hayRedes
-  const barraClara = esClaro(heroBase.colorRedes)
-  const iconos = (clase, colorIcono) =>
+  const { fondo: fondoRedes, iconos: colorIconos } = coloresRedes(heroBase)
+  // El fondo de toda la portada (hero.colores.fondoPortada; el antiguo fondoInicio): en Polaroid pinta todo, en Galería y
+  // Mosaico el fondo de alrededor, y en Editorial y Diagonal el bloque del texto, porque la foto tapa el resto
+  const fondoPortada = heroBase.colores?.fondoPortada ?? heroBase.fondoInicio
+  const iconos = (clase, color) =>
     redes.map(r => (
-      <a key={r.platform} href={r.href} target="_blank" rel="noreferrer" aria-label={r.platform} className={`transition-opacity hover:opacity-75 ${colorIcono}`}>
+      <a key={r.platform} href={r.href} target="_blank" rel="noreferrer" aria-label={r.platform} className="transition-opacity hover:opacity-75" style={{ color }}>
         <SocialIcon platform={r.platform} className={clase} />
       </a>
     ))
   return (
     <div className="flex h-full flex-col overflow-y-auto [scrollbar-width:none]">
-      <div className="relative flex min-h-[22rem] flex-1 flex-col">
+      <div className="relative flex min-h-[22rem] flex-1 flex-col" style={fondoPortada ? { background: fondoPortada, '--demo-header': fondoPortada } : undefined}>
         <LugarCompartir.Provider value={lugarCompartir}>
           {Portada && <Portada hero={{ ...heroBase, diseno: portada, pestanas: [pestana] }} nombre={negocio} lema={lema} inicio={inicio} irA={irA} sinBarra />}
         </LugarCompartir.Provider>
         {/* Redes en lateral: una columna de iconos pegada al lado derecho de la portada */}
         {redesEn === 'lateral' && hayRedes && (
           <div className="absolute right-[0.5rem] top-1/2 z-10 flex -translate-y-1/2 flex-col items-center gap-[0.75rem] rounded-full bg-black/45 px-[0.5rem] py-[0.8rem] backdrop-blur-sm">
-            {iconos('h-[1.05rem] w-[1.05rem]', 'text-white')}
+            {iconos('h-[1.05rem] w-[1.05rem]', heroBase.colores?.redesIconos ?? '#FFFFFF')}
             {compartirEnRedes && <BotonCompartir titulo={negocio} soloIcono alLado className="text-white" />}
           </div>
         )}
@@ -632,12 +635,12 @@ function PaginaPortada({ pestana, cuerpo, negocio, lema, portada, heroBase, inic
       {/* Debajo de la portada: las redes en fila (bajo el botón), como una barra */}
       {conBarra && (
         <div
-          className={`flex items-center justify-center gap-[1rem] px-[1.25rem] py-[0.55rem] ${heroBase.colorRedes ? '' : 'bg-demo-text'}`}
-          style={heroBase.colorRedes ? { background: heroBase.colorRedes } : undefined}
+          className={`flex items-center justify-center gap-[1rem] px-[1.25rem] py-[0.55rem] ${fondoRedes ? '' : 'bg-demo-header'}`}
+          style={fondoRedes ? { background: fondoRedes } : undefined}
         >
-          <div className="flex items-center gap-[0.9rem]">
-            {iconos('h-[1.1rem] w-[1.1rem]', barraClara ? 'text-[#141414]/85' : 'text-white/85')}
-            {compartirEnRedes && <BotonCompartir titulo={negocio} soloIcono alLado className={barraClara ? 'text-[#141414]/85' : 'text-white/85'} />}
+          <div className="flex items-center gap-[0.9rem]" style={{ color: colorIconos }}>
+            {iconos('h-[1.1rem] w-[1.1rem]', colorIconos)}
+            {compartirEnRedes && <BotonCompartir titulo={negocio} soloIcono alLado />}
           </div>
         </div>
       )}
@@ -749,34 +752,34 @@ const esClaro = color => {
   return 0.299 * r + 0.587 * g + 0.114 * b > 160
 }
 
-// La barra de redes, debajo del menú: hero.redesArriba y hero.colorRedes
+// Los colores de la barra de redes: el fondo elegido (hero.colores.redesFondo o el antiguo hero.colorRedes) o, sin él, el
+// de la cabecera; y los iconos, el elegido (hero.colores.redesIconos) o blanco u oscuro solos según ese fondo
+function coloresRedes(hero) {
+  const fondo = hero.colores?.redesFondo ?? hero.colorRedes ?? null
+  const clara = esClaro(fondo)
+  const iconos = hero.colores?.redesIconos ?? (clara ? 'rgba(20, 20, 20, 0.85)' : 'rgba(255, 255, 255, 0.85)')
+  return { fondo, clara, iconos }
+}
+
+// La barra de redes, debajo del menú: hero.redesArriba
 function BarraRedes({ hero, redes, redesTexto, nombre, className = '' }) {
   // Con las redes en lateral o bajo el botón, no hay barra
   if (!hero.redesArriba || !redes?.length || ['lateral', 'boton'].includes(hero.redesEn)) return null
-  // Su fondo: hero.colorRedes o, si no lleva, el color del texto. Letras e iconos en blanco sobre fondo oscuro y en
-  // oscuro sobre fondo claro
-  const redesClaras = esClaro(hero.colorRedes)
+  const { fondo, clara, iconos } = coloresRedes(hero)
   return (
     <div
-      className={`flex items-center justify-between gap-[1rem] px-[1.25rem] py-[0.45rem] ${hero.colorRedes ? '' : 'bg-demo-text'} ${redesClaras ? 'text-[#141414]' : 'text-white'} ${className}`}
-      style={hero.colorRedes ? { background: hero.colorRedes } : undefined}
+      className={`flex items-center justify-between gap-[1rem] px-[1.25rem] py-[0.45rem] ${fondo ? '' : 'bg-demo-header'} ${clara ? 'text-[#141414]' : 'text-white'} ${className}`}
+      style={fondo ? { background: fondo } : undefined}
     >
-      <p className={`text-[0.78rem] ${redesClaras ? 'text-[#141414]/75' : 'text-white/75'}`}>{redesTexto ?? 'Síguenos en redes'}</p>
-      <div className="flex items-center gap-[0.9rem]">
+      <p className={`text-[0.78rem] ${clara ? 'text-[#141414]/75' : 'text-white/75'}`}>{redesTexto ?? 'Síguenos en redes'}</p>
+      <div className="flex items-center gap-[0.9rem]" style={{ color: iconos }}>
         {redes.map(r => (
-          <a
-            key={r.platform}
-            href={r.href}
-            target="_blank"
-            rel="noreferrer"
-            aria-label={r.platform}
-            className={`transition-colors hover:text-demo-accent ${redesClaras ? 'text-[#141414]/85' : 'text-white/85'}`}
-          >
+          <a key={r.platform} href={r.href} target="_blank" rel="noreferrer" aria-label={r.platform} className="transition-opacity hover:opacity-75">
             <SocialIcon platform={r.platform} className="h-[1.05rem] w-[1.05rem]" />
           </a>
         ))}
         {/* Compartir 'en las redes': un icono más al final */}
-        {hero.compartirEn === 'redes' && <BotonCompartir titulo={nombre} soloIcono alLado className={redesClaras ? 'text-[#141414]/85' : 'text-white/85'} />}
+        {hero.compartirEn === 'redes' && <BotonCompartir titulo={nombre} soloIcono alLado />}
       </div>
     </div>
   )
@@ -809,18 +812,26 @@ export default function HeroWeb({ hero, nombre, lema, cuerpo, redes, redesTexto 
 
   // El menú, arriba (como siempre) o abajo del todo, como una app (hero.menuEn)
   const menuAbajo = hero.menuEn === 'abajo'
+  // Colores del menú: su fondo (hero.colores.menuFondo) y el color del subrayado o de la pestaña activa (menuSubrayado); con
+  // un fondo claro, las letras pasan a oscuro
+  const coloresMenu = hero.colores ?? {}
+  const menuClaro = esClaro(coloresMenu.menuFondo)
+  const estiloMenu = {
+    ...(coloresMenu.menuFondo ? { background: coloresMenu.menuFondo } : {}),
+    ...(coloresMenu.menuSubrayado ? { '--demo-accent': coloresMenu.menuSubrayado, '--demo-primary': coloresMenu.menuSubrayado } : {}),
+  }
 
   return (
     // Cualquier toque en la página para la vuelta de presentación
     <div className="flex flex-1 flex-col" onPointerDown={parar}>
       {/* Menú con un estilo de pestañas de las fichas (hero.barra), sobre el fondo de la marca */}
       {hero.barra ? (
-        <header className={`${menuAbajo ? 'order-3' : 'order-1'} bg-demo-bg px-[1.25rem] pb-[0.5rem] pt-[0.7rem]`}>
+        <header style={estiloMenu} className={`${menuAbajo ? 'order-3' : 'order-1'} bg-demo-bg ${hero.barra === 'app' ? '' : 'px-[1.25rem] pb-[0.5rem] pt-[0.7rem]'}`}>
           <BarraPestanas estilo={hero.barra} pestanas={pestanas} activa={activa} tocar={tocar} />
         </header>
       ) : (
       /* Barra de navegación, como la de una web */
-      <header className={`${menuAbajo ? 'order-3' : 'order-1'} bg-demo-header px-[1.25rem] pt-[0.7rem] text-white`}>
+      <header style={estiloMenu} className={`${menuAbajo ? 'order-3' : 'order-1'} bg-demo-header px-[1.25rem] pt-[0.7rem] ${menuClaro ? 'text-[#141414]' : 'text-white'}`}>
         <nav className="flex justify-between">
           {pestanas.map((p, i) => (
             <button
@@ -829,7 +840,7 @@ export default function HeroWeb({ hero, nombre, lema, cuerpo, redes, redesTexto 
               aria-pressed={i === activa}
               onClick={() => tocar(i)}
               className={`relative pb-[0.6rem] pt-[0.2rem] text-[0.88rem] font-semibold transition-colors duration-300 ${
-                i === activa ? 'text-white' : 'text-white/65 hover:text-white'
+                i === activa ? (menuClaro ? 'text-[#141414]' : 'text-white') : menuClaro ? 'text-[#141414]/65 hover:text-[#141414]' : 'text-white/65 hover:text-white'
               }`}
             >
               {p.texto}

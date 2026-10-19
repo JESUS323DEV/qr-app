@@ -4,6 +4,7 @@ import Img from '../components/Img'
 import BotonCompartir from '../components/BotonCompartir'
 import { LogoNegocio, useFactorNombre } from '../components/NombreMarca'
 import { fotosDe } from '../fichas/escenas'
+import { useRol } from '../components/ColoresPortada'
 
 // Líneas de ejemplo para el pie de la foto abierta (inventadas, para un restaurante), mientras las fotos no traigan
 // las suyas (etiqueta). Se reparten en orden
@@ -24,6 +25,10 @@ const PIES_EJEMPLO = [
      en grande con su título y una línea de información debajo.
    inicio: la pestaña de Inicio de la miniweb, con sus textos. irA: lleva a otra página de la miniweb */
 export default function HeroRetratoWeb({ hero, nombre, lema, inicio, irA }) {
+  const rolTitulo = useRol('titulo')
+  const rolTitular = useRol('titular')
+  const rolDescripcion = useRol('descripcion')
+  const rolBoton = useRol('boton')
   const logo = useContext(LogoNegocio)
   const factorNombre = useFactorNombre()
   const fotosDeLaPestana = fotosDe(hero.pestanas?.[0])
@@ -76,7 +81,7 @@ export default function HeroRetratoWeb({ hero, nombre, lema, inicio, irA }) {
           {hero.retrato && logo ? (
             <img src={logo} alt={nombre} className="max-h-[2.4rem] max-w-[9rem] object-contain" />
           ) : (
-            <p className="font-demo-heading font-bold leading-none" style={{ fontSize: `${1.9 * factorNombre}rem` }}>{nombre}</p>
+            <p className="font-demo-heading font-bold leading-none" style={{ fontSize: `${1.9 * factorNombre}rem`, ...rolTitulo }}>{nombre}</p>
           )}
           {hero.profesion && <p className="text-[0.85rem] text-white/75">{hero.profesion}</p>}
         </div>
@@ -85,19 +90,19 @@ export default function HeroRetratoWeb({ hero, nombre, lema, inicio, irA }) {
       {/* Centro: lo que cuenta el negocio, anclado abajo (lo que se añade crece hacia arriba) */}
       <div className="relative flex min-h-[9rem] flex-1 flex-col justify-end px-[1.25rem] pt-[1rem]">
         {titular.length > 0 && (
-          <h1 className="font-demo-heading text-[clamp(2rem,1.6rem+2vw,2.5rem)] font-bold leading-[1.02] text-white">
+          <h1 style={rolTitular} className="font-demo-heading text-[clamp(2rem,1.6rem+2vw,2.5rem)] font-bold leading-[1.02] text-white">
             {titular.map((l, i) => (
               <span key={i} className="block">{l}</span>
             ))}
           </h1>
         )}
-        {inicio?.descripcion && <p className="mt-[0.5rem] max-w-[22rem] text-[0.92rem] leading-[1.45] text-white/85">{inicio.descripcion}</p>}
+        {inicio?.descripcion && <p style={rolDescripcion} className="mt-[0.5rem] max-w-[22rem] text-[0.92rem] leading-[1.45] text-white/85">{inicio.descripcion}</p>}
         <div className="mt-[0.8rem] flex flex-wrap items-center gap-[0.75rem]">
           {inicio?.boton && inicio.botonA && (
             <button
               type="button"
               onClick={() => irA?.(inicio.botonA)}
-              className="inline-flex min-h-[2.5rem] items-center rounded-[0.4rem] bg-demo-accent px-[1.1rem] text-[0.92rem] font-semibold text-demo-text"
+              style={rolBoton} className="inline-flex min-h-[2.5rem] items-center rounded-[0.4rem] bg-demo-accent px-[1.1rem] text-[0.92rem] font-semibold text-demo-text"
             >
               {inicio.boton}
             </button>

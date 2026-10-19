@@ -13,6 +13,9 @@ import { TIPOGRAFIAS, parejaDe } from '../asistente/tipografias'
 import { DISENOS_ASISTENTE, DISENOS_CARTA } from '../asistente/disenos'
 import { PLANTILLAS } from '../plantillas'
 import Movil from '../components/Movil'
+import { COLORES_MINIWEB } from '../lib/coloresMiniweb'
+import { CORTES, puntosDeCorte } from '../lib/cortes'
+import { FORMATOS } from '../lib/formatos'
 import { pestanasDeMiniweb } from '../lib/miniweb'
 import { tipoDe } from '../lib/tematicas'
 import { HEROS } from '../heros'
@@ -1024,6 +1027,46 @@ function Diseno({ tipo, slug, vista, original, cambiar, abrir }) {
         {producto === 'miniweb' && (
           <>
             <EstructuraMiniweb valores={hero} cambiar={(clave, valor) => cambiar(`hero.${clave}`, valor === ESTRUCTURA_DEFECTO[clave] ? undefined : valor)} />
+            {hero.portada === 'editorial' && (
+              <Etiqueta texto="Formato (Formatos)">
+                <select value={hero.formato ?? 'clasica'} onChange={e => cambiar('hero.formato', e.target.value === 'clasica' ? undefined : e.target.value)} className={CAMPO}>
+                  {FORMATOS.map(f => (
+                    <option key={f.clave} value={f.clave}>
+                      {f.nombre}
+                    </option>
+                  ))}
+                </select>
+              </Etiqueta>
+            )}
+            {hero.portada === 'diagonal' && (
+              <Etiqueta texto="Forma del corte (Cortes)">
+                <select value={hero.corte ?? 'diagonal'} onChange={e => cambiar('hero.corte', e.target.value === 'diagonal' ? undefined : e.target.value)} className={CAMPO}>
+                  {CORTES.map(c => (
+                    <option key={c.clave} value={c.clave}>
+                      {c.nombre}
+                    </option>
+                  ))}
+                </select>
+              </Etiqueta>
+            )}
+            <PanelColoresMiniweb
+              valores={hero.colores ?? {}}
+              cambiar={(clave, valor) => {
+                const nuevo = { ...(hero.colores ?? {}), [clave]: valor }
+                if (valor === undefined) delete nuevo[clave]
+                cambiar('hero.colores', Object.keys(nuevo).length ? nuevo : undefined)
+              }}
+            />
+            <Etiqueta texto="Estilo del menú de navegación">
+              <select value={hero.barra ?? ''} onChange={e => cambiar('hero.barra', e.target.value || undefined)} className={CAMPO}>
+                <option value="">La rayita (la de siempre)</option>
+                {Object.entries(BARRAS).map(([clave, b]) => (
+                  <option key={clave} value={clave}>
+                    {b.nombre}
+                  </option>
+                ))}
+              </select>
+            </Etiqueta>
             <Etiqueta texto="Portada">
               <select value={hero.portada ?? ''} onChange={e => cambiar('hero.portada', e.target.value || undefined)} className={CAMPO}>
                 {!hero.portada && <option value="">La suya</option>}
@@ -1089,6 +1132,28 @@ function DisenoFicha({ hero, cambiar }) {
             ))}
           </select>
         </Etiqueta>
+        {diseno === 'editorial' && (
+          <Etiqueta texto="Formato">
+            <select value={hero?.formato ?? 'clasica'} onChange={e => cambiar('hero.formato', e.target.value === 'clasica' ? undefined : e.target.value)} className={CAMPO}>
+              {FORMATOS.map(f => (
+                <option key={f.clave} value={f.clave}>
+                  {f.nombre}
+                </option>
+              ))}
+            </select>
+          </Etiqueta>
+        )}
+        {diseno === 'diagonal' && (
+          <Etiqueta texto="Forma del corte">
+            <select value={hero?.corte ?? 'diagonal'} onChange={e => cambiar('hero.corte', e.target.value === 'diagonal' ? undefined : e.target.value)} className={CAMPO}>
+              {CORTES.map(c => (
+                <option key={c.clave} value={c.clave}>
+                  {c.nombre}
+                </option>
+              ))}
+            </select>
+          </Etiqueta>
+        )}
         {porPiezas ? (
           <Etiqueta texto="Estilo de pestañas">
             <select value={barra} onChange={e => cambiar('hero.barra', e.target.value)} className={CAMPO}>
@@ -1510,6 +1575,47 @@ const ICONOS_TEMA = {
   barberia: Armchair,
 }
 
+/* Los colores uno por uno de una miniweb (catálogo en lib/coloresMiniweb.js), por grupos. Cada uno dice qué pinta; sin
+   elegir está en "Automático" (la pieza se queda con el suyo del diseño) y se puede volver a él. valores: lo elegido;
+   cambiar(clave, color) y cambiar(clave, undefined) para volver a automático */
+function PanelColoresMiniweb({ valores, cambiar }) {
+  return (
+    <div className="grid gap-[1.1rem]">
+      {COLORES_MINIWEB.map(g => (
+        <div key={g.grupo} className="grid gap-[0.8rem]">
+          <p className="text-[0.95rem] font-bold">{g.grupo}</p>
+          {g.campos.map(c => {
+            const valor = valores[c.clave]
+            return (
+              <div key={c.clave} className="grid gap-[0.3rem]">
+                <div>
+                  <p className="text-[0.8rem] font-semibold text-zinc-500">{c.nombre}</p>
+                  <p className="text-[0.8rem] text-zinc-400">{c.ayuda}</p>
+                </div>
+                {valor ? (
+                  <div className="grid gap-[0.3rem]">
+                    <CampoColor valor={valor} cambiar={v => cambiar(c.clave, v)} />
+                    <button type="button" onClick={() => cambiar(c.clave, undefined)} className="justify-self-start text-[0.8rem] font-semibold text-zinc-500 underline underline-offset-[0.2em]">
+                      Volver a automático
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-[0.75rem]">
+                    <span className="rounded-full bg-zinc-100 px-[0.7rem] py-[0.25rem] text-[0.8rem] font-semibold text-zinc-500">Automático</span>
+                    <button type="button" onClick={() => cambiar(c.clave, '#FFFFFF')} className="text-[0.85rem] font-semibold underline underline-offset-[0.2em]">
+                      Elegir color
+                    </button>
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      ))}
+    </div>
+  )
+}
+
 // Las piezas que se pueden mover en una miniweb (hero.redesEn, hero.menuEn y hero.compartirEn), con su valor de siempre primero
 const ESTRUCTURA_MINIWEB = [
   ['redesEn', 'Redes', [['barra', 'Barra arriba'], ['lateral', 'Lateral'], ['boton', 'Bajo el botón']]],
@@ -1551,6 +1657,9 @@ function EstructuraMiniweb({ valores, cambiar }) {
 // Diseños de arriba que de momento no salen como portada de una miniweb
 const SIN_PORTADA_MINIWEB = ['banner', 'ficha', 'portada', 'historias']
 
+// El nombre de cada diseño en la fila de Nuevo perfil: Diagonal se llama Cortes (tiene varios cortes)
+const nombreDeDiseno = clave => (clave === 'diagonal' ? 'Cortes' : clave === 'editorial' ? 'Formatos' : HEROS[clave]?.nombre)
+
 // El icono de cada diseño de arriba en la fila de Nuevo perfil
 const ICONOS_DISENO = {
   editorial: Newspaper,
@@ -1585,14 +1694,24 @@ function NuevoPerfil({ filas, recargar, abrir }) {
   const [colorTexto, setColorTexto] = useState('')
   const [fondo, setFondo] = useState('')
   const [letra, setLetra] = useState('')
-  // Solo en miniwebs: el fondo de la barra de redes (sin elegir, el color del texto, como siempre)
-  const [redesColor, setRedesColor] = useState('')
-  // Solo en miniwebs: el fondo de la zona de debajo de la portada (la reseña); sin elegir, el de la demo
-  const [fondoResena, setFondoResena] = useState('')
-  // Solo en miniwebs: el fondo del bloque de texto de la portada de Inicio; sin elegir, el color de fondo de la página
-  const [fondoInicio, setFondoInicio] = useState('')
+  // Solo en miniwebs: los colores uno por uno (clave del catálogo → color); los que no están, en automático
+  const [coloresMini, setColoresMini] = useState({})
+  // Solo en miniwebs: los textos de la portada que se han escrito (titular1, titular2 y descripcion); los que no están, los de la demo
+  const [textosMini, setTextosMini] = useState({})
+  const cambiarColorMini = (clave, valor) =>
+    setColoresMini(actual => {
+      const nuevo = { ...actual, [clave]: valor }
+      if (valor === undefined) delete nuevo[clave]
+      return nuevo
+    })
   // Solo en miniwebs: dónde van las redes, el menú y compartir (lo no tocado, como siempre)
   const [estructura, setEstructura] = useState({})
+  // El corte de la foto de Diagonal ('diagonal' es el de siempre)
+  const [corte, setCorte] = useState('diagonal')
+  // Si la lista de subpestañas (cortes o formatos) está abierta bajo el diseño elegido
+  const [subAbierta, setSubAbierta] = useState(true)
+  // El formato de Editorial ('clasica' es el de siempre)
+  const [formato, setFormato] = useState('clasica')
   // El tamaño del nombre del negocio arriba: 'xs', 'md' (el de cada diseño) o 'xl'
   const [tamanoNombre, setTamanoNombre] = useState('md')
   const lugares = Object.entries(estructura).filter(([clave, valor]) => valor !== ESTRUCTURA_DEFECTO[clave])
@@ -1612,14 +1731,19 @@ function NuevoPerfil({ filas, recargar, abrir }) {
   const marcaBase = esCarta ? marcaDe(cartaBase ?? {}) : negocioBase
   const colorPrincipal = principal || marcaBase?.theme?.colors?.primary || '#000000'
   const colorAcento = acento || marcaBase?.theme?.colors?.accent || '#000000'
+  // La portada de Inicio de la miniweb de partida (la de Chalaquita en comida; si no, la primera pestaña de la ficha) y sus
+  // textos: el titular en dos líneas y la descripción. Los máximos de caracteres, los de ahora con un margen
+  const inicioBase = producto === 'miniweb' ? (plantilla.miniweb ? getNegocio(plantilla.miniweb)?.hero?.pestanas?.[0] : pestanasDeMiniweb(negocioBase)?.[0]) : null
+  const titularBase = inicioBase?.titular ?? []
+  const textoGrande = textosMini.titular ?? titularBase.join(' ')
+  const maxGrande = maxDe(titularBase.join(' ') || 'Texto grande de la portada')
+  const textoPequeno = textosMini.descripcion ?? inicioBase?.descripcion ?? ''
+  const textosEditados = Object.keys(textosMini).length > 0
   const colorDelTexto = colorTexto || marcaBase?.theme?.colors?.text || '#000000'
   const colorFondo = fondo || marcaBase?.theme?.colors?.bg || '#FFFFFF'
-  const colorRedes = redesColor || colorDelTexto
-  const colorResena = fondoResena || marcaBase?.cuerpo?.fondo || colorFondo
-  const colorInicio = fondoInicio || colorFondo
   const colorCabecera = cabecera || marcaBase?.theme?.colors?.header || colorPrincipal
-  // Diseños con cabecera de color: Polaroid y Banner, y todas las miniwebs (su menú de arriba)
-  const conCabecera = producto === 'miniweb' || (producto === 'ficha' && ['polaroid', 'banner'].includes(hero))
+  // Diseños con cabecera de color: Polaroid y Banner de una ficha (en una miniweb, el menú tiene su propio color)
+  const conCabecera = producto === 'ficha' && ['polaroid', 'banner'].includes(hero)
 
   // El logo solo cuenta con "Logo" elegido, uno subido y en una ficha o una miniweb (las cartas llevan el nombre)
   const logoElegido = !esCarta && marcaCon === 'logo' && logo ? logo : ''
@@ -1646,11 +1770,13 @@ function NuevoPerfil({ filas, recargar, abrir }) {
     colorTexto && `texto=${colorTexto.slice(1)}`,
     fondo && `fondo=${fondo.slice(1)}`,
     letra && `letra=${letra}`,
-    producto === 'miniweb' && redesColor && `redes=${redesColor.slice(1)}`,
-    producto === 'miniweb' && fondoResena && `resena=${fondoResena.slice(1)}`,
-    producto === 'miniweb' && fondoInicio && `inicio=${fondoInicio.slice(1)}`,
+    ...(producto === 'miniweb' && textosEditados ? [`tg1=${encodeURIComponent(textoGrande)}`, `tp=${encodeURIComponent(textoPequeno)}`] : []),
+    producto === 'miniweb' && Object.keys(coloresMini).length > 0 && `col=${Object.entries(coloresMini).map(([clave, valor]) => `${clave}-${valor.slice(1)}`).join(',')}`,
     !esCarta && tamanoNombre !== 'md' && `tamano=${tamanoNombre}`,
+    !esCarta && hero === 'diagonal' && corte !== 'diagonal' && `corte=${corte}`,
+    !esCarta && hero === 'editorial' && formato !== 'clasica' && `formato=${formato}`,
     ...(producto === 'miniweb' ? lugares.map(([clave, valor]) => `${clave.toLowerCase()}=${valor}`) : []),
+    producto === 'miniweb' && barra && `barra=${barra}`,
     conCabecera && cabecera && `cabecera=${cabecera.slice(1)}`,
     logoElegido && `logo=${encodeURIComponent(logoElegido)}`,
   ]
@@ -1686,11 +1812,19 @@ function NuevoPerfil({ filas, recargar, abrir }) {
       for (let n = 2; ocupadas.has(slug); n++) slug = `${raiz}-${n}`
 
       const tipografia = TIPOGRAFIAS.find(t => t.id === letra)
-      // Miniweb: el fondo de la reseña elegido (y las tarjetas de debajo, un tono más oscuro); sin elegir, el de la demo
-      const cuerpoResena = producto === 'miniweb' && fondoResena ? { cuerpo: { ...(marcaBase?.cuerpo ?? {}), fondo: fondoResena, card: `color-mix(in srgb, ${fondoResena} 90%, black)` } } : {}
+      // Los textos de la portada que se han escrito: en la copia de Chalaquita, sobre su primera pestaña; en las demás, sobre la
+      // primera pestaña de su miniweb (más abajo)
+      const textosEscritos = {
+        ...(textosMini.titular !== undefined ? { titular: [textoGrande.trim()].filter(Boolean) } : {}),
+        ...(textosMini.descripcion !== undefined ? { descripcion: textoPequeno.trim() } : {}),
+      }
       const inicioCambio = {
+        ...(producto === 'miniweb' && barra ? { 'hero.barra': barra } : {}),
         ...(!esCarta && tamanoNombre !== 'md' ? { 'hero.tamanoNombre': tamanoNombre } : {}),
-        ...(producto === 'miniweb' && fondoInicio ? { 'hero.fondoInicio': fondoInicio } : {}),
+        ...(!esCarta && hero === 'diagonal' && corte !== 'diagonal' ? { 'hero.corte': corte } : {}),
+        ...(!esCarta && hero === 'editorial' && formato !== 'clasica' ? { 'hero.formato': formato } : {}),
+        // Los colores uno por uno que se han elegido (los demás, en automático)
+        ...(producto === 'miniweb' && Object.keys(coloresMini).length ? { 'hero.colores': coloresMini } : {}),
         ...(producto === 'miniweb' ? Object.fromEntries(lugares.map(([clave, valor]) => [`hero.${clave}`, valor])) : {}),
       }
       let cambios
@@ -1722,18 +1856,15 @@ function NuevoPerfil({ filas, recargar, abrir }) {
           ...(conCabecera ? { 'theme.colors.header': colorCabecera } : {}),
           ...(tipografia ? { 'theme.fonts': tipografia.fonts } : {}),
           ...(producto === 'ficha'
-            ? { 'hero.diseno': hero, ...(barra ? { 'hero.barra': barra } : {}) }
+            ? { 'hero.diseno': hero, ...(barra ? { 'hero.barra': barra } : {}), ...(hero === 'diagonal' && corte !== 'diagonal' ? { 'hero.corte': corte } : {}), ...(hero === 'editorial' && formato !== 'clasica' ? { 'hero.formato': formato } : {}) }
             : deChalaquita
-              ? { 'hero.portada': hero, 'hero.colorRedes': colorRedes, ...cuerpoResena, ...inicioCambio }
+              ? { 'hero.portada': hero, ...inicioCambio, ...Object.fromEntries(Object.entries(textosEscritos).map(([clave, valor]) => [`hero.pestanas.0.${clave}`, valor])) }
               : {
                   'hero.diseno': 'web',
                   'hero.portada': hero,
                   'hero.redesArriba': true,
-                  // Siempre se guarda (aunque sea el del texto), para que salga en el editor y se pueda cambiar luego
-                  'hero.colorRedes': colorRedes,
-                  ...cuerpoResena,
                   ...inicioCambio,
-                  'hero.pestanas': pestanasDeMiniweb(negocioBase),
+                  'hero.pestanas': pestanasDeMiniweb(negocioBase).map((p, i) => (i === 0 ? { ...p, ...textosEscritos } : p)),
                   tipo: 'miniweb',
                 }),
         }
@@ -1919,10 +2050,17 @@ function NuevoPerfil({ filas, recargar, abrir }) {
                     <button
                       key={clave}
                       type="button"
-                      title={h.nombre}
-                      aria-label={`Diseño ${h.nombre}`}
+                      title={nombreDeDiseno(clave)}
+                      aria-label={`Diseño ${nombreDeDiseno(clave)}`}
                       aria-pressed={hero === clave}
-                      onClick={() => setHero(clave)}
+                      onClick={() => {
+                        // Al tocar otra vez el diseño elegido (Cortes o Formatos), su lista de subpestañas se cierra o se abre
+                        if (hero === clave) setSubAbierta(v => !v)
+                        else {
+                          setHero(clave)
+                          setSubAbierta(true)
+                        }
+                      }}
                       className={`flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 bg-white transition-transform duration-300 ${hero === clave ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
                     >
                       <Icono className="h-[1.3rem] w-[1.3rem]" strokeWidth={2} aria-hidden="true" />
@@ -1940,7 +2078,52 @@ function NuevoPerfil({ filas, recargar, abrir }) {
                   {masDisenos ? <Minus className="h-[1.1rem] w-[1.1rem]" strokeWidth={3} aria-hidden="true" /> : <Plus className="h-[1.1rem] w-[1.1rem]" strokeWidth={3} aria-hidden="true" />}
                 </button>
               </div>
-              <p className="text-[0.85rem] font-semibold">{HEROS[hero]?.nombre}</p>
+              <p className="text-[0.85rem] font-semibold">{nombreDeDiseno(hero)}</p>
+              {/* Con Formatos (Editorial) elegido, sus formatos con icono: la Clásica de siempre primero */}
+              {hero === 'editorial' && subAbierta && (
+                <div className="grid gap-[0.4rem]">
+                  <div className="flex flex-wrap gap-[0.4rem]">
+                    {FORMATOS.map(f => (
+                      <button
+                        key={f.clave}
+                        type="button"
+                        title={f.nombre}
+                        aria-label={`Formato ${f.nombre}`}
+                        aria-pressed={formato === f.clave}
+                        onClick={() => setFormato(f.clave)}
+                        className={`flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 bg-white transition-transform duration-300 ${formato === f.clave ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
+                      >
+                        <svg viewBox="0 0 24 24" className="h-[1.4rem] w-[1.4rem]" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: f.dibujo }} />
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-[0.8rem] text-zinc-500">{FORMATOS.find(f => f.clave === formato)?.nombre}</p>
+                </div>
+              )}
+              {/* Con Cortes (Diagonal) elegido, la lista de cortes: la Diagonal de siempre primero */}
+              {hero === 'diagonal' && subAbierta && (
+                <div className="grid gap-[0.4rem]">
+                  <div className="flex flex-wrap gap-[0.4rem]">
+                    {CORTES.map(c => (
+                      <button
+                        key={c.clave}
+                        type="button"
+                        title={c.nombre}
+                        aria-label={`Corte ${c.nombre}`}
+                        aria-pressed={corte === c.clave}
+                        onClick={() => setCorte(c.clave)}
+                        className={`flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 bg-white transition-transform duration-300 ${corte === c.clave ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
+                      >
+                        {/* La foto con la forma de su corte abajo */}
+                        <svg viewBox="0 0 100 100" className="h-[1.4rem] w-[1.4rem]" aria-hidden="true">
+                          <polygon points={puntosDeCorte(c.clave)} fill="none" stroke="currentColor" strokeWidth="8" strokeLinejoin="round" />
+                        </svg>
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-[0.8rem] text-zinc-500">{CORTES.find(c => c.clave === corte)?.nombre}</p>
+                </div>
+              )}
             </div>
           ) : (
             <Plegable titulo="Estilo de carta" elegido={estilos.find(f => f.carta === estilo)?.nombre}>
@@ -1955,10 +2138,10 @@ function NuevoPerfil({ filas, recargar, abrir }) {
           )}
           {/* Estructura de la miniweb: dónde va cada pieza (redes, menú de navegación y compartir) */}
           {producto === 'miniweb' && <EstructuraMiniweb valores={estructura} cambiar={(clave, valor) => setEstructura(e => ({ ...e, [clave]: valor }))} />}
-          {producto === 'ficha' && (
-            <Plegable titulo="Estilo de pestañas" elegido={barra ? BARRAS[barra]?.nombre : 'El suyo'}>
+          {(producto === 'ficha' || producto === 'miniweb') && (
+            <Plegable titulo={producto === 'miniweb' ? 'Estilo del menú de navegación' : 'Estilo de pestañas'} elegido={barra ? BARRAS[barra]?.nombre : producto === 'miniweb' ? 'La rayita' : 'El suyo'}>
               <div className="flex flex-wrap gap-[0.4rem]">
-                {[['', { nombre: 'El suyo' }], ...Object.entries(BARRAS)].map(([clave, b]) => (
+                {[['', { nombre: producto === 'miniweb' ? 'La rayita (la de siempre)' : 'El suyo' }], ...Object.entries(BARRAS)].map(([clave, b]) => (
                   <button key={clave || 'suyo'} type="button" aria-pressed={barra === clave} onClick={() => setBarra(clave)} className={opcion(barra === clave)}>
                     {b.nombre}
                   </button>
@@ -2020,7 +2203,7 @@ function NuevoPerfil({ filas, recargar, abrir }) {
             titulo="Colores"
             elegido={
               <span className="flex justify-end gap-[0.25rem]">
-                {[colorPrincipal, ...(conCabecera ? [colorCabecera] : []), colorAcento, colorFondo, colorDelTexto, ...(producto === 'miniweb' ? [colorRedes, colorResena, colorInicio] : [])].map((c, i) => (
+                {[colorPrincipal, ...(conCabecera ? [colorCabecera] : []), colorAcento, colorFondo, colorDelTexto].map((c, i) => (
                   <span key={i} className="h-[1.1rem] w-[1.1rem] rounded-full ring-1 ring-zinc-300" style={{ background: c }} />
                 ))}
               </span>
@@ -2036,14 +2219,6 @@ function NuevoPerfil({ filas, recargar, abrir }) {
               ['Color de acento', 'Precios, subrayados de las pestañas y detalles.', colorAcento, setAcento],
               ['Color de fondo', 'El fondo de la página: claro u oscuro.', colorFondo, setFondo],
               ['Color del texto', 'Las letras sobre el fondo.', colorDelTexto, setColorTexto],
-              // Solo en miniwebs: la franja de redes de debajo del menú
-              ...(producto === 'miniweb'
-                ? [
-                    ['Color de la barra de redes', 'La franja de redes de debajo del menú. Las letras e iconos se ponen en blanco o en oscuro solos.', colorRedes, setRedesColor],
-                    ['Fondo de la reseña', 'La zona de debajo de la portada, detrás de la reseña de Google. Las tarjetas de debajo toman un tono algo más oscuro.', colorResena, setFondoResena],
-                    ['Fondo del texto de Inicio', 'El bloque de texto que va debajo de la foto de la portada (titular, descripción y botón). Sin tocarlo, es el color de fondo de la página.', colorInicio, setFondoInicio],
-                  ]
-                : []),
             ].map(([nombreColor, ayuda, valor, poner]) => (
               <div key={nombreColor} className="grid gap-[0.3rem]">
                 <div>
@@ -2055,6 +2230,56 @@ function NuevoPerfil({ filas, recargar, abrir }) {
             ))}
           </div>
           </Plegable>
+          {producto === 'miniweb' && (
+            <Plegable
+              titulo="Colores de la miniweb"
+              elegido={
+                <span className="flex justify-end gap-[0.25rem]">
+                  {Object.values(coloresMini).length ? Object.values(coloresMini).slice(0, 8).map((c, i) => <span key={i} className="h-[1.1rem] w-[1.1rem] rounded-full ring-1 ring-zinc-300" style={{ background: c }} />) : 'Automáticos'}
+                </span>
+              }
+            >
+              <PanelColoresMiniweb valores={coloresMini} cambiar={cambiarColorMini} />
+            </Plegable>
+          )}
+          {/* Los textos de la portada: el grande (en dos líneas) y el pequeño, con su máximo de caracteres (el de ahora con margen) */}
+          {producto === 'miniweb' && (
+            <Plegable titulo="Textos de la miniweb" elegido={textosEditados ? 'Cambiados' : 'Los de la plantilla'}>
+              <div className="grid gap-[0.9rem]">
+                <div className="grid gap-[0.3rem]">
+                  <div>
+                    <p className="text-[0.8rem] font-semibold text-zinc-500">Texto grande</p>
+                    <p className="text-[0.8rem] text-zinc-400">El titular de la portada. Si no cabe en una línea, baja solo a la siguiente.</p>
+                  </div>
+                  <input value={textoGrande} maxLength={maxGrande} onChange={e => setTextosMini(t => ({ ...t, titular: e.target.value }))} className={CAMPO} />
+                  <span className="justify-self-end text-[0.75rem] text-zinc-500">
+                    {textoGrande.length}/{maxGrande}
+                  </span>
+                </div>
+                <div className="grid gap-[0.3rem]">
+                  <div>
+                    <p className="text-[0.8rem] font-semibold text-zinc-500">Texto pequeño</p>
+                    <p className="text-[0.8rem] text-zinc-400">La descripción de debajo del titular.</p>
+                  </div>
+                  <textarea
+                    value={textoPequeno}
+                    maxLength={maxDe(inicioBase?.descripcion ?? 'Descripción de la portada del negocio, en pocas palabras')}
+                    onChange={e => setTextosMini(t => ({ ...t, descripcion: e.target.value }))}
+                    rows={3}
+                    className={`${CAMPO} resize-y`}
+                  />
+                  <span className="justify-self-end text-[0.75rem] text-zinc-500">
+                    {textoPequeno.length}/{maxDe(inicioBase?.descripcion ?? 'Descripción de la portada del negocio, en pocas palabras')}
+                  </span>
+                </div>
+                {textosEditados && (
+                  <button type="button" onClick={() => setTextosMini({})} className="justify-self-start text-[0.8rem] font-semibold text-zinc-500 underline underline-offset-[0.2em]">
+                    Volver a los textos de la plantilla
+                  </button>
+                )}
+              </div>
+            </Plegable>
+          )}
           <Etiqueta texto="Tipografía">
             <select value={letra} onChange={e => setLetra(e.target.value)} className={CAMPO}>
               <option value="">La de la plantilla</option>

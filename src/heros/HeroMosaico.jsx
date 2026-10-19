@@ -5,6 +5,7 @@ import useVueltaPestanas from '../lib/useVueltaPestanas'
 import BotonCompartir from '../components/BotonCompartir'
 import Escena, { fotoDeRespaldo, tipoComun } from '../fichas/escenas'
 import BarraPestanas from '../fichas/barras'
+import { useRol } from '../components/ColoresPortada'
 
 /* Mosaico (inspirado en el Split de Dulce Lima en platform). Hero por piezas: el marco es suyo y las escenas y la
    barra de pestañas son piezas comunes (src/fichas), en forma de tarjeta; acepta cualquier pestaña común (fotos,
@@ -16,6 +17,10 @@ import BarraPestanas from '../fichas/barras'
 
 // sinBarra: sin barra de pestañas, cuando hace de portada de una miniweb (la miniweb lleva su propio menú)
 export default function HeroMosaico({ hero, nombre, lema, sinBarra = false, inicio, irA }) {
+  const rolSub = useRol('subtitulo')
+  const rolTitular = useRol('titular')
+  const rolDescripcion = useRol('descripcion')
+  const rolBoton = useRol('boton')
   // Solo las pestañas que sabe pintar (las comunes)
   const pestanas = useMemo(() => (hero.pestanas ?? []).filter(p => tipoComun(p.tipo)), [hero.pestanas])
   const [activa, setActiva] = useState(0)
@@ -41,11 +46,11 @@ export default function HeroMosaico({ hero, nombre, lema, sinBarra = false, inic
       <div className="px-[1.25rem] pt-[1rem]">
         <div className="flex items-baseline justify-between gap-[1rem]">
           <p className={`font-demo-heading font-semibold text-demo-primary ${sinBarra ? 'text-[1.6rem] leading-none' : 'text-[1.05rem]'}`}><NombreMarca nombre={nombre} tamano={sinBarra ? 'normal' : 'pequeno'} /></p>
-          {lema && <p className="text-[0.78rem] text-demo-muted">{lema}</p>}
+          {lema && <p style={rolSub} className="text-[0.78rem] text-demo-muted">{lema}</p>}
         </div>
         {textoMiniweb ? (
           <>
-            <h1 className="mt-[0.6rem] font-demo-heading text-[clamp(2rem,1.6rem+2vw,2.5rem)] font-semibold leading-[1.02]">
+            <h1 style={rolTitular} className="mt-[0.6rem] font-demo-heading text-[clamp(2rem,1.6rem+2vw,2.5rem)] font-semibold leading-[1.02]">
               {inicio.titular?.map((l, i) => (
                 <span key={i} className="block">{l}</span>
               ))}
@@ -83,13 +88,13 @@ export default function HeroMosaico({ hero, nombre, lema, sinBarra = false, inic
       {textoMiniweb ? (
         // Debajo de las fotos: la descripción pequeña y el botón
         <div className="px-[1.25rem] pb-[1rem] pt-[0.7rem]">
-          {inicio.descripcion && <p className="max-w-[22rem] text-[0.9rem] leading-[1.4] opacity-85">{inicio.descripcion}</p>}
+          {inicio.descripcion && <p style={rolDescripcion} className="max-w-[22rem] text-[0.9rem] leading-[1.4] opacity-85">{inicio.descripcion}</p>}
           {inicio.boton && inicio.botonA && (
             <div className={`flex flex-wrap items-center gap-[0.75rem] ${inicio.descripcion ? 'mt-[0.6rem]' : ''}`}>
               <button
                 type="button"
                 onClick={() => irA?.(inicio.botonA)}
-                className="inline-flex min-h-[2.5rem] items-center rounded-[0.6rem] bg-demo-accent px-[1.1rem] text-[0.92rem] font-semibold text-demo-text"
+                style={rolBoton} className="inline-flex min-h-[2.5rem] items-center rounded-[0.6rem] bg-demo-accent px-[1.1rem] text-[0.92rem] font-semibold text-demo-text"
               >
                 {inicio.boton}
               </button>
