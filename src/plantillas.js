@@ -5,6 +5,13 @@
    miniweb: la miniweb de ejemplo de esa temática (las de comida, la de Chalaquita: inicio, menú, horario con mapa y
    reservar). Sin ella, la miniweb sale de su ficha con ofertas y servicios de relleno (lib/miniweb.js). */
 
+// Los grupos en que se separan las temáticas en Nuevo perfil (subpestañas): cada uno con las claves de sus plantillas
+export const GRUPOS_PLANTILLAS = [
+  { clave: 'restauracion', nombre: 'Bares y restaurantes', claves: ['restaurante', 'bar', 'pizzeria', 'cocina-visual'] },
+  { clave: 'pastelerias', nombre: 'Pastelerías y cafeterías', claves: ['pasteleria', 'cafeteria'] },
+  { clave: 'belleza', nombre: 'Belleza', claves: ['peluqueria', 'unas', 'barberia'] },
+]
+
 export const PLANTILLAS = [
   { clave: 'restaurante', nombre: 'Restaurante', ficha: 'almendra', carta: 'almendra', miniweb: 'chalaquita' },
   { clave: 'bar', nombre: 'Bar de menú y tapas', ficha: 'almendra', carta: 'bar-fermin', miniweb: 'chalaquita' },

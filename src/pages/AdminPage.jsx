@@ -11,7 +11,7 @@ import { BOTON, CAMPO, Confirmar, Entrar, Etiqueta, usePaginaPrivada } from '../
 import { loadFont } from '../lib/applyTheme'
 import { TIPOGRAFIAS, parejaDe } from '../asistente/tipografias'
 import { DISENOS_ASISTENTE, DISENOS_CARTA } from '../asistente/disenos'
-import { PLANTILLAS } from '../plantillas'
+import { GRUPOS_PLANTILLAS, PLANTILLAS } from '../plantillas'
 import Movil from '../components/Movil'
 import { COLORES_MINIWEB } from '../lib/coloresMiniweb'
 import { CORTES, puntosDeCorte } from '../lib/cortes'
@@ -1751,7 +1751,8 @@ function NuevoPerfil({ filas, recargar, abrir }) {
   // La pestaña abierta: el asistente o el diseño (la vista previa se ve siempre)
   const [pestana, setPestana] = useState('personalizar')
   // Qué temáticas se ven en la fila de iconos: 5, o todas con el +
-  const [masTemas, setMasTemas] = useState(false)
+  // Si la lista de temáticas del grupo elegido (Restauración, Belleza...) está abierta
+  const [subTemas, setSubTemas] = useState(true)
   const [producto, setProducto] = useState('miniweb')
   const [hero, setHero] = useState('polaroid')
   const [barra, setBarra] = useState('')
@@ -1802,9 +1803,13 @@ function NuevoPerfil({ filas, recargar, abrir }) {
   const [cuento, setCuento] = useState('')
   // Qué está haciendo al crear (null: nada)
   const [creando, setCreando] = useState(null)
+  // El aviso de que el diseño se ha exportado a las muestras
+  const [aviso, setAviso] = useState('')
   const [error, setError] = useState('')
 
   const plantilla = PLANTILLAS.find(p => p.clave === tema)
+  // El grupo de la temática elegida
+  const grupoTema = GRUPOS_PLANTILLAS.find(g => g.claves.includes(tema)) ?? GRUPOS_PLANTILLAS[0]
   const negocioBase = getNegocio(plantilla.ficha)
   const cartaBase = plantilla.carta ? getCarta(plantilla.carta) : null
   const esCarta = producto === 'carta'
@@ -1888,8 +1893,12 @@ function NuevoPerfil({ filas, recargar, abrir }) {
           ? `/demo/${plantilla.carta}/carta?diseno=${estilo}${marca}`
           : null
 
-  const crear = async () => {
-    if (!nombre.trim() || creando) return
+  // muestra (true): exporta el diseño a las muestras, en la lista de Miniwebs (con el nombre escrito o, sin él, «Muestra») en lugar de crear un perfil
+  const crear = async muestra => {
+    const esMuestra = muestra === true
+    const nombreCrear = nombre.trim() || (esMuestra ? 'Muestra' : '')
+    if (!nombreCrear || creando) return
+    setAviso('')
     setCreando('Creando...')
     setError('')
     try {
@@ -1899,7 +1908,7 @@ function NuevoPerfil({ filas, recargar, abrir }) {
         ...(esCarta ? cartas : negocios).map(n => n.slug),
         ...RESERVADAS,
       ])
-      const raiz = aSlug(nombre) || 'nuevo'
+      const raiz = aSlug(nombreCrear) || 'nuevo'
       let slug = raiz
       for (let n = 2; ocupadas.has(slug); n++) slug = `${raiz}-${n}`
 
@@ -1931,7 +1940,7 @@ function NuevoPerfil({ filas, recargar, abrir }) {
         base = plantilla.carta
         const inicio = inicioCopiaCarta(cartaBase)
         cambios = fusionar(inicio, {
-          'marca.nombre': nombre.trim(),
+          'marca.nombre': nombreCrear,
           diseno: estilo,
           ...(principal ? { 'marca.theme.colors.primary': principal } : {}),
           ...(acento ? { 'marca.theme.colors.accent': acento } : {}),
@@ -1944,7 +1953,7 @@ function NuevoPerfil({ filas, recargar, abrir }) {
         const deChalaquita = producto === 'miniweb' && plantilla.miniweb
         base = deChalaquita ? plantilla.miniweb : plantilla.ficha
         cambios = {
-          nombre: nombre.trim(),
+          nombre: nombreCrear,
           ...(logoElegido ? { logo: logoElegido } : {}),
           ...(principal ? { 'theme.colors.primary': principal } : {}),
           ...(acento ? { 'theme.colors.accent': acento } : {}),
@@ -1968,6 +1977,9 @@ function NuevoPerfil({ filas, recargar, abrir }) {
         }
       }
 
+      // Una muestra va marcada: /miniweb la enseña junto a las demás miniwebs de ejemplo
+      if (esMuestra) cambios = { ...cambios, muestra: true }
+
       // Con lo que se le ha contado del negocio, el asistente se inventa el copy y busca las fotos sobre el diseño
       // ya montado. Lo elegido aquí manda: nunca cambia el nombre, el diseño ni la tipografía (colores, solo si se piden)
       let historial = []
@@ -1980,7 +1992,7 @@ function NuevoPerfil({ filas, recargar, abrir }) {
           paso: 'copy',
           peticion: cuento.trim(),
           perfil: producto,
-          nombre: nombre.trim(),
+          nombre: nombreCrear,
           campos,
           carta: estructuraCarta(preparada),
           alergenos: Object.keys(ALERGENOS),
@@ -1997,7 +2009,10 @@ function NuevoPerfil({ filas, recargar, abrir }) {
       if (error) throw new Error('No se ha podido crear.')
       if (esCarta) await crearCartaConDueno(slug, aplicar(cartaBase, cambios).menuDia)
       await recargar()
-      abrir(`${tipoFila}:${slug}`)
+      if (esMuestra) {
+        setCreando(null)
+        setAviso(`Exportada a las muestras como «${nombreCrear}»: ya sale en Miniwebs`)
+      } else abrir(`${tipoFila}:${slug}`)
     } catch (e) {
       setError(e.message)
       setCreando(null)
@@ -2104,35 +2119,56 @@ function NuevoPerfil({ filas, recargar, abrir }) {
           {/* Una fila de iconos: 5 a la vista y un + que abre el resto, con el nombre de la elegida debajo */}
           <div className="grid gap-[0.45rem]">
             <span className={titulo}>Temática del negocio</span>
+            {/* Los grupos (Restauración, Belleza...): al tocar uno, sus temáticas salen debajo como subpestañas; tocarlo otra vez las cierra */}
             <div className="flex flex-wrap items-center gap-[0.4rem]">
-              {(masTemas ? PLANTILLAS : PLANTILLAS.slice(0, 5)).map(p => {
-                const Icono = ICONOS_TEMA[p.clave] ?? Store
+              {GRUPOS_PLANTILLAS.map(g => {
+                const Icono = ICONOS_TEMA[g.claves[0]] ?? Store
                 return (
                   <button
-                    key={p.clave}
+                    key={g.clave}
                     type="button"
-                    title={p.nombre}
-                    aria-label={`Temática ${p.nombre}`}
-                    aria-pressed={tema === p.clave}
-                    onClick={() => setTema(p.clave)}
-                    className={`flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 bg-white transition-transform duration-300 ${tema === p.clave ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
+                    title={g.nombre}
+                    aria-label={`Grupo ${g.nombre}`}
+                    aria-pressed={grupoTema.clave === g.clave}
+                    onClick={() => {
+                      if (grupoTema.clave === g.clave) setSubTemas(v => !v)
+                      else {
+                        setTema(g.claves[0])
+                        setSubTemas(true)
+                      }
+                    }}
+                    className={`flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 bg-white transition-transform duration-300 ${grupoTema.clave === g.clave ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
                   >
                     <Icono className="h-[1.3rem] w-[1.3rem]" strokeWidth={2} aria-hidden="true" />
                   </button>
                 )
               })}
-              <button
-                type="button"
-                aria-label={masTemas ? 'Ver menos temáticas' : 'Ver más temáticas'}
-                aria-expanded={masTemas}
-                onClick={() => setMasTemas(v => !v)}
-                className="flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 border-zinc-300 transition-transform duration-300 hover:scale-105"
-                style={{ background: 'conic-gradient(#E5484D, #F5A524, #F2D33B, #46A758, #2E9FD9, #5B5BD6, #B04BC4, #E5484D)', color: '#141414' }}
-              >
-                {masTemas ? <Minus className="h-[1.1rem] w-[1.1rem]" strokeWidth={3} aria-hidden="true" /> : <Plus className="h-[1.1rem] w-[1.1rem]" strokeWidth={3} aria-hidden="true" />}
-              </button>
             </div>
-            <p className="text-[0.85rem] font-semibold">{plantilla.nombre}</p>
+            <p className="text-[0.85rem] font-semibold">{grupoTema.nombre}</p>
+            {subTemas && (
+              <div className="grid gap-[0.4rem]">
+                <div className="flex flex-wrap gap-[0.4rem]">
+                  {grupoTema.claves.map(clave => {
+                    const p = PLANTILLAS.find(x => x.clave === clave)
+                    const Icono = ICONOS_TEMA[clave] ?? Store
+                    return (
+                      <button
+                        key={clave}
+                        type="button"
+                        title={p.nombre}
+                        aria-label={`Temática ${p.nombre}`}
+                        aria-pressed={tema === clave}
+                        onClick={() => setTema(clave)}
+                        className={`flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 bg-white transition-transform duration-300 ${tema === clave ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
+                      >
+                        <Icono className="h-[1.3rem] w-[1.3rem]" strokeWidth={2} aria-hidden="true" />
+                      </button>
+                    )
+                  })}
+                </div>
+                <p className="text-[0.8rem] text-zinc-500">{plantilla.nombre}</p>
+              </div>
+            )}
           </div>
 
 
@@ -2527,6 +2563,15 @@ function NuevoPerfil({ filas, recargar, abrir }) {
         <div className="order-2 lg:sticky lg:top-[1rem] lg:order-none lg:col-start-2 lg:row-start-1">
           {vista && <Movil key={vista} src={vista} titulo="Vista previa" ancho={360} className="mx-auto w-full max-w-[20rem]" />}
           <p className="mt-[0.5rem] text-center text-[0.8rem] text-zinc-500">Con el contenido de ejemplo de la temática</p>
+          {/* Exporta este diseño a las muestras de /miniweb, donde está Chalaquita */}
+          {producto === 'miniweb' && (
+            <div className="mt-[0.7rem] grid gap-[0.4rem] text-center">
+              <button type="button" onClick={() => crear(true)} disabled={Boolean(creando)} className={`${BOTON} mx-auto`}>
+                {creando ?? 'Exportar a muestras'}
+              </button>
+              {aviso && <p className="text-[0.8rem] font-semibold text-emerald-700">{aviso}</p>}
+            </div>
+          )}
         </div>
       </div>
     </details>
@@ -2823,6 +2868,9 @@ function Lista({ filas, abrir, recargar }) {
     )
 
   const aFila = n => ({ clave: `negocio:${n.slug}`, nombre: n.nombre, detalle: n.demo ? 'Demo' : 'Cliente', ruta: rutaNegocio(n) })
+  const aFilaCopia = f => ({ clave: `${f.tipo}:${f.slug}`, nombre: f.nombre, detalle: f.detalle, ruta: f.ruta })
+  // Una copia exportada a muestras (botón de Nuevo perfil): sale en Miniwebs y no en Copias para enseñar
+  const esMuestra = f => f.tipo === 'negocio' && f.cambios?.muestra === true
 
   return (
     <div className="grid gap-[1.25rem]">
@@ -2861,9 +2909,10 @@ function Lista({ filas, abrir, recargar }) {
 
       {/* Todo lo que hay, por producto, en desplegables cerrados */}
       <div className="grid gap-[0.6rem]">
-        <Grupo titulo="Copias para enseñar" filas={copias.map(f => ({ clave: `${f.tipo}:${f.slug}`, nombre: f.nombre, detalle: f.detalle, ruta: f.ruta }))} />
+        <Grupo titulo="Copias para enseñar" filas={copias.filter(f => !esMuestra(f)).map(aFilaCopia)} />
         <Grupo titulo="Fichas" filas={negocios.filter(n => tipoDe(n) === 'ficha').map(aFila)} />
-        <Grupo titulo="Miniwebs" filas={negocios.filter(n => tipoDe(n) === 'miniweb').map(aFila)} />
+        {/* Las miniwebs de siempre y, con ellas, las que se exportan a muestras desde Nuevo perfil */}
+        <Grupo titulo="Miniwebs" filas={[...negocios.filter(n => tipoDe(n) === 'miniweb').map(aFila), ...copias.filter(esMuestra).map(f => ({ ...aFilaCopia(f), detalle: 'Muestra' }))]} />
         <Grupo
           titulo="Cartas"
           filas={cartas.map(c => ({ clave: `carta:${c.slug}`, nombre: marcaDe(c)?.nombre ?? c.slug, detalle: c.demo ? 'Demo' : 'Cliente', ruta: rutaCarta(c) }))}
