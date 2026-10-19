@@ -12,7 +12,7 @@ import { CLAVES_FORMATOS } from './formatos'
    &col=menuFondo-3E5A3B,titulo-FFFFFF,...: los colores uno por uno de la miniweb (hero.colores, claves de lib/coloresMiniweb.js).
    &corte=punta|onda|...: el corte del borde de abajo de la foto de Diagonal (claves de lib/cortes.js).
    &formato=tarjeta|marco|...: el formato de Editorial (claves de lib/formatos.js).
-   &tg1=...&tp=...: el texto grande y el pequeño de la portada de Inicio de la miniweb.
+   &tg1=...&tp=...&ti=...: el texto grande, el pequeño y el extra (info) de la portada de Inicio de la miniweb.
    &tamano=xs|xl: el tamaño del nombre del negocio (sin él, md, el de cada diseño).
    &inicio=FFF7EA: el fondo del bloque de texto de la portada de Inicio de las miniwebs.
    &resena=F4EFF9: el fondo de la zona de debajo de la portada de las miniwebs (reseña y tarjetas, estas algo más oscuras).
@@ -56,6 +56,7 @@ export function marcaDePrueba(marca, params) {
   const textos = {}
   if (params.has('tg1')) textos.titular = [(params.get('tg1') ?? '').trim().slice(0, 80)].filter(Boolean)
   if (params.has('tp')) textos.descripcion = (params.get('tp') ?? '').trim().slice(0, 300)
+  if (params.has('ti')) textos.info = (params.get('ti') ?? '').trim().slice(0, 100)
   // Tamaño del nombre (hero.tamanoNombre)
   const tamanoNombre = ['xs', 'xl'].includes(params.get('tamano')) ? params.get('tamano') : null
   // Dónde van las redes, el menú y compartir (solo los valores que existen)

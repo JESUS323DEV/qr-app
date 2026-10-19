@@ -49,6 +49,9 @@ export default function TextoInicio({ inicio, irA, color = '', className = '', f
           </div>
         )
       )}
+      {/* El texto extra (inicio.info): un horario o lo que se quiera, debajo del botón. Con el botón fuera (sinBoton), lo pinta
+          CtaPortada debajo de él */}
+      {!sinBoton && inicio.info && <p style={rolDescripcion} className="mt-[0.1rem] max-w-[22rem] text-[0.85rem] leading-[1.35] opacity-80">{inicio.info}</p>}
     </div>
   )
 }

@@ -1616,6 +1616,9 @@ function PanelColoresMiniweb({ valores, cambiar }) {
   )
 }
 
+// El texto extra con el que empiezan Editorial, Cortes (Diagonal) y Fullbleed
+const TEXTO_EXTRA_EJEMPLO = 'De martes a domingo, de 13:00 a 23:00'
+
 // Las piezas que se pueden mover en una miniweb (hero.redesEn, hero.menuEn y hero.compartirEn), con su valor de siempre primero
 const ESTRUCTURA_MINIWEB = [
   ['redesEn', 'Redes', [['barra', 'Barra arriba'], ['lateral', 'Lateral'], ['boton', 'Bajo el botón']]],
@@ -1738,6 +1741,11 @@ function NuevoPerfil({ filas, recargar, abrir }) {
   const textoGrande = textosMini.titular ?? titularBase.join(' ')
   const maxGrande = maxDe(titularBase.join(' ') || 'Texto grande de la portada')
   const textoPequeno = textosMini.descripcion ?? inicioBase?.descripcion ?? ''
+  // El texto extra (un horario o lo que se quiera): solo lo pintan Editorial, Cortes (Diagonal) y Fullbleed
+  // Con esas tres portadas, el texto extra empieza con uno de ejemplo (se ve y se guarda aunque no lo toques)
+  const textoExtra = textosMini.info ?? inicioBase?.info ?? TEXTO_EXTRA_EJEMPLO
+  const conTextoExtra = ['editorial', 'diagonal', 'fullbleed'].includes(hero)
+  const MAX_TEXTO_EXTRA = 60
   const textosEditados = Object.keys(textosMini).length > 0
   const colorDelTexto = colorTexto || marcaBase?.theme?.colors?.text || '#000000'
   const colorFondo = fondo || marcaBase?.theme?.colors?.bg || '#FFFFFF'
@@ -1771,6 +1779,7 @@ function NuevoPerfil({ filas, recargar, abrir }) {
     fondo && `fondo=${fondo.slice(1)}`,
     letra && `letra=${letra}`,
     ...(producto === 'miniweb' && textosEditados ? [`tg1=${encodeURIComponent(textoGrande)}`, `tp=${encodeURIComponent(textoPequeno)}`] : []),
+    producto === 'miniweb' && conTextoExtra && `ti=${encodeURIComponent(textoExtra)}`,
     producto === 'miniweb' && Object.keys(coloresMini).length > 0 && `col=${Object.entries(coloresMini).map(([clave, valor]) => `${clave}-${valor.slice(1)}`).join(',')}`,
     !esCarta && tamanoNombre !== 'md' && `tamano=${tamanoNombre}`,
     !esCarta && hero === 'diagonal' && corte !== 'diagonal' && `corte=${corte}`,
@@ -1817,6 +1826,7 @@ function NuevoPerfil({ filas, recargar, abrir }) {
       const textosEscritos = {
         ...(textosMini.titular !== undefined ? { titular: [textoGrande.trim()].filter(Boolean) } : {}),
         ...(textosMini.descripcion !== undefined ? { descripcion: textoPequeno.trim() } : {}),
+        ...(conTextoExtra ? { info: textoExtra.trim() } : {}),
       }
       const inicioCambio = {
         ...(producto === 'miniweb' && barra ? { 'hero.barra': barra } : {}),
@@ -2272,6 +2282,24 @@ function NuevoPerfil({ filas, recargar, abrir }) {
                     {textoPequeno.length}/{maxDe(inicioBase?.descripcion ?? 'Descripción de la portada del negocio, en pocas palabras')}
                   </span>
                 </div>
+                {conTextoExtra && (
+                  <div className="grid gap-[0.3rem]">
+                    <div>
+                      <p className="text-[0.8rem] font-semibold text-zinc-500">Texto extra</p>
+                      <p className="text-[0.8rem] text-zinc-400">Un horario o lo que quieras, debajo del botón. Solo lo pintan Editorial, Cortes y Fullbleed.</p>
+                    </div>
+                    <input
+                      value={textoExtra}
+                      maxLength={MAX_TEXTO_EXTRA}
+                      onChange={e => setTextosMini(t => ({ ...t, info: e.target.value }))}
+                      placeholder="De martes a domingo, de 13:00 a 23:00"
+                      className={CAMPO}
+                    />
+                    <span className="justify-self-end text-[0.75rem] text-zinc-500">
+                      {textoExtra.length}/{MAX_TEXTO_EXTRA}
+                    </span>
+                  </div>
+                )}
                 {textosEditados && (
                   <button type="button" onClick={() => setTextosMini({})} className="justify-self-start text-[0.8rem] font-semibold text-zinc-500 underline underline-offset-[0.2em]">
                     Volver a los textos de la plantilla

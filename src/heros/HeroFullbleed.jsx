@@ -7,7 +7,6 @@ import useVueltaPestanas from '../lib/useVueltaPestanas'
 import BotonCompartir from '../components/BotonCompartir'
 import Escena, { fotoDeRespaldo, fotosDe, tipoComun } from '../fichas/escenas'
 import BarraPestanas from '../fichas/barras'
-import CtaPortada from '../components/CtaPortada'
 
 /* Fullbleed (adaptado de platform). Foto a todo el ancho con velo oscuro y la marca arriba.
    Pestañas en una barra segmentada (solo cambian al tocarlas):
@@ -195,8 +194,6 @@ export default function HeroFullbleed({ hero, nombre, sinBarra = false, inicio, 
   }
 
   const enMapa = tipoComun(pestanas[activa]?.tipo) === 'ubicacion'
-  // En una miniweb con botón de portada: el botón va encima de la foto, debajo del nombre, y no abajo con el texto
-  const ctaArriba = Boolean(sinBarra && inicio?.boton && inicio?.botonA)
 
   return (
     // Cualquier toque en el hero para la vuelta de presentación
@@ -227,13 +224,11 @@ export default function HeroFullbleed({ hero, nombre, sinBarra = false, inicio, 
         <div className={`pointer-events-none absolute inset-x-0 top-0 flex flex-wrap items-center justify-between px-[1.25rem] pt-[1rem] text-white transition-opacity duration-700 ${enMapa ? 'opacity-0' : 'opacity-100'}`}>
           <p className={`font-demo-heading leading-none ${sinBarra ? 'text-[2.1rem]' : 'text-[1.5rem]'}`}><NombreMarca nombre={nombre} tamano={sinBarra ? 'grande' : 'normal'} /></p>
           {!enMapa && <BotonCompartir titulo={nombre} className="pointer-events-auto" />}
-          {/* El botón de la portada, debajo del nombre (en su propia fila) */}
-          {ctaArriba && !enMapa && <CtaPortada inicio={inicio} irA={irA} nombre={nombre} className="pointer-events-auto basis-full pt-[0.7rem]" />}
         </div>
 
-        {/* Portada de una miniweb: el texto de Inicio encima de la foto, abajo, sobre un degradado oscuro para que se lea */}
+        {/* Portada de una miniweb: el texto de Inicio (texto grande, pequeño y el botón) encima de la foto, abajo, sobre un degradado oscuro para que se lea */}
         {sinBarra && (
-          <TextoInicio inicio={inicio} irA={irA} nombre={nombre} sinBoton={ctaArriba} color="text-white" className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/55 to-transparent px-[1.25rem] pb-[0.4rem] pt-[3rem]" />
+          <TextoInicio inicio={inicio} irA={irA} nombre={nombre} color="text-white" className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/55 to-transparent px-[1.25rem] pb-[0.4rem] pt-[3rem]" />
         )}
       </div>
 
