@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import TextoInicio from '../components/TextoInicio'
 import NombreMarca from '../components/NombreMarca'
 import { Phone } from 'lucide-react'
 import Img from '../components/Img'
@@ -180,7 +181,7 @@ const ESCENAS = {
 }
 
 // sinBarra: sin barra de pestañas, cuando hace de portada de una miniweb (la miniweb lleva su propio menú)
-export default function HeroHistorias({ hero, nombre, lema, sinBarra = false }) {
+export default function HeroHistorias({ hero, nombre, lema, sinBarra = false, inicio, irA }) {
   // Solo las pestañas que sabe pintar (las comunes)
   const pestanas = useMemo(() => (hero.pestanas ?? []).filter(p => tipoComun(p.tipo)), [hero.pestanas])
   const respaldo = fotoDeRespaldo(pestanas)
@@ -232,6 +233,7 @@ export default function HeroHistorias({ hero, nombre, lema, sinBarra = false }) 
       </div>
 
       {/* Barra de pestañas (pieza); la suya, pastillas abajo sobre la foto (la activa en blanco, como en la carta) */}
+      {sinBarra && <TextoInicio inicio={inicio} irA={irA} color="text-white" className="relative mt-auto bg-gradient-to-t from-black/85 to-transparent px-[1.25rem] pb-[1rem] pt-[2.5rem]" />}
       {!sinBarra && (
         <nav className="relative mt-auto px-[1.25rem] pb-[1rem]">
           <BarraPestanas estilo={hero.barra ?? 'pastillas'} pestanas={pestanas} activa={activa} tocar={tocar} sobre="oscuro" />

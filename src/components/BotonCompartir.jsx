@@ -5,10 +5,12 @@ import { Share2 } from 'lucide-react'
    con el nombre y el enlace; donde no existe (ordenador), copia el enlace y avisa con "Enlace copiado".
    Por defecto es una pastilla oscura translúcida con texto blanco, como las de la carta; cada diseño
    la coloca donde le toca y puede cambiar su aspecto con className. */
-// Aspectos: 'oscuro' (sobre fotos) o 'suave' (sobre fondos lisos de la marca, del color del texto)
+// Aspectos: 'oscuro' (sobre fotos), 'suave' (sobre fondos lisos de la marca, del color del texto) o 'enlace' (solo texto
+// subrayado en blanco, sin pastilla, para ir en fila con otros enlaces sobre una foto)
 const ESTILOS = {
   oscuro: 'bg-black/45 text-white backdrop-blur-sm hover:bg-black/60',
   suave: 'bg-demo-text/10 text-demo-text hover:bg-demo-text/20',
+  enlace: 'flex-row-reverse rounded-none! bg-transparent p-0! text-[0.95rem]! text-white underline underline-offset-[0.3em] hover:opacity-80',
 }
 
 export default function BotonCompartir({ titulo, texto = 'Compartir', estilo = 'oscuro', className = '' }) {

@@ -711,6 +711,36 @@ const esClaro = color => {
   return 0.299 * r + 0.587 * g + 0.114 * b > 160
 }
 
+// La barra de redes, debajo del menú: hero.redesArriba y hero.colorRedes
+function BarraRedes({ hero, redes, redesTexto }) {
+  if (!hero.redesArriba || !redes?.length) return null
+  // Su fondo: hero.colorRedes o, si no lleva, el color del texto. Letras e iconos en blanco sobre fondo oscuro y en
+  // oscuro sobre fondo claro
+  const redesClaras = esClaro(hero.colorRedes)
+  return (
+    <div
+      className={`flex items-center justify-between gap-[1rem] px-[1.25rem] py-[0.45rem] ${hero.colorRedes ? '' : 'bg-demo-text'} ${redesClaras ? 'text-[#141414]' : 'text-white'}`}
+      style={hero.colorRedes ? { background: hero.colorRedes } : undefined}
+    >
+      <p className={`text-[0.78rem] ${redesClaras ? 'text-[#141414]/75' : 'text-white/75'}`}>{redesTexto ?? 'Síguenos en redes'}</p>
+      <div className="flex items-center gap-[0.9rem]">
+        {redes.map(r => (
+          <a
+            key={r.platform}
+            href={r.href}
+            target="_blank"
+            rel="noreferrer"
+            aria-label={r.platform}
+            className={`transition-colors hover:text-demo-accent ${redesClaras ? 'text-[#141414]/85' : 'text-white/85'}`}
+          >
+            <SocialIcon platform={r.platform} className="h-[1.05rem] w-[1.05rem]" />
+          </a>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 /* Miniweb por piezas: además de sus páginas propias, acepta las pestañas de cualquier ficha.
    hero.portada: el hero de ficha (por piezas) que hace de portada en la pestaña de fotos.
    hero.redesArriba: las redes en una barra debajo del menú (y en la portada, solo la reseña).
@@ -724,7 +754,6 @@ export default function HeroWeb({ hero, nombre, lema, cuerpo, redes, redesTexto 
   const fotosPortada = [...new Set(pestanas.flatMap(p => [p.foto, ...fotosDe(p).map(f => f.src)]).filter(Boolean))].map(src => ({ src }))
   const [activa, setActiva] = useState(0)
   const { parar } = useVueltaPestanas(pestanas, setActiva)
-  const redesClaras = esClaro(hero.colorRedes)
 
   const tocar = i => {
     parar()
@@ -771,30 +800,7 @@ export default function HeroWeb({ hero, nombre, lema, cuerpo, redes, redesTexto 
       )}
 
       {/* Redes en una barra debajo del menú (hero.redesArriba), en todas las páginas */}
-      {/* Su fondo: hero.colorRedes o, si no lleva, el color del texto. Letras e iconos en blanco sobre fondo oscuro
-          y en oscuro sobre fondo claro */}
-      {hero.redesArriba && redes?.length > 0 && (
-        <div
-          className={`flex items-center justify-between gap-[1rem] px-[1.25rem] py-[0.45rem] ${hero.colorRedes ? '' : 'bg-demo-text'} ${redesClaras ? 'text-[#141414]' : 'text-white'}`}
-          style={hero.colorRedes ? { background: hero.colorRedes } : undefined}
-        >
-          <p className={`text-[0.78rem] ${redesClaras ? 'text-[#141414]/75' : 'text-white/75'}`}>{redesTexto ?? 'Síguenos en redes'}</p>
-          <div className="flex items-center gap-[0.9rem]">
-            {redes.map(r => (
-              <a
-                key={r.platform}
-                href={r.href}
-                target="_blank"
-                rel="noreferrer"
-                aria-label={r.platform}
-                className={`transition-colors hover:text-demo-accent ${redesClaras ? 'text-[#141414]/85' : 'text-white/85'}`}
-              >
-                <SocialIcon platform={r.platform} className="h-[1.05rem] w-[1.05rem]" />
-              </a>
-            ))}
-          </div>
-        </div>
-      )}
+      <BarraRedes hero={hero} redes={redes} redesTexto={redesTexto} />
 
       {/* Páginas completas: ocupan el resto de la pantalla. Como al navegar en una web, la vieja desaparece
           al instante y la nueva aparece con un fundido rápido, sin cruzarse.

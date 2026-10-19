@@ -5,6 +5,8 @@ import { TIPOGRAFIAS } from '../asistente/tipografias'
    cambia el nombre, el color principal, el de acento, el del texto y la tipografía (una de asistente/tipografias.js).
    &redes=F2EDE4: el fondo de la barra de redes de las miniwebs. &cabecera=3D5A40: el fondo de cabecera.
    &logo=<dirección>: el logo en lugar del nombre escrito.
+   &inicio=FFF7EA: el fondo del bloque de texto de la portada de Inicio de las miniwebs.
+   &resena=F4EFF9: el fondo de la zona de debajo de la portada de las miniwebs (reseña y tarjetas, estas algo más oscuras).
    Nunca se usa en las páginas de clientes. */
 
 const hex = valor => (/^[0-9a-f]{6}$/i.test(valor ?? '') ? `#${valor}` : null)
@@ -27,12 +29,15 @@ export function marcaDePrueba(marca, params) {
   // Fondo de cabecera (Polaroid, Banner y el menú de las miniwebs)
   const cabecera = hex(params.get('cabecera'))
   const logo = deSupabase(params.get('logo'))
-  if (!nombre && !principal && !acento && !texto && !fondo && !letra && !redes && !cabecera && !logo) return marca
+  const resena = hex(params.get('resena'))
+  const inicio = hex(params.get('inicio'))
+  if (!nombre && !principal && !acento && !texto && !fondo && !letra && !redes && !cabecera && !logo && !resena && !inicio) return marca
   return {
     ...marca,
     ...(nombre ? { nombre } : {}),
     ...(logo ? { logo } : {}),
-    ...(redes && marca.hero ? { hero: { ...marca.hero, colorRedes: redes } } : {}),
+    ...(resena ? { cuerpo: { ...marca.cuerpo, fondo: resena, card: `color-mix(in srgb, ${resena} 90%, black)` } } : {}),
+    ...((redes || inicio) && marca.hero ? { hero: { ...marca.hero, ...(redes ? { colorRedes: redes } : {}), ...(inicio ? { fondoInicio: inicio } : {}) } } : {}),
     theme: {
       ...marca.theme,
       colors: { ...marca.theme?.colors, ...(principal ? { primary: principal } : {}), ...(acento ? { accent: acento } : {}), ...(texto ? { text: texto } : {}), ...(fondo ? { bg: fondo } : {}), ...(cabecera ? { header: cabecera } : {}) },

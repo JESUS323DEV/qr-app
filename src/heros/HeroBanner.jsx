@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import TextoInicio from '../components/TextoInicio'
 import NombreMarca from '../components/NombreMarca'
 import { Phone } from 'lucide-react'
 import Img from '../components/Img'
@@ -150,7 +151,7 @@ const titularDe = (p, nombre) =>
   p.titular ?? (tipoComun(p.tipo) === 'ubicacion' ? [p.texto, p.direccion] : [p.titulo ?? nombre, p.destacado ?? p.texto])
 
 // sinBarra: sin barra de pestañas, cuando hace de portada de una miniweb (la miniweb lleva su propio menú)
-export default function HeroBanner({ hero, nombre, lema, sinBarra = false }) {
+export default function HeroBanner({ hero, nombre, lema, sinBarra = false, inicio, irA }) {
   // Solo las pestañas que sabe pintar (las comunes)
   const pestanas = useMemo(() => (hero.pestanas ?? []).filter(p => tipoComun(p.tipo)), [hero.pestanas])
   const respaldo = fotoDeRespaldo(pestanas)
@@ -210,6 +211,9 @@ export default function HeroBanner({ hero, nombre, lema, sinBarra = false }) {
       {/* Bloque de color con el titular y las pestañas */}
       <div className="bg-demo-header px-[1.25rem] pb-[1.1rem] pt-[1.1rem] text-demo-bg">
         {/* El titular cambia con la pestaña (fundido); todos ocupan el mismo hueco */}
+        {inicio && (inicio.titular?.length || inicio.descripcion) ? (
+          <TextoInicio inicio={inicio} irA={irA} />
+        ) : (
         <h1 className="grid font-demo-heading text-[clamp(2rem,1.6rem+2vw,2.6rem)] uppercase leading-[1]" aria-live="polite">
           {pestanas.map((p, i) => {
             const titular = titularDe(p, nombre)
@@ -230,6 +234,7 @@ export default function HeroBanner({ hero, nombre, lema, sinBarra = false }) {
             )
           })}
         </h1>
+        )}
         {/* Barra de pestañas (pieza); la suya, bloques rectos sobre el color */}
         {!sinBarra && (
           <div className="mt-[0.9rem]">

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import TextoInicio from '../components/TextoInicio'
 import NombreMarca from '../components/NombreMarca'
 import { Phone } from 'lucide-react'
 import Img from '../components/Img'
@@ -174,7 +175,7 @@ const ESCENAS = {
 }
 
 // sinBarra: sin barra de pestañas, cuando hace de portada de una miniweb (la miniweb lleva su propio menú)
-export default function HeroFullbleed({ hero, nombre, sinBarra = false }) {
+export default function HeroFullbleed({ hero, nombre, sinBarra = false, inicio, irA }) {
   // Solo las pestañas que sabe pintar (las comunes)
   const pestanas = useMemo(() => (hero.pestanas ?? []).filter(p => tipoComun(p.tipo)), [hero.pestanas])
   const respaldo = fotoDeRespaldo(pestanas)
@@ -224,6 +225,11 @@ export default function HeroFullbleed({ hero, nombre, sinBarra = false }) {
           <p className="font-demo-heading text-[1.5rem] leading-none"><NombreMarca nombre={nombre} /></p>
           {!enMapa && <BotonCompartir titulo={nombre} className="pointer-events-auto" />}
         </div>
+
+        {/* Portada de una miniweb: el texto de Inicio encima de la foto, abajo, sobre un degradado oscuro para que se lea */}
+        {sinBarra && (
+          <TextoInicio inicio={inicio} irA={irA} color="text-white" className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/55 to-transparent px-[1.25rem] pb-[0.4rem] pt-[3rem]" />
+        )}
       </div>
 
       {!sinBarra && (

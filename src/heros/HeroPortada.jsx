@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import TextoInicio from '../components/TextoInicio'
 import NombreMarca from '../components/NombreMarca'
 import { Phone } from 'lucide-react'
 import Img from '../components/Img'
@@ -21,7 +22,8 @@ import BarraPestanas from '../fichas/barras'
    hero: franja, horario, barra?, pestanas[{ tipo, texto, ... }] */
 
 const TURNO_MS = 4800
-const BYN = 'grayscale contrast-110'
+// Blanco y negro suave: al 70 % (con un poco de color) y algo más de contraste
+const BYN = 'grayscale-[70%] contrast-110'
 
 function Velo({ clase = 'bg-gradient-to-t from-black/85 via-black/25 to-transparent' }) {
   return <div className={`pointer-events-none absolute inset-0 ${clase}`} />
@@ -163,7 +165,7 @@ const ESCENAS = {
 }
 
 // sinBarra: sin barra de pestañas, cuando hace de portada de una miniweb (la miniweb lleva su propio menú)
-export default function HeroPortada({ hero, nombre, sinBarra = false }) {
+export default function HeroPortada({ hero, nombre, sinBarra = false, inicio, irA }) {
   // Solo las pestañas que sabe pintar (las comunes)
   const pestanas = useMemo(() => (hero.pestanas ?? []).filter(p => tipoComun(p.tipo)), [hero.pestanas])
   const respaldo = fotoDeRespaldo(pestanas)
@@ -178,6 +180,8 @@ export default function HeroPortada({ hero, nombre, sinBarra = false }) {
     if (tipoComun(pestanas[i].tipo) === 'ubicacion') setMapaPedido(true)
   }
 
+  // El texto de Inicio (titular y descripción) de una miniweb va dentro de la foto
+  const textoEnFoto = Boolean(sinBarra && (inicio?.titular?.length || inicio?.descripcion))
   // "Navaja & Tijera": el & va en cursiva, como en la cabecera de platform
   const partes = nombre.split(' & ')
 
@@ -185,13 +189,16 @@ export default function HeroPortada({ hero, nombre, sinBarra = false }) {
     // Cualquier toque en el hero para la vuelta de presentación
     <div className="flex flex-1 flex-col" onPointerDown={parar}>
       <div className="px-[1.25rem] pt-[0.9rem]">
-        {/* Franja de revista: compartir y horario */}
-        <div className="flex items-center justify-between gap-[1rem] border-b border-demo-text/20 pb-[0.5rem] text-[0.75rem] text-demo-muted">
-          <BotonCompartir titulo={nombre} estilo="suave" />
-          {hero.horario && <span className="text-right">{hero.horario}</span>}
-        </div>
+        {/* Franja de revista: compartir y horario. Con el texto de Inicio dentro de la foto, compartir baja allí (junto al
+            enlace) y, sin horario, la franja no se pinta: la foto gana ese sitio */}
+        {(!textoEnFoto || hero.horario) && (
+          <div className="flex items-center justify-between gap-[1rem] border-b border-demo-text/20 pb-[0.5rem] text-[0.75rem] text-demo-muted">
+            {!textoEnFoto ? <BotonCompartir titulo={nombre} estilo="suave" /> : <span />}
+            {hero.horario && <span className="text-right">{hero.horario}</span>}
+          </div>
+        )}
 
-        <h1 className="mt-[0.7rem] text-center font-demo-heading text-[clamp(2.6rem,2rem+3vw,3.4rem)] uppercase leading-[0.9] tracking-tight">
+        <h1 className={`text-center font-demo-heading text-[clamp(2.6rem,2rem+3vw,3.4rem)] uppercase leading-[0.9] tracking-tight ${!textoEnFoto || hero.horario ? 'mt-[0.7rem]' : ''}`}>
           <NombreMarca nombre={nombre} tamano="grande">
             {partes.length === 2
               ? <>{partes[0]} <em className="font-normal italic">&amp;</em> {partes[1]}</>
@@ -201,7 +208,7 @@ export default function HeroPortada({ hero, nombre, sinBarra = false }) {
       </div>
 
       {/* La foto ocupa el alto que sobra, para que todo quepa en una pantalla */}
-      <div className="relative mx-[1.25rem] mt-[0.9rem] min-h-[9rem] flex-1 overflow-hidden bg-demo-surface">
+      <div className={`relative mx-[1.25rem] mt-[0.9rem] flex-1 overflow-hidden bg-demo-surface ${textoEnFoto ? 'min-h-[16rem]' : 'min-h-[9rem]'}`}>
         {pestanas.map((p, i) => {
           const tipo = tipoComun(p.tipo)
           const Escena = ESCENAS[tipo]
@@ -217,6 +224,10 @@ export default function HeroPortada({ hero, nombre, sinBarra = false }) {
             </div>
           )
         })}
+        {/* Portada de una miniweb: el titular y la entradilla dentro de la foto, abajo a la izquierda, sobre un degradado oscuro, y el botón como enlace */}
+        {sinBarra && (
+          <TextoInicio inicio={inicio} irA={irA} enlace extra={<BotonCompartir titulo={nombre} estilo="enlace" />} color="text-white" className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/55 to-transparent px-[0.9rem] pb-[0.8rem] pt-[2.5rem]" />
+        )}
       </div>
 
       {/* Barra de pestañas (pieza); la suya, como el menú de cabecera de una revista, separadas por barras */}

@@ -1,7 +1,7 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { HexColorPicker } from 'react-colorful'
 import { Link, useSearchParams } from 'react-router-dom'
-import { ArrowLeft, ArrowUp, ArrowUpRight, Camera, ChevronDown, ChevronsDownUp, Copy, Menu, QrCode, Search, Sparkles, Trash2, X } from 'lucide-react'
+import { Armchair, ArrowLeft, ArrowUp, ArrowUpRight, Beer, BookImage, Camera, ChevronDown, ChevronsDownUp, CircleUser, Coffee, Copy, Croissant, Fish, Frame, GalleryHorizontal, IdCard, LayoutGrid, Maximize, Menu, Minus, Newspaper, PanelTop, Pizza, Plus, QrCode, Scissors, Search, Slice, Smartphone, Sparkles, Store, Trash2, UtensilsCrossed, X } from 'lucide-react'
 import GeneradorQR from '../components/GeneradorQR'
 import { supabase } from '../lib/supabase'
 import { aplicar } from '../lib/ediciones'
@@ -964,7 +964,8 @@ function Diseno({ tipo, slug, vista, original, cambiar, abrir }) {
   const hero = vista.hero
   const miniweb = tipo === 'negocio' && Boolean(HEROS[hero?.diseno]?.paginaCompleta)
   const producto = tipo === 'carta' ? 'carta' : miniweb ? 'miniweb' : 'ficha'
-  const portadas = Object.entries(HEROS).filter(([, h]) => h.piezas && !h.paginaCompleta)
+  // Para miniwebs, de momento sin Banner ni Ficha (se mantiene la que el perfil ya lleve)
+  const portadas = Object.entries(HEROS).filter(([clave, h]) => h.piezas && !h.paginaCompleta && (!SIN_PORTADA_MINIWEB.includes(clave) || clave === hero?.portada))
   // La otra página del mismo negocio: su carta (desde la ficha) o su ficha (desde la carta)
   const suCarta = tipo === 'negocio' ? cartas.find(c => c.negocio === slug) : null
   const suFicha = tipo === 'carta' ? vista.negocio : null
@@ -1500,9 +1501,44 @@ function Plegable({ titulo, elegido, children }) {
   )
 }
 
+// El icono de cada temática en la fila de Nuevo perfil
+const ICONOS_TEMA = {
+  restaurante: UtensilsCrossed,
+  bar: Beer,
+  pizzeria: Pizza,
+  'cocina-visual': Fish,
+  cafeteria: Coffee,
+  pasteleria: Croissant,
+  peluqueria: Scissors,
+  unas: Sparkles,
+  barberia: Armchair,
+}
+
+// Diseños de arriba que de momento no salen como portada de una miniweb
+const SIN_PORTADA_MINIWEB = ['banner', 'ficha']
+
+// El icono de cada diseño de arriba en la fila de Nuevo perfil
+const ICONOS_DISENO = {
+  editorial: Newspaper,
+  banner: PanelTop,
+  diagonal: Slice,
+  fullbleed: Maximize,
+  mosaico: LayoutGrid,
+  portada: BookImage,
+  retrato: CircleUser,
+  ficha: IdCard,
+  galeria: GalleryHorizontal,
+  polaroid: Camera,
+  historias: Smartphone,
+}
+
 function NuevoPerfil({ filas, recargar, abrir }) {
   const [tema, setTema] = useState(PLANTILLAS[0].clave)
-  const [producto, setProducto] = useState('ficha')
+  // La pestaña abierta: el asistente o el diseño (la vista previa se ve siempre)
+  const [pestana, setPestana] = useState('personalizar')
+  // Qué temáticas se ven en la fila de iconos: 5, o todas con el +
+  const [masTemas, setMasTemas] = useState(false)
+  const [producto, setProducto] = useState('miniweb')
   const [hero, setHero] = useState('polaroid')
   const [barra, setBarra] = useState('')
   const [estilo, setEstilo] = useState('revista')
@@ -1517,6 +1553,10 @@ function NuevoPerfil({ filas, recargar, abrir }) {
   const [letra, setLetra] = useState('')
   // Solo en miniwebs: el fondo de la barra de redes (sin elegir, el color del texto, como siempre)
   const [redesColor, setRedesColor] = useState('')
+  // Solo en miniwebs: el fondo de la zona de debajo de la portada (la reseña); sin elegir, el de la demo
+  const [fondoResena, setFondoResena] = useState('')
+  // Solo en miniwebs: el fondo del bloque de texto de la portada de Inicio; sin elegir, el color de fondo de la página
+  const [fondoInicio, setFondoInicio] = useState('')
   // Fondo de cabecera: solo en los diseños que la tienen (sin elegir, el principal, como siempre)
   const [cabecera, setCabecera] = useState('')
   // Lo que se le cuenta al asistente del negocio: con esto se inventa el copy y busca las fotos al crear
@@ -1536,6 +1576,8 @@ function NuevoPerfil({ filas, recargar, abrir }) {
   const colorDelTexto = colorTexto || marcaBase?.theme?.colors?.text || '#000000'
   const colorFondo = fondo || marcaBase?.theme?.colors?.bg || '#FFFFFF'
   const colorRedes = redesColor || colorDelTexto
+  const colorResena = fondoResena || marcaBase?.cuerpo?.fondo || colorFondo
+  const colorInicio = fondoInicio || colorFondo
   const colorCabecera = cabecera || marcaBase?.theme?.colors?.header || colorPrincipal
   // Diseños con cabecera de color: Polaroid y Banner, y todas las miniwebs (su menú de arriba)
   const conCabecera = producto === 'miniweb' || (producto === 'ficha' && ['polaroid', 'banner'].includes(hero))
@@ -1544,6 +1586,10 @@ function NuevoPerfil({ filas, recargar, abrir }) {
   const logoElegido = !esCarta && marcaCon === 'logo' && logo ? logo : ''
 
   const heros = Object.entries(HEROS).filter(([, h]) => h.piezas && !h.paginaCompleta)
+  // Los 5 primeros de la fila de iconos (el resto, detrás del +), en este orden y después los demás
+  const primerosDisenos = ['editorial', 'banner', 'diagonal', 'fullbleed', 'portada']
+  const herosEnOrden = [...primerosDisenos.map(c => heros.find(([k]) => k === c)).filter(Boolean), ...heros.filter(([k]) => !primerosDisenos.includes(k))].filter(([k]) => producto !== 'miniweb' || !SIN_PORTADA_MINIWEB.includes(k))
+  const [masDisenos, setMasDisenos] = useState(false)
   const estilos = Object.values(FAMILIAS).filter(f => f.carta)
 
   // El nombre llega a la vista previa medio segundo después de dejar de escribir (si no, se recargaría a cada letra)
@@ -1561,6 +1607,8 @@ function NuevoPerfil({ filas, recargar, abrir }) {
     fondo && `fondo=${fondo.slice(1)}`,
     letra && `letra=${letra}`,
     producto === 'miniweb' && redesColor && `redes=${redesColor.slice(1)}`,
+    producto === 'miniweb' && fondoResena && `resena=${fondoResena.slice(1)}`,
+    producto === 'miniweb' && fondoInicio && `inicio=${fondoInicio.slice(1)}`,
     conCabecera && cabecera && `cabecera=${cabecera.slice(1)}`,
     logoElegido && `logo=${encodeURIComponent(logoElegido)}`,
   ]
@@ -1596,6 +1644,9 @@ function NuevoPerfil({ filas, recargar, abrir }) {
       for (let n = 2; ocupadas.has(slug); n++) slug = `${raiz}-${n}`
 
       const tipografia = TIPOGRAFIAS.find(t => t.id === letra)
+      // Miniweb: el fondo de la reseña elegido (y las tarjetas de debajo, un tono más oscuro); sin elegir, el de la demo
+      const cuerpoResena = producto === 'miniweb' && fondoResena ? { cuerpo: { ...(marcaBase?.cuerpo ?? {}), fondo: fondoResena, card: `color-mix(in srgb, ${fondoResena} 90%, black)` } } : {}
+      const inicioCambio = producto === 'miniweb' && fondoInicio ? { 'hero.fondoInicio': fondoInicio } : {}
       let cambios
       let base
       if (esCarta) {
@@ -1627,13 +1678,15 @@ function NuevoPerfil({ filas, recargar, abrir }) {
           ...(producto === 'ficha'
             ? { 'hero.diseno': hero, ...(barra ? { 'hero.barra': barra } : {}) }
             : deChalaquita
-              ? { 'hero.portada': hero, 'hero.colorRedes': colorRedes }
+              ? { 'hero.portada': hero, 'hero.colorRedes': colorRedes, ...cuerpoResena, ...inicioCambio }
               : {
                   'hero.diseno': 'web',
                   'hero.portada': hero,
                   'hero.redesArriba': true,
                   // Siempre se guarda (aunque sea el del texto), para que salga en el editor y se pueda cambiar luego
                   'hero.colorRedes': colorRedes,
+                  ...cuerpoResena,
+                  ...inicioCambio,
                   'hero.pestanas': pestanasDeMiniweb(negocioBase),
                   tipo: 'miniweb',
                 }),
@@ -1693,16 +1746,32 @@ function NuevoPerfil({ filas, recargar, abrir }) {
         <ChevronsDownUp className="hidden h-[1.1rem] w-[1.1rem] text-zinc-400 group-open/perfil:block" aria-hidden="true" />
       </summary>
       {/* En una columna: vista previa, asistente, diseño y crear */}
-      <div className="mx-auto grid w-full max-w-[32rem] gap-[1rem] px-[1rem] py-[1rem]">
-        {/* Vista previa: el contenido de la temática con el diseño elegido.
-            A 360 px de ancho por dentro, como el móvil bajo: se ve lo mismo que verá el cliente */}
-        <div>
-          {vista && <Movil key={vista} src={vista} titulo="Vista previa" ancho={360} className="mx-auto w-full max-w-[20rem]" />}
-          <p className="mt-[0.5rem] text-center text-[0.8rem] text-zinc-500">Con el contenido de ejemplo de la temática</p>
+      <div className="mx-auto grid w-full max-w-[32rem] gap-[1rem] px-[1rem] py-[1rem] lg:max-w-[60rem] lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:items-start lg:gap-x-[2.5rem]">
+        {/* En el móvil, en una columna: pestañas, vista previa y lo de cada pestaña. En pantalla grande, las pestañas y su contenido a la
+            izquierda y, a la derecha, la vista previa (fija al bajar) (display: contents lo reparte en el móvil) */}
+        <div className="contents lg:col-start-1 lg:row-start-1 lg:grid lg:gap-[1rem]">
+        {/* Dos pestañas arriba: Personalizar y Asistente. La vista previa se ve siempre, y debajo, lo de cada una */}
+        <div role="tablist" aria-label="Nuevo perfil" className="order-1 grid grid-cols-2 gap-[0.3rem] rounded-[0.75rem] bg-zinc-200 p-[0.25rem] lg:order-none">
+          {[
+            ['personalizar', 'Personalizar'],
+            ['asistente', 'Asistente'],
+          ].map(([clave, texto]) => (
+            <button
+              key={clave}
+              type="button"
+              role="tab"
+              aria-selected={pestana === clave}
+              onClick={() => setPestana(clave)}
+              className={`rounded-[0.55rem] py-[0.5rem] text-[0.95rem] font-semibold ${pestana === clave ? 'bg-white shadow-[0_0.05rem_0.2rem_rgb(0_0_0/0.15)]' : 'text-zinc-600'}`}
+            >
+              {texto}
+            </button>
+          ))}
         </div>
 
         {/* El negocio, para el asistente: con esto escribe el copy y busca las fotos al crear */}
-        <div className="grid gap-[0.4rem]">
+        {pestana === 'asistente' && (
+        <div className="order-3 grid gap-[0.4rem] lg:order-none">
           <Etiqueta texto="Cuéntale el negocio al asistente (opcional)">
             <textarea
               value={cuento}
@@ -1717,9 +1786,11 @@ function NuevoPerfil({ filas, recargar, abrir }) {
             Se inventa los textos y busca las fotos sobre tu diseño. Los colores solo los cambia si se lo pides. Vacío: se crea con el contenido de ejemplo.
           </p>
         </div>
+        )}
 
-        <div className="grid gap-[1rem]">
-          {/* Todo el diseño en un apartado que se pliega: cerrado, quedan el asistente y la vista previa a la vista */}
+        <div className="order-3 grid gap-[1rem] lg:order-none">
+          {/* Todo el diseño, abierto, en la pestaña Personalizar */}
+          {pestana === 'personalizar' && (
           <details open className="group/diseno rounded-[0.75rem] ring-1 ring-zinc-200">
             <summary className="flex cursor-pointer list-none items-center gap-[0.75rem] px-[0.85rem] py-[0.8rem] [&::-webkit-details-marker]:hidden">
               <span className="text-[1rem] font-bold">Diseño</span>
@@ -1727,31 +1798,25 @@ function NuevoPerfil({ filas, recargar, abrir }) {
             </summary>
             <div className="grid gap-[1rem] px-[0.85rem] pb-[0.85rem] pt-[0.2rem]">
           {/* 1. Temática: pone el contenido de ejemplo */}
-          <Plegable titulo="Temática del negocio" elegido={plantilla.nombre}>
-            <div className="flex flex-wrap gap-[0.4rem]">
-              {PLANTILLAS.map(p => (
-                <button key={p.clave} type="button" aria-pressed={tema === p.clave} onClick={() => setTema(p.clave)} className={opcion(tema === p.clave)}>
-                  {p.nombre}
-                </button>
-              ))}
-            </div>
-          </Plegable>
-
-          {/* 2. Producto */}
+          {/* 1. Producto */}
           <div className="grid gap-[0.4rem]">
             <span className={titulo}>Producto</span>
             <div className="grid grid-cols-3 gap-[0.3rem] rounded-[0.75rem] bg-zinc-200 p-[0.25rem]">
               {[
-                ['ficha', 'Ficha'],
                 ['miniweb', 'Miniweb'],
                 ['carta', 'Carta'],
+                ['ficha', 'Ficha'],
               ].map(([clave, texto]) => (
                 <button
                   key={clave}
                   type="button"
                   aria-pressed={producto === clave}
                   disabled={clave === 'carta' && !cartaBase}
-                  onClick={() => setProducto(clave)}
+                  onClick={() => {
+                    setProducto(clave)
+                    // Banner y Ficha no valen de portada de una miniweb: si estaba uno elegido, pasa a Editorial
+                    if (clave === 'miniweb' && SIN_PORTADA_MINIWEB.includes(hero)) setHero('editorial')
+                  }}
                   className={`rounded-[0.55rem] py-[0.5rem] text-[0.95rem] font-semibold disabled:opacity-40 ${producto === clave ? 'bg-white shadow-[0_0.05rem_0.2rem_rgb(0_0_0/0.15)]' : 'text-zinc-600'}`}
                 >
                   {texto}
@@ -1761,17 +1826,84 @@ function NuevoPerfil({ filas, recargar, abrir }) {
             {!cartaBase && <p className="text-[0.82rem] text-zinc-500">Esta temática todavía no tiene carta de ejemplo.</p>}
           </div>
 
+          {/* Una fila de iconos: 5 a la vista y un + que abre el resto, con el nombre de la elegida debajo */}
+          <div className="grid gap-[0.45rem]">
+            <span className={titulo}>Temática del negocio</span>
+            <div className="flex flex-wrap items-center gap-[0.4rem]">
+              {(masTemas ? PLANTILLAS : PLANTILLAS.slice(0, 5)).map(p => {
+                const Icono = ICONOS_TEMA[p.clave] ?? Store
+                return (
+                  <button
+                    key={p.clave}
+                    type="button"
+                    title={p.nombre}
+                    aria-label={`Temática ${p.nombre}`}
+                    aria-pressed={tema === p.clave}
+                    onClick={() => setTema(p.clave)}
+                    className={`flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 bg-white transition-transform duration-300 ${tema === p.clave ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
+                  >
+                    <Icono className="h-[1.3rem] w-[1.3rem]" strokeWidth={2} aria-hidden="true" />
+                  </button>
+                )
+              })}
+              <button
+                type="button"
+                aria-label={masTemas ? 'Ver menos temáticas' : 'Ver más temáticas'}
+                aria-expanded={masTemas}
+                onClick={() => setMasTemas(v => !v)}
+                className="flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 border-zinc-300 transition-transform duration-300 hover:scale-105"
+                style={{ background: 'conic-gradient(#E5484D, #F5A524, #F2D33B, #46A758, #2E9FD9, #5B5BD6, #B04BC4, #E5484D)', color: '#141414' }}
+              >
+                {masTemas ? <Minus className="h-[1.1rem] w-[1.1rem]" strokeWidth={3} aria-hidden="true" /> : <Plus className="h-[1.1rem] w-[1.1rem]" strokeWidth={3} aria-hidden="true" />}
+              </button>
+            </div>
+            <p className="text-[0.85rem] font-semibold">{plantilla.nombre}</p>
+          </div>
+
+          {/* Estructura de la miniweb (de momento, solo la Clásica de Chalaquita), como en el editor de un perfil */}
+          {producto === 'miniweb' && (
+            <Etiqueta texto="Estructura">
+              <select value="clasica" onChange={() => {}} className={CAMPO}>
+                <option value="clasica">Clásica: menú arriba, redes debajo y portada con las reseñas</option>
+              </select>
+            </Etiqueta>
+          )}
+
           {/* 3. Diseño, según el producto */}
           {!esCarta ? (
-            <Plegable titulo={producto === 'miniweb' ? 'Portada' : 'Diseño de arriba'} elegido={HEROS[hero]?.nombre}>
-              <div className="flex flex-wrap gap-[0.4rem]">
-                {heros.map(([clave, h]) => (
-                  <button key={clave} type="button" aria-pressed={hero === clave} onClick={() => setHero(clave)} className={opcion(hero === clave)}>
-                    {h.nombre}
-                  </button>
-                ))}
+            // Una fila de iconos: 5 a la vista y un + que abre el resto, con el nombre del elegido debajo
+            <div className="grid gap-[0.45rem]">
+              <span className={titulo}>{producto === 'miniweb' ? 'Portada' : 'Diseño de arriba'}</span>
+              <div className="flex flex-wrap items-center gap-[0.4rem]">
+                {(masDisenos ? herosEnOrden : herosEnOrden.slice(0, 5)).map(([clave, h]) => {
+                  const Icono = ICONOS_DISENO[clave] ?? Frame
+                  return (
+                    <button
+                      key={clave}
+                      type="button"
+                      title={h.nombre}
+                      aria-label={`Diseño ${h.nombre}`}
+                      aria-pressed={hero === clave}
+                      onClick={() => setHero(clave)}
+                      className={`flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 bg-white transition-transform duration-300 ${hero === clave ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
+                    >
+                      <Icono className="h-[1.3rem] w-[1.3rem]" strokeWidth={2} aria-hidden="true" />
+                    </button>
+                  )
+                })}
+                <button
+                  type="button"
+                  aria-label={masDisenos ? 'Ver menos diseños' : 'Ver más diseños'}
+                  aria-expanded={masDisenos}
+                  onClick={() => setMasDisenos(v => !v)}
+                  className="flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 border-zinc-300 transition-transform duration-300 hover:scale-105"
+                  style={{ background: 'conic-gradient(#E5484D, #F5A524, #F2D33B, #46A758, #2E9FD9, #5B5BD6, #B04BC4, #E5484D)', color: '#141414' }}
+                >
+                  {masDisenos ? <Minus className="h-[1.1rem] w-[1.1rem]" strokeWidth={3} aria-hidden="true" /> : <Plus className="h-[1.1rem] w-[1.1rem]" strokeWidth={3} aria-hidden="true" />}
+                </button>
               </div>
-            </Plegable>
+              <p className="text-[0.85rem] font-semibold">{HEROS[hero]?.nombre}</p>
+            </div>
           ) : (
             <Plegable titulo="Estilo de carta" elegido={estilos.find(f => f.carta === estilo)?.nombre}>
               <div className="flex flex-wrap gap-[0.4rem]">
@@ -1827,7 +1959,7 @@ function NuevoPerfil({ filas, recargar, abrir }) {
             titulo="Colores"
             elegido={
               <span className="flex justify-end gap-[0.25rem]">
-                {[colorPrincipal, ...(conCabecera ? [colorCabecera] : []), colorAcento, colorFondo, colorDelTexto, ...(producto === 'miniweb' ? [colorRedes] : [])].map((c, i) => (
+                {[colorPrincipal, ...(conCabecera ? [colorCabecera] : []), colorAcento, colorFondo, colorDelTexto, ...(producto === 'miniweb' ? [colorRedes, colorResena, colorInicio] : [])].map((c, i) => (
                   <span key={i} className="h-[1.1rem] w-[1.1rem] rounded-full ring-1 ring-zinc-300" style={{ background: c }} />
                 ))}
               </span>
@@ -1838,14 +1970,18 @@ function NuevoPerfil({ filas, recargar, abrir }) {
               ['Color principal', 'Botones, precios y lo que tiene que destacar.', colorPrincipal, setPrincipal],
               // Solo en los diseños con cabecera de color
               ...(conCabecera
-                ? [['Fondo de cabecera', producto === 'miniweb' ? 'La barra del menú de arriba.' : 'La parte de arriba, detrás de las fotos y el titular.', colorCabecera, setCabecera]]
+                ? [['Fondo de cabecera', producto === 'miniweb' ? 'La barra del menú de arriba y, con las portadas Polaroid y Banner, el fondo de toda la portada.' : 'La parte de arriba, detrás de las fotos y el titular.', colorCabecera, setCabecera]]
                 : []),
               ['Color de acento', 'Precios, subrayados de las pestañas y detalles.', colorAcento, setAcento],
               ['Color de fondo', 'El fondo de la página: claro u oscuro.', colorFondo, setFondo],
               ['Color del texto', 'Las letras sobre el fondo.', colorDelTexto, setColorTexto],
               // Solo en miniwebs: la franja de redes de debajo del menú
               ...(producto === 'miniweb'
-                ? [['Color de la barra de redes', 'La franja de redes de debajo del menú. Las letras e iconos se ponen en blanco o en oscuro solos.', colorRedes, setRedesColor]]
+                ? [
+                    ['Color de la barra de redes', 'La franja de redes de debajo del menú. Las letras e iconos se ponen en blanco o en oscuro solos.', colorRedes, setRedesColor],
+                    ['Fondo de la reseña', 'La zona de debajo de la portada, detrás de la reseña de Google. Las tarjetas de debajo toman un tono algo más oscuro.', colorResena, setFondoResena],
+                    ['Fondo del texto de Inicio', 'El bloque de texto que va debajo de la foto de la portada (titular, descripción y botón). Sin tocarlo, es el color de fondo de la página.', colorInicio, setFondoInicio],
+                  ]
                 : []),
             ].map(([nombreColor, ayuda, valor, poner]) => (
               <div key={nombreColor} className="grid gap-[0.3rem]">
@@ -1870,11 +2006,20 @@ function NuevoPerfil({ filas, recargar, abrir }) {
           </Etiqueta>
             </div>
           </details>
+          )}
 
           {error && <p className="text-[0.9rem] font-semibold text-red-600">{error}</p>}
           <button type="button" onClick={crear} disabled={!nombre.trim() || Boolean(creando)} className={BOTON}>
             {creando ?? `Crear ${producto === 'carta' ? 'carta' : producto === 'miniweb' ? 'miniweb' : 'ficha'}`}
           </button>
+        </div>
+        </div>
+
+        {/* Vista previa: el contenido de la temática con el diseño elegido. A 360 px de ancho por dentro, como el móvil bajo:
+            se ve lo mismo que verá el cliente. En pantalla grande, a la derecha y fija al bajar */}
+        <div className="order-2 lg:sticky lg:top-[1rem] lg:order-none lg:col-start-2 lg:row-start-1">
+          {vista && <Movil key={vista} src={vista} titulo="Vista previa" ancho={360} className="mx-auto w-full max-w-[20rem]" />}
+          <p className="mt-[0.5rem] text-center text-[0.8rem] text-zinc-500">Con el contenido de ejemplo de la temática</p>
         </div>
       </div>
     </details>

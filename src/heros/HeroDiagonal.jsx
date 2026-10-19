@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import TextoInicio from '../components/TextoInicio'
 import useVueltaPestanas from '../lib/useVueltaPestanas'
 import BotonCompartir from '../components/BotonCompartir'
 import Escena, { fotoDeRespaldo, tipoComun } from '../fichas/escenas'
@@ -13,7 +14,7 @@ import BarraPestanas from '../fichas/barras'
    (si no hay titulo, usa el de la primera pestaña: así vale con datos de otras demos) */
 
 // sinBarra: sin barra de pestañas, cuando hace de portada de una miniweb (la miniweb lleva su propio menú)
-export default function HeroDiagonal({ hero, nombre, sinBarra = false }) {
+export default function HeroDiagonal({ hero, nombre, sinBarra = false, inicio, irA }) {
   // Solo las pestañas que sabe pintar (las comunes)
   const pestanas = useMemo(() => (hero.pestanas ?? []).filter(p => tipoComun(p.tipo)), [hero.pestanas])
   const [activa, setActiva] = useState(0)
@@ -37,7 +38,7 @@ export default function HeroDiagonal({ hero, nombre, sinBarra = false }) {
     // Cualquier toque en el hero para la vuelta de presentación
     <div className="flex flex-1 flex-col" onPointerDown={parar}>
       {/* La foto ocupa el alto que sobra, para que todo quepa en una pantalla */}
-      <div className="relative min-h-[15rem] flex-1">
+      <div className={`relative flex-1 ${sinBarra && inicio ? 'min-h-[8rem]' : 'min-h-[15rem]'}`}>
         {/* El corte diagonal solo recorta la foto; el texto va fuera para que no lo corte */}
         <div className="absolute inset-0 overflow-hidden bg-demo-surface" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0 86%)' }}>
           {pestanas.map((p, i) => (
@@ -69,6 +70,7 @@ export default function HeroDiagonal({ hero, nombre, sinBarra = false }) {
         </div>
       </div>
 
+      {sinBarra && <TextoInicio inicio={inicio} irA={irA} fondo={hero.fondoInicio} color="text-demo-text" className="px-[1.25rem] pb-[1rem] pt-[1rem]" />}
       {!sinBarra && (
         <div className="px-[1.25rem] pt-[1.4rem]">
           <BarraPestanas estilo={hero.barra ?? 'subrayado'} pestanas={pestanas} activa={activa} tocar={tocar} />

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import TextoInicio from '../components/TextoInicio'
 import NombreMarca from '../components/NombreMarca'
 import { Mail, MessageCircle, Phone, Play } from 'lucide-react'
 import Img from '../components/Img'
@@ -213,7 +214,7 @@ const ESCENAS = {
 const escenaDe = tipo => ESCENAS[tipo] ?? (tipoComun(tipo) === 'contacto' ? EscenaCita : null)
 
 // sinBarra: sin barra de pestañas, cuando hace de portada de una miniweb (la miniweb lleva su propio menú)
-export default function HeroFicha({ hero, nombre, redes, redesTexto, sinBarra = false }) {
+export default function HeroFicha({ hero, nombre, redes, redesTexto, sinBarra = false, inicio, irA }) {
   // Solo las pestañas que sabe pintar (las suyas y las comunes)
   const pestanas = useMemo(() => (hero.pestanas ?? []).filter(p => ESCENAS[p.tipo] || tipoComun(p.tipo)), [hero.pestanas])
   const respaldo = fotoDeRespaldo(pestanas)
@@ -260,6 +261,7 @@ export default function HeroFicha({ hero, nombre, redes, redesTexto, sinBarra = 
         )}
       </div>
 
+      {sinBarra && <TextoInicio inicio={inicio} irA={irA} fondo={hero.fondoInicio} color="text-demo-text" className="mt-[0.8rem]" />}
       {/* Barra de pestañas (pieza); la suya, carpetas pegadas a la ficha: la activa es del mismo color que la ficha */}
       {!sinBarra && (
         <div className={pegada ? 'mt-[0.9rem]' : 'mb-[0.7rem] mt-[0.9rem]'}>
