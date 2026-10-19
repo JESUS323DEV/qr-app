@@ -1023,11 +1023,7 @@ function Diseno({ tipo, slug, vista, original, cambiar, abrir }) {
 
         {producto === 'miniweb' && (
           <>
-            <Etiqueta texto="Estructura">
-              <select value="clasica" onChange={() => {}} className={CAMPO}>
-                <option value="clasica">Clásica: menú arriba, redes debajo y portada con las reseñas</option>
-              </select>
-            </Etiqueta>
+            <EstructuraMiniweb valores={hero} cambiar={(clave, valor) => cambiar(`hero.${clave}`, valor === ESTRUCTURA_DEFECTO[clave] ? undefined : valor)} />
             <Etiqueta texto="Portada">
               <select value={hero.portada ?? ''} onChange={e => cambiar('hero.portada', e.target.value || undefined)} className={CAMPO}>
                 {!hero.portada && <option value="">La suya</option>}
@@ -1514,6 +1510,44 @@ const ICONOS_TEMA = {
   barberia: Armchair,
 }
 
+// Las piezas que se pueden mover en una miniweb (hero.redesEn, hero.menuEn y hero.compartirEn), con su valor de siempre primero
+const ESTRUCTURA_MINIWEB = [
+  ['redesEn', 'Redes', [['barra', 'Barra arriba'], ['lateral', 'Lateral'], ['boton', 'Bajo el botón']]],
+  ['menuEn', 'Menú de navegación (Inicio, Menú, Horario...)', [['arriba', 'Arriba'], ['abajo', 'Abajo']]],
+  ['compartirEn', 'Compartir', [['diseno', 'Como el diseño'], ['abajo', 'Junto al botón'], ['redes', 'En las redes']]],
+]
+const ESTRUCTURA_DEFECTO = { redesEn: 'barra', menuEn: 'arriba', compartirEn: 'diseno' }
+
+// Esas piezas, cada una con sus opciones. valores: lo elegido (sin elegir, lo de siempre); cambiar(clave, valor)
+function EstructuraMiniweb({ valores, cambiar }) {
+  return (
+    <div className="grid gap-[0.7rem]">
+      <span className="text-[0.8rem] font-semibold text-zinc-500">Estructura: dónde va cada pieza</span>
+      {ESTRUCTURA_MINIWEB.map(([clave, texto, opciones]) => {
+        const actual = valores[clave] ?? ESTRUCTURA_DEFECTO[clave]
+        return (
+          <div key={clave} className="grid gap-[0.3rem]">
+            <span className="text-[0.8rem] text-zinc-500">{texto}</span>
+            <div className="grid gap-[0.3rem] rounded-[0.75rem] bg-zinc-200 p-[0.25rem]" style={{ gridTemplateColumns: `repeat(${opciones.length}, minmax(0, 1fr))` }}>
+              {opciones.map(([valor, etiqueta]) => (
+                <button
+                  key={valor}
+                  type="button"
+                  aria-pressed={actual === valor}
+                  onClick={() => cambiar(clave, valor)}
+                  className={`rounded-[0.55rem] px-[0.2rem] py-[0.5rem] text-[0.85rem] font-semibold ${actual === valor ? 'bg-white shadow-[0_0.05rem_0.2rem_rgb(0_0_0/0.15)]' : 'text-zinc-600'}`}
+                >
+                  {etiqueta}
+                </button>
+              ))}
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 // Diseños de arriba que de momento no salen como portada de una miniweb
 const SIN_PORTADA_MINIWEB = ['banner', 'ficha', 'portada', 'historias']
 
@@ -1557,6 +1591,11 @@ function NuevoPerfil({ filas, recargar, abrir }) {
   const [fondoResena, setFondoResena] = useState('')
   // Solo en miniwebs: el fondo del bloque de texto de la portada de Inicio; sin elegir, el color de fondo de la página
   const [fondoInicio, setFondoInicio] = useState('')
+  // Solo en miniwebs: dónde van las redes, el menú y compartir (lo no tocado, como siempre)
+  const [estructura, setEstructura] = useState({})
+  // El tamaño del nombre del negocio arriba: 'xs', 'md' (el de cada diseño) o 'xl'
+  const [tamanoNombre, setTamanoNombre] = useState('md')
+  const lugares = Object.entries(estructura).filter(([clave, valor]) => valor !== ESTRUCTURA_DEFECTO[clave])
   // Fondo de cabecera: solo en los diseños que la tienen (sin elegir, el principal, como siempre)
   const [cabecera, setCabecera] = useState('')
   // Lo que se le cuenta al asistente del negocio: con esto se inventa el copy y busca las fotos al crear
@@ -1610,6 +1649,8 @@ function NuevoPerfil({ filas, recargar, abrir }) {
     producto === 'miniweb' && redesColor && `redes=${redesColor.slice(1)}`,
     producto === 'miniweb' && fondoResena && `resena=${fondoResena.slice(1)}`,
     producto === 'miniweb' && fondoInicio && `inicio=${fondoInicio.slice(1)}`,
+    !esCarta && tamanoNombre !== 'md' && `tamano=${tamanoNombre}`,
+    ...(producto === 'miniweb' ? lugares.map(([clave, valor]) => `${clave.toLowerCase()}=${valor}`) : []),
     conCabecera && cabecera && `cabecera=${cabecera.slice(1)}`,
     logoElegido && `logo=${encodeURIComponent(logoElegido)}`,
   ]
@@ -1647,7 +1688,11 @@ function NuevoPerfil({ filas, recargar, abrir }) {
       const tipografia = TIPOGRAFIAS.find(t => t.id === letra)
       // Miniweb: el fondo de la reseña elegido (y las tarjetas de debajo, un tono más oscuro); sin elegir, el de la demo
       const cuerpoResena = producto === 'miniweb' && fondoResena ? { cuerpo: { ...(marcaBase?.cuerpo ?? {}), fondo: fondoResena, card: `color-mix(in srgb, ${fondoResena} 90%, black)` } } : {}
-      const inicioCambio = producto === 'miniweb' && fondoInicio ? { 'hero.fondoInicio': fondoInicio } : {}
+      const inicioCambio = {
+        ...(!esCarta && tamanoNombre !== 'md' ? { 'hero.tamanoNombre': tamanoNombre } : {}),
+        ...(producto === 'miniweb' && fondoInicio ? { 'hero.fondoInicio': fondoInicio } : {}),
+        ...(producto === 'miniweb' ? Object.fromEntries(lugares.map(([clave, valor]) => [`hero.${clave}`, valor])) : {}),
+      }
       let cambios
       let base
       if (esCarta) {
@@ -1861,14 +1906,6 @@ function NuevoPerfil({ filas, recargar, abrir }) {
             <p className="text-[0.85rem] font-semibold">{plantilla.nombre}</p>
           </div>
 
-          {/* Estructura de la miniweb (de momento, solo la Clásica de Chalaquita), como en el editor de un perfil */}
-          {producto === 'miniweb' && (
-            <Etiqueta texto="Estructura">
-              <select value="clasica" onChange={() => {}} className={CAMPO}>
-                <option value="clasica">Clásica: menú arriba, redes debajo y portada con las reseñas</option>
-              </select>
-            </Etiqueta>
-          )}
 
           {/* 3. Diseño, según el producto */}
           {!esCarta ? (
@@ -1916,6 +1953,8 @@ function NuevoPerfil({ filas, recargar, abrir }) {
               </div>
             </Plegable>
           )}
+          {/* Estructura de la miniweb: dónde va cada pieza (redes, menú de navegación y compartir) */}
+          {producto === 'miniweb' && <EstructuraMiniweb valores={estructura} cambiar={(clave, valor) => setEstructura(e => ({ ...e, [clave]: valor }))} />}
           {producto === 'ficha' && (
             <Plegable titulo="Estilo de pestañas" elegido={barra ? BARRAS[barra]?.nombre : 'El suyo'}>
               <div className="flex flex-wrap gap-[0.4rem]">
@@ -1956,6 +1995,25 @@ function NuevoPerfil({ filas, recargar, abrir }) {
             <Etiqueta texto={!esCarta && marcaCon === 'logo' ? 'Nombre del negocio (para la dirección de la página y Google)' : 'Nombre del negocio'}>
               <input value={nombre} onChange={e => setNombre(e.target.value)} className={CAMPO} placeholder="Peluquería Ranita" />
             </Etiqueta>
+            {/* El tamaño del nombre arriba: XS, MD (el de cada diseño) o XL */}
+            {!esCarta && (
+              <div className="grid gap-[0.3rem]">
+                <span className={titulo}>Tamaño del nombre</span>
+                <div className="grid grid-cols-3 gap-[0.3rem] rounded-[0.75rem] bg-zinc-200 p-[0.25rem]">
+                  {['xs', 'md', 'xl'].map(t => (
+                    <button
+                      key={t}
+                      type="button"
+                      aria-pressed={tamanoNombre === t}
+                      onClick={() => setTamanoNombre(t)}
+                      className={`rounded-[0.55rem] py-[0.5rem] text-[0.85rem] font-semibold uppercase ${tamanoNombre === t ? 'bg-white shadow-[0_0.05rem_0.2rem_rgb(0_0_0/0.15)]' : 'text-zinc-600'}`}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
           {/* Colores: cada uno en su fila, con para qué sirve; cerrado, las cuatro muestras */}
           <Plegable

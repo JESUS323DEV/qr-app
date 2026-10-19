@@ -2,7 +2,7 @@ import { useContext, useEffect, useState } from 'react'
 import { X } from 'lucide-react'
 import Img from '../components/Img'
 import BotonCompartir from '../components/BotonCompartir'
-import { LogoNegocio } from '../components/NombreMarca'
+import { LogoNegocio, useFactorNombre } from '../components/NombreMarca'
 import { fotosDe } from '../fichas/escenas'
 
 // Líneas de ejemplo para el pie de la foto abierta (inventadas, para un restaurante), mientras las fotos no traigan
@@ -25,6 +25,7 @@ const PIES_EJEMPLO = [
    inicio: la pestaña de Inicio de la miniweb, con sus textos. irA: lleva a otra página de la miniweb */
 export default function HeroRetratoWeb({ hero, nombre, lema, inicio, irA }) {
   const logo = useContext(LogoNegocio)
+  const factorNombre = useFactorNombre()
   const fotosDeLaPestana = fotosDe(hero.pestanas?.[0])
   const fotos = fotosDeLaPestana.map(f => f.src)
   // La foto abierta en grande (su número en la fila) o ninguna
@@ -75,7 +76,7 @@ export default function HeroRetratoWeb({ hero, nombre, lema, inicio, irA }) {
           {hero.retrato && logo ? (
             <img src={logo} alt={nombre} className="max-h-[2.4rem] max-w-[9rem] object-contain" />
           ) : (
-            <p className="font-demo-heading text-[1.9rem] font-bold leading-none">{nombre}</p>
+            <p className="font-demo-heading font-bold leading-none" style={{ fontSize: `${1.9 * factorNombre}rem` }}>{nombre}</p>
           )}
           {hero.profesion && <p className="text-[0.85rem] text-white/75">{hero.profesion}</p>}
         </div>
@@ -101,7 +102,7 @@ export default function HeroRetratoWeb({ hero, nombre, lema, inicio, irA }) {
               {inicio.boton}
             </button>
           )}
-          <BotonCompartir titulo={nombre} />
+          <BotonCompartir titulo={nombre} alLado />
         </div>
       </div>
 

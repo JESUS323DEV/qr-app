@@ -228,7 +228,7 @@ export default function HeroFullbleed({ hero, nombre, sinBarra = false, inicio, 
 
         {/* Portada de una miniweb: el texto de Inicio encima de la foto, abajo, sobre un degradado oscuro para que se lea */}
         {sinBarra && (
-          <TextoInicio inicio={inicio} irA={irA} color="text-white" className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/55 to-transparent px-[1.25rem] pb-[0.4rem] pt-[3rem]" />
+          <TextoInicio inicio={inicio} irA={irA} nombre={nombre} color="text-white" className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/55 to-transparent px-[1.25rem] pb-[0.4rem] pt-[3rem]" />
         )}
       </div>
 

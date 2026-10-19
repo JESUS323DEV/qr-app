@@ -78,7 +78,7 @@ export default function HeroDiagonal({ hero, nombre, sinBarra = false, inicio, i
         </div>
       </div>
 
-      {sinBarra && <TextoInicio inicio={inicio} irA={irA} fondo={hero.fondoInicio} color="text-demo-text" className="px-[1.25rem] pb-[1rem] pt-[1rem]" />}
+      {sinBarra && <TextoInicio inicio={inicio} irA={irA} nombre={nombre} fondo={hero.fondoInicio} color="text-demo-text" className="px-[1.25rem] pb-[1rem] pt-[1rem]" />}
       {!sinBarra && (
         <div className="px-[1.25rem] pt-[1.4rem]">
           <BarraPestanas estilo={hero.barra ?? 'subrayado'} pestanas={pestanas} activa={activa} tocar={tocar} />

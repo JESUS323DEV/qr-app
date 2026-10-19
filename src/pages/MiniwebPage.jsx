@@ -14,7 +14,7 @@ import Carrusel from '../components/Carrusel'
 import GaleriaVideos from '../components/GaleriaVideos'
 import { COLORES_REDES } from '../lib/coloresRedes'
 import { secuenciaDemos, tipoDe } from '../lib/tematicas'
-import { LogoNegocio } from '../components/NombreMarca'
+import { LogoNegocio, TamanoNombre } from '../components/NombreMarca'
 
 function LogoGoogle({ compacta }) {
   return (
@@ -267,10 +267,12 @@ export default function MiniwebPage({ demo = false }) {
       {/* key: al pasar a otra demo el hero empieza de cero */}
       {/* El logo del negocio (si tiene): los diseños de arriba lo ponen en lugar del nombre escrito */}
       <LogoNegocio.Provider value={negocio.logo ?? null}>
+        <TamanoNombre.Provider value={negocio.hero?.tamanoNombre ?? 'md'}>
         <main key={negocio.slug} className="mx-auto flex min-h-svh w-full max-w-[30rem] flex-col bg-demo-bg">
           <Hero hero={negocio.hero} nombre={negocio.nombre} lema={negocio.lema} redes={negocio.redes} redesTexto={negocio.redesTexto} cuerpo={<Cuerpo negocio={negocio} soloResena={Boolean(negocio.hero.redesArriba)} compacta />} />
           {!paginaCompleta && <Cuerpo negocio={negocio} />}
         </main>
+        </TamanoNombre.Provider>
       </LogoNegocio.Provider>
     </div>
   )

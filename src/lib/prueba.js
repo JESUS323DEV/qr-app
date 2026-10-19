@@ -5,6 +5,8 @@ import { TIPOGRAFIAS } from '../asistente/tipografias'
    cambia el nombre, el color principal, el de acento, el del texto y la tipografía (una de asistente/tipografias.js).
    &redes=F2EDE4: el fondo de la barra de redes de las miniwebs. &cabecera=3D5A40: el fondo de cabecera.
    &logo=<dirección>: el logo en lugar del nombre escrito.
+   &redesen=lateral|boton, &menuen=abajo, &compartiren=abajo|redes: dónde van las redes, el menú y compartir en las miniwebs.
+   &tamano=xs|xl: el tamaño del nombre del negocio (sin él, md, el de cada diseño).
    &inicio=FFF7EA: el fondo del bloque de texto de la portada de Inicio de las miniwebs.
    &resena=F4EFF9: el fondo de la zona de debajo de la portada de las miniwebs (reseña y tarjetas, estas algo más oscuras).
    Nunca se usa en las páginas de clientes. */
@@ -31,13 +33,21 @@ export function marcaDePrueba(marca, params) {
   const logo = deSupabase(params.get('logo'))
   const resena = hex(params.get('resena'))
   const inicio = hex(params.get('inicio'))
-  if (!nombre && !principal && !acento && !texto && !fondo && !letra && !redes && !cabecera && !logo && !resena && !inicio) return marca
+  // Tamaño del nombre (hero.tamanoNombre)
+  const tamanoNombre = ['xs', 'xl'].includes(params.get('tamano')) ? params.get('tamano') : null
+  // Dónde van las redes, el menú y compartir (solo los valores que existen)
+  const lugares = {
+    ...(['lateral', 'boton'].includes(params.get('redesen')) ? { redesEn: params.get('redesen') } : {}),
+    ...(params.get('menuen') === 'abajo' ? { menuEn: 'abajo' } : {}),
+    ...(['abajo', 'redes'].includes(params.get('compartiren')) ? { compartirEn: params.get('compartiren') } : {}),
+  }
+  if (!nombre && !principal && !acento && !texto && !fondo && !letra && !redes && !cabecera && !logo && !resena && !inicio && !tamanoNombre && !Object.keys(lugares).length) return marca
   return {
     ...marca,
     ...(nombre ? { nombre } : {}),
     ...(logo ? { logo } : {}),
     ...(resena ? { cuerpo: { ...marca.cuerpo, fondo: resena, card: `color-mix(in srgb, ${resena} 90%, black)` } } : {}),
-    ...((redes || inicio) && marca.hero ? { hero: { ...marca.hero, ...(redes ? { colorRedes: redes } : {}), ...(inicio ? { fondoInicio: inicio } : {}) } } : {}),
+    ...((redes || inicio || tamanoNombre || Object.keys(lugares).length) && marca.hero ? { hero: { ...marca.hero, ...(redes ? { colorRedes: redes } : {}), ...(inicio ? { fondoInicio: inicio } : {}), ...(tamanoNombre ? { tamanoNombre } : {}), ...lugares } } : {}),
     theme: {
       ...marca.theme,
       colors: { ...marca.theme?.colors, ...(principal ? { primary: principal } : {}), ...(acento ? { accent: acento } : {}), ...(texto ? { text: texto } : {}), ...(fondo ? { bg: fondo } : {}), ...(cabecera ? { header: cabecera } : {}) },

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { CompartirJuntoAlBoton } from '../components/BotonCompartir'
 import NombreMarca from '../components/NombreMarca'
 import { X } from 'lucide-react'
 import Img from '../components/Img'
@@ -147,13 +148,16 @@ export default function HeroPolaroid({ hero, nombre, lema, sinBarra = false, ini
           )}
           {inicio.descripcion && <p className="mt-[0.4rem] max-w-[22rem] text-[0.88rem] leading-[1.4] text-white/85">{inicio.descripcion}</p>}
           {inicio.boton && inicio.botonA && (
-            <button
-              type="button"
-              onClick={() => irA?.(inicio.botonA)}
-              className="mt-[0.65rem] inline-flex min-h-[2.5rem] items-center rounded-[0.6rem] bg-demo-accent px-[1.1rem] text-[0.92rem] font-semibold text-demo-text"
-            >
-              {inicio.boton}
-            </button>
+            <div className="mt-[0.65rem] flex flex-wrap items-center gap-[0.75rem]">
+              <button
+                type="button"
+                onClick={() => irA?.(inicio.botonA)}
+                className="inline-flex min-h-[2.5rem] items-center rounded-[0.6rem] bg-demo-accent px-[1.1rem] text-[0.92rem] font-semibold text-demo-text"
+              >
+                {inicio.boton}
+              </button>
+              <CompartirJuntoAlBoton titulo={nombre} />
+            </div>
           )}
         </div>
       ) : sinBarra ? (

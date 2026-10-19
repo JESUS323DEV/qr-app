@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { CompartirJuntoAlBoton } from '../components/BotonCompartir'
 import NombreMarca from '../components/NombreMarca'
 import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 import Img from '../components/Img'
@@ -21,7 +22,7 @@ const DEGRADADO = 'bg-gradient-to-t from-black/70 via-black/10 to-transparent'
 // fuera de ella, la descripción y el botón. Solo cambia la foto de fondo, que pasa sola cada 4 s o al tocar una flecha;
 // el titular no se mueve
 const TURNO_GALERIA_MS = 4000
-function GaleriaMiniweb({ fotos, inicio, irA }) {
+function GaleriaMiniweb({ fotos, inicio, irA, nombre }) {
   const [actual, setActual] = useState(0)
   const n = fotos.length
   // Cada cambio, también el manual, reinicia los 4 s
@@ -69,13 +70,16 @@ function GaleriaMiniweb({ fotos, inicio, irA }) {
         <div className="shrink-0 pt-[0.7rem] text-demo-text">
           {inicio.descripcion && <p className="text-[0.9rem] leading-[1.4] opacity-85">{inicio.descripcion}</p>}
           {inicio.boton && inicio.botonA && (
-            <button
-              type="button"
-              onClick={() => irA?.(inicio.botonA)}
-              className={`inline-flex min-h-[2.5rem] items-center rounded-[0.6rem] bg-demo-accent px-[1.1rem] text-[0.92rem] font-semibold text-demo-text ${inicio.descripcion ? 'mt-[0.6rem]' : ''}`}
-            >
-              {inicio.boton}
-            </button>
+            <div className={`flex flex-wrap items-center gap-[0.75rem] ${inicio.descripcion ? 'mt-[0.6rem]' : ''}`}>
+              <button
+                type="button"
+                onClick={() => irA?.(inicio.botonA)}
+                className="inline-flex min-h-[2.5rem] items-center rounded-[0.6rem] bg-demo-accent px-[1.1rem] text-[0.92rem] font-semibold text-demo-text"
+              >
+                {inicio.boton}
+              </button>
+              <CompartirJuntoAlBoton titulo={nombre} />
+            </div>
           )}
         </div>
       )}
@@ -208,7 +212,7 @@ export default function HeroGaleria({ hero, nombre, lema, sinBarra = false, inic
             className={`absolute inset-0 transition-opacity duration-500 ${i === activa ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
           >
             {tipoComun(p.tipo) === 'fotos' && galeriaMiniweb ? (
-              <GaleriaMiniweb fotos={fotosDe(p)} inicio={inicio} irA={irA} />
+              <GaleriaMiniweb fotos={fotosDe(p)} inicio={inicio} irA={irA} nombre={nombre} />
             ) : tipoComun(p.tipo) === 'fotos' ? (
               <Mosaico fotos={fotosDe(p)} abrir={setVisor} />
             ) : (

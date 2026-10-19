@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { CompartirJuntoAlBoton } from '../components/BotonCompartir'
 import NombreMarca from '../components/NombreMarca'
 import useVueltaPestanas from '../lib/useVueltaPestanas'
 import BotonCompartir from '../components/BotonCompartir'
@@ -84,13 +85,16 @@ export default function HeroMosaico({ hero, nombre, lema, sinBarra = false, inic
         <div className="px-[1.25rem] pb-[1rem] pt-[0.7rem]">
           {inicio.descripcion && <p className="max-w-[22rem] text-[0.9rem] leading-[1.4] opacity-85">{inicio.descripcion}</p>}
           {inicio.boton && inicio.botonA && (
-            <button
-              type="button"
-              onClick={() => irA?.(inicio.botonA)}
-              className={`inline-flex min-h-[2.5rem] items-center rounded-[0.6rem] bg-demo-accent px-[1.1rem] text-[0.92rem] font-semibold text-demo-text ${inicio.descripcion ? 'mt-[0.6rem]' : ''}`}
-            >
-              {inicio.boton}
-            </button>
+            <div className={`flex flex-wrap items-center gap-[0.75rem] ${inicio.descripcion ? 'mt-[0.6rem]' : ''}`}>
+              <button
+                type="button"
+                onClick={() => irA?.(inicio.botonA)}
+                className="inline-flex min-h-[2.5rem] items-center rounded-[0.6rem] bg-demo-accent px-[1.1rem] text-[0.92rem] font-semibold text-demo-text"
+              >
+                {inicio.boton}
+              </button>
+              <CompartirJuntoAlBoton titulo={nombre} />
+            </div>
           )}
         </div>
       ) : sinBarra ? (

@@ -273,7 +273,7 @@ export default function HeroEditorial({ hero, nombre, lema, sinBarra = false, in
         </div>
       </div>
 
-      {sinBarra && <TextoInicio inicio={inicio} irA={irA} fondo={hero.fondoInicio} color="text-demo-text" className="px-[1.25rem] pt-[1.1rem]" />}
+      {sinBarra && <TextoInicio inicio={inicio} irA={irA} nombre={nombre} fondo={hero.fondoInicio} color="text-demo-text" className="px-[1.25rem] pt-[1.1rem]" />}
       {!sinBarra && (
         <div className="px-[1.25rem] pt-[1.1rem]">
           <BarraPestanas estilo={hero.barra ?? 'revista'} pestanas={pestanas} activa={activa} tocar={tocar} />

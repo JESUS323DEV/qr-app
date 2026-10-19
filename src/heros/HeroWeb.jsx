@@ -3,7 +3,7 @@ import NombreMarca from '../components/NombreMarca'
 import { ArrowUpRight, CalendarDays, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
 import Img from '../components/Img'
 import { SocialIcon } from '../components/SocialIcons'
-import BotonCompartir from '../components/BotonCompartir'
+import BotonCompartir, { LugarCompartir } from '../components/BotonCompartir'
 import { enlaceWhatsapp } from '../lib/whatsapp'
 import { ALERGENOS } from '../cartas'
 import useVueltaPestanas from '../lib/useVueltaPestanas'
@@ -595,14 +595,52 @@ function PaginaVacia() {
    sin su barra, con el cuerpo (reseña y redes) debajo. */
 
 // Portada: el hero de ficha elegido (hero.portada), solo con sus fotos, y el cuerpo debajo
-function PaginaPortada({ pestana, cuerpo, negocio, lema, portada, heroBase, inicio, irA }) {
+// Dónde van las redes y compartir (hero.redesEn: 'barra' | 'lateral' | 'boton'; hero.compartirEn: 'diseno' | 'abajo'):
+// en columna al lado de la portada, o en una fila justo debajo de ella (con compartir)
+function PaginaPortada({ pestana, cuerpo, negocio, lema, portada, heroBase, inicio, irA, redes }) {
   // Retrato tiene su versión para miniwebs (con los textos del Inicio y siempre tres fotos); el de fichas no se toca
   const Portada = portada === 'retrato' ? HeroRetratoWeb : HEROS[portada]?.Componente
+  const redesEn = heroBase.redesEn ?? 'barra'
+  // Compartir abajo: al lado del botón de la portada (cada diseño lo pone ahí); el suyo de siempre no se pinta
+  const lugarCompartir = heroBase.compartirEn === 'abajo' ? 'boton' : heroBase.compartirEn === 'redes' ? 'redes' : 'diseno'
+  const compartirEnRedes = heroBase.compartirEn === 'redes'
+  const hayRedes = redes?.length > 0
+  // Con las redes bajo el botón, la fila es una barra con el color de la barra de redes (hero.colorRedes o, sin él, el del
+  // texto), con los iconos en blanco u oscuro según ese color, como la barra de arriba
+  const conBarra = redesEn === 'boton' && hayRedes
+  const barraClara = esClaro(heroBase.colorRedes)
+  const iconos = (clase, colorIcono) =>
+    redes.map(r => (
+      <a key={r.platform} href={r.href} target="_blank" rel="noreferrer" aria-label={r.platform} className={`transition-opacity hover:opacity-75 ${colorIcono}`}>
+        <SocialIcon platform={r.platform} className={clase} />
+      </a>
+    ))
   return (
     <div className="flex h-full flex-col overflow-y-auto [scrollbar-width:none]">
-      <div className="flex min-h-[22rem] flex-1 flex-col">
-        {Portada && <Portada hero={{ ...heroBase, diseno: portada, pestanas: [pestana] }} nombre={negocio} lema={lema} inicio={inicio} irA={irA} sinBarra />}
+      <div className="relative flex min-h-[22rem] flex-1 flex-col">
+        <LugarCompartir.Provider value={lugarCompartir}>
+          {Portada && <Portada hero={{ ...heroBase, diseno: portada, pestanas: [pestana] }} nombre={negocio} lema={lema} inicio={inicio} irA={irA} sinBarra />}
+        </LugarCompartir.Provider>
+        {/* Redes en lateral: una columna de iconos pegada al lado derecho de la portada */}
+        {redesEn === 'lateral' && hayRedes && (
+          <div className="absolute right-[0.5rem] top-1/2 z-10 flex -translate-y-1/2 flex-col items-center gap-[0.75rem] rounded-full bg-black/45 px-[0.5rem] py-[0.8rem] backdrop-blur-sm">
+            {iconos('h-[1.05rem] w-[1.05rem]', 'text-white')}
+            {compartirEnRedes && <BotonCompartir titulo={negocio} soloIcono alLado className="text-white" />}
+          </div>
+        )}
       </div>
+      {/* Debajo de la portada: las redes en fila (bajo el botón), como una barra */}
+      {conBarra && (
+        <div
+          className={`flex items-center justify-center gap-[1rem] px-[1.25rem] py-[0.55rem] ${heroBase.colorRedes ? '' : 'bg-demo-text'}`}
+          style={heroBase.colorRedes ? { background: heroBase.colorRedes } : undefined}
+        >
+          <div className="flex items-center gap-[0.9rem]">
+            {iconos('h-[1.1rem] w-[1.1rem]', barraClara ? 'text-[#141414]/85' : 'text-white/85')}
+            {compartirEnRedes && <BotonCompartir titulo={negocio} soloIcono alLado className={barraClara ? 'text-[#141414]/85' : 'text-white/85'} />}
+          </div>
+        </div>
+      )}
       {cuerpo}
     </div>
   )
@@ -712,14 +750,15 @@ const esClaro = color => {
 }
 
 // La barra de redes, debajo del menú: hero.redesArriba y hero.colorRedes
-function BarraRedes({ hero, redes, redesTexto }) {
-  if (!hero.redesArriba || !redes?.length) return null
+function BarraRedes({ hero, redes, redesTexto, nombre, className = '' }) {
+  // Con las redes en lateral o bajo el botón, no hay barra
+  if (!hero.redesArriba || !redes?.length || ['lateral', 'boton'].includes(hero.redesEn)) return null
   // Su fondo: hero.colorRedes o, si no lleva, el color del texto. Letras e iconos en blanco sobre fondo oscuro y en
   // oscuro sobre fondo claro
   const redesClaras = esClaro(hero.colorRedes)
   return (
     <div
-      className={`flex items-center justify-between gap-[1rem] px-[1.25rem] py-[0.45rem] ${hero.colorRedes ? '' : 'bg-demo-text'} ${redesClaras ? 'text-[#141414]' : 'text-white'}`}
+      className={`flex items-center justify-between gap-[1rem] px-[1.25rem] py-[0.45rem] ${hero.colorRedes ? '' : 'bg-demo-text'} ${redesClaras ? 'text-[#141414]' : 'text-white'} ${className}`}
       style={hero.colorRedes ? { background: hero.colorRedes } : undefined}
     >
       <p className={`text-[0.78rem] ${redesClaras ? 'text-[#141414]/75' : 'text-white/75'}`}>{redesTexto ?? 'Síguenos en redes'}</p>
@@ -736,6 +775,8 @@ function BarraRedes({ hero, redes, redesTexto }) {
             <SocialIcon platform={r.platform} className="h-[1.05rem] w-[1.05rem]" />
           </a>
         ))}
+        {/* Compartir 'en las redes': un icono más al final */}
+        {hero.compartirEn === 'redes' && <BotonCompartir titulo={nombre} soloIcono alLado className={redesClaras ? 'text-[#141414]/85' : 'text-white/85'} />}
       </div>
     </div>
   )
@@ -766,17 +807,20 @@ export default function HeroWeb({ hero, nombre, lema, cuerpo, redes, redesTexto 
     if (i !== -1) tocar(i)
   }
 
+  // El menú, arriba (como siempre) o abajo del todo, como una app (hero.menuEn)
+  const menuAbajo = hero.menuEn === 'abajo'
+
   return (
     // Cualquier toque en la página para la vuelta de presentación
     <div className="flex flex-1 flex-col" onPointerDown={parar}>
       {/* Menú con un estilo de pestañas de las fichas (hero.barra), sobre el fondo de la marca */}
       {hero.barra ? (
-        <header className="bg-demo-bg px-[1.25rem] pb-[0.5rem] pt-[0.7rem]">
+        <header className={`${menuAbajo ? 'order-3' : 'order-1'} bg-demo-bg px-[1.25rem] pb-[0.5rem] pt-[0.7rem]`}>
           <BarraPestanas estilo={hero.barra} pestanas={pestanas} activa={activa} tocar={tocar} />
         </header>
       ) : (
       /* Barra de navegación, como la de una web */
-      <header className="bg-demo-header px-[1.25rem] pt-[0.7rem] text-white">
+      <header className={`${menuAbajo ? 'order-3' : 'order-1'} bg-demo-header px-[1.25rem] pt-[0.7rem] text-white`}>
         <nav className="flex justify-between">
           {pestanas.map((p, i) => (
             <button
@@ -801,12 +845,12 @@ export default function HeroWeb({ hero, nombre, lema, cuerpo, redes, redesTexto 
       )}
 
       {/* Redes en una barra debajo del menú (hero.redesArriba), en todas las páginas */}
-      <BarraRedes hero={hero} redes={redes} redesTexto={redesTexto} />
+      <BarraRedes hero={hero} redes={redes} redesTexto={redesTexto} nombre={nombre} className="order-2" />
 
       {/* Páginas completas: ocupan el resto de la pantalla. Como al navegar en una web, la vieja desaparece
           al instante y la nueva aparece con un fundido rápido, sin cruzarse.
           El mapa del horario se carga desde el principio, para que esté listo cuando la vuelta llegue a él */}
-      <div className="relative min-h-[30rem] flex-1 overflow-hidden">
+      <div className={`relative min-h-[30rem] flex-1 overflow-hidden ${menuAbajo ? 'order-1' : 'order-3'}`}>
         {pestanas.map((p, i) => {
           const Pagina = paginaDe(p.tipo, portada)
           return (
@@ -817,7 +861,7 @@ export default function HeroWeb({ hero, nombre, lema, cuerpo, redes, redesTexto 
                 i === activa ? 'opacity-100 transition-opacity duration-[250ms] ease-out' : 'pointer-events-none opacity-0 transition-none'
               }`}
             >
-              <Pagina pestana={p.tipo === 'inicio' && portada ? { tipo: 'fotos', texto: p.texto, fotos: fotosPortada } : p} inicio={p} irA={irA} cuerpo={cuerpo} negocio={nombre} lema={lema} cargarMapa portada={portada} heroBase={hero} respaldo={respaldo} />
+              <Pagina pestana={p.tipo === 'inicio' && portada ? { tipo: 'fotos', texto: p.texto, fotos: fotosPortada } : p} inicio={p} irA={irA} cuerpo={cuerpo} negocio={nombre} lema={lema} cargarMapa portada={portada} heroBase={hero} respaldo={respaldo} redes={redes} />
             </div>
           )
         })}
