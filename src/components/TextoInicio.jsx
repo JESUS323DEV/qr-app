@@ -1,5 +1,5 @@
-/* El texto de la portada de Inicio de una miniweb (el de Chalaquita): titular, qué hace el negocio y un botón que lleva
 import { CompartirJuntoAlBoton } from './BotonCompartir'
+/* El texto de la portada de Inicio de una miniweb (el de Chalaquita): titular, qué hace el negocio y un botón que lleva
    a otra página. Lo pintan los diseños de portada debajo de su foto. inicio: la página de Inicio con titular[], descripcion,
    boton y botonA; irA: lleva a otra página de la miniweb. Sin titular ni descripción, no pinta nada.
    color: la clase del color del texto (la del sitio donde va); className: el hueco que ocupa en cada diseño;
