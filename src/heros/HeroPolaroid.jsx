@@ -69,7 +69,7 @@ function PolaroidAbierta({ foto, cerrar }) {
 }
 
 // sinBarra: sin barra de pestañas, cuando hace de portada de una miniweb (la miniweb lleva su propio menú)
-export default function HeroPolaroid({ hero, nombre, lema, sinBarra = false }) {
+export default function HeroPolaroid({ hero, nombre, lema, sinBarra = false, inicio, irA }) {
   // Solo las pestañas que sabe pintar (las comunes)
   const pestanas = useMemo(() => (hero.pestanas ?? []).filter(p => tipoComun(p.tipo)), [hero.pestanas])
   const [activa, setActiva] = useState(0)
@@ -77,6 +77,8 @@ export default function HeroPolaroid({ hero, nombre, lema, sinBarra = false }) {
   const [abierta, setAbierta] = useState(null)
   const { enVuelta, parar } = useVueltaPestanas(pestanas, setActiva)
   const respaldo = fotoDeRespaldo(pestanas)
+  // En una miniweb con texto de Inicio: el titular, la descripción y el botón debajo de las polaroids
+  const textoMiniweb = Boolean(sinBarra && (inicio?.titular?.length || inicio?.descripcion))
 
   useEffect(() => loadFont(FUENTE), [])
 
@@ -133,7 +135,28 @@ export default function HeroPolaroid({ hero, nombre, lema, sinBarra = false }) {
         })}
       </div>
 
-      {sinBarra ? (
+      {textoMiniweb ? (
+        // Debajo de las polaroids, sobre el fondo de la cabecera: titular, descripción y botón
+        <div className="px-[1.25rem] pb-[1rem] pt-[0.9rem]">
+          {inicio.titular?.length > 0 && (
+            <h2 className="font-demo-heading text-[clamp(1.7rem,1.4rem+1.6vw,2.1rem)] font-bold leading-[1.05]">
+              {inicio.titular.map((l, i) => (
+                <span key={i} className="block">{l}</span>
+              ))}
+            </h2>
+          )}
+          {inicio.descripcion && <p className="mt-[0.4rem] max-w-[22rem] text-[0.88rem] leading-[1.4] text-white/85">{inicio.descripcion}</p>}
+          {inicio.boton && inicio.botonA && (
+            <button
+              type="button"
+              onClick={() => irA?.(inicio.botonA)}
+              className="mt-[0.65rem] inline-flex min-h-[2.5rem] items-center rounded-[0.6rem] bg-demo-accent px-[1.1rem] text-[0.92rem] font-semibold text-demo-text"
+            >
+              {inicio.boton}
+            </button>
+          )}
+        </div>
+      ) : sinBarra ? (
         <div className="h-[1rem]" />
       ) : (
         <div className="px-[1.25rem] pb-[0.8rem] pt-[0.8rem]">

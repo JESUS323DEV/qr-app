@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import NombreMarca from '../components/NombreMarca'
 import TextoInicio from '../components/TextoInicio'
 import useVueltaPestanas from '../lib/useVueltaPestanas'
 import BotonCompartir from '../components/BotonCompartir'
@@ -52,6 +53,13 @@ export default function HeroDiagonal({ hero, nombre, sinBarra = false, inicio, i
           ))}
           <div className={`pointer-events-none absolute inset-x-0 bottom-0 h-[10rem] bg-gradient-to-t from-demo-bg/90 via-demo-bg/55 to-transparent transition-opacity duration-700 ${enMapa ? 'opacity-0' : 'opacity-100'}`} />
         </div>
+
+        {/* En una miniweb, el nombre (o el logo con el nombre) arriba a la izquierda de la foto, sobre un degradado oscuro */}
+        {sinBarra && (
+          <div className="pointer-events-none absolute inset-x-0 top-0 bg-gradient-to-b from-black/55 to-transparent px-[1.25rem] pb-[2.5rem] pt-[1rem] font-demo-heading text-[2rem] font-semibold leading-none text-white">
+            <NombreMarca nombre={nombre} tamano="grande" />
+          </div>
+        )}
 
         {/* Nombre y frase encima de la foto, abajo a la izquierda (en el mapa se desvanecen) */}
         <div className={`pointer-events-none absolute inset-x-0 bottom-0 px-[1.25rem] pb-[1rem] text-demo-text transition-opacity duration-700 ${enMapa ? 'opacity-0' : 'opacity-100'}`}>

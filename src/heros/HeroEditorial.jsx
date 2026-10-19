@@ -266,7 +266,7 @@ export default function HeroEditorial({ hero, nombre, lema, sinBarra = false, in
             tipoComun(pestanas[activa]?.tipo) === 'ubicacion' ? 'opacity-0' : 'opacity-100'
           }`}
         >
-          <p className="font-demo-heading text-[1.6rem] leading-none"><NombreMarca nombre={nombre} /></p>
+          <p className={`font-demo-heading leading-none ${sinBarra ? 'text-[2.2rem]' : 'text-[1.6rem]'}`}><NombreMarca nombre={nombre} tamano={sinBarra ? 'grande' : 'normal'} /></p>
           {lema && <p className="mt-[0.3rem] text-[0.85rem] text-white/80">{lema}</p>}
           {/* Compartir, en todas las pestañas menos en la del mapa (ahí la marca se oculta) */}
           {tipoComun(pestanas[activa]?.tipo) !== 'ubicacion' && <BotonCompartir titulo={nombre} className="pointer-events-auto mt-[0.6rem]" />}

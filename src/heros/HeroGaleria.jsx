@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import NombreMarca from '../components/NombreMarca'
-import { X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 import Img from '../components/Img'
 import useVueltaPestanas from '../lib/useVueltaPestanas'
 import BotonCompartir from '../components/BotonCompartir'
@@ -16,6 +16,72 @@ import BarraPestanas from '../fichas/barras'
    hero: barra?, pestanas[{ tipo, texto, ... }] (en la de fotos: fotos u opciones, ver fotosDe en fichas/escenas) */
 
 const DEGRADADO = 'bg-gradient-to-t from-black/70 via-black/10 to-transparent'
+
+// Galería de una miniweb: una sola foto con el titular grande pegado abajo y una flecha a cada lado; debajo de la foto,
+// fuera de ella, la descripción y el botón. Solo cambia la foto de fondo, que pasa sola cada 4 s o al tocar una flecha;
+// el titular no se mueve
+const TURNO_GALERIA_MS = 4000
+function GaleriaMiniweb({ fotos, inicio, irA }) {
+  const [actual, setActual] = useState(0)
+  const n = fotos.length
+  // Cada cambio, también el manual, reinicia los 4 s
+  useEffect(() => {
+    if (n < 2) return
+    const id = setTimeout(() => setActual(i => (i + 1) % n), TURNO_GALERIA_MS)
+    return () => clearTimeout(id)
+  }, [actual, n])
+  const pasar = paso => setActual(i => (i + paso + n) % n)
+  const flecha = (paso, Icono, texto, lado) => (
+    <button
+      type="button"
+      aria-label={texto}
+      onClick={() => pasar(paso)}
+      className={`absolute top-1/2 ${lado} z-10 flex h-[2.2rem] w-[2.2rem] -translate-y-1/2 items-center justify-center rounded-full bg-black/35 text-white backdrop-blur-sm transition-colors hover:bg-black/55`}
+    >
+      <Icono className="h-[1.2rem] w-[1.2rem]" strokeWidth={2.5} aria-hidden="true" />
+    </button>
+  )
+  return (
+    <div className="flex h-full flex-col">
+      {/* La foto, con el titular pegado abajo sobre un degradado oscuro */}
+      <div className="relative min-h-0 flex-1 overflow-hidden rounded-[0.9rem] bg-demo-surface">
+        {fotos.map((f, i) => (
+          <div key={i} className={`absolute inset-0 transition-opacity duration-700 ${i === actual ? 'opacity-100' : 'opacity-0'}`}>
+            <Img src={f.src} alt={f.alt} className="h-full w-full object-cover" />
+          </div>
+        ))}
+        {inicio.titular?.length > 0 && (
+          <h2 className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/45 to-transparent px-[0.9rem] pb-[0.8rem] pt-[3rem] text-left text-white">
+            {inicio.titular.map((l, i) => (
+              <span key={i} className="block font-demo-heading text-[1.5rem] font-bold leading-[1.05]">{l}</span>
+            ))}
+          </h2>
+        )}
+        {n > 1 && (
+          <>
+            {flecha(-1, ChevronLeft, 'Foto anterior', 'left-[0.5rem]')}
+            {flecha(1, ChevronRight, 'Foto siguiente', 'right-[0.5rem]')}
+          </>
+        )}
+      </div>
+      {/* Fuera de la foto: la descripción y el botón */}
+      {(inicio.descripcion || (inicio.boton && inicio.botonA)) && (
+        <div className="shrink-0 pt-[0.7rem] text-demo-text">
+          {inicio.descripcion && <p className="text-[0.9rem] leading-[1.4] opacity-85">{inicio.descripcion}</p>}
+          {inicio.boton && inicio.botonA && (
+            <button
+              type="button"
+              onClick={() => irA?.(inicio.botonA)}
+              className={`inline-flex min-h-[2.5rem] items-center rounded-[0.6rem] bg-demo-accent px-[1.1rem] text-[0.92rem] font-semibold text-demo-text ${inicio.descripcion ? 'mt-[0.6rem]' : ''}`}
+            >
+              {inicio.boton}
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
 
 // Mosaico de fotos en dos filas: la primera en grande, a lo ancho, y debajo dos (si solo hay una, a lo ancho).
 // Al abrir una, en el visor se pueden pasar todas
@@ -102,7 +168,7 @@ function Visor({ fotos, inicio, cerrar }) {
 }
 
 // sinBarra: sin barra de pestañas, cuando hace de portada de una miniweb (la miniweb lleva su propio menú)
-export default function HeroGaleria({ hero, nombre, lema, sinBarra = false }) {
+export default function HeroGaleria({ hero, nombre, lema, sinBarra = false, inicio, irA }) {
   // Solo las pestañas que sabe pintar (las comunes)
   const pestanas = useMemo(() => (hero.pestanas ?? []).filter(p => tipoComun(p.tipo)), [hero.pestanas])
   const [activa, setActiva] = useState(0)
@@ -118,6 +184,8 @@ export default function HeroGaleria({ hero, nombre, lema, sinBarra = false }) {
   }
 
   const deFotos = pestanas.find(p => tipoComun(p.tipo) === 'fotos')
+  // En una miniweb con texto de Inicio: la galería de verdad (una foto con el texto encima y flechas)
+  const galeriaMiniweb = Boolean(sinBarra && (inicio?.titular?.length || inicio?.descripcion))
 
   return (
     // Cualquier toque en el hero para la vuelta de presentación
@@ -139,7 +207,9 @@ export default function HeroGaleria({ hero, nombre, lema, sinBarra = false }) {
             aria-hidden={i !== activa}
             className={`absolute inset-0 transition-opacity duration-500 ${i === activa ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
           >
-            {tipoComun(p.tipo) === 'fotos' ? (
+            {tipoComun(p.tipo) === 'fotos' && galeriaMiniweb ? (
+              <GaleriaMiniweb fotos={fotosDe(p)} inicio={inicio} irA={irA} />
+            ) : tipoComun(p.tipo) === 'fotos' ? (
               <Mosaico fotos={fotosDe(p)} abrir={setVisor} />
             ) : (
               <div className="relative h-full overflow-hidden rounded-[0.9rem] bg-demo-surface">

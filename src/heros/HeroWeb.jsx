@@ -753,7 +753,8 @@ export default function HeroWeb({ hero, nombre, lema, cuerpo, redes, redesTexto 
   // Fotos para la portada del Inicio de una miniweb propia: todas las que lleva repartidas por sus páginas
   const fotosPortada = [...new Set(pestanas.flatMap(p => [p.foto, ...fotosDe(p).map(f => f.src)]).filter(Boolean))].map(src => ({ src }))
   const [activa, setActiva] = useState(0)
-  const { parar } = useVueltaPestanas(pestanas, setActiva)
+  // Vuelta de presentación desactivada en las miniwebs, de momento (el último parámetro): para volver a activarla, quitarlo
+  const { parar } = useVueltaPestanas(pestanas, setActiva, null, true)
 
   const tocar = i => {
     parar()

@@ -268,7 +268,7 @@ export default function MiniwebPage({ demo = false }) {
       {/* El logo del negocio (si tiene): los diseños de arriba lo ponen en lugar del nombre escrito */}
       <LogoNegocio.Provider value={negocio.logo ?? null}>
         <main key={negocio.slug} className="mx-auto flex min-h-svh w-full max-w-[30rem] flex-col bg-demo-bg">
-          <Hero hero={negocio.hero} nombre={negocio.nombre} lema={negocio.lema} redes={negocio.redes} redesTexto={negocio.redesTexto} cuerpo={<Cuerpo negocio={negocio} soloResena={Boolean(negocio.hero.redesArriba)} compacta={negocio.hero.portada === 'retrato'} />} />
+          <Hero hero={negocio.hero} nombre={negocio.nombre} lema={negocio.lema} redes={negocio.redes} redesTexto={negocio.redesTexto} cuerpo={<Cuerpo negocio={negocio} soloResena={Boolean(negocio.hero.redesArriba)} compacta />} />
           {!paginaCompleta && <Cuerpo negocio={negocio} />}
         </main>
       </LogoNegocio.Provider>

@@ -222,7 +222,7 @@ export default function HeroFullbleed({ hero, nombre, sinBarra = false, inicio, 
 
         {/* Marca arriba y, a la derecha, compartir (en el mapa se desvanecen) */}
         <div className={`pointer-events-none absolute inset-x-0 top-0 flex items-center justify-between px-[1.25rem] pt-[1rem] text-white transition-opacity duration-700 ${enMapa ? 'opacity-0' : 'opacity-100'}`}>
-          <p className="font-demo-heading text-[1.5rem] leading-none"><NombreMarca nombre={nombre} /></p>
+          <p className={`font-demo-heading leading-none ${sinBarra ? 'text-[2.1rem]' : 'text-[1.5rem]'}`}><NombreMarca nombre={nombre} tamano={sinBarra ? 'grande' : 'normal'} /></p>
           {!enMapa && <BotonCompartir titulo={nombre} className="pointer-events-auto" />}
         </div>
 

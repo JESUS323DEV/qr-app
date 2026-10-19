@@ -964,7 +964,7 @@ function Diseno({ tipo, slug, vista, original, cambiar, abrir }) {
   const hero = vista.hero
   const miniweb = tipo === 'negocio' && Boolean(HEROS[hero?.diseno]?.paginaCompleta)
   const producto = tipo === 'carta' ? 'carta' : miniweb ? 'miniweb' : 'ficha'
-  // Para miniwebs, de momento sin Banner ni Ficha (se mantiene la que el perfil ya lleve)
+  // Para miniwebs, de momento sin Banner, Ficha, Portada ni Historias (se mantiene la que el perfil ya lleve)
   const portadas = Object.entries(HEROS).filter(([clave, h]) => h.piezas && !h.paginaCompleta && (!SIN_PORTADA_MINIWEB.includes(clave) || clave === hero?.portada))
   // La otra página del mismo negocio: su carta (desde la ficha) o su ficha (desde la carta)
   const suCarta = tipo === 'negocio' ? cartas.find(c => c.negocio === slug) : null
@@ -1515,7 +1515,7 @@ const ICONOS_TEMA = {
 }
 
 // Diseños de arriba que de momento no salen como portada de una miniweb
-const SIN_PORTADA_MINIWEB = ['banner', 'ficha']
+const SIN_PORTADA_MINIWEB = ['banner', 'ficha', 'portada', 'historias']
 
 // El icono de cada diseño de arriba en la fila de Nuevo perfil
 const ICONOS_DISENO = {
@@ -1600,7 +1600,8 @@ function NuevoPerfil({ filas, recargar, abrir }) {
   }, [nombre])
   // Marca de prueba en la dirección: la vista previa enseña el nombre, los colores y la tipografía al momento
   const marca = [
-    nombreVista && `nombre=${encodeURIComponent(nombreVista)}`,
+    // Con el nombre vacío, la vista previa enseña "Prueba" (y no el de la demo, Chalaquita, Almendra...)
+    `nombre=${encodeURIComponent(nombreVista || 'Prueba')}`,
     principal && `principal=${principal.slice(1)}`,
     acento && `acento=${acento.slice(1)}`,
     colorTexto && `texto=${colorTexto.slice(1)}`,
@@ -1927,33 +1928,35 @@ function NuevoPerfil({ filas, recargar, abrir }) {
             </Plegable>
           )}
 
-          {/* 4. Marca */}
-          <Etiqueta texto="Nombre del negocio">
-            <input value={nombre} onChange={e => setNombre(e.target.value)} className={CAMPO} placeholder="Peluquería Ranita" />
-          </Etiqueta>
-          {/* Cómo sale el nombre arriba: escrito (por defecto) o su logo, que se sube aquí (fichas y miniwebs) */}
-          {!esCarta && (
-            <div className="grid gap-[0.4rem]">
-              <span className={titulo}>Arriba sale</span>
-              <div className="grid grid-cols-2 gap-[0.3rem] rounded-[0.75rem] bg-zinc-200 p-[0.25rem]">
-                {[
-                  ['texto', 'Texto'],
-                  ['logo', 'Logo'],
-                ].map(([clave, texto]) => (
-                  <button
-                    key={clave}
-                    type="button"
-                    aria-pressed={marcaCon === clave}
-                    onClick={() => setMarcaCon(clave)}
-                    className={`rounded-[0.55rem] py-[0.5rem] text-[0.95rem] font-semibold ${marcaCon === clave ? 'bg-white shadow-[0_0.05rem_0.2rem_rgb(0_0_0/0.15)]' : 'text-zinc-600'}`}
-                  >
-                    {texto}
-                  </button>
-                ))}
+          {/* 4. Marca: arriba, cómo sale el nombre (Texto o Logo) y, debajo, lo que toca: el nombre escrito o, con Logo, el
+              logo que se sube (y el nombre, que se sigue necesitando para la dirección y para Google) */}
+          <div className="grid gap-[0.75rem]">
+            {!esCarta && (
+              <div className="grid gap-[0.4rem]">
+                <span className={titulo}>Arriba sale</span>
+                <div className="grid grid-cols-2 gap-[0.3rem] rounded-[0.75rem] bg-zinc-200 p-[0.25rem]">
+                  {[
+                    ['texto', 'Texto'],
+                    ['logo', 'Logo'],
+                  ].map(([clave, texto]) => (
+                    <button
+                      key={clave}
+                      type="button"
+                      aria-pressed={marcaCon === clave}
+                      onClick={() => setMarcaCon(clave)}
+                      className={`rounded-[0.55rem] py-[0.5rem] text-[0.95rem] font-semibold ${marcaCon === clave ? 'bg-white shadow-[0_0.05rem_0.2rem_rgb(0_0_0/0.15)]' : 'text-zinc-600'}`}
+                    >
+                      {texto}
+                    </button>
+                  ))}
+                </div>
               </div>
-              {marcaCon === 'logo' && <CampoLogo valor={logo} cambiar={setLogo} />}
-            </div>
-          )}
+            )}
+            {!esCarta && marcaCon === 'logo' && <CampoLogo valor={logo} cambiar={setLogo} />}
+            <Etiqueta texto={!esCarta && marcaCon === 'logo' ? 'Nombre del negocio (para la dirección de la página y Google)' : 'Nombre del negocio'}>
+              <input value={nombre} onChange={e => setNombre(e.target.value)} className={CAMPO} placeholder="Peluquería Ranita" />
+            </Etiqueta>
+          </div>
           {/* Colores: cada uno en su fila, con para qué sirve; cerrado, las cuatro muestras */}
           <Plegable
             titulo="Colores"

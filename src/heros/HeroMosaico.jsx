@@ -14,7 +14,7 @@ import BarraPestanas from '../fichas/barras'
    (si no hay titulo, usa el de la primera pestaña: así vale con datos de otras demos) */
 
 // sinBarra: sin barra de pestañas, cuando hace de portada de una miniweb (la miniweb lleva su propio menú)
-export default function HeroMosaico({ hero, nombre, lema, sinBarra = false }) {
+export default function HeroMosaico({ hero, nombre, lema, sinBarra = false, inicio, irA }) {
   // Solo las pestañas que sabe pintar (las comunes)
   const pestanas = useMemo(() => (hero.pestanas ?? []).filter(p => tipoComun(p.tipo)), [hero.pestanas])
   const [activa, setActiva] = useState(0)
@@ -25,6 +25,8 @@ export default function HeroMosaico({ hero, nombre, lema, sinBarra = false }) {
 
   const titulo = hero.titulo ?? pestanas[0]?.titulo
   const brillo = hero.brillo ?? hero.destacado ?? pestanas[0]?.destacado
+  // En una miniweb con texto de Inicio: el titular grande arriba, las fotos y, debajo, la descripción y el botón
+  const textoMiniweb = Boolean(sinBarra && (inicio?.titular?.length || inicio?.descripcion))
 
   const tocar = i => {
     parar()
@@ -37,9 +39,18 @@ export default function HeroMosaico({ hero, nombre, lema, sinBarra = false }) {
     <div className="flex flex-1 flex-col" onPointerDown={parar}>
       <div className="px-[1.25rem] pt-[1rem]">
         <div className="flex items-baseline justify-between gap-[1rem]">
-          <p className="font-demo-heading text-[1.05rem] font-semibold text-demo-primary"><NombreMarca nombre={nombre} tamano="pequeno" /></p>
+          <p className={`font-demo-heading font-semibold text-demo-primary ${sinBarra ? 'text-[1.6rem] leading-none' : 'text-[1.05rem]'}`}><NombreMarca nombre={nombre} tamano={sinBarra ? 'normal' : 'pequeno'} /></p>
           {lema && <p className="text-[0.78rem] text-demo-muted">{lema}</p>}
         </div>
+        {textoMiniweb ? (
+          <>
+            <h1 className="mt-[0.6rem] font-demo-heading text-[clamp(2rem,1.6rem+2vw,2.5rem)] font-semibold leading-[1.02]">
+              {inicio.titular?.map((l, i) => (
+                <span key={i} className="block">{l}</span>
+              ))}
+            </h1>
+          </>
+        ) : (
         <h1 className="mt-[0.6rem] font-demo-heading text-[clamp(2.2rem,1.7rem+2.4vw,2.8rem)] font-semibold leading-[1.02]">
           {titulo}
           {brillo && (
@@ -49,6 +60,7 @@ export default function HeroMosaico({ hero, nombre, lema, sinBarra = false }) {
             </>
           )}
         </h1>
+        )}
       </div>
 
       {/* El escaparate ocupa el alto que sobra, para que todo quepa en una pantalla */}
@@ -67,7 +79,21 @@ export default function HeroMosaico({ hero, nombre, lema, sinBarra = false }) {
         {tipoComun(pestanas[activa]?.tipo) !== 'ubicacion' && <BotonCompartir titulo={nombre} className="absolute left-[0.6rem] top-[0.6rem]" />}
       </div>
 
-      {sinBarra ? (
+      {textoMiniweb ? (
+        // Debajo de las fotos: la descripción pequeña y el botón
+        <div className="px-[1.25rem] pb-[1rem] pt-[0.7rem]">
+          {inicio.descripcion && <p className="max-w-[22rem] text-[0.9rem] leading-[1.4] opacity-85">{inicio.descripcion}</p>}
+          {inicio.boton && inicio.botonA && (
+            <button
+              type="button"
+              onClick={() => irA?.(inicio.botonA)}
+              className={`inline-flex min-h-[2.5rem] items-center rounded-[0.6rem] bg-demo-accent px-[1.1rem] text-[0.92rem] font-semibold text-demo-text ${inicio.descripcion ? 'mt-[0.6rem]' : ''}`}
+            >
+              {inicio.boton}
+            </button>
+          )}
+        </div>
+      ) : sinBarra ? (
         <div className="h-[1rem]" />
       ) : (
         <div className="mt-[0.4rem] px-[1.25rem]">

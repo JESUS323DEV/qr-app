@@ -1,8 +1,17 @@
-import { useContext } from 'react'
+import { useContext, useEffect, useState } from 'react'
+import { X } from 'lucide-react'
 import Img from '../components/Img'
 import BotonCompartir from '../components/BotonCompartir'
 import { LogoNegocio } from '../components/NombreMarca'
 import { fotosDe } from '../fichas/escenas'
+
+// Líneas de ejemplo para el pie de la foto abierta (inventadas, para un restaurante), mientras las fotos no traigan
+// las suyas (etiqueta). Se reparten en orden
+const PIES_EJEMPLO = [
+  { titulo: 'El plato de la casa', linea: 'Cocina de mercado, hecha cada día con producto fresco.' },
+  { titulo: 'Para compartir', linea: 'Raciones generosas para la mesa, con ingredientes de temporada.' },
+  { titulo: 'Menú del día', linea: 'De martes a viernes, primero, segundo y postre por 14,90 €.' },
+]
 
 /* Retrato para miniwebs (la portada de su página de Inicio). Aparte del Retrato de las fichas, que se queda como está.
    Un bloque oscuro sobre una foto con velo:
@@ -11,15 +20,31 @@ import { fotosDe } from '../fichas/escenas'
      escrito (así el logo nunca sale dos veces).
    - En el centro, lo que cuenta el negocio: titular, qué hace y un botón a otra página (los de su Inicio: titular,
      descripcion, boton y botonA). Sin titular propio, su lema.
-   - Abajo, siempre tres fotos en fila (de todas sus páginas; la del fondo, la última que se usa).
+   - Abajo, siempre tres fotos en fila (de todas sus páginas; la del fondo, la última que se usa). Al tocar una, se abre
+     en grande con su título y una línea de información debajo.
    inicio: la pestaña de Inicio de la miniweb, con sus textos. irA: lleva a otra página de la miniweb */
 export default function HeroRetratoWeb({ hero, nombre, lema, inicio, irA }) {
   const logo = useContext(LogoNegocio)
-  const fotos = fotosDe(hero.pestanas?.[0]).map(f => f.src)
+  const fotosDeLaPestana = fotosDe(hero.pestanas?.[0])
+  const fotos = fotosDeLaPestana.map(f => f.src)
+  // La foto abierta en grande (su número en la fila) o ninguna
+  const [abierta, setAbierta] = useState(null)
+  useEffect(() => {
+    if (abierta === null) return
+    const tecla = e => e.key === 'Escape' && setAbierta(null)
+    document.addEventListener('keydown', tecla)
+    return () => document.removeEventListener('keydown', tecla)
+  }, [abierta])
   const fondo = hero.fondo ?? fotos[0]
   // Las tres de abajo: si hay de sobra, sin repetir la del fondo; si hay menos de tres, se repiten para llenar la fila
   const disponibles = fotos.length > 3 ? fotos.slice(1) : fotos
   const fila = disponibles.length ? [0, 1, 2].map(i => disponibles[i % disponibles.length]) : []
+  // El pie de cada foto: su etiqueta (si la trae) y, si no, una línea de ejemplo
+  const pieDe = i => {
+    const propia = fotosDeLaPestana.find(f => f.src === fila[i])?.etiqueta
+    const ejemplo = PIES_EJEMPLO[i % PIES_EJEMPLO.length]
+    return { titulo: propia ?? ejemplo.titulo, linea: ejemplo.linea }
+  }
   const iniciales = (nombre ?? '').split(/\s+/).filter(Boolean).slice(0, 2).map(x => x[0]).join('').toUpperCase()
   const titular = inicio?.titular ?? (lema ? [lema] : [])
   const circulo = hero.retrato ?? logo
@@ -50,7 +75,7 @@ export default function HeroRetratoWeb({ hero, nombre, lema, inicio, irA }) {
           {hero.retrato && logo ? (
             <img src={logo} alt={nombre} className="max-h-[2.4rem] max-w-[9rem] object-contain" />
           ) : (
-            <p className="font-demo-heading text-[1.35rem] font-bold">{nombre}</p>
+            <p className="font-demo-heading text-[1.9rem] font-bold leading-none">{nombre}</p>
           )}
           {hero.profesion && <p className="text-[0.85rem] text-white/75">{hero.profesion}</p>}
         </div>
@@ -84,8 +109,31 @@ export default function HeroRetratoWeb({ hero, nombre, lema, inicio, irA }) {
       {fila.length > 0 && (
         <div className="relative mx-[1.25rem] mb-[1rem] mt-[0.9rem] grid grid-cols-3 gap-[0.4rem]">
           {fila.map((src, i) => (
-            <Img key={i} src={src} alt="" className="aspect-[3/4] w-full rounded-[0.4rem] object-cover" />
+            <button key={i} type="button" onClick={() => setAbierta(i)} aria-label={`Ver la foto ${i + 1} en grande`} className="block overflow-hidden rounded-[0.4rem]">
+              <Img src={src} alt="" className="aspect-[3/4] w-full object-cover transition-transform duration-300 hover:scale-105" />
+            </button>
           ))}
+        </div>
+      )}
+
+      {/* La foto abierta en grande, con su título y una línea de información; se cierra tocando fuera o con la X */}
+      {abierta !== null && fila[abierta] && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-[1rem]" onClick={() => setAbierta(null)} role="dialog" aria-label="Foto en grande">
+          <div className="w-full max-w-[22rem] text-white" onClick={e => e.stopPropagation()}>
+            <div className="relative">
+              <Img src={fila[abierta]} alt="" className="max-h-[68svh] w-full rounded-[0.6rem] object-cover" />
+              <button
+                type="button"
+                onClick={() => setAbierta(null)}
+                aria-label="Cerrar"
+                className="absolute right-[0.5rem] top-[0.5rem] flex h-[2.2rem] w-[2.2rem] items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm"
+              >
+                <X className="h-[1.1rem] w-[1.1rem]" strokeWidth={2.5} aria-hidden="true" />
+              </button>
+            </div>
+            <p className="mt-[0.8rem] font-demo-heading text-[1.3rem] font-bold leading-tight">{pieDe(abierta).titulo}</p>
+            <p className="mt-[0.25rem] text-[0.9rem] leading-[1.4] text-white/80">{pieDe(abierta).linea}</p>
+          </div>
         </div>
       )}
     </div>

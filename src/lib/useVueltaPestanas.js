@@ -25,10 +25,11 @@ const apuntarVista = clave => {
    y al terminar vuelven a la primera y se quedan ahí. Si el visitante toca algo, se para (parar).
    Mientras dura (enVuelta), la primera pestaña no pasa sus fotos; empiezan al acabar la vuelta.
    recordar: si se da una clave, la vuelta solo se ve la primera vez en ese navegador (se apunta en localStorage
-   al acabar o al pararla); las siguientes visitas empiezan como si ya hubiera pasado. */
-export default function useVueltaPestanas(pestanas, setActiva, recordar = null) {
+   al acabar o al pararla); las siguientes visitas empiezan como si ya hubiera pasado.
+   desactivada: sin vuelta nunca (enVuelta siempre false). Las miniwebs la llevan así, de momento (ver HeroWeb). */
+export default function useVueltaPestanas(pestanas, setActiva, recordar = null, desactivada = false) {
   const [paso, setPaso] = useState(0)
-  const [enVuelta, setEnVuelta] = useState(() => pestanas.length > 1 && !yaVista(recordar))
+  const [enVuelta, setEnVuelta] = useState(() => !desactivada && pestanas.length > 1 && !yaVista(recordar))
 
   const terminar = () => {
     setEnVuelta(false)
