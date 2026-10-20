@@ -1748,10 +1748,14 @@ function FilaEstiloMenu({ valor, cambiar }) {
 }
 
 // El diseño del horario de una miniweb, con la fila de iconos de Portada (5 y un + en el móvil, todos en ordenador) y el nombre del elegido
-// debajo. valor: la clave de lib/horarios.js o '' (la lista de siempre)
-function FilaHorario({ valor, cambiar }) {
+// debajo. Al tocar el diseño elegido se abre o se cierra la lista de sus variantes (subpestañas). valor: la clave de lib/horarios.js o ''
+// (la lista de siempre); variante: la clave de la variante ('clasica' es la primera)
+function FilaHorario({ valor, cambiar, variante, cambiarVariante }) {
   const [mas, setMas] = useState(false)
+  const [abierta, setAbierta] = useState(true)
   const actual = valor || 'lista'
+  const diseno = HORARIOS.find(h => h.clave === actual)
+  const variantes = diseno?.variantes ?? []
   return (
     <div className="grid gap-[0.45rem]">
       <span className="text-[0.8rem] font-semibold text-zinc-500">Diseño del horario</span>
@@ -1763,7 +1767,15 @@ function FilaHorario({ valor, cambiar }) {
             title={h.nombre}
             aria-label={`Horario ${h.nombre}`}
             aria-pressed={actual === h.clave}
-            onClick={() => cambiar(h.clave === 'lista' ? '' : h.clave)}
+            onClick={() => {
+              // Al tocar otra vez el diseño elegido, la lista de sus variantes se cierra o se abre; al elegir otro, vuelve a la primera
+              if (actual === h.clave) setAbierta(v => !v)
+              else {
+                cambiar(h.clave === 'lista' ? '' : h.clave)
+                cambiarVariante('clasica')
+                setAbierta(true)
+              }
+            }}
             className={`${i >= 5 && !mas ? 'hidden lg:flex' : 'flex'} h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 bg-white transition-transform duration-300 ${actual === h.clave ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
           >
             <svg viewBox="0 0 24 24" className="h-[1.4rem] w-[1.4rem]" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: h.dibujo }} />
@@ -1780,7 +1792,28 @@ function FilaHorario({ valor, cambiar }) {
           {mas ? <Minus className="h-[1.1rem] w-[1.1rem]" strokeWidth={3} aria-hidden="true" /> : <Plus className="h-[1.1rem] w-[1.1rem]" strokeWidth={3} aria-hidden="true" />}
         </button>
       </div>
-      <p className="text-[0.85rem] font-semibold">{HORARIOS.find(h => h.clave === actual)?.nombre}</p>
+      <p className="text-[0.85rem] font-semibold">{diseno?.nombre}</p>
+      {/* Las variantes del diseño elegido, como subpestañas con su icono */}
+      {abierta && variantes.length > 0 && (
+        <div className="grid gap-[0.4rem]">
+          <div className="flex flex-wrap gap-[0.4rem]">
+            {variantes.map(v => (
+              <button
+                key={v.clave}
+                type="button"
+                title={v.nombre}
+                aria-label={`Variante ${v.nombre}`}
+                aria-pressed={variante === v.clave}
+                onClick={() => cambiarVariante(v.clave)}
+                className={`flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 bg-white transition-transform duration-300 ${variante === v.clave ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
+              >
+                <svg viewBox="0 0 24 24" className="h-[1.4rem] w-[1.4rem]" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: v.dibujo }} />
+              </button>
+            ))}
+          </div>
+          <p className="text-[0.8rem] text-zinc-500">{variantes.find(v => v.clave === variante)?.nombre}</p>
+        </div>
+      )}
     </div>
   )
 }
@@ -1866,6 +1899,226 @@ const ICONOS_DISENO = {
   historias: Smartphone,
 }
 
+/* Todos los datos editables de la página, en bruto: los mismos desplegables del editor de un perfil (Pestaña Inicio, Reseña de Google, Redes,
+   Carrusel...), para tocar cualquier cosa de la miniweb o la ficha que se está montando. original: los datos sin estos cambios; cambios: los de
+   aquí (ruta → valor); cambiar(ruta, valor). El editor de un perfil sigue como está: esto es una copia de su forma de enseñarlos */
+function EditorEnBruto({ original, cambios, cambiar }) {
+  const datos = useMemo(() => aplicar(original, cambios), [original, cambios])
+  const campos = useMemo(() => camposDe(datos), [datos])
+  const bloques = useMemo(() => organizar(datos, campos), [datos, campos])
+  const campo = (c, enTarjeta = false) => {
+    const valor = leerRuta(datos, c.ruta) ?? ''
+    const cambiado = c.ruta in cambios
+    return (
+      <div key={c.ruta} className="grid gap-[0.3rem]">
+        <div className="flex items-baseline justify-between gap-[0.75rem]">
+          <span className="text-[0.8rem] font-semibold text-zinc-500">{c.etiqueta}</span>
+          {cambiado && !enTarjeta && (
+            <button type="button" onClick={() => cambiar(c.ruta, leerRuta(original, c.ruta))} className="shrink-0 text-[0.78rem] font-semibold text-zinc-500 underline underline-offset-[0.2em]">
+              Volver al original
+            </button>
+          )}
+        </div>
+        {c.clase === 'color' ? (
+          <CampoColor valor={valor} cambiar={v => cambiar(c.ruta, v)} />
+        ) : c.clase === 'foto' ? (
+          <CampoFoto valor={valor} cambiar={v => cambiar(c.ruta, v)} carpeta="negocio/nuevo" sugerencia={datos.sector ?? ''} />
+        ) : c.clase === 'largo' ? (
+          <textarea value={valor} onChange={e => cambiar(c.ruta, e.target.value)} rows={3} className={`${CAMPO} resize-y`} />
+        ) : (
+          <input value={valor} onChange={e => cambiar(c.ruta, e.target.value)} className={CAMPO} />
+        )}
+      </div>
+    )
+  }
+  campo.volverTarjeta = t => t.campos.forEach(c => cambiar(c.ruta, leerRuta(original, c.ruta)))
+  campo.tarjetaCambiada = t => t.campos.some(c => c.ruta in cambios)
+  return (
+    <div className="grid gap-[0.75rem]">
+      <p className="text-[0.8rem] text-zinc-500">Todo lo editable de la página, en bruto. Lo que cambies aquí se ve en la vista previa y se guarda al crear.</p>
+      {/* Datos, Colores de la marca, Pestaña Inicio, Pestaña Menú, Tarjeta destacada y Carrusel: fuera de aquí (ya están en Nuevo perfil o no hacen falta) */}
+      {bloques
+        .filter(b => !['Datos', 'Colores de la marca', 'Pestaña Inicio', 'Pestaña Menú', 'Pestaña Horario', 'Tarjeta destacada', 'Carrusel'].includes(b.titulo))
+        .map(b => (
+          <Bloque key={b.clave} bloque={b} abierto={false} campo={campo} />
+        ))}
+    </div>
+  )
+}
+
+/* Las imágenes de la página, solo ellas, por pestaña (Inicio, Menú, Horario...): para cada una, su miniatura con el buscador de fotos y el
+   botón de subir la tuya. Salen de los mismos datos que los desplegables en bruto (original y cambios, con cambiar(ruta, valor)) */
+function ImagenesPorPestana({ original, cambios, cambiar }) {
+  const datos = useMemo(() => aplicar(original, cambios), [original, cambios])
+  const grupos = useMemo(() => {
+    const fotos = camposDe(datos).filter(c => c.clase === 'foto')
+    const pestanas = datos.hero?.pestanas ?? []
+    const porPestana = new Map()
+    const otras = []
+    for (const c of fotos) {
+      const m = c.ruta.match(/^hero\.pestanas\.(\d+)\./)
+      if (m) porPestana.set(Number(m[1]), [...(porPestana.get(Number(m[1])) ?? []), c])
+      else otras.push(c)
+    }
+    return [
+      ...[...porPestana.entries()].sort((a, b) => a[0] - b[0]).map(([i, campos]) => ({ clave: `p${i}`, titulo: pestanas[i]?.texto ?? `Pestaña ${i + 1}`, campos })),
+      ...(otras.length ? [{ clave: 'otras', titulo: 'Otras imágenes', campos: otras }] : []),
+    ]
+  }, [datos])
+  if (!grupos.length) return <p className="text-[0.8rem] text-zinc-500">Esta página no tiene imágenes que cambiar.</p>
+  return (
+    <div className="grid gap-[1.1rem]">
+      {grupos.map(g => (
+        <div key={g.clave} className="grid gap-[0.7rem]">
+          <p className="text-[0.95rem] font-bold">{g.titulo}</p>
+          {g.campos.map(c => (
+            <div key={c.ruta} className="grid gap-[0.3rem]">
+              <div className="flex items-baseline justify-between gap-[0.75rem]">
+                <span className="text-[0.8rem] font-semibold text-zinc-500">{c.etiqueta}</span>
+                {c.ruta in cambios && (
+                  <button type="button" onClick={() => cambiar(c.ruta, leerRuta(original, c.ruta))} className="shrink-0 text-[0.78rem] font-semibold text-zinc-500 underline underline-offset-[0.2em]">
+                    Volver al original
+                  </button>
+                )}
+              </div>
+              <CampoFoto valor={leerRuta(datos, c.ruta) ?? ''} cambiar={v => cambiar(c.ruta, v)} carpeta="negocio/nuevo" sugerencia={datos.sector ?? ''} />
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/* Las horas de una línea del horario: se escriben como texto ("13:00 a 16:30 y 20:00 a 23:30" o "Cerrado"), y aquí se editan con selectores de
+   hora (desde y hasta, uno o dos tramos) y una casilla de Cerrado. Si el texto no se puede entender como horas (por ejemplo, "Con cita
+   previa"), se edita como texto normal */
+const TRAMO_HORAS = /(\d{1,2}):(\d{2})\s*(?:a|-|–)\s*(\d{1,2}):(\d{2})/g
+const dosCifras = (h, m) => `${String(h).padStart(2, '0')}:${m}`
+const leerHoras = texto => {
+  const t = texto.trim()
+  if (/^cerrad/i.test(t)) return { cerrado: true, tramos: [] }
+  const tramos = [...t.matchAll(TRAMO_HORAS)].map(m => ({ d: dosCifras(m[1], m[2]), h: dosCifras(m[3], m[4]) }))
+  // Solo vale si, quitados los tramos, no queda más que "y" y separadores
+  const resto = t.replace(TRAMO_HORAS, '').replace(/[\sy,]/g, '')
+  return tramos.length && !resto ? { cerrado: false, tramos } : null
+}
+const escribirHoras = ({ cerrado, tramos }) => (cerrado || !tramos.length ? 'Cerrado' : tramos.map(t => `${t.d} a ${t.h}`).join(' y '))
+
+function HorasLinea({ valor, cambiar }) {
+  const horas = leerHoras(valor)
+  if (!horas) return <input value={valor} onChange={e => cambiar(e.target.value)} className={CAMPO} />
+  const poner = nuevo => cambiar(escribirHoras(nuevo))
+  const hora = 'h-[2.4rem] w-[6.2rem] rounded-[0.5rem] border border-zinc-300 bg-white px-[0.4rem] text-[0.9rem]'
+  const cambiarTramo = (k, campo, v) => poner({ ...horas, tramos: horas.tramos.map((t, n) => (n === k ? { ...t, [campo]: v || t[campo] } : t)) })
+  return (
+    <div className="flex flex-wrap items-center gap-x-[0.7rem] gap-y-[0.4rem]">
+      {horas.cerrado ? (
+        <span className="text-[0.88rem] font-semibold text-zinc-500">Cerrado</span>
+      ) : (
+        horas.tramos.map((t, k) => (
+          <div key={k} className="flex items-center gap-[0.3rem]">
+            <input type="time" value={t.d} onChange={e => cambiarTramo(k, 'd', e.target.value)} className={hora} aria-label="Desde" />
+            <span className="text-[0.85rem] text-zinc-500">a</span>
+            <input type="time" value={t.h} onChange={e => cambiarTramo(k, 'h', e.target.value)} className={hora} aria-label="Hasta" />
+            {horas.tramos.length > 1 && (
+              <button type="button" aria-label="Quitar este tramo" onClick={() => poner({ ...horas, tramos: horas.tramos.filter((_, n) => n !== k) })} className="rounded-full p-[0.25rem] text-zinc-500 hover:text-zinc-900">
+                <X className="h-[0.9rem] w-[0.9rem]" strokeWidth={2.5} aria-hidden="true" />
+              </button>
+            )}
+          </div>
+        ))
+      )}
+      {!horas.cerrado && horas.tramos.length < 2 && (
+        <button type="button" onClick={() => poner({ ...horas, tramos: [...horas.tramos, { d: '20:00', h: '23:00' }] })} className="rounded-full bg-zinc-100 px-[0.7rem] py-[0.3rem] text-[0.8rem] font-semibold text-zinc-600 hover:bg-zinc-200">
+          + Otro tramo
+        </button>
+      )}
+      <label className="flex cursor-pointer items-center gap-[0.35rem] text-[0.85rem] font-semibold">
+        <input
+          type="checkbox"
+          checked={horas.cerrado}
+          onChange={e => poner({ cerrado: e.target.checked, tramos: horas.tramos.length ? horas.tramos : [{ d: '10:00', h: '14:00' }] })}
+          className="h-[1.1rem] w-[1.1rem]"
+        />
+        Cerrado
+      </label>
+    </div>
+  )
+}
+
+/* Todos los textos editables de la pestaña del Horario: el título, la nota, la dirección... y cada línea de días y horas (el día como texto y las
+   horas con selectores). Sin fotos ni el nombre de la pestaña en la barra. Salen de los mismos datos que los desplegables en bruto (original y
+   cambios, con cambiar(ruta, valor)) */
+function TextosHorario({ original, cambios, cambiar }) {
+  const datos = useMemo(() => aplicar(original, cambios), [original, cambios])
+  const i = (datos.hero?.pestanas ?? []).findIndex(p => p.tipo === 'horario')
+  const campos = useMemo(() => {
+    if (i < 0) return []
+    return camposDe(datos).filter(
+      c => c.ruta.startsWith(`hero.pestanas.${i}.`) && (c.clase === 'texto' || c.clase === 'largo') && !c.ruta.endsWith('.texto') && !c.ruta.includes('.lineas.'),
+    )
+  }, [datos, i])
+  if (i < 0) return <p className="text-[0.8rem] text-zinc-500">Esta página no tiene pestaña de horario.</p>
+  const lineas = datos.hero.pestanas[i].lineas ?? []
+  const volver = ruta => (
+    <button type="button" onClick={() => cambiar(ruta, leerRuta(original, ruta))} className="shrink-0 text-[0.78rem] font-semibold text-zinc-500 underline underline-offset-[0.2em]">
+      Volver al original
+    </button>
+  )
+  return (
+    <div className="grid gap-[1rem]">
+      {campos.map(c => {
+        const valor = leerRuta(datos, c.ruta) ?? ''
+        return (
+          <div key={c.ruta} className="grid gap-[0.3rem]">
+            <div className="flex items-baseline justify-between gap-[0.75rem]">
+              <span className="text-[0.8rem] font-semibold text-zinc-500">{c.etiqueta}</span>
+              {c.ruta in cambios && volver(c.ruta)}
+            </div>
+            {c.clase === 'largo' ? (
+              <textarea value={valor} onChange={e => cambiar(c.ruta, e.target.value)} rows={3} className={`${CAMPO} resize-y`} />
+            ) : (
+              <input value={valor} onChange={e => cambiar(c.ruta, e.target.value)} className={CAMPO} />
+            )}
+          </div>
+        )
+      })}
+      {lineas.length > 0 && (
+        <div className="grid gap-[0.7rem]">
+          <p className="text-[0.8rem] font-semibold text-zinc-500">Líneas del horario</p>
+          {lineas.map((l, j) => {
+            const rutaDias = `hero.pestanas.${i}.lineas.${j}.dias`
+            const rutaHoras = `hero.pestanas.${i}.lineas.${j}.horas`
+            return (
+              <div key={j} className="grid gap-[0.4rem] rounded-[0.8rem] bg-zinc-50 p-[0.8rem] ring-1 ring-zinc-200">
+                <div className="flex items-baseline justify-between gap-[0.75rem]">
+                  <span className="text-[0.78rem] text-zinc-500">Días</span>
+                  {(rutaDias in cambios || rutaHoras in cambios) && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        cambiar(rutaDias, leerRuta(original, rutaDias))
+                        cambiar(rutaHoras, leerRuta(original, rutaHoras))
+                      }}
+                      className="shrink-0 text-[0.78rem] font-semibold text-zinc-500 underline underline-offset-[0.2em]"
+                    >
+                      Volver al original
+                    </button>
+                  )}
+                </div>
+                <input value={l.dias ?? ''} onChange={e => cambiar(rutaDias, e.target.value)} className={CAMPO} />
+                <span className="text-[0.78rem] text-zinc-500">Horas</span>
+                <HorasLinea valor={l.horas ?? ''} cambiar={v => cambiar(rutaHoras, v)} />
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function NuevoPerfil({ filas, recargar, abrir }) {
   const [tema, setTema] = useState(PLANTILLAS[0].clave)
   // La pestaña abierta: el asistente o el diseño (la vista previa se ve siempre)
@@ -1919,6 +2172,8 @@ function NuevoPerfil({ filas, recargar, abrir }) {
   const [cartaMini, setCartaMini] = useState('')
   // El diseño del horario ('' : la lista de siempre)
   const [horarioMini, setHorarioMini] = useState('')
+  // La variante del diseño del horario ('clasica' : la primera de cada diseño)
+  const [horarioVar, setHorarioVar] = useState('clasica')
   // El tamaño del nombre del negocio arriba: 'xs', 'md' (el de cada diseño) o 'xl'
   const [tamanoNombre, setTamanoNombre] = useState('md')
   const lugares = Object.entries(estructura).filter(([clave, valor]) => valor !== ESTRUCTURA_DEFECTO[clave])
@@ -1939,6 +2194,9 @@ function NuevoPerfil({ filas, recargar, abrir }) {
   const [redactando, setRedactando] = useState(false)
   // Si el asistente ya ha generado algo alguna vez: hasta entonces, en su pestaña el móvil sale vacío
   const [generado, setGenerado] = useState(false)
+  // Los cambios hechos a mano en los datos en bruto (ruta → valor) y su versión (para recargar la vista previa, con un pequeño retraso al escribir)
+  const [cambiosExtra, setCambiosExtra] = useState({})
+  const [versionExtra, setVersionExtra] = useState(0)
   const [error, setError] = useState('')
 
   const plantilla = PLANTILLAS.find(p => p.clave === tema)
@@ -2009,11 +2267,12 @@ function NuevoPerfil({ filas, recargar, abrir }) {
     !esCarta && hero === 'polaroid' && montaje !== 'clasica' && `montaje=${montaje}`,
     producto === 'miniweb' && cartaMini && `carta=${cartaMini}`,
     producto === 'miniweb' && horarioMini && `horario=${horarioMini}`,
+    producto === 'miniweb' && horarioVar !== 'clasica' && `horariovar=${horarioVar}`,
     ...(producto === 'miniweb' ? lugares.map(([clave, valor]) => `${clave.toLowerCase()}=${valor}`) : []),
     producto === 'miniweb' && barra && `barra=${barra}`,
     conCabecera && cabecera && `cabecera=${cabecera.slice(1)}`,
     logoElegido && `logo=${encodeURIComponent(logoElegido)}`,
-    cambiosIA && `ia=${versionIA}`,
+    (cambiosIA || Object.keys(cambiosExtra).length > 0) && `ia=${versionIA}-${versionExtra}`,
   ]
     .filter(Boolean)
     .map(p => `&${p}`)
@@ -2063,6 +2322,7 @@ function NuevoPerfil({ filas, recargar, abrir }) {
       ...(!esCarta && hero === 'polaroid' && montaje !== 'clasica' ? { 'hero.montaje': montaje } : {}),
       ...(producto === 'miniweb' && cartaMini ? { 'hero.carta': cartaMini } : {}),
       ...(producto === 'miniweb' && horarioMini ? { 'hero.horario': horarioMini } : {}),
+      ...(producto === 'miniweb' && horarioVar !== 'clasica' ? { 'hero.horarioVariante': horarioVar } : {}),
       // Los colores uno por uno que se han elegido (los demás, en automático)
       ...(producto === 'miniweb' && Object.keys(coloresMini).length ? { 'hero.colores': coloresMini } : {}),
       ...(producto === 'miniweb' ? Object.fromEntries(lugares.map(([clave, valor]) => [`hero.${clave}`, valor])) : {}),
@@ -2142,6 +2402,7 @@ function NuevoPerfil({ filas, recargar, abrir }) {
     setError('')
     setResumenDiseno('')
     setCambiosIA(null)
+    setCambiosExtra({})
     try {
       const { resultado } = await llamar('asistente', { paso: 'diseno-miniweb', peticion: cuento.trim(), nombre: nombre.trim(), catalogo: catalogoMiniweb() })
       const d = validarDiseno(resultado)
@@ -2209,6 +2470,7 @@ function NuevoPerfil({ filas, recargar, abrir }) {
 
       // Si el asistente ya ha montado la miniweb (botón Montar), sus textos y fotos ya están hechos y se guardan tal cual. Si no, con
       // lo que se le ha contado del negocio se inventa el copy y busca las fotos sobre el diseño ya montado (colores, solo si se piden)
+      // Lo cambiado a mano en los datos en bruto va el último, para que mande sobre lo del asistente
       let historial = []
       if (cambiosIA) {
         cambios = fusionar(cambios, cambiosIA.cambios)
@@ -2220,6 +2482,7 @@ function NuevoPerfil({ filas, recargar, abrir }) {
         setCreando('Creando...')
       }
 
+      if (Object.keys(cambiosExtra).length) cambios = fusionar(cambios, cambiosExtra)
       const { error } = await supabase.from('ediciones').insert({ tipo: tipoFila, slug, base, cambios, ...(historial.length ? { historial } : {}) })
       if (error) throw new Error('No se ha podido crear.')
       if (esCarta) await crearCartaConDueno(slug, aplicar(cartaBase, cambios).menuDia)
@@ -2278,6 +2541,36 @@ function NuevoPerfil({ filas, recargar, abrir }) {
             )}
           </div>
   )
+
+  // Los datos de la página tal como están ahora (la base con el diseño elegido y, si lo hay, lo que ha hecho el asistente), sin los cambios a mano
+  const datosEnBruto = useMemo(() => {
+    if (esCarta) return null
+    try {
+      const { base, cambios } = armar(nombre.trim() || 'Prueba')
+      return aplicar(getNegocio(base), cambiosIA ? fusionar(cambios, cambiosIA.cambios) : cambios)
+    } catch {
+      return null
+    }
+  }, [vista, cambiosIA, producto]) // eslint-disable-line react-hooks/exhaustive-deps
+  const cambiarExtra = (ruta, valor) =>
+    setCambiosExtra(c => {
+      const nuevo = { ...c }
+      if (valor === leerRuta(datosEnBruto, ruta)) delete nuevo[ruta]
+      else nuevo[ruta] = valor
+      return nuevo
+    })
+  // Los cambios a mano pasan a la vista previa (junto a lo del asistente) medio segundo después de dejar de escribir
+  useEffect(() => {
+    const t = setTimeout(() => {
+      try {
+        localStorage.setItem('mostraq-vista-ia', JSON.stringify({ ...(cambiosIA?.cambios ?? {}), ...cambiosExtra }))
+      } catch {
+        // Sin almacenamiento, la vista previa no enseña estos cambios, pero al crear sí se guardan
+      }
+      setVersionExtra(v => v + 1)
+    }, 600)
+    return () => clearTimeout(t)
+  }, [cambiosExtra]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // La tipografía (la pareja de fuentes de la marca)
   const campoTipografia = (
@@ -2686,7 +2979,7 @@ function NuevoPerfil({ filas, recargar, abrir }) {
           )}
           {/* El estilo del menú de navegación, debajo de la portada, con la misma fila de iconos */}
           {producto === 'miniweb' && <FilaEstiloMenu valor={barra} cambiar={setBarra} />}
-          {producto === 'miniweb' && <FilaHorario valor={horarioMini} cambiar={setHorarioMini} />}
+          {producto === 'miniweb' && <FilaHorario valor={horarioMini} cambiar={setHorarioMini} variante={horarioVar} cambiarVariante={setHorarioVar} />}
             </div>
           </details>
           {/* Segundo desplegable: Colores */}
@@ -2745,7 +3038,9 @@ function NuevoPerfil({ filas, recargar, abrir }) {
             </summary>
             <div className="grid gap-[1rem] px-[0.85rem] pb-[0.85rem] pt-[0.2rem]">
             {bloqueNombre}
-            <Plegable titulo="Textos de la miniweb" elegido={textosEditados ? 'Cambiados' : 'Los de la plantilla'}>
+            {/* Tipografía, encima de Texto inicio, directamente en Textos (sin desplegable propio) */}
+            {campoTipografia}
+            <Plegable titulo="Texto inicio" elegido={textosEditados ? 'Cambiados' : 'Los de la plantilla'}>
               <div className="grid gap-[0.9rem]">
                 <div className="grid gap-[0.3rem]">
                   <div>
@@ -2796,15 +3091,34 @@ function NuevoPerfil({ filas, recargar, abrir }) {
                     Volver a los textos de la plantilla
                   </button>
                 )}
-                {campoTipografia}
               </div>
             </Plegable>
+            {/* Debajo, los textos de la página del Horario */}
+            {datosEnBruto && (
+              <Plegable titulo="Texto horarios">
+                <TextosHorario original={datosEnBruto} cambios={cambiosExtra} cambiar={cambiarExtra} />
+              </Plegable>
+            )}
             </div>
           </details>
           )}
           {/* La tipografía: en miniweb va dentro de Textos de la miniweb, abajo del todo */}
           {producto !== 'miniweb' && campoTipografia}
-            {/* La carta del menú, de momento abajo del todo */}
+            {/* Imágenes: todas las de la página, por pestaña, con el buscador de fotos y para subir la tuya */}
+            {!esCarta && datosEnBruto && (
+              <details className="group/imagenes rounded-[0.75rem] ring-1 ring-zinc-200">
+                <summary className="flex cursor-pointer list-none items-center gap-[0.75rem] px-[0.85rem] py-[0.8rem] [&::-webkit-details-marker]:hidden">
+                  <span className="text-[1rem] font-bold">Imágenes</span>
+                  <ChevronDown className="ml-auto h-[1rem] w-[1rem] shrink-0 text-zinc-500 transition-transform group-open/imagenes:rotate-180" aria-hidden="true" />
+                </summary>
+                <div className="px-[0.85rem] pb-[0.85rem] pt-[0.2rem]">
+                  <ImagenesPorPestana original={datosEnBruto} cambios={cambiosExtra} cambiar={cambiarExtra} />
+                </div>
+              </details>
+            )}
+            {/* Todos los datos editables en bruto, en sus desplegables (los del editor de un perfil) */}
+            {!esCarta && datosEnBruto && <EditorEnBruto original={datosEnBruto} cambios={cambiosExtra} cambiar={cambiarExtra} />}
+            {/* La carta del menú, abajo del todo */}
             {producto === 'miniweb' && <SelectorCartaMiniweb valor={cartaMini} cambiar={valor => setCartaMini(valor ?? '')} />}
           </div>
           )}

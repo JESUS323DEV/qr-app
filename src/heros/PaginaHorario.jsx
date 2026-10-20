@@ -3,12 +3,14 @@ import Img from '../components/Img'
 import { clipDeCorte } from '../lib/cortes'
 
 /* La página del Horario de una miniweb: la foto de arriba, el título, las líneas de días y horas, la nota y, debajo, la tarjeta del mapa.
-   El diseño (hero.horario; sin él, 'lista', el de siempre) cambia cómo se juntan la foto y el horario:
-   - sangre: la foto a sangre hasta el mapa y el horario encima, en blanco, sobre un degradado oscuro
-   - solapada: la foto arriba y el horario en una tarjeta que se monta sobre su borde
-   - cartel: una banda estrecha de foto y el horario centrado, con las horas en grande, como el cartel de la puerta de un local
-   - columnas: la foto en una tira a la izquierda y el horario a la derecha
-   - portada: la foto con el recorte y la letra de la portada elegida (diagonal, polaroid, retrato, mosaico...) y las líneas de la lista */
+   El diseño (hero.horario; sin él, 'lista', el de siempre) cambia cómo se juntan la foto y el horario, y su variante (hero.horarioVariante; sin
+   ella, 'clasica') lo retoca (los nombres, en lib/horarios.js):
+   - lista: las líneas de siempre
+   - sangre: la foto a sangre hasta el mapa y el horario encima (clasica, centrado, cristal)
+   - solapada: la foto arriba y el horario en una tarjeta que se monta sobre su borde (clasica, banda, borde)
+   - cartel: una banda baja de foto y el horario centrado, con las horas en grande
+   - columnas: la foto en una tira y el horario al lado (clasica, derecha, ancha)
+   - portada: la foto con el recorte y la letra de la portada elegida (diagonal, polaroid, retrato, mosaico...) */
 
 const cerrado = l => /cerrad/i.test(l.horas)
 
@@ -54,7 +56,7 @@ function Mapa({ pestana, cargarMapa }) {
   )
 }
 
-// Las líneas de siempre: el día a la izquierda y las horas a la derecha, con una línea discontinua entre ellas
+// Las líneas de la lista: el día a la izquierda y las horas a la derecha, con una línea discontinua entre ellas
 function LineasLista({ lineas }) {
   return (
     <dl className="mt-[0.6rem] text-[0.88rem]">
@@ -70,30 +72,56 @@ function LineasLista({ lineas }) {
 
 const Nota = ({ nota, className = '' }) => nota && <p className={`mt-[0.5rem] text-[0.78rem] ${className}`}>{nota}</p>
 
-export default function PaginaHorario({ pestana, cargarMapa, heroBase }) {
+export default function PaginaHorario({ pestana, cargarMapa, heroBase, respaldo }) {
+  // La foto de la pestaña o, si no trae (las fichas sin horario propio), la de respaldo de la miniweb
+  const foto = pestana.foto ?? respaldo
   const diseno = heroBase?.horario
+  const v = heroBase?.horarioVariante ?? 'clasica'
   const lineas = pestana.lineas ?? []
   const mapa = <Mapa pestana={pestana} cargarMapa={cargarMapa} />
   const portada = heroBase?.portada
 
-  // La foto a sangre, con el horario encima, en blanco, sobre un degradado oscuro
+  // La foto a sangre, con el horario encima, en blanco. Variantes: clasica (abajo, sobre un degradado oscuro), centrado (todo en el medio,
+  // con la foto oscurecida) y cristal (el horario en una tarjeta de cristal abajo)
   const sangre = (
     <div className="flex h-full flex-col">
-      <div className="relative flex min-h-[15rem] flex-1 flex-col justify-end">
-        <Foto foto={pestana.foto} className="absolute inset-0" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-black/15" />
-        <div className="relative px-[1.25rem] pb-[0.9rem] pt-[2rem] text-white">
-          <h2 className="font-demo-heading text-[1.8rem] font-extrabold leading-none">{pestana.titulo}</h2>
-          <dl className="mt-[0.6rem] text-[0.88rem]">
-            {lineas.map(l => (
-              <div key={l.dias} className="flex justify-between gap-[1rem] border-b border-white/25 py-[0.35rem]">
-                <dt className="font-semibold">{l.dias}</dt>
-                <dd className={`text-right ${cerrado(l) ? 'text-white/60' : 'text-white/90'}`}>{l.horas}</dd>
-              </div>
-            ))}
-          </dl>
-          <Nota nota={pestana.nota} className="text-white/70" />
+      <div className={`relative flex min-h-[15rem] flex-1 flex-col ${v === 'centrado' ? 'justify-center' : 'justify-end'}`}>
+        {/* La foto llena todo el bloque (en un contenedor propio: Foto ya lleva position relative) */}
+        <div className="absolute inset-0">
+          <Foto foto={foto} className="h-full w-full" />
         </div>
+        <div
+          className={`absolute inset-0 ${
+            v === 'centrado' ? 'bg-black/60' : v === 'cristal' ? 'bg-gradient-to-t from-black/60 via-black/15 to-transparent' : 'bg-gradient-to-t from-black/90 via-black/60 to-black/15'
+          }`}
+        />
+        {v === 'centrado' ? (
+          <div className="relative px-[1.25rem] py-[0.9rem] text-center text-white">
+            <h2 className="font-demo-heading text-[1.8rem] font-extrabold leading-none">{pestana.titulo}</h2>
+            <dl className="mt-[0.7rem] grid gap-[0.5rem]">
+              {lineas.map(l => (
+                <div key={l.dias}>
+                  <dt className="text-[0.78rem] text-white/70">{l.dias}</dt>
+                  <dd className={`font-demo-heading text-[1.15rem] font-bold leading-tight ${cerrado(l) ? 'text-white/55' : ''}`}>{l.horas}</dd>
+                </div>
+              ))}
+            </dl>
+            <Nota nota={pestana.nota} className="text-white/70" />
+          </div>
+        ) : (
+          <div className={`relative text-white ${v === 'cristal' ? 'mx-[1rem] mb-[0.8rem] rounded-[1rem] bg-black/45 px-[1rem] py-[0.8rem] backdrop-blur-md' : 'px-[1.25rem] pb-[0.9rem] pt-[2rem]'}`}>
+            <h2 className="font-demo-heading text-[1.8rem] font-extrabold leading-none">{pestana.titulo}</h2>
+            <dl className="mt-[0.6rem] text-[0.88rem]">
+              {lineas.map(l => (
+                <div key={l.dias} className="flex justify-between gap-[1rem] border-b border-white/25 py-[0.35rem] last:border-b-0">
+                  <dt className="font-semibold">{l.dias}</dt>
+                  <dd className={`text-right ${cerrado(l) ? 'text-white/60' : 'text-white/90'}`}>{l.horas}</dd>
+                </div>
+              ))}
+            </dl>
+            <Nota nota={pestana.nota} className="text-white/70" />
+          </div>
+        )}
       </div>
       {mapa}
     </div>
@@ -101,61 +129,77 @@ export default function PaginaHorario({ pestana, cargarMapa, heroBase }) {
 
   if (diseno === 'sangre') return sangre
 
-  // La foto arriba y el horario en una tarjeta que se monta sobre su borde
-  if (diseno === 'solapada')
+  // La foto arriba y el horario en una tarjeta que se monta sobre su borde. Variantes: clasica, banda (el título en una banda del color
+  // principal) y borde (una tarjeta más recta con una barra de acento a la izquierda)
+  if (diseno === 'solapada') {
+    const tarjeta =
+      v === 'banda'
+        ? 'overflow-hidden rounded-[1.2rem] bg-demo-bg shadow-[0_0.6rem_1.6rem_-0.5rem_rgb(0_0_0/0.35)]'
+        : v === 'borde'
+          ? 'rounded-[0.5rem] border-l-[0.35rem] border-demo-accent bg-demo-bg px-[1.1rem] pb-[0.7rem] pt-[0.9rem] shadow-[0_0.4rem_1.2rem_-0.4rem_rgb(0_0_0/0.35)]'
+          : 'rounded-[1.2rem] bg-demo-bg px-[1.1rem] pb-[0.7rem] pt-[1rem] shadow-[0_0.6rem_1.6rem_-0.5rem_rgb(0_0_0/0.35)]'
     return (
       <div className="flex h-full flex-col">
-        <Foto foto={pestana.foto} className="min-h-[5rem] flex-1" />
-        <div className="relative z-10 -mt-[2.4rem] mx-[1rem] mb-[0.8rem] rounded-[1.2rem] bg-demo-bg px-[1.1rem] pb-[0.7rem] pt-[1rem] shadow-[0_0.6rem_1.6rem_-0.5rem_rgb(0_0_0/0.35)]">
-          <h2 className="font-demo-heading text-[1.6rem] font-extrabold leading-none">{pestana.titulo}</h2>
-          <dl className="mt-[0.5rem] text-[0.88rem]">
-            {lineas.map(l => (
-              <div key={l.dias} className="flex justify-between gap-[1rem] border-b border-demo-text/10 py-[0.35rem] last:border-b-0">
-                <dt className="font-semibold">{l.dias}</dt>
-                <dd className={`text-right ${cerrado(l) ? 'text-demo-muted' : 'font-semibold text-demo-primary'}`}>{l.horas}</dd>
-              </div>
-            ))}
-          </dl>
-          <Nota nota={pestana.nota} className="text-demo-muted" />
+        <Foto foto={foto} className="min-h-[5rem] flex-1" />
+        <div className={`relative z-10 -mt-[2.4rem] mx-[1rem] mb-[0.8rem] ${tarjeta}`}>
+          {v === 'banda' && (
+            <div className="bg-demo-primary px-[1.1rem] py-[0.5rem] text-white">
+              <h2 className="font-demo-heading text-[1.4rem] font-extrabold leading-none">{pestana.titulo}</h2>
+            </div>
+          )}
+          <div className={v === 'banda' ? 'px-[1.1rem] pb-[0.7rem] pt-[0.4rem]' : ''}>
+            {v !== 'banda' && <h2 className="font-demo-heading text-[1.6rem] font-extrabold leading-none">{pestana.titulo}</h2>}
+            <dl className="mt-[0.5rem] text-[0.88rem]">
+              {lineas.map(l => (
+                <div key={l.dias} className="flex justify-between gap-[1rem] border-b border-demo-text/10 py-[0.35rem] last:border-b-0">
+                  <dt className="font-semibold">{l.dias}</dt>
+                  <dd className={`text-right ${cerrado(l) ? 'text-demo-muted' : 'font-semibold text-demo-primary'}`}>{l.horas}</dd>
+                </div>
+              ))}
+            </dl>
+            <Nota nota={pestana.nota} className="text-demo-muted" />
+          </div>
         </div>
         {mapa}
       </div>
     )
+  }
 
-  // Una banda estrecha de foto y el horario centrado, con las horas en grande, como el cartel de la puerta de un local
-  if (diseno === 'cartel')
+  // Una banda baja de foto y el horario centrado, con las horas en grande, como el cartel de la puerta de un local (sin variantes)
+  if (diseno === 'cartel') {
+    const horas = lineas.map((l, i) => (
+      <div key={l.dias} className={i ? 'border-t border-demo-text/15 pt-[0.5rem]' : ''}>
+        <dt className="text-[0.78rem] text-demo-muted">{l.dias}</dt>
+        <dd className={`font-demo-heading text-[1.05rem] font-bold leading-tight ${cerrado(l) ? 'text-demo-muted' : ''}`}>{l.horas}</dd>
+      </div>
+    ))
     return (
       <div className="flex h-full flex-col">
-        <Foto foto={pestana.foto} className="h-[4.2rem] shrink-0" />
+        <Foto foto={foto} className="h-[2.6rem] shrink-0" />
         <div className="flex flex-1 flex-col items-center justify-center px-[1.25rem] py-[0.7rem] text-center">
           <h2 className="font-demo-heading text-[1.6rem] font-extrabold leading-none">{pestana.titulo}</h2>
-          <dl className="mt-[0.6rem] grid w-full max-w-[18rem] gap-[0.5rem]">
-            {lineas.map((l, i) => (
-              <div key={l.dias} className={i ? 'border-t border-demo-text/15 pt-[0.5rem]' : ''}>
-                <dt className="text-[0.78rem] text-demo-muted">{l.dias}</dt>
-                <dd className={`font-demo-heading text-[1.2rem] font-bold leading-tight ${cerrado(l) ? 'text-demo-muted' : ''}`}>{l.horas}</dd>
-              </div>
-            ))}
-          </dl>
+          <dl className="mt-[0.6rem] grid w-full max-w-[18rem] gap-[0.5rem]">{horas}</dl>
           <Nota nota={pestana.nota} className="text-demo-muted" />
         </div>
         {mapa}
       </div>
     )
+  }
 
-  // La foto en una tira a la izquierda y el horario a la derecha
+  // La foto en una tira y el horario al lado. Variantes: clasica (foto a la izquierda), derecha (la foto a la derecha) y ancha (la foto más
+  // ancha y las letras más pequeñas)
   if (diseno === 'columnas')
     return (
       <div className="flex h-full flex-col">
-        <div className="flex min-h-[10rem] flex-1">
-          <Foto foto={pestana.foto} className="w-[36%] shrink-0" />
+        <div className={`flex min-h-[10rem] flex-1 ${v === 'derecha' ? 'flex-row-reverse' : ''}`}>
+          <Foto foto={foto} className={`shrink-0 ${v === 'ancha' ? 'w-[48%]' : 'w-[36%]'}`} />
           <div className="min-w-0 flex-1 px-[1rem] py-[0.9rem]">
-            <h2 className="font-demo-heading text-[1.5rem] font-extrabold leading-none">{pestana.titulo}</h2>
-            <dl className="mt-[0.6rem] text-[0.85rem]">
+            <h2 className={`font-demo-heading font-extrabold leading-none ${v === 'ancha' ? 'text-[1.3rem]' : 'text-[1.5rem]'}`}>{pestana.titulo}</h2>
+            <dl className={`mt-[0.6rem] ${v === 'ancha' ? 'text-[0.78rem]' : 'text-[0.85rem]'}`}>
               {lineas.map(l => (
                 <div key={l.dias} className="border-b border-demo-text/10 py-[0.35rem] last:border-b-0">
                   <dt className="font-semibold">{l.dias}</dt>
-                  <dd className={cerrado(l) ? 'text-demo-muted' : 'text-demo-muted'}>{l.horas}</dd>
+                  <dd className="text-demo-muted">{l.horas}</dd>
                 </div>
               ))}
             </dl>
@@ -176,7 +220,7 @@ export default function PaginaHorario({ pestana, cargarMapa, heroBase }) {
         <div className="flex h-full flex-col">
           <div className="flex-1 px-[1.25rem] pt-[1rem]">
             <div className="flex items-center gap-[0.8rem]">
-              <Foto foto={pestana.foto} className="h-[3.6rem] w-[3.6rem] shrink-0 rounded-full" />
+              <Foto foto={foto} className="h-[3.6rem] w-[3.6rem] shrink-0 rounded-full" />
               <h2 className="font-demo-heading text-[1.8rem] font-extrabold leading-none">{pestana.titulo}</h2>
             </div>
             <LineasLista lineas={lineas} />
@@ -191,7 +235,7 @@ export default function PaginaHorario({ pestana, cargarMapa, heroBase }) {
         <div className="flex h-full flex-col">
           <div className="flex min-h-[8rem] flex-1 items-center justify-center overflow-hidden py-[0.6rem]">
             <div className="aspect-[5/4] h-full max-h-[11rem] -rotate-[2deg] bg-white p-[0.4rem] pb-[1.8rem] shadow-[0_0.5rem_1.2rem_-0.3rem_rgb(0_0_0/0.45)]">
-              <Foto foto={pestana.foto} className="h-full w-full" />
+              <Foto foto={foto} className="h-full w-full" />
               <p className="-mt-[0.1rem] text-center text-[1.3rem] font-bold leading-none text-[#2A211C]" style={{ fontFamily: '"Caveat", "Comic Sans MS", cursive' }}>
                 {pestana.titulo}
               </p>
@@ -210,7 +254,7 @@ export default function PaginaHorario({ pestana, cargarMapa, heroBase }) {
     return (
       <div className="flex h-full flex-col">
         <Foto
-          foto={pestana.foto}
+          foto={foto}
           className={`min-h-[4.5rem] flex-1 ${conMarco ? 'mx-[1.25rem] mt-[0.8rem] rounded-[1.1rem]' : ''}`}
           style={corte ? { clipPath: corte } : undefined}
         />
@@ -227,7 +271,7 @@ export default function PaginaHorario({ pestana, cargarMapa, heroBase }) {
   // Lista: la de siempre
   return (
     <div className="flex h-full flex-col">
-      <Foto foto={pestana.foto} className="min-h-[4.5rem] flex-1" />
+      <Foto foto={foto} className="min-h-[4.5rem] flex-1" />
       <div className="px-[1.25rem] py-[0.9rem]">
         <h2 className="font-demo-heading text-[1.8rem] font-extrabold leading-none">{pestana.titulo}</h2>
         <LineasLista lineas={lineas} />
