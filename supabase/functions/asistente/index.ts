@@ -133,6 +133,18 @@ const ESQUEMA_DISENO = {
     compartirEn: { type: 'string' },
     estiloMenu: { type: 'string' },
     textoExtra: { type: 'string' },
+    infoImagen: { type: 'string' },
+    horario: { type: 'string' },
+    horarioVariante: { type: 'string' },
+    horarioLineas: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: { dias: { type: 'string' }, horas: { type: 'string' } },
+        required: ['dias', 'horas'],
+        additionalProperties: false,
+      },
+    },
     carta: { type: 'string' },
     tamanoNombre: { type: 'string' },
     tipografia: { type: 'string' },
@@ -153,7 +165,7 @@ const ESQUEMA_DISENO = {
     },
     resumen: { type: 'string' },
   },
-  required: ['nombre', 'tema', 'portada', 'subdiseno', 'redesEn', 'redesVinculadas', 'menuEn', 'compartirEn', 'estiloMenu', 'textoExtra', 'carta', 'tamanoNombre', 'tipografia', 'colores', 'roles', 'resumen'],
+  required: ['nombre', 'tema', 'portada', 'subdiseno', 'redesEn', 'redesVinculadas', 'menuEn', 'compartirEn', 'estiloMenu', 'textoExtra', 'infoImagen', 'horario', 'horarioVariante', 'horarioLineas', 'carta', 'tamanoNombre', 'tipografia', 'colores', 'roles', 'resumen'],
   additionalProperties: false,
 }
 
@@ -169,12 +181,32 @@ Cómo elegir:
 - estiloMenu: el estilo de las pestañas del menú, por su clave ('rayita' es el de siempre). El estilo solo cambia la FORMA de la marca de la pestaña elegida (raya, onda, pastilla, bloque, carpeta...): el fondo del menú es siempre el mismo, el de cabecera (el color principal) o el que pongas en los roles, y las letras se ponen solas en blanco u oscuro según ese fondo. Elige por el carácter de la marca, no por colores. Los que tienen forma (segmentada, pastillas, bloques, carpeta, app) piden un fondo de menú con buen contraste: si el color principal es muy claro, mejor un estilo de texto (rayita, subrayada, onda, revista o barras) o pon un fondo de menú oscuro en los roles.
 - textoExtra: un texto corto (máximo 60 caracteres) que va debajo del botón principal, normalmente el horario ("De martes a sábado, de 10 a 20") o una frase corta útil. Usa solo datos que te hayan dado; si no hay ninguno, vacío.
 - tamanoNombre: el tamaño del nombre arriba ('md' salvo que el nombre sea muy largo o muy corto o pidan otra cosa).
+- horario y horarioVariante: el diseño de la página del Horario, por su clave ('lista' es el de siempre), y una de SUS variantes (vacía o 'clasica' si no tiene o no quieres). Elige el que encaje con el carácter de la marca y con la portada que has elegido ('portada' hace que la foto del horario copie el recorte y la letra de la portada).
+- horarioLineas: las líneas del horario, solo con lo que te hayan dado (máximo 7). Cada una: dias ("Lunes a viernes", "Sábado", "Domingo"...) y horas en este formato exacto: "Cerrado", o un tramo "10:00 a 14:00", o dos "10:00 a 14:00 y 17:00 a 20:00" (horas en 24 h con dos puntos; como mucho dos tramos). Si no te dan horario, la lista vacía.
 - carta: la carta de muestra que pinta el menú de la miniweb, por su clave, entre las de la lista (cada una tiene su diseño y para qué negocios va). Elige la que mejor vaya con el negocio y el estilo que piden. Vacío si el negocio no tiene carta que enseñar o no encaja ninguna.
 - tipografia: el id de una pareja de la lista, la que mejor vaya con la marca.
+- Si te paso una imagen de referencia de la marca (su logo o una captura), úsala SOLO como referencia, no la coloques: de ella saca el carácter de la marca (moderno, artesanal, elegante, juvenil, popular...) para elegir portada, menú y tipografía, y los colores. Los colores dominantes exactos te los doy en una lista en hexadecimal: usa esos para la paleta (principal, acento, y fondo y texto con buen contraste) en lugar de inventar otros parecidos, salvo que el texto pida otros. Si el logo está sobre un fondo de color, ese fondo suele ser el principal de la marca; el color de las letras o del dibujo, el acento.
+- Si la imagen trae TEXTO (nombre del negocio, lema, descripción, teléfonos, WhatsApp, dirección, horario, redes...), léelo y úsalo como si Jesús te lo hubiera escrito: el nombre del negocio, las líneas del horario (horarioLineas), el texto extra... Y devuélvelo en infoImagen: los datos que se lean con claridad, uno por línea y tal cual ("Nombre: ...", "Lema: ...", "Teléfono: ...", "WhatsApp: ...", "Dirección: ...", "Horario: ...", "Redes: ..."), para pasárselos al paso de los textos. Solo lo que se lea bien: no inventes ni completes lo que no se vea. Ignora los números de publicaciones o seguidores y los emojis. Si no hay texto útil, infoImagen vacío.
 - colores (formato #RRGGBB): una paleta completa y coherente a partir de los colores que pidan o de lo que transmita la marca. principal es el color fuerte (botones y bloques), acento el detalle, fondo y texto los de la página. El texto tiene que leerse bien sobre el fondo (contraste alto), y el texto blanco o negro sobre el acento y el principal.
 - roles: colores sueltos de la lista de roles. Déjalo vacío salvo que haga falta (cada rol sin color se pone solo y se lee bien); úsalo, por ejemplo, para el fondo del menú o de las redes si quieres un contraste propio.
 - resumen: una o dos frases en castellano, sin guiones largos, diciendo cómo has montado el diseño y por qué. Escribe con naturalidad: nada de frases de relleno del sector ("experiencia única", "pasión por...").
 No uses guiones largos (—) en ningún texto.`
+
+// El mensaje del paso de diseño. Con imagen de referencia (el logo de la marca, solo para mirarlo): la imagen y, en texto, sus colores
+// dominantes exactos (los saca el panel de los píxeles). Se comprueba el tipo y el tamaño antes de pasársela a Claude
+function contenidoDiseno(datos: any, texto: string) {
+  const ref = datos.referencia
+  const valida =
+    ref && typeof ref.imagen === 'string' && ref.imagen.length > 0 && ref.imagen.length < 2_000_000 && ['image/jpeg', 'image/png', 'image/webp'].includes(ref.tipo)
+  if (!valida) return texto
+  const colores = Array.isArray(ref.colores)
+    ? ref.colores.slice(0, 6).filter((c: any) => /^#[0-9A-Fa-f]{6}$/.test(c?.hex)).map((c: any) => `${c.hex} (${Number(c.porcentaje) || 0} %)`).join(', ')
+    : ''
+  return [
+    { type: 'image', source: { type: 'base64', media_type: ref.tipo, data: ref.imagen } },
+    { type: 'text', text: `${texto}\n\nTe paso una imagen de referencia de la marca (su logo o una captura). Úsala solo como referencia: no se coloca en la página.${colores ? ` Colores dominantes de la imagen, exactos: ${colores}.` : ''}` },
+  ]
+}
 
 // Reglas comunes: las de diseño y copy de Jesús
 const REGLAS = `Eres el asistente de Jesús, que hace páginas para el móvil para negocios locales de Barcelona; el cliente las abre con un QR en el local. Hay tres tipos:
@@ -379,7 +411,7 @@ Deno.serve(async req => {
         messages: [
           {
             role: 'user',
-            content: `Nombre del negocio: ${String(datos.nombre || 'sin nombre').slice(0, 80)}\n\nLo que cuenta Jesús del negocio:\n${String(datos.peticion).trim().slice(0, 800)}\n\nPiezas disponibles (JSON; usa solo estas claves):\n${JSON.stringify(datos.catalogo)}`,
+            content: contenidoDiseno(datos, `Nombre del negocio: ${String(datos.nombre || 'sin nombre').slice(0, 80)}\n\nLo que cuenta Jesús del negocio:\n${String(datos.peticion).trim().slice(0, 800)}\n\nPiezas disponibles (JSON; usa solo estas claves):\n${JSON.stringify(datos.catalogo)}`),
           },
         ],
       })

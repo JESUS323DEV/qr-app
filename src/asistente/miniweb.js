@@ -14,6 +14,7 @@ import { TIPOGRAFIAS } from './tipografias'
 import { BARRAS } from '../fichas/barras'
 import { PLANTILLAS } from '../plantillas'
 import { cartas } from '../cartas'
+import { HORARIOS } from '../lib/horarios'
 import { DISENOS_CARTA } from './disenos'
 
 // Las portadas de una miniweb, con cómo se ven y su lista de subdiseños (campo: la clave que se guarda en hero)
@@ -78,6 +79,25 @@ export const ESTILOS_MENU_IA = [
   { clave: 'app', nombre: 'Tipo app', texto: 'icono y nombre como la barra de una app; muy móvil' },
 ]
 
+// Cómo se ve cada diseño de horario y cada variante (para que la IA elija sabiendo cómo queda)
+const TEXTO_HORARIO = {
+  lista: 'foto arriba y las líneas de días y horas debajo; sobrio y neutro',
+  sangre: 'la foto ocupa todo el fondo y el horario va encima en blanco; muy visual, pide una buena foto',
+  solapada: 'foto arriba y una tarjeta con el horario que se monta sobre ella; limpio y moderno',
+  cartel: 'una banda baja de foto y el horario centrado con las horas en grande, como el cartel de una puerta; bares, cafeterías y comercios',
+  columnas: 'la foto en una tira a un lado y el horario al otro, como una página de revista',
+  portada: 'la foto toma el recorte y la letra de la portada elegida; muy coherente con ella',
+  'sangre.clasica': 'el horario abajo sobre un degradado oscuro',
+  'sangre.centrado': 'todo centrado con la foto oscurecida',
+  'sangre.cristal': 'el horario en una tarjeta de cristal',
+  'solapada.clasica': 'tarjeta blanca con esquinas muy redondas',
+  'solapada.banda': 'el título en una banda del color principal',
+  'solapada.borde': 'tarjeta más recta con una barra de acento a la izquierda',
+  'columnas.clasica': 'foto a la izquierda',
+  'columnas.derecha': 'foto a la derecha',
+  'columnas.ancha': 'foto más ancha y letras más pequeñas',
+}
+
 export const TAMANOS_NOMBRE = [['xs', 'pequeño'], ['md', 'el de cada diseño'], ['xl', 'grande']]
 
 // Los roles de color opcionales (los que ya tienen un valor automático que se lee bien; solo se tocan si hace falta)
@@ -92,11 +112,23 @@ export const catalogoMiniweb = () => ({
   tamanosNombre: TAMANOS_NOMBRE.map(([clave, texto]) => ({ clave, texto })),
   tipografias: TIPOGRAFIAS.map(t => ({ id: t.id, nombre: t.nombre, estilo: t.estilo })),
   rolesColor: ROLES_COLOR_IA,
+  // Los diseños de horario, con sus variantes ('lista' es el de siempre)
+  horarios: HORARIOS.map(h => ({ clave: h.clave, texto: TEXTO_HORARIO[h.clave] ?? '', variantes: h.variantes.map(v => ({ clave: v.clave, texto: TEXTO_HORARIO[`${h.clave}.${v.clave}`] ?? '' })) })),
   // Las cartas de muestra que puede llevar el menú de la miniweb (vacío si ninguna encaja o el negocio no tiene carta)
   cartas: cartas.map(c => ({ clave: c.slug, para: DISENOS_CARTA[c.slug]?.para ?? 'Negocios de belleza: servicios y precios.', estilo: DISENOS_CARTA[c.slug]?.estilo ?? c.diseno })),
 })
 
 const HEX = /^#[0-9a-f]{6}$/i
+
+// Las líneas del horario que devuelve la IA, comprobadas: hasta 7, cada una con sus días y sus horas en el formato de la página ("Cerrado" o
+// uno o dos tramos "13:00 a 16:30 y 20:00 a 23:30"); la que no cumpla, se descarta
+const TRAMO = '\\d{1,2}:\\d{2} a \\d{1,2}:\\d{2}'
+const HORAS_VALIDAS = new RegExp(`^(Cerrado|${TRAMO}( y ${TRAMO})?)$`)
+const lineasDeHorario = lineas =>
+  (Array.isArray(lineas) ? lineas : [])
+    .slice(0, 7)
+    .map(l => ({ dias: String(l?.dias ?? '').replace(/—/g, ',').trim().slice(0, 40), horas: String(l?.horas ?? '').trim() }))
+    .filter(l => l.dias && HORAS_VALIDAS.test(l.horas))
 
 // Lo que devuelve la IA, comprobado contra las listas: solo pasa lo que existe (lo demás se ignora, no rompe nada)
 export function validarDiseno(res) {
@@ -113,7 +145,13 @@ export function validarDiseno(res) {
     // 'rayita' es el estilo de siempre (sin hero.barra): se guarda como la cadena vacía
     estiloMenu: res.estiloMenu === 'rayita' ? '' : res.estiloMenu in BARRAS ? res.estiloMenu : null,
     textoExtra: String(res.textoExtra ?? '').replace(/—/g, ',').trim().slice(0, 60),
+    // Los datos que ha leído de la imagen de referencia (nombre, teléfonos, dirección...), para pasárselos al paso de los textos
+    infoImagen: String(res.infoImagen ?? '').replace(/—/g, ',').trim().slice(0, 800),
     carta: cartas.some(c => c.slug === res.carta) ? res.carta : '',
+    // 'lista' es el de siempre: se guarda como la cadena vacía. La variante, solo si es una de las de ese diseño
+    horario: HORARIOS.some(h => h.clave === res.horario) ? (res.horario === 'lista' ? '' : res.horario) : null,
+    horarioVariante: HORARIOS.find(h => h.clave === res.horario)?.variantes.some(v => v.clave === res.horarioVariante) ? res.horarioVariante : 'clasica',
+    horarioLineas: lineasDeHorario(res.horarioLineas),
     tamanoNombre: TAMANOS_NOMBRE.some(([clave]) => clave === res.tamanoNombre) ? res.tamanoNombre : null,
     tipografia: TIPOGRAFIAS.some(t => t.id === res.tipografia) ? res.tipografia : null,
     colores: Object.fromEntries(['principal', 'acento', 'texto', 'fondo'].map(k => [k, HEX.test(res.colores?.[k] ?? '') ? res.colores[k] : null])),

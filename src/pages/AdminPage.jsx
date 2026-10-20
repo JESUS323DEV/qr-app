@@ -14,6 +14,7 @@ import { DISENOS_ASISTENTE, DISENOS_CARTA } from '../asistente/disenos'
 import { GRUPOS_PLANTILLAS, PLANTILLAS } from '../plantillas'
 import { catalogoMiniweb, validarDiseno } from '../asistente/miniweb'
 import { DIBUJOS_MENU, GRUPOS_MENU } from '../lib/estilosMenu'
+import { leerReferencia } from '../asistente/referencia'
 import { ICONOS_ESTRUCTURA } from '../lib/iconosEstructura'
 import { HORARIOS } from '../lib/horarios'
 import Movil from '../components/Movil'
@@ -1935,10 +1936,9 @@ function EditorEnBruto({ original, cambios, cambiar }) {
   campo.tarjetaCambiada = t => t.campos.some(c => c.ruta in cambios)
   return (
     <div className="grid gap-[0.75rem]">
-      <p className="text-[0.8rem] text-zinc-500">Todo lo editable de la página, en bruto. Lo que cambies aquí se ve en la vista previa y se guarda al crear.</p>
-      {/* Datos, Colores de la marca, Pestaña Inicio, Pestaña Menú, Tarjeta destacada y Carrusel: fuera de aquí (ya están en Nuevo perfil o no hacen falta) */}
+      {/* De los desplegables en bruto del editor de un perfil, aquí solo Redes y Reseña de Google, tal cual; el resto, fuera */}
       {bloques
-        .filter(b => !['Datos', 'Colores de la marca', 'Pestaña Inicio', 'Pestaña Menú', 'Pestaña Horario', 'Tarjeta destacada', 'Carrusel'].includes(b.titulo))
+        .filter(b => ['Redes', 'Reseña de Google'].includes(b.titulo))
         .map(b => (
           <Bloque key={b.clave} bloque={b} abierto={false} campo={campo} />
         ))}
@@ -2192,6 +2192,12 @@ function NuevoPerfil({ filas, recargar, abrir }) {
   const [cambiosIA, setCambiosIA] = useState(null)
   const [versionIA, setVersionIA] = useState(0)
   const [redactando, setRedactando] = useState(false)
+  // La imagen de referencia de la marca para el asistente (solo se lee; no se coloca): { imagen, tipo, miniatura, colores }
+  const [referencia, setReferencia] = useState(null)
+  // Los datos que el asistente ha leído en esa imagen (nombre, teléfonos, dirección...): van con lo que se le cuenta al escribir los textos
+  const [infoImagen, setInfoImagen] = useState('')
+  // Las líneas del horario que ha sacado el asistente de lo que se le ha contado (días y horas)
+  const [horarioIA, setHorarioIA] = useState([])
   // Si el asistente ya ha generado algo alguna vez: hasta entonces, en su pestaña el móvil sale vacío
   const [generado, setGenerado] = useState(false)
   // Los cambios hechos a mano en los datos en bruto (ruta → valor) y su versión (para recargar la vista previa, con un pequeño retraso al escribir)
@@ -2381,7 +2387,7 @@ function NuevoPerfil({ filas, recargar, abrir }) {
     avisar('Escribiendo los textos...')
     const { resultado } = await llamar('asistente', {
       paso: 'copy',
-      peticion: cuento.trim(),
+      peticion: infoImagen ? `${cuento.trim()}\n\nDatos leídos de la imagen de referencia de la marca (úsalos tal cual):\n${infoImagen}` : cuento.trim(),
       perfil: producto,
       nombre: nombreCrear,
       campos,
@@ -2404,7 +2410,7 @@ function NuevoPerfil({ filas, recargar, abrir }) {
     setCambiosIA(null)
     setCambiosExtra({})
     try {
-      const { resultado } = await llamar('asistente', { paso: 'diseno-miniweb', peticion: cuento.trim(), nombre: nombre.trim(), catalogo: catalogoMiniweb() })
+      const { resultado } = await llamar('asistente', { paso: 'diseno-miniweb', peticion: cuento.trim(), nombre: nombre.trim(), catalogo: catalogoMiniweb(), ...(referencia ? { referencia: { imagen: referencia.imagen, tipo: referencia.tipo, colores: referencia.colores } } : {}) })
       const d = validarDiseno(resultado)
       setProducto('miniweb')
       if (d.tema) setTema(d.tema)
@@ -2422,6 +2428,12 @@ function NuevoPerfil({ filas, recargar, abrir }) {
       setColoresMini(d.roles)
       if (d.nombre && !nombre.trim()) setNombre(d.nombre)
       setCartaMini(d.carta ?? '')
+      if (d.horario !== null) {
+        setHorarioMini(d.horario)
+        setHorarioVar(d.horarioVariante)
+      }
+      setHorarioIA(d.horarioLineas)
+      setInfoImagen(d.infoImagen)
       setGenerado(true)
       setResumenDiseno(d.resumen)
       setRedactando(true)
@@ -2445,6 +2457,11 @@ function NuevoPerfil({ filas, recargar, abrir }) {
           // Sin almacenamiento: la vista previa se queda sin textos ni fotos nuevos, pero al crear sí se guardan
         }
         setCambiosIA({ cambios: hecho.deIA, historial: hecho.historial })
+        // Las líneas del horario, sobre la pestaña del horario de la miniweb (como un cambio a mano, para poder retocarlas)
+        if (horarioIA.length) {
+          const idx = (aplicar(getNegocio(base), cambios).hero?.pestanas ?? []).findIndex(p => p.tipo === 'horario')
+          if (idx >= 0) setCambiosExtra(c => ({ ...c, [`hero.pestanas.${idx}.lineas`]: horarioIA }))
+        }
         setVersionIA(v => v + 1)
       } catch (e) {
         setError(e.message)
@@ -2670,6 +2687,42 @@ function NuevoPerfil({ filas, recargar, abrir }) {
             placeholder="Barbería de barrio en Sants, clásica pero cercana, colores verde y crema. Cita por WhatsApp al 612 345 678. Abre de martes a sábado de 10 a 20."
             className={`${CAMPO} resize-y`}
           />
+          {/* Logo de referencia: el asistente lo mira para sacar los colores y el carácter de la marca; no se coloca en la miniweb */}
+          <div className="flex flex-wrap items-center gap-[0.6rem]">
+            {referencia ? (
+              <>
+                <img src={referencia.miniatura} alt="Logo de referencia" className="h-[2.75rem] w-[2.75rem] rounded-[0.5rem] border border-zinc-300 object-contain" />
+                <div className="flex items-center gap-[0.25rem]" aria-label="Colores que ha sacado de la imagen">
+                  {referencia.colores.map(c => (
+                    <span key={c.hex} title={`${c.hex} (${c.porcentaje}%)`} className="h-[1.4rem] w-[1.4rem] rounded-full ring-1 ring-zinc-300" style={{ background: c.hex }} />
+                  ))}
+                </div>
+                <button type="button" aria-label="Quitar el logo de referencia" onClick={() => setReferencia(null)} className="rounded-full p-[0.25rem] text-zinc-500 hover:text-zinc-900">
+                  <X className="h-[1rem] w-[1rem]" strokeWidth={2.5} aria-hidden="true" />
+                </button>
+              </>
+            ) : (
+              <label className={`inline-flex min-h-[2.5rem] cursor-pointer items-center gap-[0.4rem] rounded-[0.6rem] bg-white px-[0.9rem] text-[0.9rem] font-semibold ring-1 ring-zinc-300 ${disenando || creando ? 'pointer-events-none opacity-50' : ''}`}>
+                <ImagePlus className="h-[1.1rem] w-[1.1rem]" aria-hidden="true" />
+                Añadir logo de referencia
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                  className="sr-only"
+                  onChange={async e => {
+                    const archivo = e.target.files?.[0]
+                    e.target.value = ''
+                    if (!archivo) return
+                    try {
+                      setReferencia(await leerReferencia(archivo))
+                    } catch (err) {
+                      setError(err.message)
+                    }
+                  }}
+                />
+              </label>
+            )}
+          </div>
           <button type="button" onClick={montar} disabled={!cuento.trim() || Boolean(disenando) || Boolean(creando)} className={BOTON}>
             {disenando ?? 'Montar el diseño con el asistente'}
           </button>
