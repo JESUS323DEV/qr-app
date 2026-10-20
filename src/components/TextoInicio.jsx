@@ -7,7 +7,7 @@ import { useFondoBoton, useRol } from './ColoresPortada'
    fondo: el color de fondo del bloque (hero.fondoInicio); sin él, no lleva fondo propio y se ve el de la página;
    enlace: el botón como un enlace subrayado con flecha y la descripción en columna estrecha (estilo revista); con él,
    extra: lo que va en fila a su lado (por ejemplo, compartir) */
-export default function TextoInicio({ inicio, irA, color = '', className = '', fondo = '', enlace = false, extra = null, nombre = '', sinBoton = false }) {
+export default function TextoInicio({ inicio, irA, color = '', className = '', fondo = '', enlace = false, extra = null, nombre = '', sinBoton = false, estilo = undefined }) {
   const rolTitular = useRol('titular')
   const rolDescripcion = useRol('descripcion')
   const rolBoton = useRol('boton')
@@ -15,7 +15,7 @@ export default function TextoInicio({ inicio, irA, color = '', className = '', f
   const rolExtra = useRol('extra')
   if (!inicio?.titular?.length && !inicio?.descripcion) return null
   return (
-    <div className={`${color} ${className}`} style={fondo ? { background: fondo } : undefined}>
+    <div className={`${color} ${className}`} style={fondo || estilo ? { ...(fondo ? { background: fondo } : {}), ...estilo } : undefined}>
       {inicio.titular?.length > 0 && (
         <h1 style={rolTitular} className="font-demo-heading text-[clamp(1.8rem,1.5rem+1.8vw,2.3rem)] font-bold leading-[1.02]">
           {inicio.titular.map((l, i) => (

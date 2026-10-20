@@ -7,6 +7,7 @@ import Escena, { fotoDeRespaldo, tipoComun } from '../fichas/escenas'
 import BarraPestanas from '../fichas/barras'
 import { clipDeCorte } from '../lib/cortes'
 import CtaPortada from '../components/CtaPortada'
+import { degradadoFiltro, useFiltro } from '../components/ColoresPortada'
 
 /* Diagonal (adaptado del Editorial de platform). Hero por piezas: el marco es suyo y las escenas y la barra de
    pestañas son piezas comunes (src/fichas), así que acepta cualquier pestaña común (fotos, horario, contacto,
@@ -25,6 +26,8 @@ export default function HeroDiagonal({ hero, nombre, sinBarra = false, inicio, i
   const [mapaPedido, setMapaPedido] = useState(true)
   const { enVuelta, parar } = useVueltaPestanas(pestanas, setActiva)
   const respaldo = fotoDeRespaldo(pestanas)
+  // El filtro que oscurece la foto: su intensidad y su color se regulan desde el editor (hero.filtro y hero.colores.filtroFoto)
+  const filtro = useFiltro()
 
   const titulo = hero.titulo ?? pestanas[0]?.titulo
   const destacado = hero.destacado ?? hero.brillo ?? pestanas[0]?.destacado
@@ -55,12 +58,12 @@ export default function HeroDiagonal({ hero, nombre, sinBarra = false, inicio, i
               <Escena pestana={p} forma="foto" info="arriba-derecha" activa={i === activa && !enVuelta} cargar={mapaPedido} respaldo={respaldo} />
             </div>
           ))}
-          <div className={`pointer-events-none absolute inset-x-0 bottom-0 h-[10rem] bg-gradient-to-t from-demo-bg/90 via-demo-bg/55 to-transparent transition-opacity duration-700 ${enMapa ? 'opacity-0' : 'opacity-100'}`} />
+          <div style={filtro.activo ? { backgroundImage: degradadoFiltro(filtro.color ?? 'var(--demo-bg)', [90, 55], filtro.intensidad) } : undefined} className={`pointer-events-none absolute inset-x-0 bottom-0 h-[10rem] bg-gradient-to-t from-demo-bg/90 via-demo-bg/55 to-transparent transition-opacity duration-700 ${enMapa ? 'opacity-0' : 'opacity-100'}`} />
         </div>
 
         {/* En una miniweb, el nombre (o el logo con el nombre) arriba a la izquierda de la foto, sobre un degradado oscuro */}
         {sinBarra && (
-          <div className="pointer-events-none absolute inset-x-0 top-0 bg-gradient-to-b from-black/55 to-transparent px-[1.25rem] pb-[2.5rem] pt-[1rem] font-demo-heading text-[2rem] font-semibold leading-none text-white">
+          <div style={filtro.intensidad !== 1 ? { backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,${0.55 * filtro.intensidad}), transparent)` } : undefined} className="pointer-events-none absolute inset-x-0 top-0 bg-gradient-to-b from-black/55 to-transparent px-[1.25rem] pb-[2.5rem] pt-[1rem] font-demo-heading text-[2rem] font-semibold leading-none text-white">
             <NombreMarca nombre={nombre} tamano="grande" />
             {ctaArriba && !enMapa && (
               <>

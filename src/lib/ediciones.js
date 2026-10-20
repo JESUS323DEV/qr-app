@@ -12,6 +12,8 @@ export function aplicar(datos, cambios) {
   if (!datos || !cambios) return datos
   const copia = structuredClone(datos)
   for (const [ruta, valor] of Object.entries(cambios)) {
+    // Las claves que empiezan por _ guardan la instantánea de Nuevo perfil (para reabrir la copia): no son datos de la página
+    if (ruta.startsWith('_')) continue
     const partes = ruta.split('.')
     let nodo = copia
     for (const p of partes.slice(0, -1)) {

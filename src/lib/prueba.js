@@ -75,6 +75,9 @@ export function marcaDePrueba(marca, params) {
   const pase = CLAVES_GALERIAS.includes(params.get('pase')) ? params.get('pase') : null
   // Montaje de Polaroid (hero.montaje)
   const montaje = CLAVES_MONTAJES.includes(params.get('montaje')) ? params.get('montaje') : null
+  // La intensidad del filtro que oscurece la foto de la portada (hero.filtro, de 0 a 100)
+  const filtroPedido = params.get('filtro')
+  const filtro = filtroPedido !== null && /^\d{1,3}$/.test(filtroPedido) && Number(filtroPedido) <= 100 ? Number(filtroPedido) : null
   // La variante del diseño del horario (hero.horarioVariante)
   const horarioVar = CLAVES_VARIANTES_HORARIO.includes(params.get('horariovar')) ? params.get('horariovar') : null
   // El diseño del horario (hero.horario)
@@ -97,13 +100,13 @@ export function marcaDePrueba(marca, params) {
     ...(params.get('redesvinculadas') === 'true' ? { redesVinculadas: true } : {}),
     ...(['abajo', 'redes'].includes(params.get('compartiren')) ? { compartirEn: params.get('compartiren') } : {}),
   }
-  if (!nombre && !principal && !acento && !texto && !fondo && !letra && !redes && !cabecera && !logo && !resena && !inicio && !tamanoNombre && !corte && !formato && !disposicion && !composicion && !distribucion && !pase && !montaje && !carta && !horario && !horarioVar && !Object.keys(textos).length && !Object.keys(coloresElegidos).length && !Object.keys(lugares).length) return marca
+  if (!nombre && !principal && !acento && !texto && !fondo && !letra && !redes && !cabecera && !logo && !resena && !inicio && !tamanoNombre && !corte && !formato && !disposicion && !composicion && !distribucion && !pase && !montaje && !carta && !horario && !horarioVar && filtro === null && !Object.keys(textos).length && !Object.keys(coloresElegidos).length && !Object.keys(lugares).length) return marca
   return {
     ...marca,
     ...(nombre ? { nombre } : {}),
     ...(logo ? { logo } : {}),
     ...(resena ? { cuerpo: { ...marca.cuerpo, fondo: resena, card: `color-mix(in srgb, ${resena} 90%, black)` } } : {}),
-    ...((redes || inicio || tamanoNombre || corte || formato || disposicion || composicion || distribucion || pase || montaje || carta || horario || horarioVar || Object.keys(textos).length || Object.keys(coloresElegidos).length || Object.keys(lugares).length) && marca.hero ? { hero: { ...marca.hero, ...(Object.keys(coloresElegidos).length ? { colores: { ...marca.hero.colores, ...coloresElegidos } } : {}), ...(redes ? { colorRedes: redes } : {}), ...(inicio ? { fondoInicio: inicio } : {}), ...(tamanoNombre ? { tamanoNombre } : {}), ...(corte ? { corte } : {}), ...(formato ? { formato } : {}), ...(disposicion ? { disposicion } : {}), ...(composicion ? { composicion } : {}), ...(distribucion ? { distribucion } : {}), ...(pase ? { pase } : {}), ...(montaje ? { montaje } : {}), ...(carta ? { carta } : {}), ...(horario ? { horario } : {}), ...(horarioVar ? { horarioVariante: horarioVar } : {}), ...(Object.keys(textos).length && marca.hero.pestanas ? { pestanas: marca.hero.pestanas.map((p, i) => (i === 0 ? { ...p, ...textos } : p)) } : {}), ...lugares } } : {}),
+    ...((redes || inicio || tamanoNombre || corte || formato || disposicion || composicion || distribucion || pase || montaje || carta || horario || horarioVar || filtro !== null || Object.keys(textos).length || Object.keys(coloresElegidos).length || Object.keys(lugares).length) && marca.hero ? { hero: { ...marca.hero, ...(Object.keys(coloresElegidos).length ? { colores: { ...marca.hero.colores, ...coloresElegidos } } : {}), ...(redes ? { colorRedes: redes } : {}), ...(inicio ? { fondoInicio: inicio } : {}), ...(tamanoNombre ? { tamanoNombre } : {}), ...(corte ? { corte } : {}), ...(formato ? { formato } : {}), ...(disposicion ? { disposicion } : {}), ...(composicion ? { composicion } : {}), ...(distribucion ? { distribucion } : {}), ...(pase ? { pase } : {}), ...(montaje ? { montaje } : {}), ...(carta ? { carta } : {}), ...(horario ? { horario } : {}), ...(horarioVar ? { horarioVariante: horarioVar } : {}), ...(filtro !== null ? { filtro } : {}), ...(Object.keys(textos).length && marca.hero.pestanas ? { pestanas: marca.hero.pestanas.map((p, i) => (i === 0 ? { ...p, ...textos } : p)) } : {}), ...lugares } } : {}),
     theme: {
       ...marca.theme,
       colors: { ...marca.theme?.colors, ...(principal ? { primary: principal } : {}), ...(acento ? { accent: acento } : {}), ...(texto ? { text: texto } : {}), ...(fondo ? { bg: fondo } : {}), ...(cabecera ? { header: cabecera } : {}) },

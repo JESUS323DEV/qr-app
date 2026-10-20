@@ -8,6 +8,7 @@ import BotonCompartir from '../components/BotonCompartir'
 import Escena, { fotoDeRespaldo, fotosDe, tipoComun } from '../fichas/escenas'
 import BarraPestanas from '../fichas/barras'
 import { disposicionDe } from '../lib/disposiciones'
+import { degradadoFiltro, useFiltro } from '../components/ColoresPortada'
 
 /* Fullbleed (adaptado de platform). Foto a todo el ancho con velo oscuro y la marca arriba.
    Pestañas en una barra segmentada (solo cambian al tocarlas):
@@ -24,7 +25,13 @@ import { disposicionDe } from '../lib/disposiciones'
 const TURNO_MS = 4500
 
 function Velo() {
-  return <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-demo-text/90 via-demo-text/45 to-demo-text/15" />
+  const filtro = useFiltro()
+  return (
+    <div
+      style={filtro.activo ? { backgroundImage: degradadoFiltro(filtro.color ?? 'var(--demo-text)', [90, 45], filtro.intensidad) } : undefined}
+      className="pointer-events-none absolute inset-0 bg-gradient-to-t from-demo-text/90 via-demo-text/45 to-demo-text/15"
+    />
+  )
 }
 
 function Abajo({ children }) {
@@ -197,6 +204,12 @@ export default function HeroFullbleed({ hero, nombre, sinBarra = false, inicio, 
 
   const enMapa = tipoComun(pestanas[activa]?.tipo) === 'ubicacion'
   const disposicion = disposicionDe(hero.disposicion)
+  // El filtro que oscurece la foto bajo el texto: intensidad y color regulables (hero.filtro y hero.colores.filtroFoto)
+  const filtro = useFiltro()
+  const degradadoTexto =
+    filtro.activo && ['clasica', 'velo'].includes(disposicion.clave)
+      ? { backgroundImage: degradadoFiltro(filtro.color ?? (disposicion.clave === 'velo' ? 'var(--demo-header)' : '#000000'), [85, 55], filtro.intensidad) }
+      : undefined
 
   return (
     // Cualquier toque en el hero para la vuelta de presentación
@@ -233,7 +246,7 @@ export default function HeroFullbleed({ hero, nombre, sinBarra = false, inicio, 
 
         {/* Portada de una miniweb: el texto de Inicio (texto grande, pequeño y el botón) encima de la foto, abajo, sobre un degradado oscuro para que se lea */}
         {sinBarra && (
-          <TextoInicio inicio={inicio} irA={irA} nombre={nombre} color="text-white" className={disposicion.texto} />
+          <TextoInicio inicio={inicio} irA={irA} nombre={nombre} color="text-white" className={disposicion.texto} estilo={degradadoTexto} />
         )}
       </div>
 

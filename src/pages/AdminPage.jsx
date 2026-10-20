@@ -4,7 +4,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { Armchair, ArrowLeft, ArrowUp, ArrowUpRight, Beer, BookImage, Camera, ChevronDown, ChevronsDownUp, CircleUser, Coffee, Copy, Croissant, Fish, Frame, GalleryHorizontal, IdCard, ImagePlus, LayoutGrid, Maximize, Menu, Minus, Newspaper, PanelTop, Pizza, Plus, QrCode, RotateCcw, Scissors, Search, Slice, Smartphone, Sparkles, Store, Trash2, UtensilsCrossed, X } from 'lucide-react'
 import GeneradorQR from '../components/GeneradorQR'
 import { supabase } from '../lib/supabase'
-import { aplicar } from '../lib/ediciones'
+import { aplicar, conEdicion } from '../lib/ediciones'
 import { getNegocio, negocios, rutaNegocio } from '../negocios'
 import { ALERGENOS, cartas, fotoDe, getCarta, marcaDe, rutaCarta } from '../cartas'
 import { BOTON, CAMPO, Confirmar, Entrar, Etiqueta, usePaginaPrivada } from '../components/panel'
@@ -12,7 +12,7 @@ import { loadFont } from '../lib/applyTheme'
 import { TIPOGRAFIAS, parejaDe } from '../asistente/tipografias'
 import { DISENOS_ASISTENTE, DISENOS_CARTA } from '../asistente/disenos'
 import { GRUPOS_PLANTILLAS, PLANTILLAS } from '../plantillas'
-import { catalogoMiniweb, validarDiseno } from '../asistente/miniweb'
+import { PORTADAS_IA, catalogoMiniweb, validarDiseno } from '../asistente/miniweb'
 import { DIBUJOS_MENU, GRUPOS_MENU } from '../lib/estilosMenu'
 import { leerReferencia } from '../asistente/referencia'
 import { ICONOS_ESTRUCTURA } from '../lib/iconosEstructura'
@@ -38,6 +38,9 @@ import { FAMILIAS } from '../familias'
    hacen que solo un administrador (tabla admins) pueda guardarlos. El diseño y la estructura siguen en el código. */
 
 // Direcciones que no puede usar una copia: las de las páginas de la web
+// Los campos de la ficha que no se pintan en una miniweb (su titular sobre la foto, su segunda línea y su texto): se dejan vacíos al convertirla
+const LIMPIAR_FICHA = { 'hero.titulo': '', 'hero.destacado': '', 'hero.brillo': '', 'hero.texto': '' }
+
 const RESERVADAS = new Set(['demo', 'tematicas', 'gestion', 'catalogo', 'planes', 'panel', 'mi-carta', 'admin', 'miniweb', 'disenos', 'aviso-legal', 'privacidad', 'mi-qr'])
 
 // "Peluquería Ranita" → "peluqueria-ranita"
@@ -74,7 +77,7 @@ const reducirFoto = archivo =>
 
 // Datos que no se tocan desde aquí: estructura, diseño, direcciones internas, tipografías...
 // (barra es el estilo de pestañas: se elige en el bloque Diseño, con su selector)
-const SALTAR = new Set(['slug', 'demo', 'copia', 'diseno', 'barra', 'portada', 'perfil', 'tipo', 'platform', 'tematica', 'sector', 'negocio', 'google', 'family', 'idiomas', 'alergenos', 'alt'])
+const SALTAR = new Set(['slug', 'demo', 'copia', 'diseno', 'barra', 'portada', 'perfil', 'tipo', 'platform', 'tematica', 'sector', 'negocio', 'google', 'family', 'idiomas', 'alergenos', 'alt', 'botonA'])
 
 const CLAVES_FOTO = new Set(['src', 'foto', 'fotos', 'imagen', 'img', 'logo', 'poster', 'captura'])
 const esColor = v => /^#([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(v)
@@ -256,10 +259,23 @@ async function llamar(funcion, cuerpo) {
 // para que la IA escriba textos nuevos sin romper el diseño
 // (en los cortos, el margen es más amplio: "Valóranos en Google" tiene que poder ser "Cuéntanos qué tal en Google")
 const maxDe = texto => Math.max(Math.ceil(texto.length * 1.25), texto.length + 12)
+// El nombre de una pestaña del menú (hero.pestanas.N.texto) cabe en el menú: como mucho 10 caracteres ("Pedir cita")
+const MAX_PESTANA = 10
+const esNombreDePestana = ruta => /^hero\.pestanas\.\d+\.texto$/.test(ruta)
+// Los textos de la portada de Inicio (el grande, el pequeño y el extra) tienen un máximo fijo, el mismo que el del editor, sea cual sea el texto de partida:
+// así el asistente puede llenarlos. El grande, en una línea, hasta 47; si tiene dos, 24 cada una
+const MAX_TITULAR = 47
+const MAX_DESCRIPCION = 120
+const maxCampo = (ruta, valor, datos) => {
+  if (esNombreDePestana(ruta)) return MAX_PESTANA
+  if (/^hero\.pestanas\.0\.titular\.\d+$/.test(ruta)) return (datos?.hero?.pestanas?.[0]?.titular?.length ?? 1) > 1 ? Math.floor(MAX_TITULAR / 2) : MAX_TITULAR
+  if (ruta === 'hero.pestanas.0.descripcion') return MAX_DESCRIPCION
+  return maxDe(valor)
+}
 const camposParaIA = datos =>
   camposDe(datos).map(c => {
     const valor = c.clase === 'foto' ? '' : leerRuta(datos, c.ruta)
-    return { ...c, valor, ...(c.clase === 'texto' || c.clase === 'largo' ? { max: maxDe(valor) } : {}) }
+    return { ...c, valor, ...(c.clase === 'texto' || c.clase === 'largo' ? { max: maxCampo(c.ruta, valor, datos) } : {}) }
   })
 
 // Si un texto se pasa de su máximo, se corta en la última palabra que cabe (sin puntos suspensivos)
@@ -1241,7 +1257,81 @@ function DisenoFicha({ hero, cambiar }) {
 
 /* ---------- Editor de una ficha, miniweb o carta ---------- */
 
-function Editor({ tipo, slug, fila, volver, recargar, abrir }) {
+// La tarjeta de información de una copia para enseñar (nada se edita aquí): de qué trata, su sector, su estilo, sus colores y cómo se creó.
+// Debajo, el botón para pasar al editor
+function InfoCopia({ vista, tipo, fila, historial, ruta, onEditar }) {
+  const esCarta = tipo === 'carta'
+  const marca = esCarta ? marcaDe(vista) : vista
+  const colores = marca?.theme?.colors ?? {}
+  const hero = vista.hero ?? {}
+  const portada = PORTADAS_IA.find(p => p.clave === hero.portada)
+  const sub = portada ? portada.lista.find(x => x.clave === (hero[portada.campo] ?? portada.lista[0].clave)) : null
+  const esMiniweb = !esCarta && tipoDe(vista) === 'miniweb'
+  const base = esCarta ? marcaDe(getCarta(fila?.base) ?? {})?.nombre : getNegocio(fila?.base)?.nombre
+  const barra = hero.barra ?? HEROS[hero.diseno]?.barra
+  const filas = [
+    ['Tipo', esCarta ? 'Carta' : esMiniweb ? 'Miniweb' : 'Ficha'],
+    ['Sector', marca?.sector],
+    ['Parte de', base],
+    [
+      esCarta ? 'Estilo de carta' : 'Diseño',
+      esCarta ? vista.diseno : esMiniweb ? [portada?.clave ? HEROS[portada.clave]?.nombre : null, sub?.nombre].filter(Boolean).join(' · ') : HEROS[hero.diseno]?.nombre,
+    ],
+    ...(esCarta ? [] : [['Estilo del menú', barra ? BARRAS[barra]?.nombre : 'La rayita']]),
+    ['Tipografía', parejaDe(marca?.theme?.fonts)?.nombre ?? 'La de la plantilla'],
+  ].filter(([, valor]) => valor)
+  const paleta = [
+    ['Principal', colores.primary],
+    ['Acento', colores.accent],
+    ['Fondo', colores.bg],
+    ['Texto', colores.text],
+    ...(colores.header ? [['Cabecera', colores.header]] : []),
+  ].filter(([, c]) => c)
+  const creacion = historial?.[0]
+  return (
+    <div className="grid gap-[1rem] rounded-[1rem] bg-white p-[1rem] ring-1 ring-zinc-200">
+      <p className="text-[1rem] font-bold">Información de la copia</p>
+      <dl className="grid gap-[0.45rem] text-[0.9rem]">
+        {filas.map(([nombreFila, valor]) => (
+          <div key={nombreFila} className="flex justify-between gap-[1rem]">
+            <dt className="text-zinc-500">{nombreFila}</dt>
+            <dd className="text-right font-semibold">{valor}</dd>
+          </div>
+        ))}
+        <div className="flex justify-between gap-[1rem]">
+          <dt className="text-zinc-500">Dirección</dt>
+          <dd className="text-right font-semibold">{ruta}</dd>
+        </div>
+      </dl>
+      {paleta.length > 0 && (
+        <div className="grid gap-[0.4rem]">
+          <p className="text-[0.8rem] font-semibold text-zinc-500">Colores</p>
+          <div className="flex flex-wrap gap-[0.9rem]">
+            {paleta.map(([nombreColor, c]) => (
+              <div key={nombreColor} className="grid justify-items-center gap-[0.2rem]">
+                <span className="h-[2.2rem] w-[2.2rem] rounded-full ring-1 ring-zinc-300" style={{ background: c }} />
+                <span className="text-[0.72rem] text-zinc-500">{nombreColor}</span>
+                <span className="font-mono text-[0.72rem] text-zinc-400">{c}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {creacion && (
+        <div className="grid gap-[0.3rem]">
+          <p className="text-[0.8rem] font-semibold text-zinc-500">Cómo se creó</p>
+          <p className="text-[0.9rem] leading-[1.45]">{creacion.peticion}</p>
+          {creacion.resumen && <p className="text-[0.88rem] leading-[1.45] text-zinc-600">{creacion.resumen}</p>}
+        </div>
+      )}
+      <button type="button" onClick={onEditar} className={`${BOTON} justify-self-start`}>
+        Editar
+      </button>
+    </div>
+  )
+}
+
+function Editor({ tipo, slug, fila, volver, recargar, abrir, irANuevoPerfil }) {
   const buscar = tipo === 'negocio' ? getNegocio : getCarta
   const original = buscar(slug) ?? (fila?.base ? buscar(fila.base) : null)
   const esCopia = Boolean(fila?.base)
@@ -1250,6 +1340,8 @@ function Editor({ tipo, slug, fila, volver, recargar, abrir }) {
   const [estado, setEstado] = useState(null)
   const [pregunta, setPregunta] = useState(null)
   const [duplicando, setDuplicando] = useState(null)
+  // Una copia se abre con su información; el editor entero se ve al pulsar Editar
+  const [editando, setEditando] = useState(false)
   const [historial, setHistorial] = useState(fila?.historial ?? [])
   // Sube cada vez que se guarda: la vista previa se recarga con lo nuevo
   const [version, setVersion] = useState(0)
@@ -1265,6 +1357,7 @@ function Editor({ tipo, slug, fila, volver, recargar, abrir }) {
   // Las páginas de clientes y las copias sí se editan.
   const soloLectura = !esCopia && Boolean(original.demo)
   const sinGuardar = JSON.stringify(cambios) !== JSON.stringify(guardados)
+  const verInfo = esCopia && !editando
   const nombre = tipo === 'negocio' ? vista.nombre : marcaDe(vista)?.nombre ?? slug
   const ruta =
     tipo === 'negocio' ? (esCopia ? `/demo/${slug}` : rutaNegocio(original)) : esCopia ? `/demo/${slug}/carta` : rutaCarta(original)
@@ -1436,11 +1529,12 @@ function Editor({ tipo, slug, fila, volver, recargar, abrir }) {
         </div>
       </div>
 
-      {/* Chat con el asistente: en las copias (fichas, miniwebs y cartas) */}
-      {esCopia && <Retocar historial={historial} enviar={retocar} />}
+      {/* Una copia se abre con su información y un botón Editar; el chat con el asistente y los ajustes solo con Editar */}
+      {verInfo && <InfoCopia vista={vista} tipo={tipo} fila={fila} historial={historial} ruta={ruta} onEditar={() => irANuevoPerfil(`${tipo}:${slug}`)} />}
+      {esCopia && editando && <Retocar historial={historial} enviar={retocar} />}
 
       {/* En las cartas, el menú del día no se edita aquí: es del dueño */}
-      {tipo === 'carta' && (
+      {tipo === 'carta' && !verInfo && (
         <p className="text-[0.88rem] leading-[1.45] text-zinc-600">
           El menú del día se cambia desde el panel del dueño,{' '}
           <a href="/mi-carta" target="_blank" rel="noreferrer" className="font-semibold text-zinc-900 underline underline-offset-[0.2em]">
@@ -1465,6 +1559,7 @@ function Editor({ tipo, slug, fila, volver, recargar, abrir }) {
       )}
 
       {/* En una demo original, todos los campos y botones quedan desactivados (fieldset disabled) */}
+      {!verInfo && (
       <fieldset disabled={soloLectura} className="contents">
       {bloques.map((b, i) => (
         <Fragment key={b.clave}>
@@ -1480,6 +1575,7 @@ function Editor({ tipo, slug, fila, volver, recargar, abrir }) {
       {/* Si no hay bloques después de los colores (raro), la tipografía va al final */}
       {(tipo === 'negocio' || vista.marca) && (bloques.at(-1)?.orden ?? 0) <= 30 && tipografia}
       </fieldset>
+      )}
     </div>
 
       {/* Vista previa: la página tal cual está guardada, del tamaño de un móvil; se recarga al guardar */}
@@ -1490,7 +1586,7 @@ function Editor({ tipo, slug, fila, volver, recargar, abrir }) {
       </aside>
 
       {/* Guardar, siempre a mano abajo (no en las demos originales, que no se guardan) */}
-      {!soloLectura && (
+      {!soloLectura && !verInfo && (
       <div className="fixed inset-x-0 bottom-0 border-t border-zinc-200 bg-white/95 px-[1rem] py-[0.75rem] backdrop-blur">
         <div className="mx-auto flex w-full max-w-[32rem] items-center gap-[0.75rem]">
           <p className="min-w-0 flex-1 text-[0.85rem] text-zinc-500">
@@ -1936,12 +2032,26 @@ function EditorEnBruto({ original, cambios, cambiar }) {
   campo.tarjetaCambiada = t => t.campos.some(c => c.ruta in cambios)
   return (
     <div className="grid gap-[0.75rem]">
-      {/* De los desplegables en bruto del editor de un perfil, aquí solo Redes y Reseña de Google, tal cual; el resto, fuera */}
+      {/* Redes y Reseña de Google, tal cual */}
       {bloques
         .filter(b => ['Redes', 'Reseña de Google'].includes(b.titulo))
         .map(b => (
           <Bloque key={b.clave} bloque={b} abierto={false} campo={campo} />
         ))}
+      {/* Debajo, Ajustes personalizados: todo lo demás del editor de un perfil (Datos, Arriba, Colores de la marca, las pestañas, Tarjeta destacada, Carrusel...), para los ajustes que aún no están extraídos */}
+      <details className="group/ajustes rounded-[0.75rem] ring-1 ring-zinc-200">
+        <summary className="flex cursor-pointer list-none items-center gap-[0.75rem] px-[0.85rem] py-[0.8rem] [&::-webkit-details-marker]:hidden">
+          <span className="text-[1rem] font-bold">Ajustes personalizados</span>
+          <ChevronDown className="ml-auto h-[1rem] w-[1rem] shrink-0 text-zinc-500 transition-transform group-open/ajustes:rotate-180" aria-hidden="true" />
+        </summary>
+        <div className="grid gap-[0.75rem] px-[0.85rem] pb-[0.85rem] pt-[0.2rem]">
+          {bloques
+            .filter(b => !['Redes', 'Reseña de Google'].includes(b.titulo))
+            .map(b => (
+              <Bloque key={b.clave} bloque={b} abierto={false} campo={campo} />
+            ))}
+        </div>
+      </details>
     </div>
   )
 }
@@ -2119,7 +2229,83 @@ function TextosHorario({ original, cambios, cambiar }) {
   )
 }
 
-function NuevoPerfil({ filas, recargar, abrir }) {
+// Un campo para subir una imagen al asistente (solo la lee): botón con su texto o, subida, su miniatura (con los colores que ha sacado, si los
+// saca) y una x para quitarla. valor: { imagen, tipo, miniatura, colores } o null
+function CampoImagenAsistente({ titulo, valor, cambiar, conColores = false, bloqueado, avisar }) {
+  if (valor)
+    return (
+      <div className="flex items-center gap-[0.5rem]">
+        <img src={valor.miniatura} alt={titulo} className="h-[2.75rem] w-[2.75rem] rounded-[0.5rem] border border-zinc-300 object-contain" />
+        {conColores && valor.colores.length > 0 && (
+          <div className="flex items-center gap-[0.25rem]" aria-label="Colores que ha sacado de la imagen">
+            {valor.colores.map(c => (
+              <span key={c.hex} title={`${c.hex} (${c.porcentaje}%)`} className="h-[1.4rem] w-[1.4rem] rounded-full ring-1 ring-zinc-300" style={{ background: c.hex }} />
+            ))}
+          </div>
+        )}
+        <button type="button" aria-label={`Quitar: ${titulo}`} onClick={() => cambiar(null)} className="rounded-full p-[0.25rem] text-zinc-500 hover:text-zinc-900">
+          <X className="h-[1rem] w-[1rem]" strokeWidth={2.5} aria-hidden="true" />
+        </button>
+      </div>
+    )
+  return (
+    <label className={`inline-flex min-h-[2.5rem] cursor-pointer items-center gap-[0.4rem] rounded-[0.6rem] bg-white px-[0.9rem] text-[0.9rem] font-semibold ring-1 ring-zinc-300 ${bloqueado ? 'pointer-events-none opacity-50' : ''}`}>
+      <ImagePlus className="h-[1.1rem] w-[1.1rem]" aria-hidden="true" />
+      {titulo}
+      <input
+        type="file"
+        accept="image/png,image/jpeg,image/webp,image/svg+xml"
+        className="sr-only"
+        onChange={async e => {
+          const archivo = e.target.files?.[0]
+          e.target.value = ''
+          if (!archivo) return
+          try {
+            cambiar(await leerReferencia(archivo, { colores: conColores }))
+          } catch (err) {
+            avisar(err.message)
+          }
+        }}
+      />
+    </label>
+  )
+}
+
+// Los nombres de las pestañas del menú (Inicio, Menú, Horario, Reservar...): un campo por pestaña, de 10 caracteres como mucho para que quepan.
+// Salen de los mismos datos que los desplegables en bruto (original y cambios, con cambiar(ruta, valor))
+const NOMBRE_DE_TIPO = { inicio: 'Inicio', menu: 'Menú', servicios: 'Servicios', horario: 'Horario', reservar: 'Reservar' }
+function TextosPestanas({ original, cambios, cambiar }) {
+  const datos = useMemo(() => aplicar(original, cambios), [original, cambios])
+  const pestanas = datos.hero?.pestanas ?? []
+  if (!pestanas.length) return <p className="text-[0.8rem] text-zinc-500">Esta página no tiene pestañas.</p>
+  return (
+    <div className="grid gap-[0.9rem]">
+      <p className="text-[0.8rem] text-zinc-500">El nombre que sale en el menú de navegación. Corto, de una o dos palabras.</p>
+      {pestanas.map((p, i) => {
+        const ruta = `hero.pestanas.${i}.texto`
+        const valor = p.texto ?? ''
+        return (
+          <div key={ruta} className="grid gap-[0.3rem]">
+            <div className="flex items-baseline justify-between gap-[0.75rem]">
+              <span className="text-[0.8rem] font-semibold text-zinc-500">{NOMBRE_DE_TIPO[p.tipo] ?? `Pestaña ${i + 1}`}</span>
+              {ruta in cambios && (
+                <button type="button" onClick={() => cambiar(ruta, leerRuta(original, ruta))} className="shrink-0 text-[0.78rem] font-semibold text-zinc-500 underline underline-offset-[0.2em]">
+                  Volver al original
+                </button>
+              )}
+            </div>
+            <input value={valor} maxLength={MAX_PESTANA} onChange={e => cambiar(ruta, e.target.value)} className={CAMPO} />
+            <span className="justify-self-end text-[0.75rem] text-zinc-500">
+              {valor.length}/{MAX_PESTANA}
+            </span>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+function NuevoPerfil({ filas, recargar, abrir, cargar }) {
   const [tema, setTema] = useState(PLANTILLAS[0].clave)
   // La pestaña abierta: el asistente o el diseño (la vista previa se ve siempre)
   const [pestana, setPestana] = useState('personalizar')
@@ -2174,6 +2360,8 @@ function NuevoPerfil({ filas, recargar, abrir }) {
   const [horarioMini, setHorarioMini] = useState('')
   // La variante del diseño del horario ('clasica' : la primera de cada diseño)
   const [horarioVar, setHorarioVar] = useState('clasica')
+  // La intensidad del filtro que oscurece la foto de la portada, de 0 a 100 (100: el de cada diseño)
+  const [filtroFoto, setFiltroFoto] = useState(100)
   // El tamaño del nombre del negocio arriba: 'xs', 'md' (el de cada diseño) o 'xl'
   const [tamanoNombre, setTamanoNombre] = useState('md')
   const lugares = Object.entries(estructura).filter(([clave, valor]) => valor !== ESTRUCTURA_DEFECTO[clave])
@@ -2194,12 +2382,17 @@ function NuevoPerfil({ filas, recargar, abrir }) {
   const [redactando, setRedactando] = useState(false)
   // La imagen de referencia de la marca para el asistente (solo se lee; no se coloca): { imagen, tipo, miniatura, colores }
   const [referencia, setReferencia] = useState(null)
+  // Una captura con información del negocio (la bio de Instagram, una carta...): el asistente solo lee su texto, sin sacar colores: { imagen, tipo, miniatura }
+  const [captura, setCaptura] = useState(null)
   // Los datos que el asistente ha leído en esa imagen (nombre, teléfonos, dirección...): van con lo que se le cuenta al escribir los textos
   const [infoImagen, setInfoImagen] = useState('')
   // Las líneas del horario que ha sacado el asistente de lo que se le ha contado (días y horas)
   const [horarioIA, setHorarioIA] = useState([])
   // Si el asistente ya ha generado algo alguna vez: hasta entonces, en su pestaña el móvil sale vacío
   const [generado, setGenerado] = useState(false)
+  // La copia que se ha cargado para retocarla ({ tipo, slug }) o null si se está montando una nueva, y si todo Nuevo perfil está abierto
+  const [copiaCargada, setCopiaCargada] = useState(null)
+  const [abierto, setAbierto] = useState(false)
   // Los cambios hechos a mano en los datos en bruto (ruta → valor) y su versión (para recargar la vista previa, con un pequeño retraso al escribir)
   const [cambiosExtra, setCambiosExtra] = useState({})
   const [versionExtra, setVersionExtra] = useState(0)
@@ -2274,6 +2467,7 @@ function NuevoPerfil({ filas, recargar, abrir }) {
     producto === 'miniweb' && cartaMini && `carta=${cartaMini}`,
     producto === 'miniweb' && horarioMini && `horario=${horarioMini}`,
     producto === 'miniweb' && horarioVar !== 'clasica' && `horariovar=${horarioVar}`,
+    producto === 'miniweb' && filtroFoto !== 100 && `filtro=${filtroFoto}`,
     ...(producto === 'miniweb' ? lugares.map(([clave, valor]) => `${clave.toLowerCase()}=${valor}`) : []),
     producto === 'miniweb' && barra && `barra=${barra}`,
     conCabecera && cabecera && `cabecera=${cabecera.slice(1)}`,
@@ -2329,6 +2523,7 @@ function NuevoPerfil({ filas, recargar, abrir }) {
       ...(producto === 'miniweb' && cartaMini ? { 'hero.carta': cartaMini } : {}),
       ...(producto === 'miniweb' && horarioMini ? { 'hero.horario': horarioMini } : {}),
       ...(producto === 'miniweb' && horarioVar !== 'clasica' ? { 'hero.horarioVariante': horarioVar } : {}),
+      ...(producto === 'miniweb' && filtroFoto !== 100 ? { 'hero.filtro': filtroFoto } : {}),
       // Los colores uno por uno que se han elegido (los demás, en automático)
       ...(producto === 'miniweb' && Object.keys(coloresMini).length ? { 'hero.colores': coloresMini } : {}),
       ...(producto === 'miniweb' ? Object.fromEntries(lugares.map(([clave, valor]) => [`hero.${clave}`, valor])) : {}),
@@ -2369,6 +2564,8 @@ function NuevoPerfil({ filas, recargar, abrir }) {
                 'hero.diseno': 'web',
                 'hero.portada': hero,
                 'hero.redesArriba': true,
+                // El titular propio de la ficha (el que iba sobre la foto) sobra en una miniweb: ya está el Texto inicio
+                ...LIMPIAR_FICHA,
                 ...inicioCambio,
                 'hero.pestanas': pestanasDeMiniweb(negocioBase).map((p, i) => (i === 0 ? { ...p, ...textosEscritos } : p)),
                 tipo: 'miniweb',
@@ -2410,7 +2607,7 @@ function NuevoPerfil({ filas, recargar, abrir }) {
     setCambiosIA(null)
     setCambiosExtra({})
     try {
-      const { resultado } = await llamar('asistente', { paso: 'diseno-miniweb', peticion: cuento.trim(), nombre: nombre.trim(), catalogo: catalogoMiniweb(), ...(referencia ? { referencia: { imagen: referencia.imagen, tipo: referencia.tipo, colores: referencia.colores } } : {}) })
+      const { resultado } = await llamar('asistente', { paso: 'diseno-miniweb', peticion: cuento.trim(), nombre: nombre.trim(), catalogo: catalogoMiniweb(), ...(referencia ? { referencia: { imagen: referencia.imagen, tipo: referencia.tipo, colores: referencia.colores } } : {}), ...(captura ? { captura: { imagen: captura.imagen, tipo: captura.tipo } } : {}) })
       const d = validarDiseno(resultado)
       setProducto('miniweb')
       if (d.tema) setTema(d.tema)
@@ -2470,6 +2667,136 @@ function NuevoPerfil({ filas, recargar, abrir }) {
     })()
   }, [redactando]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Cómo está todo ahora (lo elegido en cada selector, los textos y lo que ha hecho el asistente), para poder reabrir la copia tal cual
+  const instantanea = () => ({
+    producto,
+    tema,
+    hero,
+    barra,
+    estilo,
+    nombre,
+    logo,
+    principal,
+    acento,
+    colorTexto,
+    fondo,
+    letra,
+    cabecera,
+    coloresMini,
+    textosMini,
+    estructura,
+    corte,
+    formato,
+    disposicion,
+    composicion,
+    distribucion,
+    pase,
+    montaje,
+    tamanoNombre,
+    cartaMini,
+    horarioMini,
+    horarioVar,
+    filtroFoto,
+    cuento,
+    cambiosExtra,
+    cambiosIA,
+    resumenDiseno,
+  })
+
+  // Carga una copia en Nuevo perfil a partir de su instantánea. Las copias antiguas (de antes de Nuevo perfil) no la tienen y no se pueden abrir aquí
+  const cargarCopia = fila => {
+    const i = fila?.cambios?._nuevoPerfil
+    if (!i) {
+      setError('Esta copia es antigua (se creó antes del editor) y no se puede abrir aquí.')
+      return
+    }
+    setError('')
+    setAviso('')
+    setPestana('personalizar')
+    setProducto(i.producto ?? 'miniweb')
+    setTema(i.tema ?? PLANTILLAS[0].clave)
+    setHero(i.hero ?? 'polaroid')
+    setBarra(i.barra ?? '')
+    setEstilo(i.estilo ?? 'revista')
+    setNombre(i.nombre ?? '')
+    setLogo(i.logo ?? '')
+    setPrincipal(i.principal ?? '')
+    setAcento(i.acento ?? '')
+    setColorTexto(i.colorTexto ?? '')
+    setFondo(i.fondo ?? '')
+    setLetra(i.letra ?? '')
+    setCabecera(i.cabecera ?? '')
+    setColoresMini(i.coloresMini ?? {})
+    setTextosMini(i.textosMini ?? {})
+    setEstructura(i.estructura ?? {})
+    setCorte(i.corte ?? 'diagonal')
+    setFormato(i.formato ?? 'clasica')
+    setDisposicion(i.disposicion ?? 'clasica')
+    setComposicion(i.composicion ?? 'clasica')
+    setDistribucion(i.distribucion ?? 'clasica')
+    setPase(i.pase ?? 'clasica')
+    setMontaje(i.montaje ?? 'clasica')
+    setTamanoNombre(i.tamanoNombre ?? 'md')
+    setCartaMini(i.cartaMini ?? '')
+    setHorarioMini(i.horarioMini ?? '')
+    setHorarioVar(i.horarioVar ?? 'clasica')
+    setFiltroFoto(i.filtroFoto ?? 100)
+    setCuento(i.cuento ?? '')
+    setCambiosExtra(i.cambiosExtra ?? {})
+    setCambiosIA(i.cambiosIA ?? null)
+    setResumenDiseno(i.resumenDiseno ?? '')
+    setGenerado(true)
+    setVersionIA(v => v + 1)
+    try {
+      localStorage.setItem('mostraq-vista-ia', JSON.stringify({ ...(i.cambiosIA?.cambios ?? {}), ...(i.cambiosExtra ?? {}) }))
+    } catch {
+      // Sin almacenamiento, la vista previa no enseña lo del asistente, pero al guardar sí se conserva
+    }
+    setCopiaCargada({ tipo: fila.tipo, slug: fila.slug })
+  }
+
+  // Si se llega con ?copia=tipo:slug (botón Editar de la pantalla de información), se abre Nuevo perfil con esa copia
+  useEffect(() => {
+    if (!cargar || !filas) return
+    const [t, sl] = cargar.split(':')
+    const fila = filas.find(f => f.tipo === t && f.slug === sl)
+    if (!fila) return
+    setAbierto(true)
+    cargarCopia(fila)
+    abrir(null)
+  }, [cargar, filas]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Guardar cambios: actualiza la copia cargada (misma dirección) con lo que hay ahora
+  const guardarCopia = async () => {
+    if (!copiaCargada || creando) return
+    setAviso('')
+    setError('')
+    setCreando('Guardando...')
+    try {
+      const nombreGuardar = nombre.trim() || 'Prueba'
+      const { base, cambios: cambiosBase } = armar(nombreGuardar)
+      let cambios = cambiosBase
+      let historial = []
+      if (cambiosIA) {
+        cambios = fusionar(cambios, cambiosIA.cambios)
+        historial = cambiosIA.historial
+      }
+      if (Object.keys(cambiosExtra).length) cambios = fusionar(cambios, cambiosExtra)
+      cambios = { ...cambios, _nuevoPerfil: instantanea() }
+      const { error } = await supabase
+        .from('ediciones')
+        .update({ base, cambios, ...(historial.length ? { historial } : {}) })
+        .eq('tipo', copiaCargada.tipo)
+        .eq('slug', copiaCargada.slug)
+      if (error) throw new Error('No se han podido guardar los cambios.')
+      await recargar()
+      setAviso(`Cambios guardados en «${nombreGuardar}».`)
+    } catch (e) {
+      setError(e.message)
+    }
+    setCreando(null)
+  }
+
   // muestra (true): exporta el diseño a las muestras, en la lista de Miniwebs (con el nombre escrito o, sin él, «Muestra») en lugar de crear un perfil
   const crear = async muestra => {
     const esMuestra = muestra === true
@@ -2500,6 +2827,8 @@ function NuevoPerfil({ filas, recargar, abrir }) {
       }
 
       if (Object.keys(cambiosExtra).length) cambios = fusionar(cambios, cambiosExtra)
+      // La instantánea de Nuevo perfil, para poder reabrir la copia y retocarla
+      cambios = { ...cambios, _nuevoPerfil: instantanea() }
       const { error } = await supabase.from('ediciones').insert({ tipo: tipoFila, slug, base, cambios, ...(historial.length ? { historial } : {}) })
       if (error) throw new Error('No se ha podido crear.')
       if (esCarta) await crearCartaConDueno(slug, aplicar(cartaBase, cambios).menuDia)
@@ -2640,14 +2969,14 @@ function NuevoPerfil({ filas, recargar, abrir }) {
 
   return (
     // peer: abierto, se oculta el botón de "Crear con el asistente" que va justo debajo (en Lista)
-    <details className="group/perfil peer rounded-[1rem] bg-white ring-1 ring-zinc-200">
+    <details open={abierto} onToggle={e => setAbierto(e.currentTarget.open)} className="group/perfil peer rounded-[1rem] bg-white ring-1 ring-zinc-200">
       {/* Cerrado: "Nuevo perfil" con una flecha para abrir. Abierto: solo un icono pequeño de plegar, para que la
           vista previa empiece casi arriba */}
       <summary
-        aria-label="Nuevo perfil"
+        aria-label="Editor"
         className="flex cursor-pointer list-none items-center px-[1rem] py-[0.9rem] group-open/perfil:justify-center group-open/perfil:pb-0 group-open/perfil:pt-[0.4rem] [&::-webkit-details-marker]:hidden"
       >
-        <span className="text-[1.05rem] font-bold group-open/perfil:hidden">Nuevo perfil</span>
+        <span className="text-[1.05rem] font-bold group-open/perfil:hidden">Editor</span>
         <ChevronDown className="ml-auto h-[1.1rem] w-[1.1rem] text-zinc-500 group-open/perfil:hidden" aria-hidden="true" />
         <ChevronsDownUp className="hidden h-[1.1rem] w-[1.1rem] text-zinc-400 group-open/perfil:block" aria-hidden="true" />
       </summary>
@@ -2657,7 +2986,7 @@ function NuevoPerfil({ filas, recargar, abrir }) {
             izquierda y, a la derecha, la vista previa (fija al bajar) (display: contents lo reparte en el móvil) */}
         <div className="contents lg:col-start-1 lg:row-start-1 lg:grid lg:gap-[1rem]">
         {/* Dos pestañas arriba: Personalizar y Asistente. La vista previa se ve siempre, y debajo, lo de cada una */}
-        <div role="tablist" aria-label="Nuevo perfil" className="order-1 grid grid-cols-2 gap-[0.3rem] rounded-[0.75rem] bg-zinc-200 p-[0.25rem] lg:order-none">
+        <div role="tablist" aria-label="Editor" className="order-1 grid grid-cols-2 gap-[0.3rem] rounded-[0.75rem] bg-zinc-200 p-[0.25rem] lg:order-none">
           {[
             ['personalizar', 'Personalizar'],
             ['asistente', 'Asistente'],
@@ -2687,41 +3016,11 @@ function NuevoPerfil({ filas, recargar, abrir }) {
             placeholder="Barbería de barrio en Sants, clásica pero cercana, colores verde y crema. Cita por WhatsApp al 612 345 678. Abre de martes a sábado de 10 a 20."
             className={`${CAMPO} resize-y`}
           />
-          {/* Logo de referencia: el asistente lo mira para sacar los colores y el carácter de la marca; no se coloca en la miniweb */}
-          <div className="flex flex-wrap items-center gap-[0.6rem]">
-            {referencia ? (
-              <>
-                <img src={referencia.miniatura} alt="Logo de referencia" className="h-[2.75rem] w-[2.75rem] rounded-[0.5rem] border border-zinc-300 object-contain" />
-                <div className="flex items-center gap-[0.25rem]" aria-label="Colores que ha sacado de la imagen">
-                  {referencia.colores.map(c => (
-                    <span key={c.hex} title={`${c.hex} (${c.porcentaje}%)`} className="h-[1.4rem] w-[1.4rem] rounded-full ring-1 ring-zinc-300" style={{ background: c.hex }} />
-                  ))}
-                </div>
-                <button type="button" aria-label="Quitar el logo de referencia" onClick={() => setReferencia(null)} className="rounded-full p-[0.25rem] text-zinc-500 hover:text-zinc-900">
-                  <X className="h-[1rem] w-[1rem]" strokeWidth={2.5} aria-hidden="true" />
-                </button>
-              </>
-            ) : (
-              <label className={`inline-flex min-h-[2.5rem] cursor-pointer items-center gap-[0.4rem] rounded-[0.6rem] bg-white px-[0.9rem] text-[0.9rem] font-semibold ring-1 ring-zinc-300 ${disenando || creando ? 'pointer-events-none opacity-50' : ''}`}>
-                <ImagePlus className="h-[1.1rem] w-[1.1rem]" aria-hidden="true" />
-                Añadir logo de referencia
-                <input
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp,image/svg+xml"
-                  className="sr-only"
-                  onChange={async e => {
-                    const archivo = e.target.files?.[0]
-                    e.target.value = ''
-                    if (!archivo) return
-                    try {
-                      setReferencia(await leerReferencia(archivo))
-                    } catch (err) {
-                      setError(err.message)
-                    }
-                  }}
-                />
-              </label>
-            )}
+          {/* Dos imágenes opcionales para el asistente, que solo las mira (no se colocan en la miniweb): el logo de referencia (colores y carácter
+              de la marca) y una captura con información (solo se lee su texto: nombre, teléfonos, dirección, horario...) */}
+          <div className="flex flex-wrap items-center gap-x-[1.2rem] gap-y-[0.6rem]">
+            <CampoImagenAsistente titulo="Añadir logo de referencia" valor={referencia} cambiar={setReferencia} conColores bloqueado={Boolean(disenando) || Boolean(creando)} avisar={setError} />
+            <CampoImagenAsistente titulo="Añadir captura con información" valor={captura} cambiar={setCaptura} bloqueado={Boolean(disenando) || Boolean(creando)} avisar={setError} />
           </div>
           <button type="button" onClick={montar} disabled={!cuento.trim() || Boolean(disenando) || Boolean(creando)} className={BOTON}>
             {disenando ?? 'Montar el diseño con el asistente'}
@@ -3031,6 +3330,16 @@ function NuevoPerfil({ filas, recargar, abrir }) {
             </Plegable>
           )}
           {/* El estilo del menú de navegación, debajo de la portada, con la misma fila de iconos */}
+          {/* El filtro que oscurece la foto de la portada bajo el texto: de 0 (sin filtro) a 100 (el de cada diseño). El color, en Colores generales */}
+          {producto === 'miniweb' && (
+            <div className="grid gap-[0.35rem]">
+              <div className="flex items-baseline justify-between">
+                <span className="text-[0.8rem] font-semibold text-zinc-500">Filtro de la foto</span>
+                <span className="text-[0.8rem] font-semibold">{filtroFoto === 100 ? 'El de cada diseño' : filtroFoto === 0 ? 'Sin filtro' : `${filtroFoto} %`}</span>
+              </div>
+              <input type="range" min="0" max="100" step="5" value={filtroFoto} onChange={e => setFiltroFoto(Number(e.target.value))} aria-label="Intensidad del filtro de la foto" className="w-full accent-zinc-900" />
+            </div>
+          )}
           {producto === 'miniweb' && <FilaEstiloMenu valor={barra} cambiar={setBarra} />}
           {producto === 'miniweb' && <FilaHorario valor={horarioMini} cambiar={setHorarioMini} variante={horarioVar} cambiarVariante={setHorarioVar} />}
             </div>
@@ -3152,6 +3461,12 @@ function NuevoPerfil({ filas, recargar, abrir }) {
                 <TextosHorario original={datosEnBruto} cambios={cambiosExtra} cambiar={cambiarExtra} />
               </Plegable>
             )}
+            {/* Debajo, los nombres de las pestañas del menú */}
+            {datosEnBruto && (
+              <Plegable titulo="Texto pestañas">
+                <TextosPestanas original={datosEnBruto} cambios={cambiosExtra} cambiar={cambiarExtra} />
+              </Plegable>
+            )}
             </div>
           </details>
           )}
@@ -3176,18 +3491,39 @@ function NuevoPerfil({ filas, recargar, abrir }) {
           </div>
           )}
 
-          {error && <p className="text-[0.9rem] font-semibold text-red-600">{error}</p>}
-          {(pestana !== 'asistente' || cambiosIA) && (
-            <button type="button" onClick={crear} disabled={!nombre.trim() || Boolean(creando) || Boolean(disenando)} className={BOTON}>
-              {creando ?? `Crear ${producto === 'carta' ? 'carta' : producto === 'miniweb' ? 'miniweb' : 'ficha'}`}
-            </button>
-          )}
         </div>
         </div>
 
         {/* Vista previa: el contenido de la temática con el diseño elegido. A 360 px de ancho por dentro, como el móvil bajo:
             se ve lo mismo que verá el cliente. En pantalla grande, a la derecha y fija al bajar */}
         <div className="order-2 lg:sticky lg:top-[1rem] lg:order-none lg:col-start-2 lg:row-start-1">
+          {/* Las copias para enseñar (sin las demos originales) del producto elegido, para cargarlas aquí y retocarlas */}
+          <label className="mx-auto mb-[0.7rem] grid w-full max-w-[20rem] gap-[0.25rem]">
+            <span className="text-[0.8rem] font-semibold text-zinc-500">Copia</span>
+            <select
+              value={copiaCargada ? `${copiaCargada.tipo}:${copiaCargada.slug}` : ''}
+              onChange={e => {
+                if (!e.target.value) return setCopiaCargada(null)
+                const [t, sl] = e.target.value.split(':')
+                cargarCopia((filas ?? []).find(f => f.tipo === t && f.slug === sl))
+              }}
+              className={CAMPO}
+            >
+              <option value="">Ninguna (una nueva)</option>
+              {(filas ?? [])
+                .filter(f => f.base && (f.tipo === 'carta' ? producto === 'carta' : producto !== 'carta' && (f.cambios?._nuevoPerfil?.producto ?? tipoDe(conEdicion('negocio', f.slug, f) ?? {})) === producto))
+                .map(f => {
+                  const antigua = !f.cambios?._nuevoPerfil
+                  const nombreFila = f.cambios?._nuevoPerfil?.nombre || f.cambios?.nombre || f.cambios?.['marca.nombre'] || f.slug
+                  return (
+                    <option key={`${f.tipo}:${f.slug}`} value={`${f.tipo}:${f.slug}`} disabled={antigua}>
+                      {nombreFila}
+                      {antigua ? ' (antigua, no se abre aquí)' : ''}
+                    </option>
+                  )
+                })}
+            </select>
+          </label>
           {pestana === 'asistente' && !generado ? (
             <Movil ancho={360} className="mx-auto w-full max-w-[20rem]">
               <div className="flex h-full items-center justify-center bg-black px-[1.5rem] text-center text-[0.95rem] font-semibold text-white/60">Genera algo con el asistente y aparecerá aquí</div>
@@ -3196,15 +3532,32 @@ function NuevoPerfil({ filas, recargar, abrir }) {
             vista && <Movil key={vista} src={vista} titulo="Vista previa" ancho={360} className="mx-auto w-full max-w-[20rem]" />
           )}
           <p className="mt-[0.5rem] text-center text-[0.8rem] text-zinc-500">Con el contenido de ejemplo de la temática</p>
-          {/* Exporta este diseño a las muestras de /miniweb, donde está Chalaquita */}
-          {producto === 'miniweb' && (
-            <div className="mt-[0.7rem] grid gap-[0.4rem] text-center">
-              <button type="button" onClick={() => crear(true)} disabled={Boolean(creando)} className={`${BOTON} mx-auto`}>
-                {creando ?? 'Exportar a muestras'}
-              </button>
-              {aviso && <p className="text-[0.8rem] font-semibold text-emerald-700">{aviso}</p>}
-            </div>
-          )}
+          {/* Debajo del móvil: Añadir a copias (crea la copia) o, con una copia cargada, Guardar cambios y Guardar como nueva */}
+          <div className="mx-auto mt-[0.9rem] grid w-full max-w-[20rem] gap-[0.5rem]">
+            {error && <p className="text-[0.9rem] font-semibold text-red-600">{error}</p>}
+            {(pestana !== 'asistente' || cambiosIA || copiaCargada) &&
+              (copiaCargada ? (
+                <div className="grid gap-[0.5rem]">
+                  <button type="button" onClick={guardarCopia} disabled={Boolean(creando) || Boolean(disenando)} className={BOTON}>
+                    {creando ?? 'Guardar cambios'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => crear()}
+                    disabled={!nombre.trim() || Boolean(creando) || Boolean(disenando)}
+                    className="rounded-[0.7rem] bg-white px-[1rem] py-[0.7rem] text-[0.95rem] font-semibold ring-1 ring-zinc-300 hover:ring-zinc-500 disabled:opacity-50"
+                  >
+                    Guardar como nueva
+                  </button>
+                </div>
+              ) : (
+                <button type="button" onClick={crear} disabled={!nombre.trim() || Boolean(creando) || Boolean(disenando)} className={BOTON}>
+                  {creando ?? 'Añadir a copias'}
+                </button>
+              ))}
+          </div>
+          {/* Ya no hay muestras: todo lo que se crea es una copia para enseñar. El aviso de Guardar cambios sale aquí */}
+          {aviso && <p className="mt-[0.7rem] text-center text-[0.8rem] font-semibold text-emerald-700">{aviso}</p>}
         </div>
       </div>
     </details>
@@ -3453,7 +3806,7 @@ function EditorClientes({ copias }) {
   )
 }
 
-function Lista({ filas, abrir, recargar }) {
+function Lista({ filas, abrir, recargar, copia }) {
   const editadas = new Set((filas ?? []).map(f => `${f.tipo}:${f.slug}`))
   // Copias de fichas, miniwebs y cartas, con el nombre que les has puesto
   const copias = (filas ?? [])
@@ -3508,13 +3861,9 @@ function Lista({ filas, abrir, recargar }) {
   return (
     <div className="grid gap-[1.25rem]">
       {/* Panel principal: crear un perfil nuevo eligiendo temática, producto, diseño y marca */}
-      <NuevoPerfil filas={filas} recargar={recargar} abrir={abrir} />
+      <NuevoPerfil filas={filas} recargar={recargar} abrir={abrir} cargar={copia} />
 
-      {/* Con Nuevo perfil abierto no se ve: ya tiene su asistente dentro */}
-      <button type="button" onClick={() => abrir('asistente')} className={`${BOTON} inline-flex items-center justify-center gap-[0.4rem] peer-open:hidden`}>
-        <Sparkles className="h-[1.1rem] w-[1.1rem]" aria-hidden="true" />
-        Crear con el asistente
-      </button>
+      {/* El botón "Crear con el asistente" (el primer asistente) está oculto: el Editor ya lo hace todo. Su pantalla (CrearConAsistente) sigue en el código */}
 
       {/* Generador de QR, aparte: se elige la página o se hace uno suelto */}
       <details className="group/qr rounded-[1rem] bg-white ring-1 ring-zinc-200">
@@ -3542,10 +3891,10 @@ function Lista({ filas, abrir, recargar }) {
 
       {/* Todo lo que hay, por producto, en desplegables cerrados */}
       <div className="grid gap-[0.6rem]">
-        <Grupo titulo="Copias para enseñar" filas={copias.filter(f => !esMuestra(f)).map(aFilaCopia)} />
+        <Grupo titulo="Copias para enseñar" filas={copias.map(aFilaCopia)} />
         <Grupo titulo="Fichas" filas={negocios.filter(n => tipoDe(n) === 'ficha').map(aFila)} />
         {/* Las miniwebs de siempre y, con ellas, las que se exportan a muestras desde Nuevo perfil */}
-        <Grupo titulo="Miniwebs" filas={[...negocios.filter(n => tipoDe(n) === 'miniweb').map(aFila), ...copias.filter(esMuestra).map(f => ({ ...aFilaCopia(f), detalle: 'Muestra' }))]} />
+        <Grupo titulo="Miniwebs" filas={negocios.filter(n => tipoDe(n) === 'miniweb').map(aFila)} />
         <Grupo
           titulo="Cartas"
           filas={cartas.map(c => ({ clave: `carta:${c.slug}`, nombre: marcaDe(c)?.nombre ?? c.slug, detalle: c.demo ? 'Demo' : 'Cliente', ruta: rutaCarta(c) }))}
@@ -3639,6 +3988,8 @@ export default function AdminPage() {
   const [params, setParams] = useSearchParams()
   // Lo que se está editando va en la dirección (?editar=negocio:laca): el botón atrás del móvil vuelve a la lista
   const editar = params.get('editar')
+  // ?copia=negocio:slug: la copia que se carga en Nuevo perfil (botón Editar de su pantalla de información)
+  const copia = params.get('copia')
 
   // ¿Esta cuenta es de administrador?
   useEffect(() => {
@@ -3695,9 +4046,21 @@ export default function AdminPage() {
               <CrearConAsistente filas={filas} volver={() => abrir(null)} recargar={recargar} abrir={abrir} />
             ) : editar && (tipo === 'negocio' || tipo === 'carta') ? (
               // key: al abrir otra (por ejemplo, la copia recién creada) el editor empieza de cero
-              <Editor key={`${editar}-${Boolean(fila)}`}tipo={tipo} slug={slug} fila={fila} volver={() => abrir(null)} recargar={recargar} abrir={abrir} />
+              <Editor
+                key={`${editar}-${Boolean(fila)}`}
+                tipo={tipo}
+                slug={slug}
+                fila={fila}
+                volver={() => abrir(null)}
+                recargar={recargar}
+                abrir={abrir}
+                irANuevoPerfil={clave => {
+                  setParams({ copia: clave })
+                  window.scrollTo(0, 0)
+                }}
+              />
             ) : (
-              <Lista filas={filas} abrir={abrir} recargar={recargar} />
+              <Lista filas={filas} abrir={abrir} recargar={recargar} copia={copia} />
             )}
           </>
         )}

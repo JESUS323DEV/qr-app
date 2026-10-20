@@ -19,6 +19,21 @@ const RELLENO_HORARIO = [
   { dias: 'Domingo y lunes', horas: 'Cerrado' },
 ]
 
+// El texto de la portada de Inicio, como el de Chalaquita (titular, descripción y un botón a Servicios): el de la propia ficha (su titular y su lema)
+// y, si no tiene, uno de partida con su nombre y sector. El asistente y el editor lo reescriben
+const textosDeInicio = (negocio, fotos) => {
+  const hero = negocio.hero ?? {}
+  const titular = [hero.titulo ?? fotos?.titulo, hero.destacado ?? hero.brillo ?? fotos?.destacado].filter(Boolean)
+  // Sin titular propio, el lema o el sector (nunca el nombre, que ya sale arriba)
+  const base = titular.length ? titular : [negocio.lema ?? negocio.sector ?? '']
+  return {
+    titular: base,
+    descripcion: negocio.lema && negocio.lema !== base[0] ? negocio.lema : negocio.sector && negocio.sector !== base[0] ? negocio.sector : '',
+    boton: 'Ver servicios',
+    botonA: 'servicios',
+  }
+}
+
 export function pestanasDeMiniweb(negocio) {
   const pestanas = negocio.hero?.pestanas ?? []
   const de = tipo => pestanas.find(p => tipoComun(p.tipo) === tipo)
@@ -32,7 +47,7 @@ export function pestanasDeMiniweb(negocio) {
   const horarioDePagina = horario ?? { tipo: 'horario', texto: 'Horario', titulo: 'Horario', foto: contacto?.foto, lineas: RELLENO_HORARIO }
 
   return [
-    fotos && { ...fotos, texto: 'Inicio' },
+    fotos && { ...fotos, ...textosDeInicio(negocio, fotos), texto: 'Inicio' },
     relleno && { tipo: 'servicios', texto: 'Servicios', ofertas: relleno.ofertas, secciones: relleno.secciones },
     { ...horarioDePagina, ...(ubicacion ? { mapa: ubicacion.mapa, direccion: ubicacion.direccion } : {}) },
     contacto,
@@ -43,5 +58,6 @@ export function pestanasDeMiniweb(negocio) {
 export const fichaAMiniweb = (negocio, portada) => ({
   ...negocio,
   tipo: 'miniweb',
-  hero: { ...negocio.hero, diseno: 'web', portada, barra: undefined, redesArriba: true, pestanas: pestanasDeMiniweb(negocio) },
+  // El titular propio de la ficha (titulo, destacado y texto, el que iba sobre la foto) sobra en una miniweb: ya está el Texto inicio
+  hero: { ...negocio.hero, diseno: 'web', portada, barra: undefined, redesArriba: true, titulo: '', destacado: '', brillo: '', texto: '', pestanas: pestanasDeMiniweb(negocio) },
 })

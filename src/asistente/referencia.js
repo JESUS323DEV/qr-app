@@ -38,7 +38,7 @@ function coloresDominantes(datos) {
 }
 
 // Lee el archivo y devuelve { imagen (base64 sin cabecera), tipo, miniatura (para enseñarla) y colores }
-export function leerReferencia(archivo) {
+export function leerReferencia(archivo, { colores: sacarColores = true } = {}) {
   return new Promise((resolver, rechazar) => {
     const url = URL.createObjectURL(archivo)
     const img = new Image()
@@ -52,7 +52,8 @@ export function leerReferencia(archivo) {
       lienzo.height = alto
       const ctx = lienzo.getContext('2d', { willReadFrequently: true })
       ctx.drawImage(img, 0, 0, ancho, alto)
-      const colores = coloresDominantes(ctx.getImageData(0, 0, ancho, alto).data)
+      // Una captura con solo información (texto) no aporta colores de marca: no se sacan
+      const colores = sacarColores ? coloresDominantes(ctx.getImageData(0, 0, ancho, alto).data) : []
       // Para mandarla, sobre blanco (un logo transparente se vería negro en JPEG) y en JPEG, que pesa poco
       const envio = document.createElement('canvas')
       envio.width = ancho

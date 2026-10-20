@@ -4,7 +4,7 @@ import Img from '../components/Img'
 import BotonCompartir from '../components/BotonCompartir'
 import { LogoNegocio, useFactorNombre } from '../components/NombreMarca'
 import { fotosDe } from '../fichas/escenas'
-import { useFondoBoton, useRol } from '../components/ColoresPortada'
+import { useFiltro, useFondoBoton, useRol } from '../components/ColoresPortada'
 import { distribucionDe } from '../lib/distribuciones'
 
 // Líneas de ejemplo para el pie de la foto abierta (inventadas, para un restaurante), mientras las fotos no traigan
@@ -33,6 +33,8 @@ export default function HeroRetratoWeb({ hero, nombre, lema, inicio, irA }) {
   const fondoBoton = useFondoBoton()
   const logo = useContext(LogoNegocio)
   const factorNombre = useFactorNombre()
+  // El velo oscuro de la foto de fondo: su intensidad se regula desde el editor (hero.filtro)
+  const filtro = useFiltro()
   const fotosDeLaPestana = fotosDe(hero.pestanas?.[0])
   const fotos = fotosDeLaPestana.map(f => f.src)
   // La foto abierta en grande (su número en la fila) o ninguna
@@ -74,7 +76,7 @@ export default function HeroRetratoWeb({ hero, nombre, lema, inicio, irA }) {
       {/* Fondo y velo, recortados en su propia capa */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         {fondo && <Img src={fondo} alt="" className="absolute inset-0 h-full w-full object-cover object-[center_65%]" />}
-        <div className="absolute inset-0 bg-black/70" />
+        <div style={{ opacity: filtro.intensidad }} className="absolute inset-0 bg-black/70" />
       </div>
 
       {/* Círculo (foto de la persona, logo o iniciales) y, al lado, el nombre o el logo */}
