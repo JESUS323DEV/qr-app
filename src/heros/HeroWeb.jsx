@@ -12,6 +12,7 @@ import BarraPestanas from '../fichas/barras'
 import { HEROS } from './index'
 import HeroRetratoWeb from './HeroRetratoWeb'
 import Ofertas from '../components/carta/Ofertas'
+import PaginaHorario from './PaginaHorario'
 
 /* Web (plan premium). Parece una web de verdad dentro del móvil: arriba una barra de navegación del color de la marca,
    con las pestañas como enlaces de menú (raya bajo la activa). Debajo, cada pestaña es una "página" completa
@@ -69,57 +70,6 @@ function Franja({ foto, className = '' }) {
   return (
     <div className={`relative overflow-hidden ${className}`}>
       <Img src={foto} alt="" className="absolute inset-0 h-full w-full object-cover" />
-    </div>
-  )
-}
-
-function PaginaHorario({ pestana, cargarMapa }) {
-  return (
-    <div className="flex h-full flex-col">
-      <Franja foto={pestana.foto} className="min-h-[4.5rem] flex-1" />
-      <div className="px-[1.25rem] py-[0.9rem]">
-        <h2 className="font-demo-heading text-[1.8rem] font-extrabold leading-none">{pestana.titulo}</h2>
-        <dl className="mt-[0.6rem] text-[0.88rem]">
-          {pestana.lineas.map(l => (
-            <div key={l.dias} className="flex justify-between gap-[1rem] border-b border-dashed border-demo-text/20 py-[0.35rem]">
-              <dt className="font-semibold">{l.dias}</dt>
-              <dd className="text-right text-demo-muted">{l.horas}</dd>
-            </div>
-          ))}
-        </dl>
-        {pestana.nota && <p className="mt-[0.5rem] text-[0.78rem] text-demo-muted">{pestana.nota}</p>}
-      </div>
-
-      {/* Ubicación debajo del horario: cuándo abren y dónde están, en la misma pantalla */}
-      {pestana.mapa && (
-        <div className="relative h-[11rem] shrink-0">
-          {cargarMapa && (
-            <iframe
-              title="Mapa"
-              src={`https://www.google.com/maps?q=${encodeURIComponent(pestana.mapa)}&output=embed`}
-              className="absolute inset-0 h-full w-full border-0"
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-            />
-          )}
-          {/* Tarjeta de dirección, como el bloque de contacto de una web */}
-          <div className="absolute bottom-[0.7rem] left-[1.25rem] flex max-w-[calc(100%-2.5rem)] items-center gap-[0.75rem] rounded-[0.6rem] bg-demo-bg px-[0.75rem] py-[0.45rem] shadow-[0_0.3rem_0.9rem_-0.3rem_rgb(0_0_0/0.35)]">
-            <div className="min-w-0">
-              <p className="truncate text-[0.82rem] font-semibold leading-tight">{pestana.direccion}</p>
-              {pestana.zona && <p className="truncate text-[0.7rem] leading-tight text-demo-muted">{pestana.zona}</p>}
-            </div>
-            <a
-              href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(pestana.mapa)}`}
-              target="_blank"
-              rel="noreferrer"
-              className="flex shrink-0 items-center gap-[0.15rem] text-[0.75rem] font-semibold text-demo-primary"
-            >
-              Cómo llegar
-              <ArrowUpRight className="h-[0.75rem] w-[0.75rem]" aria-hidden="true" />
-            </a>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
@@ -839,6 +789,9 @@ export default function HeroWeb({ hero, nombre, lema, cuerpo, redes, redesTexto 
   // un fondo claro, las letras pasan a oscuro
   const coloresMenu = hero.colores ?? {}
   const menuClaro = esClaro(coloresMenu.menuFondo)
+  // El estilo del menú (hero.barra) solo cambia la forma: el fondo es siempre el del menú (cabecera o el elegido) y las letras se adaptan a él.
+  // Con un texto elegido: si es claro, el menú es oscuro (letras claras); si es oscuro, el menú es claro y las letras llevan su color
+  const menuSobre = coloresMenu.menuTexto ? (esClaro(coloresMenu.menuTexto) ? 'oscuro' : 'claro') : menuClaro ? 'claro' : 'oscuro'
   const estiloMenu = {
     ...(coloresMenu.menuFondo ? { background: coloresMenu.menuFondo } : {}),
     ...(coloresMenu.menuSubrayado ? { '--demo-accent': coloresMenu.menuSubrayado, '--demo-primary': coloresMenu.menuSubrayado } : {}),
@@ -851,8 +804,8 @@ export default function HeroWeb({ hero, nombre, lema, cuerpo, redes, redesTexto 
     <div className="flex flex-1 flex-col" onPointerDown={parar}>
       {/* Menú con un estilo de pestañas de las fichas (hero.barra), sobre el fondo de la marca */}
       {hero.barra ? (
-        <header style={estiloMenu} className={`${menuAbajo ? 'order-3' : 'order-1'} bg-demo-bg ${hero.barra === 'app' ? '' : 'px-[1.25rem] pb-[0.5rem] pt-[0.7rem]'}`}>
-          <BarraPestanas estilo={hero.barra} pestanas={pestanas} activa={activa} tocar={tocar} />
+        <header style={estiloMenu} className={`${menuAbajo ? 'order-3' : 'order-1'} bg-demo-header ${hero.barra === 'app' ? '' : 'px-[1.25rem] pb-[0.5rem] pt-[0.7rem]'}`}>
+          <BarraPestanas estilo={hero.barra} pestanas={pestanas} activa={activa} tocar={tocar} sobre={menuSobre} />
         </header>
       ) : (
       /* Barra de navegación, como la de una web */

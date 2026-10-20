@@ -70,12 +70,12 @@ export function coloresAutomaticos(theme, hero = {}, elegidos = {}) {
   const texto = hex6(c.text, '#141414')
   const cabecera = hex6(c.header, principal)
   const surface = hex6(c.surface, bg)
-  const menuFondo = hex6(elegidos.menuFondo, hero.barra ? bg : cabecera)
+  const menuFondo = hex6(elegidos.menuFondo, cabecera)
   const redesFondo = hex6(elegidos.redesFondo, hero.colorRedes ? hex6(hero.colorRedes, cabecera) : cabecera)
   const botonFondo = hex6(elegidos.botonFondo, acento)
   return {
     menuFondo,
-    menuTexto: hero.barra ? texto : oscuroOBlanco(menuFondo),
+    menuTexto: oscuroOBlanco(menuFondo),
     menuSubrayado: acento,
     redesFondo,
     redesIconos: oscuroOBlanco(redesFondo),

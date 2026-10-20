@@ -34,6 +34,50 @@ export const ESTRUCTURA_IA = [
   { campo: 'compartirEn', texto: 'Dónde va el botón de compartir', lista: [['diseno', 'donde lo pone el diseño'], ['abajo', 'junto al botón principal'], ['redes', 'como un icono más en las redes']] },
 ]
 
+// Qué parece cada subdiseño (la clave es campo.clave): para que la IA elija sabiendo cómo se ve y no solo por su nombre
+const TEXTO_SUBDISENO = {
+  'formato.clasica': 'foto grande arriba y el texto debajo, sin más',
+  'formato.tarjeta': 'el texto en una tarjeta que se solapa sobre la foto',
+  'formato.marco': 'la foto con márgenes y esquinas redondeadas',
+  'formato.franja': 'una franja gruesa del color de la marca entre la foto y el texto',
+  'corte.diagonal': 'la foto termina en una diagonal suave',
+  'corte.diagonal-inversa': 'la diagonal sube hacia el otro lado',
+  'corte.diagonal-fuerte': 'una diagonal muy marcada, más dramática',
+  'corte.curva': 'la foto termina en una curva redondeada hacia abajo',
+  'corte.curva-inversa': 'la curva se hunde hacia dentro, como un valle',
+  'corte.onda': 'un borde ondulado, alegre y suave',
+  'disposicion.clasica': 'el texto abajo de la foto, sobre un degradado oscuro',
+  'disposicion.tarjeta': 'el texto en una tarjeta de cristal translúcida abajo',
+  'disposicion.velo': 'el texto abajo sobre un degradado del color de la marca (no negro)',
+  'composicion.clasica': 'titular arriba, fotos en el centro y descripción con botón abajo',
+  'composicion.arriba': 'todo el texto arriba y las fotos al final',
+  'composicion.abajo': 'solo el nombre arriba, las fotos y todo el texto debajo',
+  'distribucion.clasica': 'tres fotos verticales en fila al final',
+  'distribucion.redondas': 'tres fotos en círculo, más suave y personal',
+  'distribucion.destacada': 'una foto grande y dos pequeñas (pide pantalla alta)',
+  'distribucion.arriba': 'las fotos justo bajo el nombre y el texto al final',
+  'pase.clasica': 'una foto con flechas, el titular sobre ella y el texto debajo',
+  'pase.sobre': 'titular, descripción y botón, todo sobre la foto',
+  'pase.carrusel': 'carrusel con un trozo de las fotos de los lados',
+  'montaje.clasica': 'polaroids torcidas de dos en dos con el texto debajo',
+  'montaje.monton': 'un montón de polaroids que se pasa con flechas, muy cercano',
+  'montaje.arriba': 'el texto arriba y las polaroids debajo',
+}
+
+// Los estilos del menú de navegación, como se ven en una miniweb (todos van sobre el fondo del menú; solo cambia la forma)
+export const ESTILOS_MENU_IA = [
+  { clave: 'rayita', nombre: 'La rayita (la de siempre)', texto: 'letras sueltas con una raya corta bajo la elegida; sobrio, el más neutro' },
+  { clave: 'subrayado', nombre: 'Subrayada', texto: 'como la rayita pero con una raya larga bajo la elegida' },
+  { clave: 'onda', nombre: 'Ondulada', texto: 'una onda pequeña bajo la elegida; alegre y suave' },
+  { clave: 'revista', nombre: 'Índice de revista', texto: 'la elegida en negrita con una raya encima; elegante' },
+  { clave: 'barras', nombre: 'Menú con barras', texto: 'palabras separadas por barras verticales; limpio y editorial' },
+  { clave: 'segmentada', nombre: 'Segmentada', texto: 'una píldora con la elegida rellena; moderno' },
+  { clave: 'pastillas', nombre: 'Pastillas', texto: 'pastillas separadas, la elegida rellena; joven' },
+  { clave: 'bloques', nombre: 'Bloques', texto: 'bloques rectos pegados; contundente y popular' },
+  { clave: 'carpeta', nombre: 'Carpetas', texto: 'pestañas de carpeta con las esquinas de arriba redondas' },
+  { clave: 'app', nombre: 'Tipo app', texto: 'icono y nombre como la barra de una app; muy móvil' },
+]
+
 export const TAMANOS_NOMBRE = [['xs', 'pequeño'], ['md', 'el de cada diseño'], ['xl', 'grande']]
 
 // Los roles de color opcionales (los que ya tienen un valor automático que se lee bien; solo se tocan si hace falta)
@@ -42,9 +86,9 @@ export const ROLES_COLOR_IA = COLORES_MINIWEB.flatMap(g => g.campos).map(c => ({
 // Todo lo que se le manda a la IA: las listas con sus claves y para qué sirve cada una
 export const catalogoMiniweb = () => ({
   temas: PLANTILLAS.map(p => ({ clave: p.clave, nombre: p.nombre })),
-  portadas: PORTADAS_IA.map(p => ({ clave: p.clave, texto: p.texto, campo: p.campo, subdisenos: p.lista.map(s => ({ clave: s.clave, nombre: s.nombre })) })),
+  portadas: PORTADAS_IA.map(p => ({ clave: p.clave, texto: p.texto, campo: p.campo, subdisenos: p.lista.map(s => ({ clave: s.clave, nombre: s.nombre, texto: TEXTO_SUBDISENO[`${p.campo}.${s.clave}`] ?? '' })) })),
   estructura: ESTRUCTURA_IA.map(e => ({ campo: e.campo, texto: e.texto, opciones: e.lista.map(([clave, texto]) => ({ clave, texto })) })),
-  estilosMenu: Object.entries(BARRAS).map(([clave, b]) => ({ clave, nombre: b.nombre, texto: b.texto })),
+  estilosMenu: ESTILOS_MENU_IA,
   tamanosNombre: TAMANOS_NOMBRE.map(([clave, texto]) => ({ clave, texto })),
   tipografias: TIPOGRAFIAS.map(t => ({ id: t.id, nombre: t.nombre, estilo: t.estilo })),
   rolesColor: ROLES_COLOR_IA,
@@ -66,7 +110,9 @@ export function validarDiseno(res) {
     portada: portada?.clave ?? null,
     subdiseno: sub ? { campo: portada.campo, valor: sub.clave } : null,
     estructura: { ...estructura, redesVinculadas: res.redesVinculadas === true },
-    estiloMenu: res.estiloMenu in BARRAS ? res.estiloMenu : null,
+    // 'rayita' es el estilo de siempre (sin hero.barra): se guarda como la cadena vacía
+    estiloMenu: res.estiloMenu === 'rayita' ? '' : res.estiloMenu in BARRAS ? res.estiloMenu : null,
+    textoExtra: String(res.textoExtra ?? '').replace(/—/g, ',').trim().slice(0, 60),
     carta: cartas.some(c => c.slug === res.carta) ? res.carta : '',
     tamanoNombre: TAMANOS_NOMBRE.some(([clave]) => clave === res.tamanoNombre) ? res.tamanoNombre : null,
     tipografia: TIPOGRAFIAS.some(t => t.id === res.tipografia) ? res.tipografia : null,

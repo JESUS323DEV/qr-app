@@ -132,6 +132,7 @@ const ESQUEMA_DISENO = {
     menuEn: { type: 'string' },
     compartirEn: { type: 'string' },
     estiloMenu: { type: 'string' },
+    textoExtra: { type: 'string' },
     carta: { type: 'string' },
     tamanoNombre: { type: 'string' },
     tipografia: { type: 'string' },
@@ -152,7 +153,7 @@ const ESQUEMA_DISENO = {
     },
     resumen: { type: 'string' },
   },
-  required: ['nombre', 'tema', 'portada', 'subdiseno', 'redesEn', 'redesVinculadas', 'menuEn', 'compartirEn', 'estiloMenu', 'carta', 'tamanoNombre', 'tipografia', 'colores', 'roles', 'resumen'],
+  required: ['nombre', 'tema', 'portada', 'subdiseno', 'redesEn', 'redesVinculadas', 'menuEn', 'compartirEn', 'estiloMenu', 'textoExtra', 'carta', 'tamanoNombre', 'tipografia', 'colores', 'roles', 'resumen'],
   additionalProperties: false,
 }
 
@@ -165,7 +166,9 @@ Cómo elegir:
 - tema: la temática más cercana al negocio, entre las de la lista (solo sirve para el contenido de ejemplo; el aspecto no depende de ella).
 - portada y subdiseno: una portada y uno de SUS subdiseños (cada portada tiene los suyos; la clave del subdiseno tiene que ser de la portada elegida).
 - redesEn, redesVinculadas, menuEn y compartirEn: dónde va cada pieza. redesVinculadas en true pega la barra de redes siempre al menú (en ese caso redesEn no se usa, pero rellénalo igual). Una estructura sencilla suele ser mejor que una rara: usa lateral, medio o menú abajo cuando encajen con la marca y no por variar.
-- estiloMenu: el estilo de las pestañas del menú. tamanoNombre: el tamaño del nombre arriba ('md' salvo que el nombre sea muy largo o muy corto o pidan otra cosa).
+- estiloMenu: el estilo de las pestañas del menú, por su clave ('rayita' es el de siempre). El estilo solo cambia la FORMA de la marca de la pestaña elegida (raya, onda, pastilla, bloque, carpeta...): el fondo del menú es siempre el mismo, el de cabecera (el color principal) o el que pongas en los roles, y las letras se ponen solas en blanco u oscuro según ese fondo. Elige por el carácter de la marca, no por colores. Los que tienen forma (segmentada, pastillas, bloques, carpeta, app) piden un fondo de menú con buen contraste: si el color principal es muy claro, mejor un estilo de texto (rayita, subrayada, onda, revista o barras) o pon un fondo de menú oscuro en los roles.
+- textoExtra: un texto corto (máximo 60 caracteres) que va debajo del botón principal, normalmente el horario ("De martes a sábado, de 10 a 20") o una frase corta útil. Usa solo datos que te hayan dado; si no hay ninguno, vacío.
+- tamanoNombre: el tamaño del nombre arriba ('md' salvo que el nombre sea muy largo o muy corto o pidan otra cosa).
 - carta: la carta de muestra que pinta el menú de la miniweb, por su clave, entre las de la lista (cada una tiene su diseño y para qué negocios va). Elige la que mejor vaya con el negocio y el estilo que piden. Vacío si el negocio no tiene carta que enseñar o no encaja ninguna.
 - tipografia: el id de una pareja de la lista, la que mejor vaya con la marca.
 - colores (formato #RRGGBB): una paleta completa y coherente a partir de los colores que pidan o de lo que transmita la marca. principal es el color fuerte (botones y bloques), acento el detalle, fondo y texto los de la página. El texto tiene que leerse bien sobre el fondo (contraste alto), y el texto blanco o negro sobre el acento y el principal.

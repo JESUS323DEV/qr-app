@@ -1,7 +1,7 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { HexColorPicker } from 'react-colorful'
 import { Link, useSearchParams } from 'react-router-dom'
-import { Armchair, ArrowLeft, ArrowUp, ArrowUpRight, Beer, BookImage, Camera, ChevronDown, ChevronsDownUp, CircleUser, Coffee, Copy, Croissant, Fish, Frame, GalleryHorizontal, IdCard, LayoutGrid, Maximize, Menu, Minus, Newspaper, PanelTop, Pizza, Plus, QrCode, Scissors, Search, Slice, Smartphone, Sparkles, Store, Trash2, UtensilsCrossed, X } from 'lucide-react'
+import { Armchair, ArrowLeft, ArrowUp, ArrowUpRight, Beer, BookImage, Camera, ChevronDown, ChevronsDownUp, CircleUser, Coffee, Copy, Croissant, Fish, Frame, GalleryHorizontal, IdCard, ImagePlus, LayoutGrid, Maximize, Menu, Minus, Newspaper, PanelTop, Pizza, Plus, QrCode, RotateCcw, Scissors, Search, Slice, Smartphone, Sparkles, Store, Trash2, UtensilsCrossed, X } from 'lucide-react'
 import GeneradorQR from '../components/GeneradorQR'
 import { supabase } from '../lib/supabase'
 import { aplicar } from '../lib/ediciones'
@@ -13,6 +13,9 @@ import { TIPOGRAFIAS, parejaDe } from '../asistente/tipografias'
 import { DISENOS_ASISTENTE, DISENOS_CARTA } from '../asistente/disenos'
 import { GRUPOS_PLANTILLAS, PLANTILLAS } from '../plantillas'
 import { catalogoMiniweb, validarDiseno } from '../asistente/miniweb'
+import { DIBUJOS_MENU, GRUPOS_MENU } from '../lib/estilosMenu'
+import { ICONOS_ESTRUCTURA } from '../lib/iconosEstructura'
+import { HORARIOS } from '../lib/horarios'
 import Movil from '../components/Movil'
 import { COLORES_MINIWEB, coloresAutomaticos } from '../lib/coloresMiniweb'
 import { CORTES, puntosDeCorte } from '../lib/cortes'
@@ -636,7 +639,8 @@ function Retocar({ historial, enviar }) {
 /* Color: una muestra que, al tocarla, abre un selector propio (cuadrado de tono e intensidad y barra de color,
    react-colorful), igual en el móvil que en el ordenador; al lado, el código para escribirlo o pegarlo.
    Se cierra tocando fuera o con Escape. */
-function CampoColor({ valor, cambiar, auto = false }) {
+// auto: el color que se pone solo (borde de rayitas); soloCirculo: sin el campo del código, para que al elegir un color solo cambie el círculo
+function CampoColor({ valor, cambiar, auto = false, soloCirculo = false }) {
   const [abierto, setAbierto] = useState(false)
   const caja = useRef(null)
   // El selector solo entiende #rrggbb
@@ -665,7 +669,7 @@ function CampoColor({ valor, cambiar, auto = false }) {
       >
         <span className="block h-full w-full rounded-full" style={{ background: seis }} />
       </button>
-      {!auto && <input value={valor} onChange={e => cambiar(e.target.value)} className={`${CAMPO} font-mono`} spellCheck={false} />}
+      {!auto && !soloCirculo && <input value={valor} onChange={e => cambiar(e.target.value)} className={`${CAMPO} font-mono`} spellCheck={false} />}
       {abierto && (
         // En el móvil, abajo y a todo el ancho (para que no se salga de la pantalla); en el ordenador, debajo de la muestra
         <div className="fixed inset-x-[1rem] bottom-[1rem] z-50 rounded-[0.9rem] bg-white p-[0.8rem] shadow-[0_0.6rem_1.6rem_-0.4rem_rgb(0_0_0/0.35)] ring-1 ring-zinc-200 sm:absolute sm:inset-x-auto sm:bottom-auto sm:left-0 sm:top-[calc(100%+0.4rem)] sm:z-30 sm:w-[15rem] sm:p-[0.7rem] [&_.react-colorful]:!h-[13rem] [&_.react-colorful]:!w-full sm:[&_.react-colorful]:!h-[11rem]">
@@ -1612,9 +1616,9 @@ function Duplicar({ tipo, datos, setDatos, crear }) {
    guarda como una copia de la demo de esa temática con el diseño y la marca elegidos, y se abre en el editor.
    La vista previa enseña todo al momento: el contenido, el diseño y la marca (con la marca de prueba de lib/prueba.js). */
 // Apartado de Nuevo perfil que se pliega: cerrado, el título y lo elegido; al tocarlo se abren las opciones
-function Plegable({ titulo, elegido, children }) {
+function Plegable({ titulo, elegido, children, abierto = false }) {
   return (
-    <details className="group rounded-[0.75rem] ring-1 ring-zinc-200">
+    <details open={abierto} className="group rounded-[0.75rem] ring-1 ring-zinc-200">
       <summary className="flex cursor-pointer list-none items-center gap-[0.75rem] px-[0.85rem] py-[0.7rem] [&::-webkit-details-marker]:hidden">
         <span className="text-[0.85rem] font-semibold text-zinc-500">{titulo}</span>
         <span className="ml-auto min-w-0 truncate text-[0.9rem] font-semibold">{elegido}</span>
@@ -1642,10 +1646,10 @@ const ICONOS_TEMA = {
    un círculo con el color que se pinta ahora (con borde de rayitas si es el automático, el que se pone solo según el diseño); al
    tocarlo se abre el cuadro de colores y, elegido uno, aparece su código y un enlace para volver a automático.
    valores: lo elegido; autos: el color automático de cada rol; cambiar(clave, color) y cambiar(clave, undefined) para volver a él */
-function PanelColoresMiniweb({ valores, cambiar, autos = {} }) {
+function PanelColoresMiniweb({ valores, cambiar, autos = {}, sinTitulo = false }) {
   return (
     <div className="grid gap-[1rem] lg:grid-cols-2 lg:items-start lg:gap-x-[1.75rem]">
-      <span className="text-[0.8rem] font-semibold text-zinc-500 lg:col-span-2">Colores</span>
+      {!sinTitulo && <span className="text-[0.8rem] font-semibold text-zinc-500 lg:col-span-2">Colores</span>}
       {COLORES_MINIWEB.map(g => (
         <div key={g.grupo} className={`grid gap-[0.5rem] ${g.ancho ? "lg:col-span-2" : ""}`}>
           <p className="text-[0.85rem] font-bold">{g.grupo}</p>
@@ -1653,12 +1657,12 @@ function PanelColoresMiniweb({ valores, cambiar, autos = {} }) {
             {g.campos.map(c => {
               const valor = valores[c.clave]
               return (
-                <div key={c.clave} className="grid gap-[0.25rem]" title={c.ayuda}>
+                <div key={c.clave} className="grid justify-items-center gap-[0.25rem]" title={c.ayuda}>
                   <p className="text-[0.8rem] font-semibold text-zinc-500">{c.corto}</p>
-                  <CampoColor valor={valor ?? autos[c.clave] ?? '#FFFFFF'} auto={!valor} cambiar={v => cambiar(c.clave, v)} />
+                  <CampoColor valor={valor ?? autos[c.clave] ?? '#FFFFFF'} auto={!valor} soloCirculo cambiar={v => cambiar(c.clave, v)} />
                   {valor && (
-                    <button type="button" onClick={() => cambiar(c.clave, undefined)} className="justify-self-start text-[0.8rem] font-semibold text-zinc-500 underline underline-offset-[0.2em]">
-                      Volver a automático
+                    <button type="button" title="Volver a automático" aria-label={`Volver a automático: ${c.nombre}`} onClick={() => cambiar(c.clave, undefined)} className="rounded-full p-[0.2rem] text-zinc-400 hover:text-zinc-900">
+                      <RotateCcw className="h-[0.95rem] w-[0.95rem]" strokeWidth={2.2} aria-hidden="true" />
                     </button>
                   )}
                 </div>
@@ -1683,6 +1687,104 @@ const ESTRUCTURA_MINIWEB = [
 const ESTRUCTURA_DEFECTO = { redesVinculadas: false, redesEn: 'arriba', menuEn: 'arriba', compartirEn: 'diseno' }
 
 // Esas piezas, cada una con sus opciones. valores: lo elegido (sin elegir, lo de siempre); cambiar(clave, valor)
+// El estilo del menú de navegación de una miniweb, con subpestañas como Portada: un icono por grupo (De texto, Con forma) y, al tocarlo,
+// los iconos de sus estilos; debajo, el nombre del elegido. valor: la clave de BARRAS o '' (la rayita de siempre)
+function FilaEstiloMenu({ valor, cambiar }) {
+  const [abierta, setAbierta] = useState(true)
+  const nombres = { '': 'La rayita (la de siempre)', ...Object.fromEntries(Object.entries(BARRAS).map(([clave, b]) => [clave, b.nombre])) }
+  const grupo = GRUPOS_MENU.find(g => g.claves.includes(valor)) ?? GRUPOS_MENU[0]
+  const icono = 'flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 bg-white transition-transform duration-300'
+  const dibujar = trazos => (
+    <svg viewBox="0 0 24 24" className="h-[1.4rem] w-[1.4rem]" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: trazos }} />
+  )
+  return (
+    <div className="grid gap-[0.45rem]">
+      <span className="text-[0.8rem] font-semibold text-zinc-500">Estilo del menú de navegación</span>
+      <div className="flex flex-wrap items-center gap-[0.4rem]">
+        {GRUPOS_MENU.map(g => (
+          <button
+            key={g.clave}
+            type="button"
+            title={g.nombre}
+            aria-label={`Menú ${g.nombre}`}
+            aria-pressed={grupo.clave === g.clave}
+            onClick={() => {
+              // Tocar otra vez el grupo elegido abre o cierra sus estilos; tocar otro, elige su primero
+              if (grupo.clave === g.clave) setAbierta(v => !v)
+              else {
+                cambiar(g.claves[0])
+                setAbierta(true)
+              }
+            }}
+            className={`${icono} ${grupo.clave === g.clave ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
+          >
+            {dibujar(g.dibujo)}
+          </button>
+        ))}
+      </div>
+      <p className="text-[0.85rem] font-semibold">{grupo.nombre}</p>
+      {abierta && (
+        <div className="grid gap-[0.4rem]">
+          <div className="flex flex-wrap gap-[0.4rem]">
+            {grupo.claves.map(clave => (
+              <button
+                key={clave || 'rayita'}
+                type="button"
+                title={nombres[clave]}
+                aria-label={`Estilo ${nombres[clave]}`}
+                aria-pressed={valor === clave}
+                onClick={() => cambiar(clave)}
+                className={`${icono} ${valor === clave ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
+              >
+                {dibujar(DIBUJOS_MENU[clave])}
+              </button>
+            ))}
+          </div>
+          <p className="text-[0.8rem] text-zinc-500">{nombres[valor]}</p>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// El diseño del horario de una miniweb, con la fila de iconos de Portada (5 y un + en el móvil, todos en ordenador) y el nombre del elegido
+// debajo. valor: la clave de lib/horarios.js o '' (la lista de siempre)
+function FilaHorario({ valor, cambiar }) {
+  const [mas, setMas] = useState(false)
+  const actual = valor || 'lista'
+  return (
+    <div className="grid gap-[0.45rem]">
+      <span className="text-[0.8rem] font-semibold text-zinc-500">Diseño del horario</span>
+      <div className="flex flex-wrap items-center gap-[0.4rem]">
+        {HORARIOS.map((h, i) => (
+          <button
+            key={h.clave}
+            type="button"
+            title={h.nombre}
+            aria-label={`Horario ${h.nombre}`}
+            aria-pressed={actual === h.clave}
+            onClick={() => cambiar(h.clave === 'lista' ? '' : h.clave)}
+            className={`${i >= 5 && !mas ? 'hidden lg:flex' : 'flex'} h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 bg-white transition-transform duration-300 ${actual === h.clave ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
+          >
+            <svg viewBox="0 0 24 24" className="h-[1.4rem] w-[1.4rem]" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: h.dibujo }} />
+          </button>
+        ))}
+        <button
+          type="button"
+          aria-label={mas ? 'Ver menos diseños' : 'Ver más diseños'}
+          aria-expanded={mas}
+          onClick={() => setMas(v => !v)}
+          className="flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 border-zinc-300 transition-transform duration-300 hover:scale-105 lg:hidden"
+          style={{ background: 'conic-gradient(#E5484D, #F5A524, #F2D33B, #46A758, #2E9FD9, #5B5BD6, #B04BC4, #E5484D)', color: '#141414' }}
+        >
+          {mas ? <Minus className="h-[1.1rem] w-[1.1rem]" strokeWidth={3} aria-hidden="true" /> : <Plus className="h-[1.1rem] w-[1.1rem]" strokeWidth={3} aria-hidden="true" />}
+        </button>
+      </div>
+      <p className="text-[0.85rem] font-semibold">{HORARIOS.find(h => h.clave === actual)?.nombre}</p>
+    </div>
+  )
+}
+
 // La carta que pinta el menú de la miniweb: una de las cartas hechas (con su diseño) o, sin elegir, el menú propio de la miniweb
 function SelectorCartaMiniweb({ valor, cambiar }) {
   return (
@@ -1699,29 +1801,36 @@ function SelectorCartaMiniweb({ valor, cambiar }) {
   )
 }
 
-function EstructuraMiniweb({ valores, cambiar }) {
+function EstructuraMiniweb({ valores, cambiar, sinTitulo = false }) {
   return (
-    <div className="grid gap-[0.7rem]">
-      <span className="text-[0.8rem] font-semibold text-zinc-500">Estructura: dónde va cada pieza</span>
+    <div className="grid gap-[0.9rem] lg:grid-cols-2 lg:items-start lg:gap-x-[1.75rem]">
+      {!sinTitulo && <span className="text-[0.8rem] font-semibold text-zinc-500 lg:col-span-2">Estructura: dónde va cada pieza</span>}
       {ESTRUCTURA_MINIWEB.map(([clave, texto, opciones]) => {
         // Los valores viejos de las redes ('barra' y 'boton') son 'arriba' y 'medio'
         const actual = ({ barra: 'arriba', boton: 'medio' })[valores[clave]] ?? valores[clave] ?? ESTRUCTURA_DEFECTO[clave]
+        // Con las redes vinculadas al menú, su sitio lo decide el menú: las opciones se bloquean
+        const bloqueada = clave === 'redesEn' && Boolean(valores.redesVinculadas)
         return (
-          <div key={clave} className="grid gap-[0.3rem]">
+          <div key={clave} className={`grid gap-[0.4rem] ${clave === 'compartirEn' ? 'lg:col-span-2' : ''}`}>
             <span className="text-[0.8rem] text-zinc-500">{texto}</span>
-            <div className="grid gap-[0.3rem] rounded-[0.75rem] bg-zinc-200 p-[0.25rem]" style={{ gridTemplateColumns: `repeat(${opciones.length}, minmax(0, 1fr))` }}>
+            {/* Un icono por opción (un móvil con la pieza en su sitio) y, debajo, el nombre de la elegida */}
+            <div className={`flex flex-wrap items-center gap-[0.4rem] ${bloqueada ? 'opacity-50' : ''}`}>
               {opciones.map(([valor, etiqueta]) => (
                 <button
                   key={valor}
                   type="button"
+                  title={etiqueta}
+                  aria-label={`${texto}: ${etiqueta}`}
                   aria-pressed={actual === valor}
+                  disabled={bloqueada}
                   onClick={() => cambiar(clave, valor)}
-                  className={`rounded-[0.55rem] px-[0.2rem] py-[0.5rem] text-[0.85rem] font-semibold ${actual === valor ? 'bg-white shadow-[0_0.05rem_0.2rem_rgb(0_0_0/0.15)]' : 'text-zinc-600'}`}
+                  className={`flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 bg-white transition-transform duration-300 disabled:cursor-not-allowed ${actual === valor ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
                 >
-                  {etiqueta}
+                  <svg viewBox="0 0 24 24" className="h-[1.5rem] w-[1.5rem]" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: ICONOS_ESTRUCTURA[clave]?.[valor] ?? '' }} />
                 </button>
               ))}
             </div>
+            <p className="text-[0.85rem] font-semibold">{opciones.find(([valor]) => valor === actual)?.[1]}</p>
             {/* Redes: pegarlas siempre al menú de navegación (debajo de él si está arriba y encima si está abajo) */}
             {clave === 'redesEn' && (
               <label className="flex cursor-pointer items-center gap-[0.5rem] text-[0.85rem] font-semibold">
@@ -1770,7 +1879,8 @@ function NuevoPerfil({ filas, recargar, abrir }) {
   const [estilo, setEstilo] = useState('revista')
   const [nombre, setNombre] = useState('')
   // Cómo sale el nombre arriba (fichas y miniwebs): escrito ('texto', lo de siempre) o con su logo ('logo')
-  const [marcaCon, setMarcaCon] = useState('texto')
+  // Si el campo para subir el logo está abierto (el logo se sube junto al nombre; con uno subido, se usa)
+  const [logoAbierto, setLogoAbierto] = useState(false)
   const [logo, setLogo] = useState('')
   const [principal, setPrincipal] = useState('')
   const [acento, setAcento] = useState('')
@@ -1807,6 +1917,8 @@ function NuevoPerfil({ filas, recargar, abrir }) {
   const [montaje, setMontaje] = useState('clasica')
   // La carta que pinta el menú de la miniweb ('' : el menú de la propia miniweb)
   const [cartaMini, setCartaMini] = useState('')
+  // El diseño del horario ('' : la lista de siempre)
+  const [horarioMini, setHorarioMini] = useState('')
   // El tamaño del nombre del negocio arriba: 'xs', 'md' (el de cada diseño) o 'xl'
   const [tamanoNombre, setTamanoNombre] = useState('md')
   const lugares = Object.entries(estructura).filter(([clave, valor]) => valor !== ESTRUCTURA_DEFECTO[clave])
@@ -1860,7 +1972,7 @@ function NuevoPerfil({ filas, recargar, abrir }) {
   const conCabecera = producto === 'ficha' && ['polaroid', 'banner'].includes(hero)
 
   // El logo solo cuenta con "Logo" elegido, uno subido y en una ficha o una miniweb (las cartas llevan el nombre)
-  const logoElegido = !esCarta && marcaCon === 'logo' && logo ? logo : ''
+  const logoElegido = !esCarta && logo ? logo : ''
 
   const heros = Object.entries(HEROS).filter(([, h]) => h.piezas && !h.paginaCompleta)
   // Los 5 primeros de la fila de iconos (el resto, detrás del +), en este orden y después los demás
@@ -1896,6 +2008,7 @@ function NuevoPerfil({ filas, recargar, abrir }) {
     !esCarta && hero === 'galeria' && pase !== 'clasica' && `pase=${pase}`,
     !esCarta && hero === 'polaroid' && montaje !== 'clasica' && `montaje=${montaje}`,
     producto === 'miniweb' && cartaMini && `carta=${cartaMini}`,
+    producto === 'miniweb' && horarioMini && `horario=${horarioMini}`,
     ...(producto === 'miniweb' ? lugares.map(([clave, valor]) => `${clave.toLowerCase()}=${valor}`) : []),
     producto === 'miniweb' && barra && `barra=${barra}`,
     conCabecera && cabecera && `cabecera=${cabecera.slice(1)}`,
@@ -1949,6 +2062,7 @@ function NuevoPerfil({ filas, recargar, abrir }) {
       ...(!esCarta && hero === 'galeria' && pase !== 'clasica' ? { 'hero.pase': pase } : {}),
       ...(!esCarta && hero === 'polaroid' && montaje !== 'clasica' ? { 'hero.montaje': montaje } : {}),
       ...(producto === 'miniweb' && cartaMini ? { 'hero.carta': cartaMini } : {}),
+      ...(producto === 'miniweb' && horarioMini ? { 'hero.horario': horarioMini } : {}),
       // Los colores uno por uno que se han elegido (los demás, en automático)
       ...(producto === 'miniweb' && Object.keys(coloresMini).length ? { 'hero.colores': coloresMini } : {}),
       ...(producto === 'miniweb' ? Object.fromEntries(lugares.map(([clave, valor]) => [`hero.${clave}`, valor])) : {}),
@@ -2036,7 +2150,8 @@ function NuevoPerfil({ filas, recargar, abrir }) {
       if (d.portada) setHero(d.portada)
       if (d.subdiseno) ({ corte: setCorte, formato: setFormato, disposicion: setDisposicion, composicion: setComposicion, distribucion: setDistribucion, pase: setPase, montaje: setMontaje })[d.subdiseno.campo]?.(d.subdiseno.valor)
       setEstructura(d.estructura)
-      if (d.estiloMenu) setBarra(d.estiloMenu)
+      if (d.estiloMenu !== null) setBarra(d.estiloMenu)
+      if (d.textoExtra) setTextosMini(t => ({ ...t, info: d.textoExtra }))
       if (d.tamanoNombre) setTamanoNombre(d.tamanoNombre)
       if (d.tipografia) setLetra(d.tipografia)
       if (d.colores.principal) setPrincipal(d.colores.principal)
@@ -2122,6 +2237,97 @@ function NuevoPerfil({ filas, recargar, abrir }) {
   const titulo = 'text-[0.8rem] font-semibold text-zinc-500'
   const opcion = activa => `rounded-[0.6rem] px-[0.75rem] py-[0.45rem] text-[0.9rem] font-medium ring-1 ${activa ? 'bg-zinc-900 text-white ring-zinc-900' : 'bg-white ring-zinc-300'}`
 
+  // El nombre del negocio (obligatorio), el icono del logo (abre el campo para subirlo) y el tamaño del nombre
+  const bloqueNombre = (
+          <div className="grid gap-[0.75rem]">
+            <Etiqueta texto="Nombre del negocio">
+              <div className="flex items-center gap-[0.5rem]">
+                <input value={nombre} onChange={e => setNombre(e.target.value)} className={CAMPO} placeholder="Peluquería Ranita" />
+                {!esCarta && (
+                  <button
+                    type="button"
+                    title="Logo"
+                    aria-label="Logo del negocio"
+                    aria-expanded={logoAbierto}
+                    onClick={() => setLogoAbierto(v => !v)}
+                    className={`flex h-[2.75rem] w-[2.75rem] shrink-0 items-center justify-center overflow-hidden rounded-[0.5rem] border-2 bg-white p-[0.2rem] transition-transform duration-300 ${logoAbierto ? 'scale-105 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
+                  >
+                    {logo ? <img src={logo} alt="" className="max-h-full max-w-full object-contain" /> : <ImagePlus className="h-[1.3rem] w-[1.3rem]" strokeWidth={2} aria-hidden="true" />}
+                  </button>
+                )}
+              </div>
+            </Etiqueta>
+            {!esCarta && logoAbierto && <CampoLogo valor={logo} cambiar={setLogo} />}
+            {/* El tamaño del nombre arriba (XS, MD, el de cada diseño, o XL): cápsulas pequeñas bajo el campo */}
+            {!esCarta && (
+              <div className="grid justify-items-start gap-[0.25rem]">
+                <div className="flex gap-[0.4rem]">
+                  {['xs', 'md', 'xl'].map(t => (
+                    <button
+                      key={t}
+                      type="button"
+                      aria-pressed={tamanoNombre === t}
+                      onClick={() => setTamanoNombre(t)}
+                      className={`rounded-full px-[0.8rem] py-[0.25rem] text-[0.78rem] font-semibold uppercase ring-1 transition-colors ${tamanoNombre === t ? 'bg-zinc-900 text-white ring-zinc-900' : 'bg-white text-zinc-600 ring-zinc-300 hover:ring-zinc-500'}`}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+  )
+
+  // La tipografía (la pareja de fuentes de la marca)
+  const campoTipografia = (
+          <Etiqueta texto="Tipografía">
+            <select value={letra} onChange={e => setLetra(e.target.value)} className={CAMPO}>
+              <option value="">La de la plantilla</option>
+              {TIPOGRAFIAS.map(t => (
+                <option key={t.id} value={t.id}>
+                  {t.nombre}
+                </option>
+              ))}
+            </select>
+          </Etiqueta>
+  )
+
+  // La paleta base de la marca (principal, acento, fondo y texto)
+  const paletaMarca = (
+          <Plegable
+            titulo={producto === 'miniweb' ? 'Personalizado' : 'Colores'}
+            elegido={
+              <span className="flex justify-end gap-[0.25rem]">
+                {[colorPrincipal, ...(conCabecera ? [colorCabecera] : []), colorAcento, colorFondo, colorDelTexto].map((c, i) => (
+                  <span key={i} className="h-[1.1rem] w-[1.1rem] rounded-full ring-1 ring-zinc-300" style={{ background: c }} />
+                ))}
+              </span>
+            }
+          >
+          <div className="grid gap-[0.9rem]">
+            {[
+              ['Color principal', 'Botones, precios y lo que tiene que destacar.', colorPrincipal, setPrincipal],
+              // Solo en los diseños con cabecera de color
+              ...(conCabecera
+                ? [['Fondo de cabecera', producto === 'miniweb' ? 'La barra del menú de arriba y, con las portadas Polaroid y Banner, el fondo de toda la portada.' : 'La parte de arriba, detrás de las fotos y el titular.', colorCabecera, setCabecera]]
+                : []),
+              ['Color de acento', 'Precios, subrayados de las pestañas y detalles.', colorAcento, setAcento],
+              ['Color de fondo', 'El fondo de la página: claro u oscuro.', colorFondo, setFondo],
+              ['Color del texto', 'Las letras sobre el fondo.', colorDelTexto, setColorTexto],
+            ].map(([nombreColor, ayuda, valor, poner]) => (
+              <div key={nombreColor} className="grid gap-[0.3rem]">
+                <div>
+                  <p className="text-[0.8rem] font-semibold text-zinc-500">{nombreColor}</p>
+                  <p className="text-[0.8rem] text-zinc-400">{ayuda}</p>
+                </div>
+                <CampoColor valor={valor} cambiar={poner} />
+              </div>
+            ))}
+          </div>
+          </Plegable>
+  )
+
   return (
     // peer: abierto, se oculta el botón de "Crear con el asistente" que va justo debajo (en Lista)
     <details className="group/perfil peer rounded-[1rem] bg-white ring-1 ring-zinc-200">
@@ -2179,14 +2385,9 @@ function NuevoPerfil({ filas, recargar, abrir }) {
         )}
 
         <div className="order-3 grid gap-[1rem] lg:order-none">
-          {/* Todo el diseño, abierto, en la pestaña Personalizar */}
+          {/* Personalizar: el producto y, debajo, desplegables independientes (de momento solo el primero, Diseño y estilos) */}
           {pestana === 'personalizar' && (
-          <details open className="group/diseno rounded-[0.75rem] ring-1 ring-zinc-200">
-            <summary className="flex cursor-pointer list-none items-center gap-[0.75rem] px-[0.85rem] py-[0.8rem] [&::-webkit-details-marker]:hidden">
-              <span className="text-[1rem] font-bold">Diseño</span>
-              <ChevronDown className="ml-auto h-[1rem] w-[1rem] shrink-0 text-zinc-500 transition-transform group-open/diseno:rotate-180" aria-hidden="true" />
-            </summary>
-            <div className="grid gap-[1rem] px-[0.85rem] pb-[0.85rem] pt-[0.2rem]">
+          <div className="grid gap-[1rem]">
           {/* 1. Temática: pone el contenido de ejemplo */}
           {/* 1. Producto */}
           <div className="grid gap-[0.4rem]">
@@ -2216,6 +2417,13 @@ function NuevoPerfil({ filas, recargar, abrir }) {
             {!cartaBase && <p className="text-[0.82rem] text-zinc-500">Esta temática todavía no tiene carta de ejemplo.</p>}
           </div>
 
+          {/* Primer desplegable, abierto: Diseño y estilos (temática, portada y estilo del menú de navegación) */}
+          <details open className="group/diseno rounded-[0.75rem] ring-1 ring-zinc-200">
+            <summary className="flex cursor-pointer list-none items-center gap-[0.75rem] px-[0.85rem] py-[0.8rem] [&::-webkit-details-marker]:hidden">
+              <span className="text-[1rem] font-bold">Diseño y estilos</span>
+              <ChevronDown className="ml-auto h-[1rem] w-[1rem] shrink-0 text-zinc-500 transition-transform group-open/diseno:rotate-180" aria-hidden="true" />
+            </summary>
+            <div className="grid gap-[1rem] px-[0.85rem] pb-[0.85rem] pt-[0.2rem]">
           {/* Una fila de iconos: 5 a la vista y un + que abre el resto, con el nombre de la elegida debajo */}
           <div className="grid gap-[0.45rem]">
             <span className={titulo}>Temática del negocio</span>
@@ -2476,18 +2684,42 @@ function NuevoPerfil({ filas, recargar, abrir }) {
               </div>
             </Plegable>
           )}
-          {/* Los colores de la miniweb, justo debajo de la portada */}
+          {/* El estilo del menú de navegación, debajo de la portada, con la misma fila de iconos */}
+          {producto === 'miniweb' && <FilaEstiloMenu valor={barra} cambiar={setBarra} />}
+          {producto === 'miniweb' && <FilaHorario valor={horarioMini} cambiar={setHorarioMini} />}
+            </div>
+          </details>
+          {/* Segundo desplegable: Colores */}
           {producto === 'miniweb' && (
+          <details className="group/colores rounded-[0.75rem] ring-1 ring-zinc-200">
+            <summary className="flex cursor-pointer list-none items-center gap-[0.75rem] px-[0.85rem] py-[0.8rem] [&::-webkit-details-marker]:hidden">
+              <span className="text-[1rem] font-bold">Colores generales</span>
+              <ChevronDown className="ml-auto h-[1rem] w-[1rem] shrink-0 text-zinc-500 transition-transform group-open/colores:rotate-180" aria-hidden="true" />
+            </summary>
+            <div className="px-[0.85rem] pb-[0.85rem] pt-[0.2rem]">
             <PanelColoresMiniweb
+              sinTitulo
               valores={coloresMini}
               cambiar={cambiarColorMini}
               autos={coloresAutomaticos({ colors: { ...marcaBase?.theme?.colors, bg: colorFondo, primary: colorPrincipal, accent: colorAcento, text: colorDelTexto, header: colorCabecera } }, { barra, portada: hero }, coloresMini)}
             />
+            <div className="mt-[1rem]">{paletaMarca}</div>
+            </div>
+          </details>
           )}
-          {/* Estructura de la miniweb: dónde va cada pieza (redes, menú de navegación y compartir) */}
-          {producto === 'miniweb' && <EstructuraMiniweb valores={estructura} cambiar={(clave, valor) => setEstructura(e => ({ ...e, [clave]: valor }))} />}
-          {producto === 'miniweb' && <SelectorCartaMiniweb valor={cartaMini} cambiar={valor => setCartaMini(valor ?? '')} />}
-          {(producto === 'ficha' || producto === 'miniweb') && (
+          {/* Tercer desplegable: Estructura, dónde va cada pieza (redes, menú de navegación y compartir) */}
+          {producto === 'miniweb' && (
+          <details className="group/estructura rounded-[0.75rem] ring-1 ring-zinc-200">
+            <summary className="flex cursor-pointer list-none items-center gap-[0.75rem] px-[0.85rem] py-[0.8rem] [&::-webkit-details-marker]:hidden">
+              <span className="text-[1rem] font-bold">Estructura</span>
+              <ChevronDown className="ml-auto h-[1rem] w-[1rem] shrink-0 text-zinc-500 transition-transform group-open/estructura:rotate-180" aria-hidden="true" />
+            </summary>
+            <div className="px-[0.85rem] pb-[0.85rem] pt-[0.2rem]">
+              <EstructuraMiniweb sinTitulo valores={estructura} cambiar={(clave, valor) => setEstructura(e => ({ ...e, [clave]: valor }))} />
+            </div>
+          </details>
+          )}
+          {producto === 'ficha' && (
             <Plegable titulo={producto === 'miniweb' ? 'Estilo del menú de navegación' : 'Estilo de pestañas'} elegido={barra ? BARRAS[barra]?.nombre : producto === 'miniweb' ? 'La rayita' : 'El suyo'}>
               <div className="flex flex-wrap gap-[0.4rem]">
                 {[['', { nombre: producto === 'miniweb' ? 'La rayita (la de siempre)' : 'El suyo' }], ...Object.entries(BARRAS)].map(([clave, b]) => (
@@ -2499,88 +2731,20 @@ function NuevoPerfil({ filas, recargar, abrir }) {
             </Plegable>
           )}
 
-          {/* 4. Marca: arriba, cómo sale el nombre (Texto o Logo) y, debajo, lo que toca: el nombre escrito o, con Logo, el
-              logo que se sube (y el nombre, que se sigue necesitando para la dirección y para Google) */}
-          <div className="grid gap-[0.75rem]">
-            {!esCarta && (
-              <div className="grid gap-[0.4rem]">
-                <span className={titulo}>Arriba sale</span>
-                <div className="grid grid-cols-2 gap-[0.3rem] rounded-[0.75rem] bg-zinc-200 p-[0.25rem]">
-                  {[
-                    ['texto', 'Texto'],
-                    ['logo', 'Logo'],
-                  ].map(([clave, texto]) => (
-                    <button
-                      key={clave}
-                      type="button"
-                      aria-pressed={marcaCon === clave}
-                      onClick={() => setMarcaCon(clave)}
-                      className={`rounded-[0.55rem] py-[0.5rem] text-[0.95rem] font-semibold ${marcaCon === clave ? 'bg-white shadow-[0_0.05rem_0.2rem_rgb(0_0_0/0.15)]' : 'text-zinc-600'}`}
-                    >
-                      {texto}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-            {!esCarta && marcaCon === 'logo' && <CampoLogo valor={logo} cambiar={setLogo} />}
-            <Etiqueta texto={!esCarta && marcaCon === 'logo' ? 'Nombre del negocio (para la dirección de la página y Google)' : 'Nombre del negocio'}>
-              <input value={nombre} onChange={e => setNombre(e.target.value)} className={CAMPO} placeholder="Peluquería Ranita" />
-            </Etiqueta>
-            {/* El tamaño del nombre arriba: XS, MD (el de cada diseño) o XL */}
-            {!esCarta && (
-              <div className="grid gap-[0.3rem]">
-                <span className={titulo}>Tamaño del nombre</span>
-                <div className="grid grid-cols-3 gap-[0.3rem] rounded-[0.75rem] bg-zinc-200 p-[0.25rem]">
-                  {['xs', 'md', 'xl'].map(t => (
-                    <button
-                      key={t}
-                      type="button"
-                      aria-pressed={tamanoNombre === t}
-                      onClick={() => setTamanoNombre(t)}
-                      className={`rounded-[0.55rem] py-[0.5rem] text-[0.85rem] font-semibold uppercase ${tamanoNombre === t ? 'bg-white shadow-[0_0.05rem_0.2rem_rgb(0_0_0/0.15)]' : 'text-zinc-600'}`}
-                    >
-                      {t}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-          {/* Colores: cada uno en su fila, con para qué sirve; cerrado, las cuatro muestras */}
-          <Plegable
-            titulo="Colores"
-            elegido={
-              <span className="flex justify-end gap-[0.25rem]">
-                {[colorPrincipal, ...(conCabecera ? [colorCabecera] : []), colorAcento, colorFondo, colorDelTexto].map((c, i) => (
-                  <span key={i} className="h-[1.1rem] w-[1.1rem] rounded-full ring-1 ring-zinc-300" style={{ background: c }} />
-                ))}
-              </span>
-            }
-          >
-          <div className="grid gap-[0.9rem]">
-            {[
-              ['Color principal', 'Botones, precios y lo que tiene que destacar.', colorPrincipal, setPrincipal],
-              // Solo en los diseños con cabecera de color
-              ...(conCabecera
-                ? [['Fondo de cabecera', producto === 'miniweb' ? 'La barra del menú de arriba y, con las portadas Polaroid y Banner, el fondo de toda la portada.' : 'La parte de arriba, detrás de las fotos y el titular.', colorCabecera, setCabecera]]
-                : []),
-              ['Color de acento', 'Precios, subrayados de las pestañas y detalles.', colorAcento, setAcento],
-              ['Color de fondo', 'El fondo de la página: claro u oscuro.', colorFondo, setFondo],
-              ['Color del texto', 'Las letras sobre el fondo.', colorDelTexto, setColorTexto],
-            ].map(([nombreColor, ayuda, valor, poner]) => (
-              <div key={nombreColor} className="grid gap-[0.3rem]">
-                <div>
-                  <p className="text-[0.8rem] font-semibold text-zinc-500">{nombreColor}</p>
-                  <p className="text-[0.8rem] text-zinc-400">{ayuda}</p>
-                </div>
-                <CampoColor valor={valor} cambiar={poner} />
-              </div>
-            ))}
-          </div>
-          </Plegable>
+          {/* 4. Marca: el nombre del negocio, el icono del logo y el tamaño. En ficha y carta, aquí suelto; en miniweb, dentro de Textos */}
+          {producto !== 'miniweb' && bloqueNombre}
+          {/* La paleta base de la marca: suelta en ficha y carta; en miniweb va dentro de Colores generales, como Personalizado */}
+          {producto !== 'miniweb' && paletaMarca}
           {/* Los textos de la portada: el grande (en dos líneas) y el pequeño, con su máximo de caracteres (el de ahora con margen) */}
+          {/* Cuarto desplegable (solo miniweb): Textos, con el nombre del negocio y los textos de la miniweb, tal como estaban */}
           {producto === 'miniweb' && (
+          <details className="group/textos rounded-[0.75rem] ring-1 ring-zinc-200">
+            <summary className="flex cursor-pointer list-none items-center gap-[0.75rem] px-[0.85rem] py-[0.8rem] [&::-webkit-details-marker]:hidden">
+              <span className="text-[1rem] font-bold">Textos</span>
+              <ChevronDown className="ml-auto h-[1rem] w-[1rem] shrink-0 text-zinc-500 transition-transform group-open/textos:rotate-180" aria-hidden="true" />
+            </summary>
+            <div className="grid gap-[1rem] px-[0.85rem] pb-[0.85rem] pt-[0.2rem]">
+            {bloqueNombre}
             <Plegable titulo="Textos de la miniweb" elegido={textosEditados ? 'Cambiados' : 'Los de la plantilla'}>
               <div className="grid gap-[0.9rem]">
                 <div className="grid gap-[0.3rem]">
@@ -2632,21 +2796,17 @@ function NuevoPerfil({ filas, recargar, abrir }) {
                     Volver a los textos de la plantilla
                   </button>
                 )}
+                {campoTipografia}
               </div>
             </Plegable>
-          )}
-          <Etiqueta texto="Tipografía">
-            <select value={letra} onChange={e => setLetra(e.target.value)} className={CAMPO}>
-              <option value="">La de la plantilla</option>
-              {TIPOGRAFIAS.map(t => (
-                <option key={t.id} value={t.id}>
-                  {t.nombre}
-                </option>
-              ))}
-            </select>
-          </Etiqueta>
             </div>
           </details>
+          )}
+          {/* La tipografía: en miniweb va dentro de Textos de la miniweb, abajo del todo */}
+          {producto !== 'miniweb' && campoTipografia}
+            {/* La carta del menú, de momento abajo del todo */}
+            {producto === 'miniweb' && <SelectorCartaMiniweb valor={cartaMini} cambiar={valor => setCartaMini(valor ?? '')} />}
+          </div>
           )}
 
           {error && <p className="text-[0.9rem] font-semibold text-red-600">{error}</p>}
