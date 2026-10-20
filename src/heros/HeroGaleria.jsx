@@ -7,7 +7,7 @@ import useVueltaPestanas from '../lib/useVueltaPestanas'
 import BotonCompartir from '../components/BotonCompartir'
 import Escena, { fotoDeRespaldo, fotosDe, tipoComun } from '../fichas/escenas'
 import BarraPestanas from '../fichas/barras'
-import { useRol } from '../components/ColoresPortada'
+import { useFondoBoton, useRol } from '../components/ColoresPortada'
 import { galeriaDe } from '../lib/galerias'
 
 /* Galería (inspirado en la carta Galería de Tumi). Hero por piezas: acepta cualquier pestaña común y cualquier
@@ -28,6 +28,7 @@ function GaleriaMiniweb({ fotos, inicio, irA, nombre, estilo }) {
   const rolTitular = useRol('titular')
   const rolDescripcion = useRol('descripcion')
   const rolBoton = useRol('boton')
+  const fondoBoton = useFondoBoton()
   const [actual, setActual] = useState(0)
   const n = fotos.length
   // Cada cambio, también el manual, reinicia los 4 s
@@ -62,7 +63,7 @@ function GaleriaMiniweb({ fotos, inicio, irA, nombre, estilo }) {
       <button
         type="button"
         onClick={() => irA?.(inicio.botonA)}
-        style={rolBoton} className="inline-flex min-h-[2.5rem] items-center rounded-[0.6rem] bg-demo-accent px-[1.1rem] text-[0.92rem] font-semibold text-demo-text"
+        style={{ ...rolBoton, ...fondoBoton }} className="inline-flex min-h-[2.5rem] items-center rounded-[0.6rem] bg-demo-accent px-[1.1rem] text-[0.92rem] font-semibold text-demo-text"
       >
         {inicio.boton}
       </button>

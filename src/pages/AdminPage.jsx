@@ -12,8 +12,9 @@ import { loadFont } from '../lib/applyTheme'
 import { TIPOGRAFIAS, parejaDe } from '../asistente/tipografias'
 import { DISENOS_ASISTENTE, DISENOS_CARTA } from '../asistente/disenos'
 import { GRUPOS_PLANTILLAS, PLANTILLAS } from '../plantillas'
+import { catalogoMiniweb, validarDiseno } from '../asistente/miniweb'
 import Movil from '../components/Movil'
-import { COLORES_MINIWEB } from '../lib/coloresMiniweb'
+import { COLORES_MINIWEB, coloresAutomaticos } from '../lib/coloresMiniweb'
 import { CORTES, puntosDeCorte } from '../lib/cortes'
 import { FORMATOS } from '../lib/formatos'
 import { DISPOSICIONES } from '../lib/disposiciones'
@@ -635,7 +636,7 @@ function Retocar({ historial, enviar }) {
 /* Color: una muestra que, al tocarla, abre un selector propio (cuadrado de tono e intensidad y barra de color,
    react-colorful), igual en el móvil que en el ordenador; al lado, el código para escribirlo o pegarlo.
    Se cierra tocando fuera o con Escape. */
-function CampoColor({ valor, cambiar }) {
+function CampoColor({ valor, cambiar, auto = false }) {
   const [abierto, setAbierto] = useState(false)
   const caja = useRef(null)
   // El selector solo entiende #rrggbb
@@ -660,11 +661,11 @@ function CampoColor({ valor, cambiar }) {
         aria-label="Elegir color"
         aria-expanded={abierto}
         onClick={() => setAbierto(a => !a)}
-        className="h-[2.75rem] w-[3.25rem] shrink-0 rounded-[0.6rem] border border-zinc-300 p-[0.2rem]"
+        className={`h-[2.75rem] w-[2.75rem] shrink-0 rounded-full border p-[0.2rem] ${auto ? 'border-dashed border-zinc-400' : 'border-zinc-300'}`}
       >
-        <span className="block h-full w-full rounded-[0.4rem]" style={{ background: seis }} />
+        <span className="block h-full w-full rounded-full" style={{ background: seis }} />
       </button>
-      <input value={valor} onChange={e => cambiar(e.target.value)} className={`${CAMPO} font-mono`} spellCheck={false} />
+      {!auto && <input value={valor} onChange={e => cambiar(e.target.value)} className={`${CAMPO} font-mono`} spellCheck={false} />}
       {abierto && (
         // En el móvil, abajo y a todo el ancho (para que no se salga de la pantalla); en el ordenador, debajo de la muestra
         <div className="fixed inset-x-[1rem] bottom-[1rem] z-50 rounded-[0.9rem] bg-white p-[0.8rem] shadow-[0_0.6rem_1.6rem_-0.4rem_rgb(0_0_0/0.35)] ring-1 ring-zinc-200 sm:absolute sm:inset-x-auto sm:bottom-auto sm:left-0 sm:top-[calc(100%+0.4rem)] sm:z-30 sm:w-[15rem] sm:p-[0.7rem] [&_.react-colorful]:!h-[13rem] [&_.react-colorful]:!w-full sm:[&_.react-colorful]:!h-[11rem]">
@@ -1043,6 +1044,7 @@ function Diseno({ tipo, slug, vista, original, cambiar, abrir }) {
                 </select>
               </Etiqueta>
             )}
+            <SelectorCartaMiniweb valor={hero.carta} cambiar={valor => cambiar('hero.carta', valor)} />
             {hero.portada === 'polaroid' && (
               <Etiqueta texto="Montaje de las polaroids">
                 <select value={hero.montaje ?? 'clasica'} onChange={e => cambiar('hero.montaje', e.target.value === 'clasica' ? undefined : e.target.value)} className={CAMPO}>
@@ -1111,6 +1113,7 @@ function Diseno({ tipo, slug, vista, original, cambiar, abrir }) {
             )}
             <PanelColoresMiniweb
               valores={hero.colores ?? {}}
+              autos={coloresAutomaticos(vista?.theme, vista?.hero, vista?.hero?.colores)}
               cambiar={(clave, valor) => {
                 const nuevo = { ...(hero.colores ?? {}), [clave]: valor }
                 if (valor === undefined) delete nuevo[clave]
@@ -1635,41 +1638,33 @@ const ICONOS_TEMA = {
   barberia: Armchair,
 }
 
-/* Los colores uno por uno de una miniweb (catálogo en lib/coloresMiniweb.js), por grupos. Cada uno dice qué pinta; sin
-   elegir está en "Automático" (la pieza se queda con el suyo del diseño) y se puede volver a él. valores: lo elegido;
-   cambiar(clave, color) y cambiar(clave, undefined) para volver a automático */
-function PanelColoresMiniweb({ valores, cambiar }) {
+/* El editor de colores de una miniweb (catálogo en lib/coloresMiniweb.js), por grupos: menú, redes, fondos, textos y botón. Cada color es
+   un círculo con el color que se pinta ahora (con borde de rayitas si es el automático, el que se pone solo según el diseño); al
+   tocarlo se abre el cuadro de colores y, elegido uno, aparece su código y un enlace para volver a automático.
+   valores: lo elegido; autos: el color automático de cada rol; cambiar(clave, color) y cambiar(clave, undefined) para volver a él */
+function PanelColoresMiniweb({ valores, cambiar, autos = {} }) {
   return (
-    <div className="grid gap-[1.1rem]">
+    <div className="grid gap-[1rem] lg:grid-cols-2 lg:items-start lg:gap-x-[1.75rem]">
+      <span className="text-[0.8rem] font-semibold text-zinc-500 lg:col-span-2">Colores</span>
       {COLORES_MINIWEB.map(g => (
-        <div key={g.grupo} className="grid gap-[0.8rem]">
-          <p className="text-[0.95rem] font-bold">{g.grupo}</p>
-          {g.campos.map(c => {
-            const valor = valores[c.clave]
-            return (
-              <div key={c.clave} className="grid gap-[0.3rem]">
-                <div>
-                  <p className="text-[0.8rem] font-semibold text-zinc-500">{c.nombre}</p>
-                  <p className="text-[0.8rem] text-zinc-400">{c.ayuda}</p>
-                </div>
-                {valor ? (
-                  <div className="grid gap-[0.3rem]">
-                    <CampoColor valor={valor} cambiar={v => cambiar(c.clave, v)} />
+        <div key={g.grupo} className={`grid gap-[0.5rem] ${g.ancho ? "lg:col-span-2" : ""}`}>
+          <p className="text-[0.85rem] font-bold">{g.grupo}</p>
+          <div className="flex flex-wrap items-start gap-x-[1.2rem] gap-y-[0.8rem]">
+            {g.campos.map(c => {
+              const valor = valores[c.clave]
+              return (
+                <div key={c.clave} className="grid gap-[0.25rem]" title={c.ayuda}>
+                  <p className="text-[0.8rem] font-semibold text-zinc-500">{c.corto}</p>
+                  <CampoColor valor={valor ?? autos[c.clave] ?? '#FFFFFF'} auto={!valor} cambiar={v => cambiar(c.clave, v)} />
+                  {valor && (
                     <button type="button" onClick={() => cambiar(c.clave, undefined)} className="justify-self-start text-[0.8rem] font-semibold text-zinc-500 underline underline-offset-[0.2em]">
                       Volver a automático
                     </button>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-[0.75rem]">
-                    <span className="rounded-full bg-zinc-100 px-[0.7rem] py-[0.25rem] text-[0.8rem] font-semibold text-zinc-500">Automático</span>
-                    <button type="button" onClick={() => cambiar(c.clave, '#FFFFFF')} className="text-[0.85rem] font-semibold underline underline-offset-[0.2em]">
-                      Elegir color
-                    </button>
-                  </div>
-                )}
-              </div>
-            )
-          })}
+                  )}
+                </div>
+              )
+            })}
+          </div>
         </div>
       ))}
     </div>
@@ -1688,6 +1683,22 @@ const ESTRUCTURA_MINIWEB = [
 const ESTRUCTURA_DEFECTO = { redesVinculadas: false, redesEn: 'arriba', menuEn: 'arriba', compartirEn: 'diseno' }
 
 // Esas piezas, cada una con sus opciones. valores: lo elegido (sin elegir, lo de siempre); cambiar(clave, valor)
+// La carta que pinta el menú de la miniweb: una de las cartas hechas (con su diseño) o, sin elegir, el menú propio de la miniweb
+function SelectorCartaMiniweb({ valor, cambiar }) {
+  return (
+    <Etiqueta texto="Carta del menú">
+      <select value={valor ?? ''} onChange={e => cambiar(e.target.value || undefined)} className={CAMPO}>
+        <option value="">El menú de la miniweb (el de siempre)</option>
+        {cartas.map(c => (
+          <option key={c.slug} value={c.slug}>
+            {marcaDe(c)?.nombre ?? c.slug} ({c.diseno})
+          </option>
+        ))}
+      </select>
+    </Etiqueta>
+  )
+}
+
 function EstructuraMiniweb({ valores, cambiar }) {
   return (
     <div className="grid gap-[0.7rem]">
@@ -1794,6 +1805,8 @@ function NuevoPerfil({ filas, recargar, abrir }) {
   const [pase, setPase] = useState('clasica')
   // El montaje de Polaroid ('clasica' es el de siempre)
   const [montaje, setMontaje] = useState('clasica')
+  // La carta que pinta el menú de la miniweb ('' : el menú de la propia miniweb)
+  const [cartaMini, setCartaMini] = useState('')
   // El tamaño del nombre del negocio arriba: 'xs', 'md' (el de cada diseño) o 'xl'
   const [tamanoNombre, setTamanoNombre] = useState('md')
   const lugares = Object.entries(estructura).filter(([clave, valor]) => valor !== ESTRUCTURA_DEFECTO[clave])
@@ -1805,6 +1818,15 @@ function NuevoPerfil({ filas, recargar, abrir }) {
   const [creando, setCreando] = useState(null)
   // El aviso de que el diseño se ha exportado a las muestras
   const [aviso, setAviso] = useState('')
+  // El asistente montando el diseño de la miniweb (texto de lo que hace; null: nada) y lo que cuenta de lo que ha elegido
+  const [disenando, setDisenando] = useState(null)
+  const [resumenDiseno, setResumenDiseno] = useState('')
+  // Los textos y fotos que ha hecho el asistente (cambios e historial), su versión (para recargar la vista previa) y el aviso de que toca hacerlos
+  const [cambiosIA, setCambiosIA] = useState(null)
+  const [versionIA, setVersionIA] = useState(0)
+  const [redactando, setRedactando] = useState(false)
+  // Si el asistente ya ha generado algo alguna vez: hasta entonces, en su pestaña el móvil sale vacío
+  const [generado, setGenerado] = useState(false)
   const [error, setError] = useState('')
 
   const plantilla = PLANTILLAS.find(p => p.clave === tema)
@@ -1814,7 +1836,8 @@ function NuevoPerfil({ filas, recargar, abrir }) {
   const cartaBase = plantilla.carta ? getCarta(plantilla.carta) : null
   const esCarta = producto === 'carta'
   // Colores de partida: los de la demo de la temática
-  const marcaBase = esCarta ? marcaDe(cartaBase ?? {}) : negocioBase
+  // En miniweb, los colores de partida son los de la misma base que la vista previa (la miniweb de la temática, si la tiene; si no, su ficha)
+  const marcaBase = esCarta ? marcaDe(cartaBase ?? {}) : producto === 'miniweb' && plantilla.miniweb ? getNegocio(plantilla.miniweb) : negocioBase
   const colorPrincipal = principal || marcaBase?.theme?.colors?.primary || '#000000'
   const colorAcento = acento || marcaBase?.theme?.colors?.accent || '#000000'
   // La portada de Inicio de la miniweb de partida (la de Chalaquita en comida; si no, la primera pestaña de la ficha) y sus
@@ -1872,10 +1895,12 @@ function NuevoPerfil({ filas, recargar, abrir }) {
     !esCarta && hero === 'retrato' && distribucion !== 'clasica' && `distribucion=${distribucion}`,
     !esCarta && hero === 'galeria' && pase !== 'clasica' && `pase=${pase}`,
     !esCarta && hero === 'polaroid' && montaje !== 'clasica' && `montaje=${montaje}`,
+    producto === 'miniweb' && cartaMini && `carta=${cartaMini}`,
     ...(producto === 'miniweb' ? lugares.map(([clave, valor]) => `${clave.toLowerCase()}=${valor}`) : []),
     producto === 'miniweb' && barra && `barra=${barra}`,
     conCabecera && cabecera && `cabecera=${cabecera.slice(1)}`,
     logoElegido && `logo=${encodeURIComponent(logoElegido)}`,
+    cambiosIA && `ia=${versionIA}`,
   ]
     .filter(Boolean)
     .map(p => `&${p}`)
@@ -1893,6 +1918,165 @@ function NuevoPerfil({ filas, recargar, abrir }) {
           ? `/demo/${plantilla.carta}/carta?diseno=${estilo}${marca}`
           : null
 
+  // Arma lo que se guarda al crear (el perfil de partida, su dirección y los cambios del diseño elegido), sin tocar Supabase
+  const armar = nombreCrear => {
+    const tipoFila = esCarta ? 'carta' : 'negocio'
+    const ocupadas = new Set([
+      ...(filas ?? []).filter(f => f.tipo === tipoFila).map(f => f.slug),
+      ...(esCarta ? cartas : negocios).map(n => n.slug),
+      ...RESERVADAS,
+    ])
+    const raiz = aSlug(nombreCrear) || 'nuevo'
+    let slug = raiz
+    for (let n = 2; ocupadas.has(slug); n++) slug = `${raiz}-${n}`
+
+    const tipografia = TIPOGRAFIAS.find(t => t.id === letra)
+    // Los textos de la portada que se han escrito: en la copia de Chalaquita, sobre su primera pestaña; en las demás, sobre la
+    // primera pestaña de su miniweb (más abajo)
+    const textosEscritos = {
+      ...(textosMini.titular !== undefined ? { titular: [textoGrande.trim()].filter(Boolean) } : {}),
+      ...(textosMini.descripcion !== undefined ? { descripcion: textoPequeno.trim() } : {}),
+      ...(conTextoExtra ? { info: textoExtra.trim() } : {}),
+    }
+    const inicioCambio = {
+      ...(producto === 'miniweb' && barra ? { 'hero.barra': barra } : {}),
+      ...(!esCarta && tamanoNombre !== 'md' ? { 'hero.tamanoNombre': tamanoNombre } : {}),
+      ...(!esCarta && hero === 'diagonal' && corte !== 'diagonal' ? { 'hero.corte': corte } : {}),
+      ...(!esCarta && hero === 'editorial' && formato !== 'clasica' ? { 'hero.formato': formato } : {}),
+      ...(!esCarta && hero === 'fullbleed' && disposicion !== 'clasica' ? { 'hero.disposicion': disposicion } : {}),
+      ...(!esCarta && hero === 'mosaico' && composicion !== 'clasica' ? { 'hero.composicion': composicion } : {}),
+      ...(!esCarta && hero === 'retrato' && distribucion !== 'clasica' ? { 'hero.distribucion': distribucion } : {}),
+      ...(!esCarta && hero === 'galeria' && pase !== 'clasica' ? { 'hero.pase': pase } : {}),
+      ...(!esCarta && hero === 'polaroid' && montaje !== 'clasica' ? { 'hero.montaje': montaje } : {}),
+      ...(producto === 'miniweb' && cartaMini ? { 'hero.carta': cartaMini } : {}),
+      // Los colores uno por uno que se han elegido (los demás, en automático)
+      ...(producto === 'miniweb' && Object.keys(coloresMini).length ? { 'hero.colores': coloresMini } : {}),
+      ...(producto === 'miniweb' ? Object.fromEntries(lugares.map(([clave, valor]) => [`hero.${clave}`, valor])) : {}),
+    }
+    let cambios
+    let base
+    if (esCarta) {
+      base = plantilla.carta
+      const inicio = inicioCopiaCarta(cartaBase)
+      cambios = fusionar(inicio, {
+        'marca.nombre': nombreCrear,
+        diseno: estilo,
+        ...(principal ? { 'marca.theme.colors.primary': principal } : {}),
+        ...(acento ? { 'marca.theme.colors.accent': acento } : {}),
+        ...(colorTexto ? { 'marca.theme.colors.text': colorTexto } : {}),
+        ...(fondo ? { 'marca.theme.colors.bg': fondo } : {}),
+        ...(tipografia ? { 'marca.theme.fonts': tipografia.fonts } : {}),
+      })
+    } else {
+      // Miniweb de comida: copia de Chalaquita con la portada elegida. El resto: su ficha como miniweb
+      const deChalaquita = producto === 'miniweb' && plantilla.miniweb
+      base = deChalaquita ? plantilla.miniweb : plantilla.ficha
+      cambios = {
+        nombre: nombreCrear,
+        ...(logoElegido ? { logo: logoElegido } : {}),
+        ...(principal ? { 'theme.colors.primary': principal } : {}),
+        ...(acento ? { 'theme.colors.accent': acento } : {}),
+        ...(colorTexto ? { 'theme.colors.text': colorTexto } : {}),
+        ...(fondo ? { 'theme.colors.bg': fondo } : {}),
+        // Con cabecera, se guarda siempre (aunque sea el principal), para que salga en el editor y se pueda cambiar
+        ...(conCabecera ? { 'theme.colors.header': colorCabecera } : {}),
+        ...(tipografia ? { 'theme.fonts': tipografia.fonts } : {}),
+        ...(producto === 'ficha'
+          ? { 'hero.diseno': hero, ...(barra ? { 'hero.barra': barra } : {}), ...(hero === 'diagonal' && corte !== 'diagonal' ? { 'hero.corte': corte } : {}), ...(hero === 'editorial' && formato !== 'clasica' ? { 'hero.formato': formato } : {}), ...(hero === 'fullbleed' && disposicion !== 'clasica' ? { 'hero.disposicion': disposicion } : {}), ...(hero === 'mosaico' && composicion !== 'clasica' ? { 'hero.composicion': composicion } : {}), ...(hero === 'retrato' && distribucion !== 'clasica' ? { 'hero.distribucion': distribucion } : {}), ...(hero === 'galeria' && pase !== 'clasica' ? { 'hero.pase': pase } : {}), ...(hero === 'polaroid' && montaje !== 'clasica' ? { 'hero.montaje': montaje } : {}) }
+          : deChalaquita
+            ? { 'hero.portada': hero, ...inicioCambio, ...Object.fromEntries(Object.entries(textosEscritos).map(([clave, valor]) => [`hero.pestanas.0.${clave}`, valor])) }
+            : {
+                'hero.diseno': 'web',
+                'hero.portada': hero,
+                'hero.redesArriba': true,
+                ...inicioCambio,
+                'hero.pestanas': pestanasDeMiniweb(negocioBase).map((p, i) => (i === 0 ? { ...p, ...textosEscritos } : p)),
+                tipo: 'miniweb',
+              }),
+      }
+    }
+
+    return { tipoFila, slug, base, cambios }
+  }
+
+  // El asistente escribe los textos y busca las fotos sobre el diseño armado: devuelve los cambios (sin tocar nombre, diseño ni portada)
+  const redactar = async (base, cambios, nombreCrear, avisar) => {
+    const datosBase = esCarta ? cartaBase : getNegocio(base)
+    const preparada = aplicar(datosBase, cambios)
+    const campos = camposParaIA(preparada)
+    avisar('Escribiendo los textos...')
+    const { resultado } = await llamar('asistente', {
+      paso: 'copy',
+      peticion: cuento.trim(),
+      perfil: producto,
+      nombre: nombreCrear,
+      campos,
+      carta: estructuraCarta(preparada),
+      alergenos: Object.keys(ALERGENOS),
+    })
+    avisar('Buscando fotos...')
+    const deIA = await cambiosDeIA({ ...resultado, tipografia: '' }, campos, preparada)
+    for (const ruta of ['nombre', 'marca.nombre', 'hero.diseno', 'hero.barra', 'hero.portada']) delete deIA[ruta]
+    return { deIA, historial: [{ peticion: cuento.trim(), resumen: sinGuionLargo(resultado.resumen ?? '') }] }
+  }
+
+  // El botón del asistente, en dos tiempos: 1) elige el diseño (y el nombre, si falta) y lo pone en los selectores; 2) con esos
+  // selectores ya puestos (efecto de más abajo), escribe los textos y busca las fotos. La vista previa lo enseña todo
+  const montar = async () => {
+    if (!cuento.trim() || disenando) return
+    setDisenando('Montando el diseño...')
+    setError('')
+    setResumenDiseno('')
+    setCambiosIA(null)
+    try {
+      const { resultado } = await llamar('asistente', { paso: 'diseno-miniweb', peticion: cuento.trim(), nombre: nombre.trim(), catalogo: catalogoMiniweb() })
+      const d = validarDiseno(resultado)
+      setProducto('miniweb')
+      if (d.tema) setTema(d.tema)
+      if (d.portada) setHero(d.portada)
+      if (d.subdiseno) ({ corte: setCorte, formato: setFormato, disposicion: setDisposicion, composicion: setComposicion, distribucion: setDistribucion, pase: setPase, montaje: setMontaje })[d.subdiseno.campo]?.(d.subdiseno.valor)
+      setEstructura(d.estructura)
+      if (d.estiloMenu) setBarra(d.estiloMenu)
+      if (d.tamanoNombre) setTamanoNombre(d.tamanoNombre)
+      if (d.tipografia) setLetra(d.tipografia)
+      if (d.colores.principal) setPrincipal(d.colores.principal)
+      if (d.colores.acento) setAcento(d.colores.acento)
+      if (d.colores.texto) setColorTexto(d.colores.texto)
+      if (d.colores.fondo) setFondo(d.colores.fondo)
+      setColoresMini(d.roles)
+      if (d.nombre && !nombre.trim()) setNombre(d.nombre)
+      setCartaMini(d.carta ?? '')
+      setGenerado(true)
+      setResumenDiseno(d.resumen)
+      setRedactando(true)
+    } catch (e) {
+      setError(e.message)
+      setDisenando(null)
+    }
+  }
+  useEffect(() => {
+    if (!redactando) return
+    setRedactando(false)
+    ;(async () => {
+      try {
+        const nombreHecho = nombre.trim() || 'Prueba'
+        const { base, cambios } = armar(nombreHecho)
+        const hecho = await redactar(base, cambios, nombreHecho, setDisenando)
+        // La vista previa los lee de aquí (la misma pestaña del navegador, el mismo origen)
+        try {
+          localStorage.setItem('mostraq-vista-ia', JSON.stringify(hecho.deIA))
+        } catch {
+          // Sin almacenamiento: la vista previa se queda sin textos ni fotos nuevos, pero al crear sí se guardan
+        }
+        setCambiosIA({ cambios: hecho.deIA, historial: hecho.historial })
+        setVersionIA(v => v + 1)
+      } catch (e) {
+        setError(e.message)
+      }
+      setDisenando(null)
+    })()
+  }, [redactando]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // muestra (true): exporta el diseño a las muestras, en la lista de Miniwebs (con el nombre escrito o, sin él, «Muestra») en lugar de crear un perfil
   const crear = async muestra => {
     const esMuestra = muestra === true
@@ -1902,106 +2086,22 @@ function NuevoPerfil({ filas, recargar, abrir }) {
     setCreando('Creando...')
     setError('')
     try {
-      const tipoFila = esCarta ? 'carta' : 'negocio'
-      const ocupadas = new Set([
-        ...(filas ?? []).filter(f => f.tipo === tipoFila).map(f => f.slug),
-        ...(esCarta ? cartas : negocios).map(n => n.slug),
-        ...RESERVADAS,
-      ])
-      const raiz = aSlug(nombreCrear) || 'nuevo'
-      let slug = raiz
-      for (let n = 2; ocupadas.has(slug); n++) slug = `${raiz}-${n}`
-
-      const tipografia = TIPOGRAFIAS.find(t => t.id === letra)
-      // Los textos de la portada que se han escrito: en la copia de Chalaquita, sobre su primera pestaña; en las demás, sobre la
-      // primera pestaña de su miniweb (más abajo)
-      const textosEscritos = {
-        ...(textosMini.titular !== undefined ? { titular: [textoGrande.trim()].filter(Boolean) } : {}),
-        ...(textosMini.descripcion !== undefined ? { descripcion: textoPequeno.trim() } : {}),
-        ...(conTextoExtra ? { info: textoExtra.trim() } : {}),
-      }
-      const inicioCambio = {
-        ...(producto === 'miniweb' && barra ? { 'hero.barra': barra } : {}),
-        ...(!esCarta && tamanoNombre !== 'md' ? { 'hero.tamanoNombre': tamanoNombre } : {}),
-        ...(!esCarta && hero === 'diagonal' && corte !== 'diagonal' ? { 'hero.corte': corte } : {}),
-        ...(!esCarta && hero === 'editorial' && formato !== 'clasica' ? { 'hero.formato': formato } : {}),
-        ...(!esCarta && hero === 'fullbleed' && disposicion !== 'clasica' ? { 'hero.disposicion': disposicion } : {}),
-        ...(!esCarta && hero === 'mosaico' && composicion !== 'clasica' ? { 'hero.composicion': composicion } : {}),
-        ...(!esCarta && hero === 'retrato' && distribucion !== 'clasica' ? { 'hero.distribucion': distribucion } : {}),
-        ...(!esCarta && hero === 'galeria' && pase !== 'clasica' ? { 'hero.pase': pase } : {}),
-        ...(!esCarta && hero === 'polaroid' && montaje !== 'clasica' ? { 'hero.montaje': montaje } : {}),
-        // Los colores uno por uno que se han elegido (los demás, en automático)
-        ...(producto === 'miniweb' && Object.keys(coloresMini).length ? { 'hero.colores': coloresMini } : {}),
-        ...(producto === 'miniweb' ? Object.fromEntries(lugares.map(([clave, valor]) => [`hero.${clave}`, valor])) : {}),
-      }
-      let cambios
-      let base
-      if (esCarta) {
-        base = plantilla.carta
-        const inicio = inicioCopiaCarta(cartaBase)
-        cambios = fusionar(inicio, {
-          'marca.nombre': nombreCrear,
-          diseno: estilo,
-          ...(principal ? { 'marca.theme.colors.primary': principal } : {}),
-          ...(acento ? { 'marca.theme.colors.accent': acento } : {}),
-          ...(colorTexto ? { 'marca.theme.colors.text': colorTexto } : {}),
-          ...(fondo ? { 'marca.theme.colors.bg': fondo } : {}),
-          ...(tipografia ? { 'marca.theme.fonts': tipografia.fonts } : {}),
-        })
-      } else {
-        // Miniweb de comida: copia de Chalaquita con la portada elegida. El resto: su ficha como miniweb
-        const deChalaquita = producto === 'miniweb' && plantilla.miniweb
-        base = deChalaquita ? plantilla.miniweb : plantilla.ficha
-        cambios = {
-          nombre: nombreCrear,
-          ...(logoElegido ? { logo: logoElegido } : {}),
-          ...(principal ? { 'theme.colors.primary': principal } : {}),
-          ...(acento ? { 'theme.colors.accent': acento } : {}),
-          ...(colorTexto ? { 'theme.colors.text': colorTexto } : {}),
-          ...(fondo ? { 'theme.colors.bg': fondo } : {}),
-          // Con cabecera, se guarda siempre (aunque sea el principal), para que salga en el editor y se pueda cambiar
-          ...(conCabecera ? { 'theme.colors.header': colorCabecera } : {}),
-          ...(tipografia ? { 'theme.fonts': tipografia.fonts } : {}),
-          ...(producto === 'ficha'
-            ? { 'hero.diseno': hero, ...(barra ? { 'hero.barra': barra } : {}), ...(hero === 'diagonal' && corte !== 'diagonal' ? { 'hero.corte': corte } : {}), ...(hero === 'editorial' && formato !== 'clasica' ? { 'hero.formato': formato } : {}), ...(hero === 'fullbleed' && disposicion !== 'clasica' ? { 'hero.disposicion': disposicion } : {}), ...(hero === 'mosaico' && composicion !== 'clasica' ? { 'hero.composicion': composicion } : {}), ...(hero === 'retrato' && distribucion !== 'clasica' ? { 'hero.distribucion': distribucion } : {}), ...(hero === 'galeria' && pase !== 'clasica' ? { 'hero.pase': pase } : {}), ...(hero === 'polaroid' && montaje !== 'clasica' ? { 'hero.montaje': montaje } : {}) }
-            : deChalaquita
-              ? { 'hero.portada': hero, ...inicioCambio, ...Object.fromEntries(Object.entries(textosEscritos).map(([clave, valor]) => [`hero.pestanas.0.${clave}`, valor])) }
-              : {
-                  'hero.diseno': 'web',
-                  'hero.portada': hero,
-                  'hero.redesArriba': true,
-                  ...inicioCambio,
-                  'hero.pestanas': pestanasDeMiniweb(negocioBase).map((p, i) => (i === 0 ? { ...p, ...textosEscritos } : p)),
-                  tipo: 'miniweb',
-                }),
-        }
-      }
+      const { tipoFila, slug, base, cambios: cambiosBase } = armar(nombreCrear)
+      let cambios = cambiosBase
 
       // Una muestra va marcada: /miniweb la enseña junto a las demás miniwebs de ejemplo
       if (esMuestra) cambios = { ...cambios, muestra: true }
 
-      // Con lo que se le ha contado del negocio, el asistente se inventa el copy y busca las fotos sobre el diseño
-      // ya montado. Lo elegido aquí manda: nunca cambia el nombre, el diseño ni la tipografía (colores, solo si se piden)
+      // Si el asistente ya ha montado la miniweb (botón Montar), sus textos y fotos ya están hechos y se guardan tal cual. Si no, con
+      // lo que se le ha contado del negocio se inventa el copy y busca las fotos sobre el diseño ya montado (colores, solo si se piden)
       let historial = []
-      if (cuento.trim()) {
-        setCreando('Escribiendo los textos...')
-        const datosBase = esCarta ? cartaBase : getNegocio(base)
-        const preparada = aplicar(datosBase, cambios)
-        const campos = camposParaIA(preparada)
-        const { resultado } = await llamar('asistente', {
-          paso: 'copy',
-          peticion: cuento.trim(),
-          perfil: producto,
-          nombre: nombreCrear,
-          campos,
-          carta: estructuraCarta(preparada),
-          alergenos: Object.keys(ALERGENOS),
-        })
-        setCreando('Buscando fotos...')
-        const deIA = await cambiosDeIA({ ...resultado, tipografia: '' }, campos, preparada)
-        for (const ruta of ['nombre', 'marca.nombre', 'hero.diseno', 'hero.barra', 'hero.portada']) delete deIA[ruta]
-        cambios = fusionar(cambios, deIA)
-        historial = [{ peticion: cuento.trim(), resumen: sinGuionLargo(resultado.resumen ?? '') }]
+      if (cambiosIA) {
+        cambios = fusionar(cambios, cambiosIA.cambios)
+        historial = cambiosIA.historial
+      } else if (cuento.trim()) {
+        const hecho = await redactar(base, cambios, nombreCrear, setCreando)
+        cambios = fusionar(cambios, hecho.deIA)
+        historial = hecho.historial
         setCreando('Creando...')
       }
 
@@ -2059,22 +2159,22 @@ function NuevoPerfil({ filas, recargar, abrir }) {
           ))}
         </div>
 
-        {/* El negocio, para el asistente: con esto escribe el copy y busca las fotos al crear */}
+        {/* El asistente: un cuadro donde pedirle lo que sea y un solo botón que lo monta todo (diseño, nombre, textos y fotos) */}
         {pestana === 'asistente' && (
-        <div className="order-3 grid gap-[0.4rem] lg:order-none">
-          <Etiqueta texto="Cuéntale el negocio al asistente (opcional)">
-            <textarea
-              value={cuento}
-              onChange={e => setCuento(e.target.value)}
-              disabled={Boolean(creando)}
-              rows={4}
-              placeholder="Barbería de barrio en Sants, clásica pero cercana. Cita por WhatsApp al 612 345 678. Abre de martes a sábado de 10 a 20."
-              className={`${CAMPO} resize-y`}
-            />
-          </Etiqueta>
-          <p className="text-[0.8rem] text-zinc-500">
-            Se inventa los textos y busca las fotos sobre tu diseño. Los colores solo los cambia si se lo pides. Vacío: se crea con el contenido de ejemplo.
-          </p>
+        <div className="order-3 grid gap-[0.6rem] lg:order-none">
+          <textarea
+            value={cuento}
+            onChange={e => setCuento(e.target.value)}
+            disabled={Boolean(disenando) || Boolean(creando)}
+            rows={5}
+            aria-label="Pídele al asistente lo que quieras"
+            placeholder="Barbería de barrio en Sants, clásica pero cercana, colores verde y crema. Cita por WhatsApp al 612 345 678. Abre de martes a sábado de 10 a 20."
+            className={`${CAMPO} resize-y`}
+          />
+          <button type="button" onClick={montar} disabled={!cuento.trim() || Boolean(disenando) || Boolean(creando)} className={BOTON}>
+            {disenando ?? 'Montar el diseño con el asistente'}
+          </button>
+          {resumenDiseno && <p className="text-[0.85rem] font-semibold text-zinc-800">{resumenDiseno}</p>}
         </div>
         )}
 
@@ -2178,7 +2278,8 @@ function NuevoPerfil({ filas, recargar, abrir }) {
             <div className="grid gap-[0.45rem]">
               <span className={titulo}>{producto === 'miniweb' ? 'Portada' : 'Diseño de arriba'}</span>
               <div className="flex flex-wrap items-center gap-[0.4rem]">
-                {(masDisenos ? herosEnOrden : herosEnOrden.slice(0, 5)).map(([clave, h]) => {
+                {/* En el móvil, 5 a la vista y un + que abre el resto; en pantalla grande, la lista completa y sin el + */}
+                {herosEnOrden.map(([clave, h], i) => {
                   const Icono = ICONOS_DISENO[clave] ?? Frame
                   return (
                     <button
@@ -2195,7 +2296,7 @@ function NuevoPerfil({ filas, recargar, abrir }) {
                           setSubAbierta(true)
                         }
                       }}
-                      className={`flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 bg-white transition-transform duration-300 ${hero === clave ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
+                      className={`${i >= 5 && !masDisenos ? 'hidden lg:flex' : 'flex'} h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 bg-white transition-transform duration-300 ${hero === clave ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
                     >
                       <Icono className="h-[1.3rem] w-[1.3rem]" strokeWidth={2} aria-hidden="true" />
                     </button>
@@ -2206,7 +2307,7 @@ function NuevoPerfil({ filas, recargar, abrir }) {
                   aria-label={masDisenos ? 'Ver menos diseños' : 'Ver más diseños'}
                   aria-expanded={masDisenos}
                   onClick={() => setMasDisenos(v => !v)}
-                  className="flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 border-zinc-300 transition-transform duration-300 hover:scale-105"
+                  className="flex h-[2.5rem] lg:hidden w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 border-zinc-300 transition-transform duration-300 hover:scale-105"
                   style={{ background: 'conic-gradient(#E5484D, #F5A524, #F2D33B, #46A758, #2E9FD9, #5B5BD6, #B04BC4, #E5484D)', color: '#141414' }}
                 >
                   {masDisenos ? <Minus className="h-[1.1rem] w-[1.1rem]" strokeWidth={3} aria-hidden="true" /> : <Plus className="h-[1.1rem] w-[1.1rem]" strokeWidth={3} aria-hidden="true" />}
@@ -2375,8 +2476,17 @@ function NuevoPerfil({ filas, recargar, abrir }) {
               </div>
             </Plegable>
           )}
+          {/* Los colores de la miniweb, justo debajo de la portada */}
+          {producto === 'miniweb' && (
+            <PanelColoresMiniweb
+              valores={coloresMini}
+              cambiar={cambiarColorMini}
+              autos={coloresAutomaticos({ colors: { ...marcaBase?.theme?.colors, bg: colorFondo, primary: colorPrincipal, accent: colorAcento, text: colorDelTexto, header: colorCabecera } }, { barra, portada: hero }, coloresMini)}
+            />
+          )}
           {/* Estructura de la miniweb: dónde va cada pieza (redes, menú de navegación y compartir) */}
           {producto === 'miniweb' && <EstructuraMiniweb valores={estructura} cambiar={(clave, valor) => setEstructura(e => ({ ...e, [clave]: valor }))} />}
+          {producto === 'miniweb' && <SelectorCartaMiniweb valor={cartaMini} cambiar={valor => setCartaMini(valor ?? '')} />}
           {(producto === 'ficha' || producto === 'miniweb') && (
             <Plegable titulo={producto === 'miniweb' ? 'Estilo del menú de navegación' : 'Estilo de pestañas'} elegido={barra ? BARRAS[barra]?.nombre : producto === 'miniweb' ? 'La rayita' : 'El suyo'}>
               <div className="flex flex-wrap gap-[0.4rem]">
@@ -2469,18 +2579,6 @@ function NuevoPerfil({ filas, recargar, abrir }) {
             ))}
           </div>
           </Plegable>
-          {producto === 'miniweb' && (
-            <Plegable
-              titulo="Colores de la miniweb"
-              elegido={
-                <span className="flex justify-end gap-[0.25rem]">
-                  {Object.values(coloresMini).length ? Object.values(coloresMini).slice(0, 8).map((c, i) => <span key={i} className="h-[1.1rem] w-[1.1rem] rounded-full ring-1 ring-zinc-300" style={{ background: c }} />) : 'Automáticos'}
-                </span>
-              }
-            >
-              <PanelColoresMiniweb valores={coloresMini} cambiar={cambiarColorMini} />
-            </Plegable>
-          )}
           {/* Los textos de la portada: el grande (en dos líneas) y el pequeño, con su máximo de caracteres (el de ahora con margen) */}
           {producto === 'miniweb' && (
             <Plegable titulo="Textos de la miniweb" elegido={textosEditados ? 'Cambiados' : 'Los de la plantilla'}>
@@ -2552,16 +2650,24 @@ function NuevoPerfil({ filas, recargar, abrir }) {
           )}
 
           {error && <p className="text-[0.9rem] font-semibold text-red-600">{error}</p>}
-          <button type="button" onClick={crear} disabled={!nombre.trim() || Boolean(creando)} className={BOTON}>
-            {creando ?? `Crear ${producto === 'carta' ? 'carta' : producto === 'miniweb' ? 'miniweb' : 'ficha'}`}
-          </button>
+          {(pestana !== 'asistente' || cambiosIA) && (
+            <button type="button" onClick={crear} disabled={!nombre.trim() || Boolean(creando) || Boolean(disenando)} className={BOTON}>
+              {creando ?? `Crear ${producto === 'carta' ? 'carta' : producto === 'miniweb' ? 'miniweb' : 'ficha'}`}
+            </button>
+          )}
         </div>
         </div>
 
         {/* Vista previa: el contenido de la temática con el diseño elegido. A 360 px de ancho por dentro, como el móvil bajo:
             se ve lo mismo que verá el cliente. En pantalla grande, a la derecha y fija al bajar */}
         <div className="order-2 lg:sticky lg:top-[1rem] lg:order-none lg:col-start-2 lg:row-start-1">
-          {vista && <Movil key={vista} src={vista} titulo="Vista previa" ancho={360} className="mx-auto w-full max-w-[20rem]" />}
+          {pestana === 'asistente' && !generado ? (
+            <Movil ancho={360} className="mx-auto w-full max-w-[20rem]">
+              <div className="flex h-full items-center justify-center bg-black px-[1.5rem] text-center text-[0.95rem] font-semibold text-white/60">Genera algo con el asistente y aparecerá aquí</div>
+            </Movil>
+          ) : (
+            vista && <Movil key={vista} src={vista} titulo="Vista previa" ancho={360} className="mx-auto w-full max-w-[20rem]" />
+          )}
           <p className="mt-[0.5rem] text-center text-[0.8rem] text-zinc-500">Con el contenido de ejemplo de la temática</p>
           {/* Exporta este diseño a las muestras de /miniweb, donde está Chalaquita */}
           {producto === 'miniweb' && (

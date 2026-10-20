@@ -5,7 +5,7 @@ import Img from '../components/Img'
 import { SocialIcon } from '../components/SocialIcons'
 import BotonCompartir, { LugarCompartir } from '../components/BotonCompartir'
 import { enlaceWhatsapp } from '../lib/whatsapp'
-import { ALERGENOS } from '../cartas'
+import { ALERGENOS, getCarta, rutaCarta } from '../cartas'
 import useVueltaPestanas from '../lib/useVueltaPestanas'
 import { fotoDeRespaldo, fotosDe, tipoComun } from '../fichas/escenas'
 import BarraPestanas from '../fichas/barras'
@@ -534,7 +534,7 @@ function SeccionCarta({ seccion }) {
 /* También vale para belleza y tiendas (pestaña servicios): en vez del menú del día, las ofertas (con sus
    polaroids, si traen fotos), y la carta se llama Servicios.
    pestana: ofertas { texto, titulo, cuando, fotos, lista }, secciones, textoCarta? */
-function PaginaMenu({ pestana }) {
+function PaginaMenuPropia({ pestana }) {
   const ofertas = pestana.ofertas
   const destacado = pestana.menuDia ?? ofertas
   const [vista, setVista] = useState(destacado ? 'menu' : 'carta')
@@ -573,6 +573,19 @@ function PaginaMenu({ pestana }) {
       </div>
     </div>
   )
+}
+
+/* La carta de verdad (hero.carta: el nombre de una de las cartas de src/cartas) dentro de la página del menú, con su diseño y su
+   contenido. Es la misma página que se abre con /slug/carta: lo que se edite en su panel se ve aquí. La carta de muestra, la de
+   una demo (/demo/slug/carta); la de un cliente, la suya (/slug/carta). Sin carta elegida, el menú propio de la miniweb */
+function CartaIncrustada({ slug }) {
+  const carta = getCarta(slug)
+  const ruta = carta ? rutaCarta(carta) : `/${slug}/carta`
+  return <iframe src={`${ruta}?incrustada=1`} title="Carta" className="h-full w-full border-0 bg-demo-bg" />
+}
+
+function PaginaMenu(props) {
+  return props.heroBase?.carta ? <CartaIncrustada slug={props.heroBase.carta} /> : <PaginaMenuPropia {...props} />
 }
 
 const PAGINAS = {
@@ -829,6 +842,8 @@ export default function HeroWeb({ hero, nombre, lema, cuerpo, redes, redesTexto 
   const estiloMenu = {
     ...(coloresMenu.menuFondo ? { background: coloresMenu.menuFondo } : {}),
     ...(coloresMenu.menuSubrayado ? { '--demo-accent': coloresMenu.menuSubrayado, '--demo-primary': coloresMenu.menuSubrayado } : {}),
+    // El texto del menú (hero.colores.menuTexto): las letras de las pestañas; en los estilos de las fichas, su color de texto
+    ...(coloresMenu.menuTexto ? { color: coloresMenu.menuTexto, '--demo-text': coloresMenu.menuTexto } : {}),
   }
 
   return (
@@ -841,7 +856,7 @@ export default function HeroWeb({ hero, nombre, lema, cuerpo, redes, redesTexto 
         </header>
       ) : (
       /* Barra de navegación, como la de una web */
-      <header style={estiloMenu} className={`${menuAbajo ? 'order-3' : 'order-1'} bg-demo-header px-[1.25rem] pt-[0.7rem] ${menuClaro ? 'text-[#141414]' : 'text-white'}`}>
+      <header style={estiloMenu} className={`${menuAbajo ? 'order-3' : 'order-1'} bg-demo-header px-[1.25rem] pt-[0.7rem] ${coloresMenu.menuTexto ? '' : menuClaro ? 'text-[#141414]' : 'text-white'}`}>
         <nav className="flex justify-between">
           {pestanas.map((p, i) => (
             <button
@@ -850,7 +865,9 @@ export default function HeroWeb({ hero, nombre, lema, cuerpo, redes, redesTexto 
               aria-pressed={i === activa}
               onClick={() => tocar(i)}
               className={`relative pb-[0.6rem] pt-[0.2rem] text-[0.88rem] font-semibold transition-colors duration-300 ${
-                i === activa ? (menuClaro ? 'text-[#141414]' : 'text-white') : menuClaro ? 'text-[#141414]/65 hover:text-[#141414]' : 'text-white/65 hover:text-white'
+                coloresMenu.menuTexto
+                  ? i === activa ? 'opacity-100' : 'opacity-65 hover:opacity-100'
+                  : i === activa ? (menuClaro ? 'text-[#141414]' : 'text-white') : menuClaro ? 'text-[#141414]/65 hover:text-[#141414]' : 'text-white/65 hover:text-white'
               }`}
             >
               {p.texto}

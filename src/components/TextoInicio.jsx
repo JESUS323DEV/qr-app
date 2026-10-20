@@ -1,5 +1,5 @@
 import { CompartirJuntoAlBoton } from './BotonCompartir'
-import { useRol } from './ColoresPortada'
+import { useFondoBoton, useRol } from './ColoresPortada'
 /* El texto de la portada de Inicio de una miniweb (el de Chalaquita): titular, qué hace el negocio y un botón que lleva
    a otra página. Lo pintan los diseños de portada debajo de su foto. inicio: la página de Inicio con titular[], descripcion,
    boton y botonA; irA: lleva a otra página de la miniweb. Sin titular ni descripción, no pinta nada.
@@ -11,6 +11,7 @@ export default function TextoInicio({ inicio, irA, color = '', className = '', f
   const rolTitular = useRol('titular')
   const rolDescripcion = useRol('descripcion')
   const rolBoton = useRol('boton')
+  const fondoBoton = useFondoBoton()
   const rolExtra = useRol('extra')
   if (!inicio?.titular?.length && !inicio?.descripcion) return null
   return (
@@ -42,7 +43,7 @@ export default function TextoInicio({ inicio, irA, color = '', className = '', f
             <button
               type="button"
               onClick={() => irA?.(inicio.botonA)}
-              style={rolBoton} className="inline-flex min-h-[2.5rem] items-center rounded-[0.6rem] bg-demo-accent px-[1.1rem] text-[0.92rem] font-semibold text-demo-text"
+              style={{ ...rolBoton, ...fondoBoton }} className="inline-flex min-h-[2.5rem] items-center rounded-[0.6rem] bg-demo-accent px-[1.1rem] text-[0.92rem] font-semibold text-demo-text"
             >
               {inicio.boton}
             </button>

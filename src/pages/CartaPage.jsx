@@ -256,6 +256,8 @@ export default function CartaPage(props) {
   const { slug } = useParams()
   const [params] = useSearchParams()
   const pruebaDiseno = params.get('diseno')
+  // ?incrustada=1: la carta dentro de la pestaña del menú de una miniweb (sin flechas de demos ni enlace de vuelta a la miniweb)
+  const incrustada = params.get('incrustada') === '1'
   const { cargando, fila } = useCartaRemota(slug)
   const ahora = useAhora()
   // Cambios de /admin: los de la carta (textos, fotos, platos; o una copia, que solo vive en Supabase)
@@ -277,12 +279,13 @@ export default function CartaPage(props) {
   let carta = conOfertas(conHorario(juntar(conCambios, fila), ahora), ahora)
   // En las demos, el estilo de carta se puede probar desde la dirección (?diseno=polaroid): lo usa /admin
   if (carta?.demo && ESTILOS_CARTA.has(pruebaDiseno)) carta = { ...carta, diseno: pruebaDiseno }
+  if (incrustada && carta) carta = { ...carta, negocio: null }
   // La clave cambia si el menú del día aparece o desaparece (horario, interruptor): la carta empieza de cero
   // en lo que toca, y no se queda en blanco en la pestaña del menú que ya no existe
-  return <Carta key={`${slug}-${Boolean(carta?.menuDia)}`} carta={carta} negocio={negocio} {...props} />
+  return <Carta key={`${slug}-${Boolean(carta?.menuDia)}`} carta={carta} negocio={negocio} incrustada={incrustada} {...props} />
 }
 
-function Carta({ carta, negocio, demo = false }) {
+function Carta({ carta, negocio, demo = false, incrustada = false }) {
   // Dos niveles: Menú del día o Carta; dentro de Carta, las secciones
   const [modo, setModo] = useState(carta?.menuDia ? 'menu' : 'carta')
   const [seccionActiva, setSeccionActiva] = useState(carta?.secciones?.[0]?.nombre)
@@ -305,7 +308,7 @@ function Carta({ carta, negocio, demo = false }) {
   }
 
   // En las demos, las mismas flechas y botón de inicio que en las miniwebs, para pasar de una carta a otra
-  const navegacion = demo && (
+  const navegacion = demo && !incrustada && (
     <>
       {/* Las copias para enseñar a un negocio no llevan flechas: no están en el catálogo */}
       {!carta.copia && <DemoPager negocio={carta} secuencia={cartas.filter(c => c.demo)} rutaDe={rutaCarta} conTransicion={false} />}

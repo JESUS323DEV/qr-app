@@ -4,7 +4,7 @@ import Img from '../components/Img'
 import BotonCompartir from '../components/BotonCompartir'
 import { LogoNegocio, useFactorNombre } from '../components/NombreMarca'
 import { fotosDe } from '../fichas/escenas'
-import { useRol } from '../components/ColoresPortada'
+import { useFondoBoton, useRol } from '../components/ColoresPortada'
 import { distribucionDe } from '../lib/distribuciones'
 
 // Líneas de ejemplo para el pie de la foto abierta (inventadas, para un restaurante), mientras las fotos no traigan
@@ -30,6 +30,7 @@ export default function HeroRetratoWeb({ hero, nombre, lema, inicio, irA }) {
   const rolTitular = useRol('titular')
   const rolDescripcion = useRol('descripcion')
   const rolBoton = useRol('boton')
+  const fondoBoton = useFondoBoton()
   const logo = useContext(LogoNegocio)
   const factorNombre = useFactorNombre()
   const fotosDeLaPestana = fotosDe(hero.pestanas?.[0])
@@ -116,7 +117,7 @@ export default function HeroRetratoWeb({ hero, nombre, lema, inicio, irA }) {
             <button
               type="button"
               onClick={() => irA?.(inicio.botonA)}
-              style={rolBoton} className="inline-flex min-h-[2.5rem] items-center rounded-[0.4rem] bg-demo-accent px-[1.1rem] text-[0.92rem] font-semibold text-demo-text"
+              style={{ ...rolBoton, ...fondoBoton }} className="inline-flex min-h-[2.5rem] items-center rounded-[0.4rem] bg-demo-accent px-[1.1rem] text-[0.92rem] font-semibold text-demo-text"
             >
               {inicio.boton}
             </button>

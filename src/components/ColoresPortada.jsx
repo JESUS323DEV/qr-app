@@ -19,6 +19,13 @@ export function useRol(rol) {
   // El texto extra, sin color propio, usa el del texto pequeño
   const elegido = colores?.[rol] ?? (rol === 'extra' ? colores?.descripcion : undefined)
   if (elegido) return { color: elegido }
-  if (rol === 'boton' && acento) return { color: esClaroHex(acento) ? '#141414' : '#FFFFFF' }
+  const fondoBoton = colores?.botonFondo ?? acento
+  if (rol === 'boton' && fondoBoton) return { color: esClaroHex(fondoBoton) ? '#141414' : '#FFFFFF' }
   return undefined
+}
+
+// El fondo del botón principal (hero.colores.botonFondo); sin elegir, no pone nada y el botón se queda con el acento de la marca
+export function useFondoBoton() {
+  const { colores } = useContext(ColoresMiniweb)
+  return colores?.botonFondo ? { background: colores.botonFondo } : undefined
 }

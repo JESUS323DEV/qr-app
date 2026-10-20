@@ -4,7 +4,7 @@ import { BARRAS } from '../fichas/barras'
 import { marcaDePrueba } from '../lib/prueba'
 import { fichaAMiniweb } from '../lib/miniweb'
 import { ChevronRight } from 'lucide-react'
-import { conEdicion, useEdicion } from '../lib/ediciones'
+import { aplicar, conEdicion, useEdicion } from '../lib/ediciones'
 import { HEROS } from '../heros'
 import { applyTheme, resetTheme } from '../lib/applyTheme'
 import { SocialIcon } from '../components/SocialIcons'
@@ -214,7 +214,7 @@ export default function MiniwebPage({ demo = false }) {
   const { cargando, fila } = useEdicion('negocio', slug)
   // ?miniweb=1: la ficha vista como miniweb (su diseño de arriba pasa a ser la portada y cada pestaña, una página)
   const pruebaMiniweb = params.get('miniweb') === '1'
-  const negocio = useMemo(() => {
+  const negocioBase = useMemo(() => {
     const leido = conEdicion('negocio', slug, fila)
     // En las demos: nombre, colores y tipografía de prueba desde la dirección (vista previa de /admin)
     const n = leido?.demo ? marcaDePrueba(leido, params) : leido
@@ -235,6 +235,16 @@ export default function MiniwebPage({ demo = false }) {
     const barra = HEROS[diseno]?.piezas && BARRAS[pruebaBarra] ? pruebaBarra : n.hero.barra
     return { ...n, hero: { ...n.hero, diseno, barra } }
   }, [slug, fila, pruebaDiseno, pruebaBarra, pruebaMiniweb, params])
+  // ?ia=N: los textos y fotos que ha hecho el asistente de Nuevo perfil (los deja en localStorage, del mismo origen), solo en la vista previa
+  const pruebaIA = params.get('ia')
+  const negocio = useMemo(() => {
+    if (!pruebaIA || !negocioBase?.demo) return negocioBase
+    try {
+      return aplicar(negocioBase, JSON.parse(localStorage.getItem('mostraq-vista-ia') ?? 'null'))
+    } catch {
+      return negocioBase
+    }
+  }, [negocioBase, pruebaIA])
 
   useEffect(() => {
     if (!negocio) return

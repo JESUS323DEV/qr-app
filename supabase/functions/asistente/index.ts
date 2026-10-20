@@ -119,6 +119,60 @@ const ESQUEMA_CAMBIOS = {
   additionalProperties: false,
 }
 
+// El diseño de una miniweb nueva: solo claves de las listas que manda el panel (el panel las comprueba una a una)
+const ESQUEMA_DISENO = {
+  type: 'object',
+  properties: {
+    nombre: { type: 'string' },
+    tema: { type: 'string' },
+    portada: { type: 'string' },
+    subdiseno: { type: 'string' },
+    redesEn: { type: 'string' },
+    redesVinculadas: { type: 'boolean' },
+    menuEn: { type: 'string' },
+    compartirEn: { type: 'string' },
+    estiloMenu: { type: 'string' },
+    carta: { type: 'string' },
+    tamanoNombre: { type: 'string' },
+    tipografia: { type: 'string' },
+    colores: {
+      type: 'object',
+      properties: { principal: { type: 'string' }, acento: { type: 'string' }, texto: { type: 'string' }, fondo: { type: 'string' } },
+      required: ['principal', 'acento', 'texto', 'fondo'],
+      additionalProperties: false,
+    },
+    roles: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: { rol: { type: 'string' }, color: { type: 'string' } },
+        required: ['rol', 'color'],
+        additionalProperties: false,
+      },
+    },
+    resumen: { type: 'string' },
+  },
+  required: ['nombre', 'tema', 'portada', 'subdiseno', 'redesEn', 'redesVinculadas', 'menuEn', 'compartirEn', 'estiloMenu', 'carta', 'tamanoNombre', 'tipografia', 'colores', 'roles', 'resumen'],
+  additionalProperties: false,
+}
+
+const INSTRUCCIONES_DISENO = `Eres el asistente de Jesús, que hace miniwebs para el móvil para negocios locales de Barcelona (el cliente las abre con un QR en el local). Una miniweb tiene un menú de navegación, una portada de Inicio con foto y texto, una barra de redes y la tarjeta de reseña de Google.
+Ahora diseñas una miniweb nueva, SIN partir de ninguna demo: tú decides cómo es, eligiendo SOLO entre las piezas que te paso. No escribes código ni inventas valores: cada campo es la clave exacta de una de las listas.
+
+Cómo elegir:
+- Piensa en el negocio, en su barrio y en el tono que piden (elegante, cercano, joven, popular, serio...) y elige las piezas que mejor lo cuentan. No elijas la primera opción de cada lista por defecto ni repitas siempre la misma combinación: cada negocio tiene que tener su propio aspecto.
+- nombre: el nombre del negocio. Si te lo dan en lo que cuentan (o si el nombre que te paso no está vacío), ese, tal cual. Si no hay nombre, invéntate uno corto, creíble y propio de ese tipo de negocio y de su barrio (sin tópicos del sector); Jesús lo cambiará si quiere.
+- tema: la temática más cercana al negocio, entre las de la lista (solo sirve para el contenido de ejemplo; el aspecto no depende de ella).
+- portada y subdiseno: una portada y uno de SUS subdiseños (cada portada tiene los suyos; la clave del subdiseno tiene que ser de la portada elegida).
+- redesEn, redesVinculadas, menuEn y compartirEn: dónde va cada pieza. redesVinculadas en true pega la barra de redes siempre al menú (en ese caso redesEn no se usa, pero rellénalo igual). Una estructura sencilla suele ser mejor que una rara: usa lateral, medio o menú abajo cuando encajen con la marca y no por variar.
+- estiloMenu: el estilo de las pestañas del menú. tamanoNombre: el tamaño del nombre arriba ('md' salvo que el nombre sea muy largo o muy corto o pidan otra cosa).
+- carta: la carta de muestra que pinta el menú de la miniweb, por su clave, entre las de la lista (cada una tiene su diseño y para qué negocios va). Elige la que mejor vaya con el negocio y el estilo que piden. Vacío si el negocio no tiene carta que enseñar o no encaja ninguna.
+- tipografia: el id de una pareja de la lista, la que mejor vaya con la marca.
+- colores (formato #RRGGBB): una paleta completa y coherente a partir de los colores que pidan o de lo que transmita la marca. principal es el color fuerte (botones y bloques), acento el detalle, fondo y texto los de la página. El texto tiene que leerse bien sobre el fondo (contraste alto), y el texto blanco o negro sobre el acento y el principal.
+- roles: colores sueltos de la lista de roles. Déjalo vacío salvo que haga falta (cada rol sin color se pone solo y se lee bien); úsalo, por ejemplo, para el fondo del menú o de las redes si quieres un contraste propio.
+- resumen: una o dos frases en castellano, sin guiones largos, diciendo cómo has montado el diseño y por qué. Escribe con naturalidad: nada de frases de relleno del sector ("experiencia única", "pasión por...").
+No uses guiones largos (—) en ningún texto.`
+
 // Reglas comunes: las de diseño y copy de Jesús
 const REGLAS = `Eres el asistente de Jesús, que hace páginas para el móvil para negocios locales de Barcelona; el cliente las abre con un QR en el local. Hay tres tipos:
 - Ficha: una sola pantalla con lo esencial (hero con pestañas, y debajo la reseña de Google y las redes). Textos muy cortos.
@@ -262,8 +316,13 @@ Deno.serve(async req => {
   } catch {
     return responder({ error: 'Petición no válida.' }, 400)
   }
-  const paso = datos?.paso as keyof typeof INSTRUCCIONES | 'colores-qr'
-  const pasoValido = paso === 'colores-qr' ? Boolean(datos.colores || datos.descripcion?.trim()) :Boolean(INSTRUCCIONES[paso as keyof typeof INSTRUCCIONES] && datos.peticion?.trim())
+  const paso = datos?.paso as keyof typeof INSTRUCCIONES | 'colores-qr' | 'diseno-miniweb'
+  const pasoValido =
+    paso === 'colores-qr'
+      ? Boolean(datos.colores || datos.descripcion?.trim())
+      : paso === 'diseno-miniweb'
+        ? Boolean(datos.peticion?.trim() && datos.catalogo)
+        : Boolean(INSTRUCCIONES[paso as keyof typeof INSTRUCCIONES] && datos.peticion?.trim())
   if (!pasoValido) return responder({ error: 'Petición no válida.' }, 400)
 
   // Límite diario (la tabla solo la toca el servidor)
@@ -302,6 +361,22 @@ Deno.serve(async req => {
               tipografias: datos.tipografias,
               colores: datos.colores,
             }),
+          },
+        ],
+      })
+    } else if (paso === 'diseno-miniweb') {
+      // El diseño de una miniweb nueva, sin demo de partida: de gusto, así que Sonnet. Solo claves de las listas del panel
+      respuesta = await claude.beta.messages.create({
+        model: MODELO,
+        max_tokens: 4000,
+        betas: ['server-side-fallback-2026-07-01'],
+        fallbacks: 'default',
+        output_config: { effort: 'low', format: { type: 'json_schema', schema: ESQUEMA_DISENO } },
+        system: INSTRUCCIONES_DISENO,
+        messages: [
+          {
+            role: 'user',
+            content: `Nombre del negocio: ${String(datos.nombre || 'sin nombre').slice(0, 80)}\n\nLo que cuenta Jesús del negocio:\n${String(datos.peticion).trim().slice(0, 800)}\n\nPiezas disponibles (JSON; usa solo estas claves):\n${JSON.stringify(datos.catalogo)}`,
           },
         ],
       })

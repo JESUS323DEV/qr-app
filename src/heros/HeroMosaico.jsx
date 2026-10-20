@@ -5,7 +5,7 @@ import useVueltaPestanas from '../lib/useVueltaPestanas'
 import BotonCompartir from '../components/BotonCompartir'
 import Escena, { fotoDeRespaldo, tipoComun } from '../fichas/escenas'
 import BarraPestanas from '../fichas/barras'
-import { useRol } from '../components/ColoresPortada'
+import { useFondoBoton, useRol } from '../components/ColoresPortada'
 import { composicionDe } from '../lib/composiciones'
 
 /* Mosaico (inspirado en el Split de Dulce Lima en platform). Hero por piezas: el marco es suyo y las escenas y la
@@ -22,6 +22,7 @@ export default function HeroMosaico({ hero, nombre, lema, sinBarra = false, inic
   const rolTitular = useRol('titular')
   const rolDescripcion = useRol('descripcion')
   const rolBoton = useRol('boton')
+  const fondoBoton = useFondoBoton()
   // Solo las pestañas que sabe pintar (las comunes)
   const pestanas = useMemo(() => (hero.pestanas ?? []).filter(p => tipoComun(p.tipo)), [hero.pestanas])
   const [activa, setActiva] = useState(0)
@@ -49,7 +50,7 @@ export default function HeroMosaico({ hero, nombre, lema, sinBarra = false, inic
       <button
         type="button"
         onClick={() => irA?.(inicio.botonA)}
-        style={rolBoton} className="inline-flex min-h-[2.5rem] items-center rounded-[0.6rem] bg-demo-accent px-[1.1rem] text-[0.92rem] font-semibold text-demo-text"
+        style={{ ...rolBoton, ...fondoBoton }} className="inline-flex min-h-[2.5rem] items-center rounded-[0.6rem] bg-demo-accent px-[1.1rem] text-[0.92rem] font-semibold text-demo-text"
       >
         {inicio.boton}
       </button>

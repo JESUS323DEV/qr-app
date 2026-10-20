@@ -1,10 +1,11 @@
-import { useRol } from './ColoresPortada'
+import { useFondoBoton, useRol } from './ColoresPortada'
 import { CompartirJuntoAlBoton } from './BotonCompartir'
 
 /* El botón de la portada ("Ver menú") cuando va encima de la foto, debajo del nombre (Editorial, Diagonal y Fullbleed),
    y, si la miniweb lo pide, compartir a su lado. inicio: la página de Inicio con boton y botonA; irA: lleva a otra página */
 export default function CtaPortada({ inicio, irA, nombre, className = '' }) {
   const rolBoton = useRol('boton')
+  const fondoBoton = useFondoBoton()
   const rolExtra = useRol('extra')
   const hayBoton = Boolean(inicio?.boton && inicio?.botonA)
   if (!hayBoton && !inicio?.info) return null
@@ -15,7 +16,7 @@ export default function CtaPortada({ inicio, irA, nombre, className = '' }) {
           <button
             type="button"
             onClick={() => irA?.(inicio.botonA)}
-            style={rolBoton}
+            style={{ ...rolBoton, ...fondoBoton }}
             className="inline-flex min-h-[2.5rem] items-center rounded-[0.6rem] bg-demo-accent px-[1.1rem] text-[0.92rem] font-semibold text-demo-text"
           >
             {inicio.boton}
