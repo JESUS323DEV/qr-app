@@ -3,12 +3,12 @@ const px = (id, w, h) => `https://images.pexels.com/photos/${id}/pexels-photo-${
 const foto = id => px(id, 900, 1600)
 
 // Carta digital de Ají Limón, restaurante peruano inventado (demo). Usa la marca de su miniweb (negocios/aji-limon.js).
-// Diseño historias: el menú del día y cada sección de la carta ocupan una pantalla; se pasa deslizando de lado.
+// Diseño inmersiva: una foto a pantalla completa de fondo y el contenido encima.
 export default {
   slug: 'aji-limon',
   negocio: 'aji-limon',
   demo: true,
-  diseno: 'historias',
+  diseno: 'inmersiva',
   idiomas: ['ES', 'EN'],
 
   menuDia: {

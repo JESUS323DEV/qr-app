@@ -20,24 +20,6 @@ export const DISENOS_CARTA = {
     pestanas: 'Menú del día y Carta (con sus secciones debajo).',
     notas: 'Con una sola foto muy buena del local o del plato estrella. Está en catalán: si no lo piden, todo en castellano.',
   },
-  'aji-limon': {
-    para: 'Restaurantes con platos muy visuales: peruana, japonesa, mexicana, fusión, brunch.',
-    estilo: 'Historias de Instagram: el menú del día y cada sección ocupan una pantalla con su foto de fondo; se pasa de lado.',
-    pestanas: 'Menú del día y Carta (cada sección es una pantalla).',
-    notas: 'Necesita una buena foto por sección y pocas secciones (de 3 a 6) con pocos platos cada una (hasta 6).',
-  },
-  'bar-fermin': {
-    para: 'Bares de menú, tabernas, bodegas, bares de tapas y vermut, restaurantes de cocina de casa.',
-    estilo: 'La pizarra del bar: fondo de pizarra con marco de madera, letra de tiza y precios alineados con puntitos. Sin fotos.',
-    pestanas: 'Menú del día (con el precio rodeado a mano) y Carta (todas las secciones seguidas, con atajos).',
-    notas: 'La mejor para el menú del día. No necesita fotos. Colores: bg es la pizarra (verde muy oscuro o negro), primary la madera del marco, text la tiza blanca y accent la tiza de color. Las tipografías son de tiza: no cambiarlas.',
-  },
-  'grano-lento': {
-    para: 'Cafeterías, brunch, panaderías, bocadillerías, heladerías, sitios de desayunos.',
-    estilo: 'Un ticket de papel crema con bordes en zigzag que flota sobre el color de la marca, con letra de máquina de escribir, precios con puntitos y código de barras de adorno.',
-    pestanas: 'Menú del día (o el brunch, con el precio como el Total del ticket) y Carta (una sección cada vez).',
-    notas: 'Sin fotos. Colores: primary es el fondo de la pantalla (el color fuerte de la marca), surface el papel (siempre claro), text la tinta oscura y accent la tinta de color. Las tipografías son de máquina de escribir: no cambiarlas.',
-  },
   'forno-nonna': {
     para: 'Pizzerías, panaderías, heladerías, hamburgueserías, brunch, tapas: sitios cuyos platos entran por los ojos.',
     estilo: 'Cada plato es una polaroid con su foto y su nombre y precio escritos a mano, pegadas un poco torcidas sobre el color de la marca, de dos en dos. Al tocar una, se abre grande con la descripción.',

@@ -16,9 +16,6 @@ import { supabase } from '../lib/supabase'
 import { menuActivo, textoHorario } from '../lib/horarioMenu'
 import { conEdicion, useEdicion } from '../lib/ediciones'
 import CartaInmersiva from '../components/carta/CartaInmersiva'
-import CartaHistorias from '../components/carta/CartaHistorias'
-import CartaPizarra from '../components/carta/CartaPizarra'
-import CartaTicket from '../components/carta/CartaTicket'
 import CartaRevista from '../components/carta/CartaRevista'
 import CartaPolaroid from '../components/carta/CartaPolaroid'
 import CartaGaleria from '../components/carta/CartaGaleria'
@@ -118,22 +115,22 @@ function MenuDia({ menu }) {
   // Perfil de belleza o de tienda: en el hueco del menú del día van las ofertas
   if (menu.ofertas) return <div className="rounded-[1.1rem] bg-demo-surface px-[1rem] py-[1rem]"><Ofertas menu={menu} /></div>
   return (
-    <div className="rounded-[1.1rem] bg-demo-surface px-[1rem] py-[1rem]">
+    <div className="rounded-[1.1rem] bg-demo-surface px-[1rem] py-[0.8rem]">
       <h1 className="font-demo-heading text-[1.5rem] leading-none">{menu.titulo}</h1>
-      <p className="mt-[0.3rem] text-[0.8rem] text-demo-muted">{menu.cuando}</p>
+      <p className="mt-[0.25rem] text-[0.8rem] text-demo-muted">{menu.cuando}</p>
 
-      <div className="mt-[0.8rem] grid gap-[0.7rem]">
+      <div className="mt-[0.6rem] grid gap-[0.45rem]">
         {menu.grupos.map(g => (
-          <div key={g.nombre} className="border-t border-dashed border-demo-text/20 pt-[0.6rem]">
-            <p className="font-demo-heading text-[1rem] text-demo-accent">{g.nombre}</p>
-            <ul className="mt-[0.25rem] grid gap-[0.1rem] text-[0.88rem]">
+          <div key={g.nombre} className="border-t border-dashed border-demo-text/20 pt-[0.4rem]">
+            <p className="font-demo-heading text-[1rem] leading-[1.2] text-demo-accent">{g.nombre}</p>
+            <ul className="mt-[0.15rem] grid gap-0 text-[0.88rem] leading-[1.35]">
               {g.platos.map(p => <li key={p}>{p}</li>)}
             </ul>
           </div>
         ))}
       </div>
 
-      <div className="mt-[0.8rem] flex items-end justify-between gap-[1rem] border-t border-dashed border-demo-text/20 pt-[0.7rem]">
+      <div className="mt-[0.6rem] flex items-end justify-between gap-[1rem] border-t border-dashed border-demo-text/20 pt-[0.5rem]">
         <p className="text-[0.8rem] leading-[1.4] text-demo-muted">{menu.incluye}</p>
         <p className="shrink-0 font-demo-heading text-[1.5rem] leading-none text-demo-primary">{menu.precio}</p>
       </div>
@@ -325,15 +322,6 @@ function Carta({ carta, negocio, demo = false, incrustada = false }) {
       </>
     )
   }
-  // Diseño pizarra: la carta escrita con tiza en la pizarra del bar
-  if (carta.diseno === 'pizarra') {
-    return (
-      <>
-        <CartaPizarra carta={carta} negocio={negocio} />
-        {navegacion}
-      </>
-    )
-  }
   // Diseño galería: mosaico de fotos a sangre; al tocar una, los platos a pantalla completa
   if (carta.diseno === 'galeria') {
     return (
@@ -361,24 +349,6 @@ function Carta({ carta, negocio, demo = false, incrustada = false }) {
       </>
     )
   }
-  // Diseño ticket: la carta como un ticket de papel, con letra de máquina de escribir
-  if (carta.diseno === 'ticket') {
-    return (
-      <>
-        <CartaTicket carta={carta} negocio={negocio} />
-        {navegacion}
-      </>
-    )
-  }
-  // Diseño historias: un plato por pantalla, deslizando de lado
-  if (carta.diseno === 'historias') {
-    return (
-      <>
-        <CartaHistorias carta={carta} negocio={negocio} />
-        {navegacion}
-      </>
-    )
-  }
 
   // Pestañas principales: Menú del día (si lo hay) y Carta
   const principales = [
@@ -389,9 +359,10 @@ function Carta({ carta, negocio, demo = false, incrustada = false }) {
 
   return (
     <div className="min-h-svh bg-demo-surface font-demo-body text-demo-text">
-      <main className="mx-auto flex min-h-svh w-full max-w-[30rem] flex-col bg-demo-bg">
+      <main className="mx-auto flex h-svh w-full max-w-[30rem] flex-col overflow-hidden bg-demo-bg">
         {/* Foto protagonista, con el idioma arriba y el título ("Carta" y el nombre) abajo */}
-        <div className="relative h-[16rem] overflow-hidden">
+        {/* La franja de la foto ocupa el alto que sobra después del menú (entre 7 y 18 rem): así el menú siempre cabe y la foto se queda con el resto */}
+        <div className="relative min-h-[7rem] max-h-[18rem] flex-[1_1_0%] overflow-hidden">
           <Img src={carta.foto ?? fotoDe(negocio)} alt="" className="absolute inset-0 h-full w-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/25" />
 
@@ -432,7 +403,7 @@ function Carta({ carta, negocio, demo = false, incrustada = false }) {
         </div>
 
         {/* Barra fija: pestañas principales y, en la carta, sus secciones debajo */}
-        <div className="sticky top-0 z-10 border-b border-demo-text/10 bg-demo-bg/95 backdrop-blur-sm">
+        <div className="sticky top-0 z-10 shrink-0 border-b border-demo-text/10 bg-demo-bg/95 backdrop-blur-sm">
           <div className="flex gap-[0.4rem] px-[1.25rem] pt-[0.8rem]">
             {principales.map(p => (
               <button
@@ -470,8 +441,8 @@ function Carta({ carta, negocio, demo = false, incrustada = false }) {
           )}
         </div>
 
-        {/* Contenido de la pestaña */}
-        <div className="flex-1 px-[1.25rem] py-[1.25rem]">
+        {/* Contenido de la pestaña: ocupa el hueco que queda y, solo si no cabe, hace scroll por dentro (la foto y la barra se quedan fijas) */}
+        <div className="min-h-0 flex-[0_1_auto] overflow-y-auto px-[1.25rem] py-[0.9rem] [scrollbar-width:none]">
           {modo === 'menu' && carta.menuDia && <MenuDia menu={carta.menuDia} />}
           {seccion && <Seccion seccion={seccion} />}
 

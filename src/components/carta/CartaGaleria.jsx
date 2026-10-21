@@ -124,8 +124,8 @@ function MenuDia({ menu }) {
         <div className={`grid gap-[0.5rem] [@media(min-height:46rem)]:gap-[0.7rem] ${menu.grupos.length > 3 ? 'grid-cols-2 gap-x-[0.8rem]' : ''}`}>
           {menu.grupos.map(g => (
             <div key={g.nombre}>
-              <p className="font-demo-heading text-[0.95rem] font-bold leading-none text-demo-accent [@media(min-height:46rem)]:text-[1.05rem] [@media(min-height:56rem)]:text-[1.15rem]">{g.nombre}</p>
-              <ul className="mt-[0.2rem] text-[0.86rem] leading-[1.3] [@media(min-height:46rem)]:mt-[0.3rem] [@media(min-height:46rem)]:text-[0.94rem] [@media(min-height:56rem)]:text-[1rem] [@media(min-height:56rem)]:leading-[1.38]">
+              <p className="font-demo-heading text-[1.1rem] font-bold leading-none text-demo-accent [@media(min-height:46rem)]:text-[1.2rem] [@media(min-height:56rem)]:text-[1.3rem]">{g.nombre}</p>
+              <ul className="mt-[0.2rem] text-[0.98rem] leading-[1.3] [@media(min-height:46rem)]:mt-[0.3rem] [@media(min-height:46rem)]:text-[1.08rem] [@media(min-height:56rem)]:text-[1.16rem] [@media(min-height:56rem)]:leading-[1.38]">
                 {g.platos.map(p => <li key={p}>{p}</li>)}
               </ul>
             </div>

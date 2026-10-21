@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { enlaceWhatsapp } from '../lib/whatsapp'
-import { marca, planesDetalle, precio, seo } from '../landing/contenido'
+import { marca, pasos, planesDetalle, precio, seo, ventajas } from '../landing/contenido'
 
 /* Planes en detalle (/planes): lo que incluye cada plan, lo que va bajo presupuesto y los extras.
    En la landing, la subpestaña Planes solo enseña el resumen y enlaza aquí. Mismo estilo que el catálogo. */
@@ -68,6 +68,34 @@ export default function PlanesPage() {
               <li key={a.titulo} className="border-b border-linea py-[0.8rem]">
                 <p className="font-semibold">{a.titulo}</p>
                 <p className="mt-[0.2rem] text-[0.92rem] leading-[1.5] text-suave">{a.texto}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        {/* Cómo funciona (los pasos de la landing) y las ventajas */}
+        <section id="como-funciona" className="mt-[2.5rem] scroll-mt-[1rem]">
+          <Titulo>{pasos.titulo}</Titulo>
+          <ol className="mt-[0.8rem] border-t border-linea">
+            {pasos.lista.map((paso, i) => (
+              <li key={paso.titulo} className="flex gap-[1rem] border-b border-linea py-[0.9rem]">
+                <span className="font-titulo text-[2rem] font-black leading-none text-acento">{i + 1}</span>
+                <div>
+                  <p className="font-semibold">{paso.titulo}</p>
+                  <p className="mt-[0.2rem] text-[0.92rem] leading-[1.5] text-suave">{paso.texto}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </section>
+
+        <section id="ventajas" className="mt-[2.5rem] scroll-mt-[1rem]">
+          <Titulo>{ventajas.titulo}</Titulo>
+          <ul className="mt-[0.8rem] border-t border-linea">
+            {ventajas.lista.map(v => (
+              <li key={v.titulo} className="border-b border-linea py-[0.8rem]">
+                <p className="font-semibold">{v.titulo}</p>
+                <p className="mt-[0.2rem] text-[0.92rem] leading-[1.5] text-suave">{v.texto}</p>
               </li>
             ))}
           </ul>

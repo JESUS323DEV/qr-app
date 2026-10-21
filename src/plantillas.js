@@ -14,11 +14,11 @@ export const GRUPOS_PLANTILLAS = [
 
 export const PLANTILLAS = [
   { clave: 'restaurante', nombre: 'Restaurante', ficha: 'almendra', carta: 'almendra', miniweb: 'chalaquita' },
-  { clave: 'bar', nombre: 'Bar de menú y tapas', ficha: 'almendra', carta: 'bar-fermin', miniweb: 'chalaquita' },
+  { clave: 'bar', nombre: 'Bar de menú y tapas', ficha: 'almendra', carta: null, miniweb: 'chalaquita' },
   { clave: 'pizzeria', nombre: 'Pizzería', ficha: 'almendra', carta: 'forno-nonna', miniweb: 'chalaquita' },
   { clave: 'cocina-visual', nombre: 'Cocina peruana, japonesa o fusión', ficha: 'aji-limon', carta: 'tumi', miniweb: 'chalaquita' },
-  { clave: 'cafeteria', nombre: 'Cafetería y brunch', ficha: 'dulce-lima', carta: 'grano-lento' },
-  { clave: 'pasteleria', nombre: 'Pastelería y panadería', ficha: 'dulce-lima', carta: 'grano-lento' },
+  { clave: 'cafeteria', nombre: 'Cafetería y brunch', ficha: 'dulce-lima', carta: null },
+  { clave: 'pasteleria', nombre: 'Pastelería y panadería', ficha: 'dulce-lima', carta: null },
   { clave: 'peluqueria', nombre: 'Peluquería y estética', ficha: 'ladysalon', carta: 'laca' },
   { clave: 'unas', nombre: 'Uñas', ficha: 'laca', carta: 'laca' },
   { clave: 'barberia', nombre: 'Barbería', ficha: 'navaja-y-tijera', carta: null },

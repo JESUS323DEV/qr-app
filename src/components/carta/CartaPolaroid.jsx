@@ -95,19 +95,20 @@ function PolaroidAbierta({ plato, cerrar }) {
 }
 
 // Menú del día: la foto del día en una polaroid grande y, debajo, la nota con los platos, como un papel pegado
+// El menú del día con foto es como una polaroid de verdad: la foto casi cuadrada y más pequeña, y debajo el borde grueso con el título y el precio grandes
 function MenuDia({ menu }) {
   // Perfil de belleza o de tienda: en el hueco del menú del día van las ofertas
   if (menu.ofertas) return <div className={`bg-demo-surface px-[1rem] py-[0.9rem] text-demo-text rotate-[1deg] ${SOMBRA}`}><Ofertas menu={menu} /></div>
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-[0.9rem] [@media(min-height:46rem)]:gap-[1.2rem]">
       {menu.foto && (
-        <div className={`mx-auto flex min-h-[6rem] w-[88%] flex-1 flex-col bg-demo-surface p-[0.45rem] pb-0 text-demo-text -rotate-[1.5deg] ${SOMBRA}`}>
-          <div className="relative min-h-0 flex-1 overflow-hidden">
+        <div className={`mx-auto flex min-h-0 w-[96%] flex-col bg-demo-surface p-[0.6rem] pb-0 text-demo-text -rotate-[1.5deg] ${SOMBRA}`}>
+          <div className="relative aspect-[5/4] min-h-[5rem] overflow-hidden">
             <Img src={menu.foto} alt="" className="absolute inset-0 h-full w-full object-cover" />
           </div>
-          <div className="flex shrink-0 items-baseline justify-between gap-[0.5rem] px-[0.15rem] pb-[0.35rem] pt-[0.2rem]">
-            <span className="font-demo-heading text-[1.5rem] font-bold leading-none [@media(min-height:46rem)]:text-[1.8rem]">{menu.titulo}</span>
-            <span className="font-demo-heading text-[1.5rem] font-bold leading-none text-demo-accent [@media(min-height:46rem)]:text-[1.8rem]">{menu.precio}</span>
+          <div className="flex shrink-0 items-baseline justify-between gap-[0.5rem] px-[0.3rem] pb-[0.9rem] pt-[0.8rem]">
+            <span className="whitespace-nowrap font-demo-heading text-[1.6rem] font-bold leading-none [@media(min-height:46rem)]:text-[1.85rem] [@media(min-height:56rem)]:text-[2.1rem]">{menu.titulo}</span>
+            <span className="shrink-0 whitespace-nowrap font-demo-heading text-[1.6rem] font-bold leading-none text-demo-accent [@media(min-height:46rem)]:text-[1.85rem] [@media(min-height:56rem)]:text-[2.1rem]">{menu.precio}</span>
           </div>
         </div>
       )}
@@ -122,9 +123,12 @@ function MenuDia({ menu }) {
         {menu.cuando && <p className="text-[0.8rem] text-demo-muted [@media(min-height:46rem)]:text-[0.88rem]">{menu.cuando}</p>}
         <div className={`mt-[0.35rem] grid gap-[0.35rem] [@media(min-height:46rem)]:mt-[0.5rem] [@media(min-height:46rem)]:gap-[0.5rem] ${menu.grupos.length > 3 ? 'grid-cols-2 gap-x-[0.8rem]' : ''}`}>
           {menu.grupos.map(g => (
-            <p key={g.nombre} className="text-[0.86rem] leading-[1.3] [@media(min-height:46rem)]:text-[0.94rem] [@media(min-height:56rem)]:text-[1rem]">
-              <span className="font-demo-heading text-[1.2em] font-bold text-demo-accent">{g.nombre}:</span> {g.platos.join(', ')}
-            </p>
+            <div key={g.nombre}>
+              <p className="font-demo-heading text-[1.15rem] font-bold leading-none text-demo-accent [@media(min-height:46rem)]:text-[1.25rem] [@media(min-height:56rem)]:text-[1.35rem]">{g.nombre}</p>
+              <ul className="mt-[0.2rem] text-[0.98rem] leading-[1.32] [@media(min-height:46rem)]:text-[1.08rem] [@media(min-height:56rem)]:text-[1.16rem]">
+                {g.platos.map(p => <li key={p}>{p}</li>)}
+              </ul>
+            </div>
           ))}
         </div>
         {menu.incluye && <p className="mt-[0.35rem] text-[0.8rem] text-demo-muted [@media(min-height:46rem)]:mt-[0.5rem] [@media(min-height:46rem)]:text-[0.88rem]">Incluye {menu.incluye.charAt(0).toLowerCase() + menu.incluye.slice(1)}</p>}

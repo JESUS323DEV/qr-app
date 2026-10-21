@@ -8,6 +8,7 @@ import { cartas, marcaDe, rutaCarta } from '../cartas'
 import { enlaceWhatsapp } from '../lib/whatsapp'
 import { marca, hero, pasos, comoFunciona, ventajas, seo, planes, precio, contactoForm, webCompleta, cartasMiniwebs, escaparate, menu } from '../landing/contenido'
 import useVueltaPestanas from '../lib/useVueltaPestanas'
+import { ESCALA_LANDING } from '../lib/escalaTexto'
 
 const contacto = enlaceWhatsapp(marca.whatsapp, marca.mensajeWhatsapp)
 // Enlace de WhatsApp con el mensaje de pedir presupuesto
@@ -219,7 +220,6 @@ const PESTANAS = [
 ]
 const PESTANAS_ABAJO = [
   { key: 'contacto', texto: 'Contacto' },
-  { key: 'como', texto: comoFunciona.pestana },
 ]
 // Orden de la vuelta de presentación al entrar: todas las pestañas, de arriba abajo y de izquierda a derecha
 const ORDEN_PESTANAS = [...PESTANAS, ...PESTANAS_ABAJO]
@@ -506,126 +506,6 @@ function HeroMiniweb() {
           <FormularioContacto />
         </Panel>
 
-        {/* Pestaña Planes (clave como): arriba cuatro subpestañas (Planes, Ventajas, Pasos y SEO). Ocupa todo el alto;
-            si el contenido de una subpestaña no cabe, se desliza por dentro y el resto de la pantalla no se mueve */}
-        <Panel clave="como" pestana={pestana}>
-          {/* Tocar algo dentro (una subpestaña, el texto, el botón) para los cambios solos */}
-          <div onPointerDown={pararSub} className="flex min-h-0 flex-1 flex-col">
-            <nav className="flex gap-[1.4rem] border-b border-linea px-[1.25rem] pt-[0.9rem]">
-              {comoFunciona.subpestanas.map(s => (
-                <button
-                  key={s.key}
-                  type="button"
-                  aria-pressed={subComo === s.key}
-                  onClick={() => setSubComo(s.key)}
-                  className={`relative pb-[0.5rem] text-[0.92rem] font-semibold transition-colors ${subComo === s.key ? 'text-tinta' : 'text-suave hover:text-tinta'}`}
-                >
-                  {s.texto}
-                  <span className={`absolute inset-x-0 bottom-0 h-[0.15rem] rounded-full bg-acento transition-transform duration-300 ${subComo === s.key ? 'scale-x-100' : 'scale-x-0'}`} />
-                </button>
-              ))}
-            </nav>
-
-            {/* Subpestañas: también todas en el HTML, solo se ve la elegida (hidden) */}
-            {/* Ventajas: cada una con su explicación */}
-              <div hidden={subComo !== 'ventajas'} className="min-h-0 flex-1 overflow-y-auto px-[1.25rem] pb-[1rem] pt-[0.9rem]">
-                <h2 className="font-titulo text-[clamp(1.9rem,1.5rem+2vw,2.5rem)] font-black leading-[1] tracking-tight">{ventajas.titulo}</h2>
-                <ul className="mt-[0.6rem]">
-                  {ventajas.lista.map(v => (
-                    <li key={v.titulo} className="border-b border-linea py-[0.7rem] last:border-b-0">
-                      <p className="font-titulo text-[1.05rem] font-bold leading-tight">{v.titulo}</p>
-                      <p className="mt-[0.2rem] text-[0.85rem] leading-[1.45] text-suave">{v.texto}</p>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-          <div hidden={subComo !== 'pasos'} className="flex flex-1 flex-col px-[1.25rem] pb-[1rem] pt-[0.9rem]">
-            <h2 className="font-titulo text-[clamp(1.9rem,1.5rem+2vw,2.5rem)] font-black leading-[1] tracking-tight">
-              {pasos.titulo}
-            </h2>
-            <ol className="flex flex-1 flex-col justify-evenly gap-[1rem] py-[1rem]">
-              {pasos.lista.map((paso, i) => (
-                <li key={paso.titulo} className="flex gap-[0.9rem]">
-                  <span className="font-titulo text-[2rem] font-black leading-none text-acento">{i + 1}</span>
-                  <div>
-                    <p className="font-titulo text-[1.1rem] font-bold leading-tight">{paso.titulo}</p>
-                    <p className="mt-[0.2rem] text-[0.85rem] leading-[1.45] text-suave">{paso.texto}</p>
-                  </div>
-                </li>
-              ))}
-            </ol>
-          </div>
-
-            {/* SEO: como Planes, en tarjetas sin precio. Arriba lo incluido; separado debajo, lo de salir en Google,
-                que se pide con el botón de presupuesto. Cabe en una pantalla con el botón */}
-              <div hidden={subComo !== 'seo'} className="flex min-h-0 flex-1 flex-col gap-[0.8rem] overflow-hidden px-[1.25rem] pb-[1rem] pt-[0.9rem]">
-                <div>
-                  <h2 className="font-titulo text-[clamp(1.6rem,1.3rem+1.6vw,2.1rem)] font-black leading-[1] tracking-tight">{seo.titulo}</h2>
-                  <p className="mt-[0.4rem] text-[0.85rem] leading-[1.4] text-suave">{seo.texto}</p>
-                </div>
-
-                {/* justify-center-safe: si falta alto (móviles pequeños), no se sale por arriba tapando el subtítulo */}
-                <div className="flex min-h-0 flex-1 flex-col justify-center-safe gap-[0.7rem]">
-                  {/* Lo incluido, con el borde amarillo para separarlo de lo demás */}
-                  <div className="mb-[0.3rem] rounded-[1rem] bg-papel px-[1rem] py-[0.8rem] ring-1 ring-acento/60">
-                    <div className="flex items-baseline justify-between gap-[1rem]">
-                      <p className="font-titulo text-[1.2rem] font-black leading-none">{seo.incluido.titulo}</p>
-                      <p className="shrink-0 font-titulo text-[0.95rem] font-bold text-acento">{seo.incluido.etiqueta}</p>
-                    </div>
-                    <p className="mt-[0.4rem] text-[0.88rem] leading-[1.4] text-suave">{seo.incluido.texto}</p>
-                  </div>
-
-                  {/* Para salir en Google: aparte, se piden con el botón de presupuesto */}
-                  {seo.lista.map(s => (
-                    <div key={s.titulo} className="rounded-[1rem] bg-papel px-[1rem] py-[0.8rem]">
-                      <p className="font-titulo text-[1.2rem] font-black leading-none">{s.titulo}</p>
-                      <p className="mt-[0.4rem] text-[0.88rem] leading-[1.4] text-suave">{s.texto}</p>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Dos botones en fila: la sección SEO de /planes y pedir presupuesto por WhatsApp */}
-                <div className="grid grid-cols-2 gap-[0.6rem]">
-                  <Link
-                    to="/planes#seo"
-                    className="inline-flex min-h-[3.25rem] items-center justify-center rounded-full border border-tinta/30 text-[1rem] font-bold transition-colors hover:border-acento hover:text-acento"
-                  >
-                    {seo.verMas}
-                  </Link>
-                  <BotonWhatsapp href={enlaceWhatsapp(marca.whatsapp, seo.mensaje)} className="w-full">{seo.boton}</BotonWhatsapp>
-                </div>
-              </div>
-
-            {/* Planes: Ficha, Carta y Ficha + carta; debajo, lo que va bajo presupuesto. Cabe en una pantalla con el botón */}
-              <div hidden={subComo !== 'planes'} className="flex min-h-0 flex-1 flex-col gap-[0.8rem] overflow-hidden px-[1.25rem] pb-[1rem] pt-[0.9rem]">
-                {/* Cada tarjeta mide lo que necesita su texto (en móviles pequeños no se aprietan); el espacio que sobra queda alrededor del grupo */}
-                <div className="flex min-h-0 flex-1 flex-col justify-center gap-[0.7rem]">
-                  {planes.lista.map(p => (
-                    <div key={p.titulo} className="flex flex-col justify-center rounded-[1rem] bg-papel px-[1rem] py-[0.8rem]">
-                      <div className="flex items-baseline justify-between gap-[1rem]">
-                        <p className="font-titulo text-[1.35rem] font-black leading-none">{p.titulo}</p>
-                        <p className="shrink-0 font-titulo text-[1.05rem] font-bold text-acento">{p.precio}</p>
-                      </div>
-                      <p className="mt-[0.4rem] text-[0.88rem] leading-[1.4] text-suave">{p.texto}</p>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Dos botones en fila: los planes en detalle (/planes) y pedir presupuesto por WhatsApp */}
-                <div className="grid grid-cols-2 gap-[0.6rem]">
-                  <Link
-                    to="/planes"
-                    className="inline-flex min-h-[3.25rem] items-center justify-center rounded-full border border-tinta/30 text-[1rem] font-bold transition-colors hover:border-acento hover:text-acento"
-                  >
-                    {planes.verDetalle}
-                  </Link>
-                  <BotonWhatsapp href={pedirPresupuesto} className="w-full">{planes.boton}</BotonWhatsapp>
-                </div>
-              </div>
-          </div>
-        </Panel>
-
         {/* Pestaña Tu QR: la placa del mostrador, personalizable con colores y forma de los puntos del QR */}
         <Panel clave="qr" pestana={pestana}>
             <div className="px-[1.25rem] pt-[0.9rem]">
@@ -637,7 +517,7 @@ function HeroMiniweb() {
             <div onPointerDown={pararPlaca} className="flex min-h-[10rem] flex-1 items-center justify-center py-[1rem]">
               {/* La placa de verdad (la misma que hace el generador), con su silueta y sus colores; mientras carga, un
                   hueco del mismo tamaño */}
-              <div className="w-[min(52%,13rem)] -rotate-[4deg] drop-shadow-[0_1.25rem_1.5rem_rgb(0_0_0/0.5)]">
+              <div className={`${ESCALA_LANDING.placa} -rotate-[4deg] drop-shadow-[0_1.25rem_1.5rem_rgb(0_0_0/0.5)]`}>
                 <Suspense fallback={<div className="aspect-[3/4] w-full" />}>
                   <GeneradorQR
                     modo="placa"
@@ -736,9 +616,6 @@ function HeroMiniweb() {
                   // Al tocar Tu QR (también en mitad de la vuelta inicial), la placa empieza a probarse diseños sola,
                   // salvo que el usuario ya haya elegido uno
                   setPlacaSola(p.key === 'qr' && !placaElegida)
-                  // Al tocar Ventajas, sus subpestañas empiezan a cambiar solas desde la primera (salvo que ya eligiera una)
-                  setSubSola(p.key === 'como' && !subElegida)
-                  if (p.key === 'como' && !subElegida) setSubComo(comoFunciona.subpestanas[0].key)
                   if (p.key === 'cartas') { setActualCarta(0); setTocadoCarta(false) }
                 }}
                 className={`rounded-[0.7rem] py-[0.65rem] text-[0.82rem] font-semibold transition-colors ${
@@ -748,6 +625,12 @@ function HeroMiniweb() {
                 {p.texto}
               </button>
             ))}
+            {/* Planes ya no es una pantalla de la landing: lleva a la página con todo explicado y con scroll (/planes) */}
+            {f > 0 && (
+              <Link to="/planes" className="w-[calc((100%-0.7rem)/3*1.3)] rounded-[0.7rem] bg-crema py-[0.65rem] text-center text-[0.82rem] font-semibold text-tinta transition-colors hover:bg-linea">
+                {comoFunciona.pestana}
+              </Link>
+            )}
           </div>
         ))}
       </nav>

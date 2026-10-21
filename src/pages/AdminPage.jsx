@@ -1,7 +1,7 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { HexColorPicker } from 'react-colorful'
 import { Link, useSearchParams } from 'react-router-dom'
-import { Armchair, ArrowLeft, ArrowUp, ArrowUpRight, Beer, BookImage, Camera, ChevronDown, ChevronsDownUp, CircleUser, Coffee, Copy, Croissant, Fish, Frame, GalleryHorizontal, IdCard, ImagePlus, LayoutGrid, Maximize, Menu, Minus, Newspaper, PanelTop, Pizza, Plus, QrCode, RotateCcw, Scissors, Search, Slice, Smartphone, Sparkles, Store, Trash2, UtensilsCrossed, X } from 'lucide-react'
+import { Armchair, ArrowLeft, BadgePercent, List, ArrowUp, ArrowUpRight, Beer, BookImage, Camera, ChevronDown, ChevronsDownUp, CircleUser, Coffee, Copy, Croissant, Fish, Frame, GalleryHorizontal, IdCard, ImagePlus, LayoutGrid, Maximize, Menu, Minus, Newspaper, PanelTop, Pizza, Plus, QrCode, RotateCcw, Scissors, Search, Slice, Smartphone, Sparkles, Store, Trash2, UtensilsCrossed, X } from 'lucide-react'
 import GeneradorQR from '../components/GeneradorQR'
 import { supabase } from '../lib/supabase'
 import { aplicar, conEdicion } from '../lib/ediciones'
@@ -2401,6 +2401,17 @@ function TextosPestanas({ original, cambios, cambiar }) {
   )
 }
 
+// Las cartas de ejemplo de cada tipo de carta (el diseño ya no depende de la temática): Carta, la de un restaurante con menú del día;
+// Promociones, la de Laca, con ofertas (con su precio anterior tachado) y servicios por secciones
+const CARTA_DE_TIPO = { carta: 'almendra', promociones: 'laca' }
+// Un icono por estilo de carta (la clave es la del diseño de carta) y por tipo de carta, como en la fila de portadas de las miniwebs
+const ICONOS_ESTILO_CARTA = { polaroid: Camera, galeria: GalleryHorizontal, revista: Newspaper, inmersiva: Maximize, base: List }
+const ICONOS_TIPO_CARTA = { carta: UtensilsCrossed, promociones: BadgePercent }
+const TIPOS_CARTA = [
+  { clave: 'carta', texto: 'Carta', descripcion: 'Menú del día y platos por secciones, con precios y alérgenos.' },
+  { clave: 'promociones', texto: 'Promociones', descripcion: 'Ofertas con su precio anterior tachado y servicios por secciones.' },
+]
+
 function NuevoPerfil({ filas, recargar, abrir, cargar }) {
   const [tema, setTema] = useState(PLANTILLAS[0].clave)
   // La pestaña abierta: el asistente o el diseño (la vista previa se ve siempre)
@@ -2409,6 +2420,8 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
   // Si la lista de temáticas del grupo elegido (Restauración, Belleza...) está abierta
   const [subTemas, setSubTemas] = useState(true)
   const [producto, setProducto] = useState('miniweb')
+  // En el modo Carta, el tipo de carta (en lugar de la temática): 'carta' (menú del día y platos) o 'promociones' (ofertas y servicios)
+  const [tipoCarta, setTipoCarta] = useState('carta')
   const [hero, setHero] = useState('polaroid')
   const [barra, setBarra] = useState('')
   const [estilo, setEstilo] = useState('revista')
@@ -2498,7 +2511,8 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
   // El grupo de la temática elegida
   const grupoTema = GRUPOS_PLANTILLAS.find(g => g.claves.includes(tema)) ?? GRUPOS_PLANTILLAS[0]
   const negocioBase = getNegocio(plantilla.ficha)
-  const cartaBase = plantilla.carta ? getCarta(plantilla.carta) : null
+  const cartaSlug = CARTA_DE_TIPO[tipoCarta]
+  const cartaBase = getCarta(cartaSlug)
   const esCarta = producto === 'carta'
   // Colores de partida: los de la demo de la temática
   // En miniweb, los colores de partida son los de la misma base que la vista previa (la miniweb de la temática, si la tiene; si no, su ficha)
@@ -2591,7 +2605,7 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
           ? `/demo/${plantilla.miniweb}?diseno=${hero}${marca}`
           : `/demo/${plantilla.ficha}?diseno=${hero}&miniweb=1${marca}`
         : cartaBase
-          ? `/demo/${plantilla.carta}/carta?diseno=${estilo}${marca}`
+          ? `/demo/${cartaSlug}/carta?diseno=${estilo}${marca}`
           : null
 
   // Arma lo que se guarda al crear (el perfil de partida, su dirección y los cambios del diseño elegido), sin tocar Supabase
@@ -2635,7 +2649,7 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
     let cambios
     let base
     if (esCarta) {
-      base = plantilla.carta
+      base = cartaSlug
       const inicio = inicioCopiaCarta(cartaBase)
       cambios = fusionar(inicio, {
         'marca.nombre': nombreCrear,
@@ -2777,6 +2791,7 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
   const instantanea = () => ({
     producto,
     tema,
+    tipoCarta,
     hero,
     barra,
     estilo,
@@ -2845,6 +2860,8 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
     setPestana('personalizar')
     setProducto(i.producto ?? 'miniweb')
     setTema(i.tema ?? PLANTILLAS[0].clave)
+    // Las copias de antes de este selector: la carta de la temática que tenían decide el tipo (Laca, promociones; el resto, carta)
+    setTipoCarta(i.tipoCarta ?? (PLANTILLAS.find(p => p.clave === i.tema)?.carta === 'laca' ? 'promociones' : 'carta'))
     setHero(i.hero ?? 'polaroid')
     setBarra(i.barra ?? '')
     setEstilo(i.estilo ?? 'revista')
@@ -3185,7 +3202,6 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                   key={clave}
                   type="button"
                   aria-pressed={producto === clave}
-                  disabled={clave === 'carta' && !cartaBase}
                   onClick={() => {
                     setProducto(clave)
                     // Banner y Ficha no valen de portada de una miniweb: si estaba uno elegido, pasa a Editorial
@@ -3197,7 +3213,6 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                 </button>
               ))}
             </div>
-            {!cartaBase && <p className="text-[0.82rem] text-zinc-500">Esta temática todavía no tiene carta de ejemplo.</p>}
           </div>
 
           {/* Primer desplegable, abierto: Diseño y estilos (temática, portada y estilo del menú de navegación) */}
@@ -3208,6 +3223,31 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
             </summary>
             <div className="grid gap-[1rem] px-[0.85rem] pb-[0.85rem] pt-[0.2rem]">
           {/* Una fila de iconos: 5 a la vista y un + que abre el resto, con el nombre de la elegida debajo */}
+          {esCarta ? (
+            <div className="grid gap-[0.45rem]">
+              <span className={titulo}>Tipo de carta</span>
+              <div className="flex flex-wrap items-center gap-[0.4rem]">
+                {TIPOS_CARTA.map(t => {
+                  const Icono = ICONOS_TIPO_CARTA[t.clave] ?? Store
+                  return (
+                    <button
+                      key={t.clave}
+                      type="button"
+                      title={t.texto}
+                      aria-label={`Tipo de carta ${t.texto}`}
+                      aria-pressed={tipoCarta === t.clave}
+                      onClick={() => setTipoCarta(t.clave)}
+                      className={`flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 bg-white transition-transform duration-300 ${tipoCarta === t.clave ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
+                    >
+                      <Icono className="h-[1.3rem] w-[1.3rem]" strokeWidth={2} aria-hidden="true" />
+                    </button>
+                  )
+                })}
+              </div>
+              <p className="text-[0.85rem] font-semibold">{TIPOS_CARTA.find(t => t.clave === tipoCarta)?.texto}</p>
+              <p className="text-[0.8rem] text-zinc-500">{TIPOS_CARTA.find(t => t.clave === tipoCarta)?.descripcion}</p>
+            </div>
+          ) : (
           <div className="grid gap-[0.45rem]">
             <span className={titulo}>Temática del negocio</span>
             {/* Los grupos (Restauración, Belleza...): al tocar uno, sus temáticas salen debajo como subpestañas; tocarlo otra vez las cierra */}
@@ -3261,6 +3301,7 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
               </div>
             )}
           </div>
+          )}
 
 
           {/* 3. Diseño, según el producto */}
@@ -3457,15 +3498,28 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
               )}
             </div>
           ) : (
-            <Plegable titulo="Estilo de carta" elegido={estilos.find(f => f.carta === estilo)?.nombre}>
-              <div className="flex flex-wrap gap-[0.4rem]">
-                {estilos.map(f => (
-                  <button key={f.carta} type="button" aria-pressed={estilo === f.carta} onClick={() => setEstilo(f.carta)} className={opcion(estilo === f.carta)}>
-                    {f.nombre}
-                  </button>
-                ))}
+            <div className="grid gap-[0.45rem]">
+              <span className={titulo}>Estilo de carta</span>
+              <div className="flex flex-wrap items-center gap-[0.4rem]">
+                {estilos.map(f => {
+                  const Icono = ICONOS_ESTILO_CARTA[f.carta] ?? Frame
+                  return (
+                    <button
+                      key={f.carta}
+                      type="button"
+                      title={f.nombre}
+                      aria-label={`Estilo de carta ${f.nombre}`}
+                      aria-pressed={estilo === f.carta}
+                      onClick={() => setEstilo(f.carta)}
+                      className={`flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 bg-white transition-transform duration-300 ${estilo === f.carta ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
+                    >
+                      <Icono className="h-[1.3rem] w-[1.3rem]" strokeWidth={2} aria-hidden="true" />
+                    </button>
+                  )
+                })}
               </div>
-            </Plegable>
+              <p className="text-[0.85rem] font-semibold">{estilos.find(f => f.carta === estilo)?.nombre}</p>
+            </div>
           )}
           {/* El estilo del menú de navegación, debajo de la portada, con la misma fila de iconos */}
           {/* El filtro que oscurece la foto de la portada bajo el texto: de 0 (sin filtro) a 100 (el de cada diseño). El color, en Colores generales */}
