@@ -1,5 +1,5 @@
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { ArrowRight, ArrowUpRight, Menu, X, QrCode } from 'lucide-react'
 import { DISENOS, mascaraSilueta } from '../lib/siluetas'
 import { SocialIcon } from '../components/SocialIcons'
@@ -10,30 +10,23 @@ import { marca, hero, pasos, comoFunciona, ventajas, seo, planes, precio, contac
 import useVueltaPestanas from '../lib/useVueltaPestanas'
 import { ESCALA_LANDING } from '../lib/escalaTexto'
 
-const contacto = enlaceWhatsapp(marca.whatsapp, marca.mensajeWhatsapp)
-// Enlace de WhatsApp con el mensaje de pedir presupuesto
-const pedirPresupuesto = enlaceWhatsapp(marca.whatsapp, precio.mensaje)
-
-function BotonWhatsapp({ children, className = '', href = contacto }) {
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noreferrer"
-      className={`inline-flex min-h-[3.25rem] items-center justify-center rounded-full bg-acento px-[1.6rem] text-[1rem] font-bold text-papel transition-colors hover:bg-acento-oscuro ${className}`}
-    >
-      {children}
-    </a>
-  )
-}
-
 /* Formulario de la pestaña Contacto: nombre, teléfono, la idea y aceptar la privacidad.
-   Sin servidor: al enviar, abre WhatsApp con todo ya escrito. Ocupa el alto que queda en el escenario. */
-function FormularioContacto() {
+   Sin servidor: al enviar, abre WhatsApp con el mensaje ya ordenado (quién es, su teléfono, el motivo y su idea).
+   motivo: de dónde viene (presupuesto, salir en Google...), una clave de contactoForm.motivos. Ocupa el alto que queda en el escenario. */
+function FormularioContacto({ motivo = 'contacto' }) {
+  const m = contactoForm.motivos[motivo] ?? contactoForm.motivos.contacto
   const enviar = e => {
     e.preventDefault()
     const datos = new FormData(e.currentTarget)
-    const mensaje = `Hola, soy ${datos.get('nombre')} (${datos.get('telefono')}).\n${datos.get('idea')}`
+    const mensaje = [
+      `Hola, soy ${datos.get('nombre').trim()}.`,
+      '',
+      `Teléfono: ${datos.get('telefono').trim()}`,
+      `Motivo: ${m.texto}`,
+      `Mi negocio y lo que busco: ${datos.get('idea').trim()}`,
+      '',
+      `Enviado desde ${marca.nombre}`,
+    ].join('\n')
     window.open(enlaceWhatsapp(marca.whatsapp, mensaje), '_blank', 'noopener')
   }
 
@@ -46,7 +39,7 @@ function FormularioContacto() {
       <p className="mb-[0.4rem] text-[0.88rem] leading-[1.45] text-suave">{precio.texto}</p>
       <input name="nombre" required autoComplete="name" placeholder={contactoForm.nombre} aria-label={contactoForm.nombre} className={`${campo} min-h-[2.5rem]`} />
       <input name="telefono" type="tel" required autoComplete="tel" placeholder={contactoForm.telefono} aria-label={contactoForm.telefono} className={`${campo} min-h-[2.5rem]`} />
-      <textarea name="idea" required rows={3} placeholder={contactoForm.idea} aria-label={contactoForm.idea} className={`${campo} resize-none py-[0.6rem]`} />
+      <textarea name="idea" required rows={3} defaultValue={m.idea} placeholder={contactoForm.idea} aria-label={contactoForm.idea} className={`${campo} resize-none py-[0.6rem]`} />
       <label className="flex items-start gap-[0.55rem] text-[0.78rem] leading-[1.4] text-suave">
         <input type="checkbox" name="acepto" required className="mt-[0.15rem] h-[1rem] w-[1rem] shrink-0 accent-[var(--color-acento)]" />
         {contactoForm.acepto}
@@ -60,7 +53,7 @@ function FormularioContacto() {
 
 /* Menú hamburguesa de la cabecera del hero: abre una capa a pantalla completa con los apartados
    de la landing (bajan a cada sección) y el botón de WhatsApp. */
-function MenuHamburguesa() {
+function MenuHamburguesa({ alContacto }) {
   const [abierto, setAbierto] = useState(false)
 
   // Mientras está abierto, la página de detrás no se mueve
@@ -142,7 +135,16 @@ function MenuHamburguesa() {
             </ul>
           </div>
 
-          <BotonWhatsapp className="w-full">{menu.boton}</BotonWhatsapp>
+          <button
+            type="button"
+            onClick={() => {
+              setAbierto(false)
+              alContacto()
+            }}
+            className="inline-flex min-h-[3.25rem] w-full items-center justify-center rounded-full bg-acento px-[1.6rem] text-[1rem] font-bold text-papel transition-colors hover:bg-acento-oscuro"
+          >
+            {menu.boton}
+          </button>
           <p className="mt-[1rem] text-center text-[0.78rem] text-suave">{menu.firma}</p>
         </div>
       </div>
@@ -296,9 +298,15 @@ function MockupMiniweb({ activo }) {
 }
 
 function HeroMiniweb() {
+  // Si llega desde un botón de presupuesto (/?contacto=presupuesto o /?contacto=google), se abre directamente la pestaña Contacto
+  const { search } = useLocation()
+  const llegaConMotivo = new URLSearchParams(search).get('contacto')
+  const [motivo, setMotivo] = useState(() => (llegaConMotivo && contactoForm.motivos[llegaConMotivo] ? llegaConMotivo : 'contacto'))
+  const abreContacto = Boolean(llegaConMotivo && contactoForm.motivos[llegaConMotivo])
   // Al volver de una demo (se abren en la misma pestaña), la landing se abre en la pestaña de donde venías.
   // Se guarda solo durante la visita (sessionStorage); al cerrar el navegador se olvida
   const [pestana, setPestana] = useState(() => {
+    if (abreContacto) return 'contacto'
     try {
       const guardada = sessionStorage.getItem(CLAVE_PESTANA)
       return ORDEN_PESTANAS.some(p => p.key === guardada) ? guardada : 'ejemplos'
@@ -316,7 +324,7 @@ function HeroMiniweb() {
   // Al entrar, las pestañas dan una vuelta solas cada 4 s y vuelven a Inicio; cualquier toque la para.
   // Solo la primera vez en cada navegador: luego queda apuntado y la landing empieza directamente en Inicio
   const ponerPestana = useCallback(i => setPestana(ORDEN_PESTANAS[i].key), [])
-  const { enVuelta, parar } = useVueltaPestanas(ORDEN_PESTANAS, ponerPestana, 'landing-vuelta-vista')
+  const { enVuelta, parar } = useVueltaPestanas(ORDEN_PESTANAS, ponerPestana, 'landing-vuelta-vista', abreContacto)
   // Subpestaña de la pestaña Planes: Planes, Ventajas, Pasos o SEO
   const [subComo, setSubComo] = useState(comoFunciona.subpestanas[0].key)
   // Igual que la placa de Tu QR: al tocar la pestaña Ventajas (no en la vuelta inicial), las subpestañas
@@ -407,7 +415,7 @@ function HeroMiniweb() {
         {/* Marca arriba */}
         <div className="flex items-center justify-between px-[1.25rem] pt-[1rem]">
           <p className="font-titulo text-[1.3rem] font-black tracking-tight">{marca.nombre}</p>
-          <MenuHamburguesa />
+          <MenuHamburguesa alContacto={() => { setMotivo('presupuesto'); setPestana('contacto') }} />
         </div>
 
         {/* Las pestañas: todas están en el HTML (para Google y los lectores de pantalla) y solo se ve la elegida.
@@ -503,7 +511,7 @@ function HeroMiniweb() {
 
         {/* Pestaña Contacto: formulario sencillo que, al enviar, abre WhatsApp con el mensaje ya escrito */}
         <Panel clave="contacto" pestana={pestana}>
-          <FormularioContacto />
+          <FormularioContacto key={motivo} motivo={motivo} />
         </Panel>
 
         {/* Pestaña Tu QR: la placa del mostrador, personalizable con colores y forma de los puntos del QR */}
@@ -590,7 +598,8 @@ function HeroMiniweb() {
             <h1 className="font-titulo text-[clamp(2.6rem,2rem+4vw,3.6rem)] font-black leading-[0.98] tracking-tight">
               {hero.titulo}
             </h1>
-            <p className="mt-[0.9rem] max-w-[26rem] text-[clamp(0.92rem,0.85rem+0.3vw,1.02rem)] leading-[1.5] text-suave">
+            <p className="mt-[0.6rem] text-[0.82rem] font-semibold leading-[1.3] text-tinta">{hero.lema}</p>
+            <p className="mt-[0.5rem] max-w-[26rem] text-[clamp(0.92rem,0.85rem+0.3vw,1.02rem)] leading-[1.5] text-suave">
               {hero.texto}
             </p>
             </div>

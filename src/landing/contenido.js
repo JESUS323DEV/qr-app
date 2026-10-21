@@ -1,10 +1,10 @@
 // Todo el texto y los datos de la landing están aquí para cambiarlos sin tocar el diseño.
-// Provisional: nombre de la marca, número de WhatsApp y precios.
+// Provisional: nombre de la marca y precios.
 
 export const marca = {
   nombre: 'Mostraq',
   ciudad: 'Barcelona',
-  whatsapp: '34600000000',
+  whatsapp: '34695078648',
   mensajeWhatsapp: 'Hola, he visto Mostraq y me interesa para mi negocio.',
 }
 
@@ -28,8 +28,10 @@ export const hero = {
   // Pestaña Inicio del hero (los móviles con las demos)
   titulo: 'Tu negocio entero, a un escaneo.',
   pista: 'Ver demo',
+  // Frase pequeña bajo el titular
+  lema: 'Un punto digital dentro de tu local físico.',
   texto:
-    'Una placa en tu mostrador. Tus clientes la escanean y lo tienen todo: reseñas, horario, cómo llegar y reservas.',
+    'Reseñas, redes, reservas y horario, a un toque del móvil.',
   boton: 'Escríbeme por WhatsApp',
   enlace: 'Ver ejemplos',
   // Debajo del móvil, mientras pasan las demos
@@ -78,7 +80,7 @@ export const ventajas = {
 // las otras dos, separadas debajo, se piden con el botón de presupuesto
 export const seo = {
   titulo: 'Que te encuentren',
-  texto: 'Y si quieres llegar a más gente, salimos en Google.',
+  texto: 'Y si quieres llegar a más gente, salimos en Google. La plataforma completa ya lo incluye.',
   incluido: {
     titulo: 'Al compartirla',
     etiqueta: 'Incluido',
@@ -100,24 +102,19 @@ export const seo = {
   mensaje: 'Hola, me interesa salir en Google con mi negocio: la página y la ficha de Google Maps.',
 }
 
-// Subpestaña Planes: las fichas y las cartas, que es lo que se vende primero (precios orientativos, provisionales).
+// Subpestaña Planes: la miniweb básica (cerrada: la monta y la cambia Jesús) y la plataforma completa (el negocio cambia carta, ofertas, horario y textos). Precios orientativos, provisionales.
 // El detalle (qué incluye cada plan, lo que va bajo presupuesto y los extras) está en /planes
 export const planes = {
   lista: [
     {
-      titulo: 'Ficha digital',
-      texto: 'Tu ficha con tu marca y 2 placas con QR para el mostrador.',
+      titulo: 'Miniweb básica',
+      texto: 'Tu miniweb con tu marca, con tu menú del día o tus ofertas, y 2 placas con QR para el mostrador.',
       precio: 'Desde 120 €',
     },
     {
-      titulo: 'Carta digital',
-      texto: 'Tu carta y tu menú del día, con QR para las mesas.',
-      precio: 'Desde 150 €',
-    },
-    {
-      titulo: 'Ficha + carta',
-      texto: 'Las dos juntas, con la misma marca.',
-      precio: 'Desde 230 €',
+      titulo: 'Plataforma completa',
+      texto: 'Todo lo de la básica, y tú cambias la carta, las ofertas, el horario y los textos cuando quieras. Con tu página y tu ficha de Google Maps trabajadas para que te encuentren.',
+      precio: 'A consultar',
     },
   ],
   // Dos botones en fila, con texto corto para que quepan en un móvil pequeño
@@ -194,7 +191,7 @@ export const preguntas = {
     },
     {
       pregunta: '¿Y si cambio el horario o la carta?',
-      respuesta: 'Me escribes y lo cambio. La placa no se toca.',
+      respuesta: 'Con la miniweb básica, me escribes y lo cambio. Con la plataforma completa lo cambias tú desde tu panel. En los dos casos, la placa no se toca.',
     },
   ],
 }
@@ -217,6 +214,13 @@ export const contactoForm = {
   idea: 'Qué negocio tienes y qué te gustaría conseguir',
   acepto: 'Acepto que uses estos datos para contactarme sobre mi consulta.',
   enviar: 'Enviar',
+  // Para qué escribe: lo que llega en la línea "Motivo" del WhatsApp y, si ya se sabe, la idea escrita de antemano.
+  // Los botones de presupuesto y de salir en Google llevan aquí (/?contacto=presupuesto o /?contacto=google)
+  motivos: {
+    contacto: { texto: 'Consulta', idea: '' },
+    presupuesto: { texto: 'Presupuesto', idea: '' },
+    google: { texto: 'Salir en Google', idea: 'Quiero salir en Google con mi negocio: mi página y mi ficha de Google Maps.' },
+  },
 }
 
 // Pestaña Web completa del hero: el siguiente escalón para quien quiere más
@@ -226,11 +230,11 @@ export const webCompleta = {
   url: 'https://landig-demos.netlify.app/',
 }
 
-// Escaparate de la landing: Inicio enseña las fichas; la pestaña Cartas, las cartas. Las miniwebs no salen (se enseñan en /miniweb).
+// Escaparate de la landing: Inicio enseña las miniwebs; la pestaña Cartas, las cartas. Las miniwebs no salen (se enseñan en /miniweb).
 // Las demos salen solas de sus archivos (con destacada: false se quitan del escaparate, pero siguen en el catálogo).
 // Sin captura, el móvil enseña un texto que lleva a la demo.
 export const escaparate = {
-  verFichas: 'Ver todas las fichas',
+  verFichas: 'Ver todas las miniwebs',
   verCartasMiniwebs: 'Ver todas las cartas',
   verMiniwebs: 'Ver todas las miniwebs',
 }
@@ -257,38 +261,38 @@ export const planesDetalle = {
   texto: 'Lo que incluye cada plan. Los precios son orientativos: te paso el presupuesto exacto según tu negocio.',
   lista: [
     {
-      titulo: 'Ficha digital',
+      titulo: 'Miniweb básica',
       precio: 'Desde 120 €',
-      texto: 'Una pantalla con lo esencial de tu negocio, para cualquier tipo de local.',
+      texto: 'Una pantalla con lo esencial de tu negocio, con un diseño cuidado que se adapta a tus colores y a tu marca.',
       incluye: [
-        'Tu ficha con tu marca: tus colores, tus fotos y tus textos',
+        'Tu miniweb con tu marca: tus colores, tus fotos y tus textos',
         'Reseña de Google, horario, ubicación y redes, y los botones que necesites',
+        'Tu menú del día o tus ofertas y servicios, listos para tus clientes',
         '2 placas con QR para el mostrador',
         '2 pegatinas para el escaparate o la puerta, si las quieres',
+        'Al compartirla por WhatsApp o Instagram, sale con tu nombre y tu foto',
+        'Sin complicaciones: siempre al día y funcionando',
       ],
     },
     {
-      titulo: 'Carta digital',
-      precio: 'Desde 150 €',
-      texto: 'Para bares y restaurantes que quieren su carta en el móvil del cliente.',
+      titulo: 'Plataforma completa',
+      precio: 'A consultar',
+      texto: 'Para negocios que cambian cosas a menudo y quieren hacerlo ellos mismos, sin esperar a nadie.',
       incluye: [
-        'Tu carta por secciones, con precios y alérgenos',
-        'Tu menú del día',
-        'En varios idiomas si lo necesitas',
+        'Todo lo de la miniweb básica',
+        'Tu propio panel para cambiar tu carta, tu menú del día y tus ofertas cuando quieras',
+        'Cambia tu horario, tus textos y tus fotos sin escribirme',
+        'Tu carta completa por secciones, con precios, alérgenos y varios idiomas',
         'QR para las mesas',
+        'Tu página en Google, con el título y la descripción pensados para lo que busca tu cliente',
+        'Tu ficha de Google Maps, creada o revisada, con tu horario, tus fotos y el enlace a tu página',
       ],
-    },
-    {
-      titulo: 'Ficha + carta',
-      precio: 'Desde 230 €',
-      texto: 'Las dos juntas, con la misma marca. Te ahorras 40 €.',
-      incluye: ['Todo lo de la ficha digital', 'Todo lo de la carta digital'],
     },
   ],
   aMedida: {
     titulo: 'Bajo presupuesto',
     lista: [
-      { titulo: 'Diseño a medida', texto: 'Tu ficha o tu carta, diseñada solo para tu negocio.' },
+      { titulo: 'Diseño a medida', texto: 'Tu miniweb, diseñada solo para tu negocio.' },
     ],
   },
   extras: {
@@ -303,7 +307,7 @@ export const planesDetalle = {
     titulo: 'Que te encuentren',
     texto: 'Tu página ya luce cuando alguien la comparte. Y si quieres llegar a gente que todavía no te conoce, te ayudo a salir en Google.',
     incluido: {
-      titulo: 'Incluido en todos los planes',
+      titulo: 'Incluido en la miniweb básica y en la plataforma completa',
       lista: [
         {
           titulo: 'Tu página, bonita al compartirla',
@@ -312,25 +316,11 @@ export const planesDetalle = {
       ],
     },
     aparte: {
-      titulo: 'Para salir en Google, bajo presupuesto',
-      lista: [
-        {
-          titulo: 'Tu página en Google',
-          texto: 'Escribo el título y la descripción de tu página pensando en lo que busca tu cliente ("peluquería en Sants", "menú del día en Horta"), preparo tus datos para que Google los entienda y la doy de alta para que aparezca antes.',
-        },
-        {
-          titulo: 'Tu ficha de Google Maps',
-          texto: 'Te la creo o la reviso: categoría, horario, fotos, servicios y el enlace a tu página. Te acompaño en la verificación, que la tiene que hacer el dueño del negocio.',
-        },
-        {
-          titulo: 'Mantenimiento de tu ficha',
-          texto: 'Si quieres, me encargo cada mes: responder a las reseñas, subir fotos nuevas y cambiar el horario en festivos y vacaciones.',
-        },
-      ],
+      titulo: 'Salir en Google con la miniweb básica, bajo presupuesto (la plataforma completa ya lo lleva)',
+      texto: 'Que te encuentre quien busca lo que tú haces cerca de él ("peluquería en Sants", "menú del día en Horta"). Me ocupo de todo: preparo tu página para Google, creo o reviso tu ficha de Google Maps con tu horario y tus fotos, y te acompaño en la verificación. Y si quieres, cada mes respondo tus reseñas, subo fotos nuevas y cambio tu horario en festivos y vacaciones.',
     },
     boton: 'Pedir presupuesto para salir en Google',
   },
-  nota: 'Los cambios que me pidas más adelante (fotos, textos, carta...) se presupuestan aparte.',
   boton: 'Pedir presupuesto',
   volver: 'Volver al inicio',
 }
@@ -340,7 +330,7 @@ export const catalogo = {
   titulo: 'Así quedaría tu negocio.',
   texto: 'Diseños cuidados y todo a un escaneo: reseñas, WhatsApp, carta y redes. Ábrelas en tu móvil y pruébalas como lo haría tu cliente; la tuya, con tu marca y tus fotos.',
   tipos: [
-    { key: 'ficha', texto: 'Fichas', descripcion: 'Una pantalla con lo esencial de tu negocio.' },
+    { key: 'ficha', texto: 'Miniwebs', descripcion: 'Una pantalla con lo esencial de tu negocio.' },
     { key: 'carta', texto: 'Cartas', descripcion: 'Tu carta y tu menú del día, con QR para las mesas.' },
   ],
   // Página escondida /miniweb: las miniwebs no salen en el catálogo público, solo aquí
@@ -351,7 +341,7 @@ export const catalogo = {
 
 // Menú hamburguesa de la cabecera: hace de pie de página (qué es, redes, textos legales y firma)
 export const menu = {
-  texto: 'Placas con QR, fichas y cartas digitales para negocios locales, con la marca de cada uno. Hecho en Barcelona.',
+  texto: 'Placas con QR, miniwebs y cartas digitales para negocios locales, con la marca de cada uno. Hecho en Barcelona.',
   redesTexto: 'Sígueme',
   // Redes de la marca (pendiente: poner los perfiles cuando existan)
   redes: [
@@ -363,14 +353,14 @@ export const menu = {
     { texto: 'Política de privacidad', url: '/privacidad' },
     { texto: 'Aviso legal', url: '/aviso-legal' },
   ],
-  boton: 'Escríbeme por WhatsApp',
+  boton: 'Pedir presupuesto',
   firma: 'Mostraq · Hecho por JesúsDev',
 }
 
 /* Textos legales (/aviso-legal y /privacidad). Plantilla básica: conviene que la revise una gestoría al darse de alta.
    Cada apartado: titulo y parrafos; en los párrafos, {dominio} se cambia por la dirección de la web.
    Pendiente al darse de alta: NIF y domicilio en los datos del titular (la LSSI los pide). */
-const titular = ['Titular: Jesús (JesúsDev)', 'Actividad: placas con QR y páginas digitales (fichas, miniwebs y cartas) para negocios locales', 'Contacto: WhatsApp · Instagram @jesussdev']
+const titular = ['Titular: Jesús (JesúsDev)', 'Actividad: placas con QR y páginas digitales (miniwebs y cartas) para negocios locales', 'Contacto: WhatsApp · Instagram @jesussdev']
 
 export const legales = {
   volver: 'Volver al inicio',

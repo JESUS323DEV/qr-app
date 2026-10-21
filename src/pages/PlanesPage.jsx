@@ -1,14 +1,9 @@
 import { useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { enlaceWhatsapp } from '../lib/whatsapp'
-import { marca, pasos, planesDetalle, precio, seo, ventajas } from '../landing/contenido'
+import { marca, pasos, planesDetalle, ventajas } from '../landing/contenido'
 
 /* Planes en detalle (/planes): lo que incluye cada plan, lo que va bajo presupuesto y los extras.
    En la landing, la subpestaña Planes solo enseña el resumen y enlaza aquí. Mismo estilo que el catálogo. */
-
-const pedirPresupuesto = enlaceWhatsapp(marca.whatsapp, precio.mensaje)
-// Presupuesto para salir en Google, con el mismo mensaje que el botón de la subpestaña SEO de la landing
-const presupuestoSeo = enlaceWhatsapp(marca.whatsapp, seo.mensaje)
 
 function Titulo({ children }) {
   return <h2 className="font-titulo text-[1.5rem] font-black leading-none tracking-tight">{children}</h2>
@@ -119,23 +114,14 @@ export default function PlanesPage() {
 
           {/* Para salir en Google: aparte, bajo presupuesto */}
           <p className="mt-[1.5rem] font-titulo text-[1.05rem] font-bold">{planesDetalle.seo.aparte.titulo}</p>
-          <ul className="mt-[0.6rem] border-t border-linea">
-            {planesDetalle.seo.aparte.lista.map(a => (
-              <li key={a.titulo} className="border-b border-linea py-[0.8rem]">
-                <p className="font-semibold">{a.titulo}</p>
-                <p className="mt-[0.2rem] text-[0.92rem] leading-[1.5] text-suave">{a.texto}</p>
-              </li>
-            ))}
-          </ul>
+          <p className="mt-[0.6rem] max-w-[36rem] text-[0.95rem] leading-[1.6] text-suave">{planesDetalle.seo.aparte.texto}</p>
 
-          <a
-            href={presupuestoSeo}
-            target="_blank"
-            rel="noreferrer"
+          <Link
+            to="/?contacto=google"
             className="mt-[1.25rem] inline-flex min-h-[3.25rem] w-full items-center justify-center rounded-full border border-tinta/30 px-[1.6rem] text-[1rem] font-bold transition-colors hover:border-acento hover:text-acento sm:w-auto"
           >
             {planesDetalle.seo.boton}
-          </a>
+          </Link>
         </section>
 
         {/* Extras */}
@@ -150,16 +136,13 @@ export default function PlanesPage() {
           </ul>
         </section>
 
-        <p className="mt-[2rem] max-w-[34rem] text-[0.88rem] leading-[1.5] text-suave">{planesDetalle.nota}</p>
 
-        <a
-          href={pedirPresupuesto}
-          target="_blank"
-          rel="noreferrer"
+        <Link
+          to="/?contacto=presupuesto"
           className="mt-[1.25rem] inline-flex min-h-[3.25rem] w-full items-center justify-center rounded-full bg-acento px-[1.6rem] text-[1rem] font-bold text-papel transition-colors hover:bg-acento-oscuro sm:w-auto"
         >
           {planesDetalle.boton}
-        </a>
+        </Link>
       </main>
     </div>
   )
