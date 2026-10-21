@@ -2782,9 +2782,8 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
     try {
       // Con Carta elegida, solo el diseño: tipo, estilo (y subdiseño), tipografía, colores y nombre. El contenido es de /mi-carta
       if (producto === 'carta') {
-        const { resultado: res } = await llamar('asistente', { paso: 'diseno-carta', peticion: cuento.trim() || 'Sin más indicaciones: decide tú el estilo.', nombre: nombre.trim(), catalogo: catalogoCarta(), ...(referencia ? { referencia: { imagen: referencia.imagen, tipo: referencia.tipo, colores: referencia.colores } } : {}), ...(captura ? { captura: { imagen: captura.imagen, tipo: captura.tipo } } : {}) })
+        const { resultado: res } = await llamar('asistente', { paso: 'diseno-carta', tipo: tipoCarta, peticion: cuento.trim() || 'Sin más indicaciones: decide tú el estilo.', nombre: nombre.trim(), catalogo: catalogoCarta(), ...(referencia ? { referencia: { imagen: referencia.imagen, tipo: referencia.tipo, colores: referencia.colores } } : {}), ...(captura ? { captura: { imagen: captura.imagen, tipo: captura.tipo } } : {}) })
         const c = validarDisenoCarta(res)
-        if (c.tipo) setTipoCarta(c.tipo)
         if (c.estilo) setEstilo(c.estilo)
         setSubCarta(c.subdiseno ?? 'fila')
         if (c.tipografia) setLetra(c.tipografia)
@@ -3272,6 +3271,23 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
               </button>
             ))}
           </div>
+          {/* Con Carta elegida, qué tipo: cada uno con sus reglas en el asistente (es el mismo tipo del selector del Editor) */}
+          {producto === 'carta' && (
+            <div className="grid grid-cols-2 gap-[0.3rem] rounded-[0.75rem] bg-zinc-200 p-[0.25rem]">
+              {TIPOS_CARTA.map(t => (
+                <button
+                  key={t.clave}
+                  type="button"
+                  aria-pressed={tipoCarta === t.clave}
+                  disabled={Boolean(disenando) || Boolean(creando)}
+                  onClick={() => setTipoCarta(t.clave)}
+                  className={`rounded-[0.55rem] py-[0.45rem] text-[0.9rem] font-semibold disabled:opacity-40 ${tipoCarta === t.clave ? 'bg-white shadow-[0_0.05rem_0.2rem_rgb(0_0_0/0.15)]' : 'text-zinc-600'}`}
+                >
+                  {t.clave === 'carta' ? 'Carta' : 'Ofertas'}
+                </button>
+              ))}
+            </div>
+          )}
           {/* Lo único seguro: el nombre. Si se escribe, el asistente lo usa tal cual; si no, lo saca de la captura o se lo inventa */}
           <Etiqueta texto="Nombre del negocio">
             <input value={nombre} onChange={e => setNombre(e.target.value)} disabled={Boolean(disenando) || Boolean(creando)} className={CAMPO} placeholder="Peluquería Ranita" />

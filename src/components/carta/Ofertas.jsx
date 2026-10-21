@@ -73,10 +73,11 @@ export default function Ofertas({ menu, sobreFoto = false, estilo = 'base', pape
   const fotos = (menu.fotos ?? []).slice(0, 3)
   const [primera, ...resto] = menu.ofertas
 
-  const titulo = (clase = '') => (
+  // sobrePrimario: el título va directamente sobre el color Principal (Polaroid con papelitos), así que cambia a blanco u oscuro según lo claro que sea
+  const titulo = (clase = '', sobrePrimario = false) => (
     <>
-      <h2 className={`font-demo-heading leading-none ${clase || 'text-[1.9rem] [@media(min-height:46rem)]:text-[2.3rem] [@media(min-height:56rem)]:text-[2.6rem]'}`}>{menu.titulo}</h2>
-      {menu.cuando && <p className={`mt-[0.3rem] text-[0.85rem] ${suave} [@media(min-height:46rem)]:text-[0.92rem]`}>{menu.cuando}</p>}
+      <h2 className={`font-demo-heading leading-none ${sobrePrimario ? 'sp' : ''} ${clase || 'text-[1.9rem] [@media(min-height:46rem)]:text-[2.3rem] [@media(min-height:56rem)]:text-[2.6rem]'}`}>{menu.titulo}</h2>
+      {menu.cuando && <p className={`mt-[0.3rem] text-[0.85rem] ${sobrePrimario ? 'sp-80' : suave} [@media(min-height:46rem)]:text-[0.92rem]`}>{menu.cuando}</p>}
     </>
   )
 
@@ -103,7 +104,7 @@ export default function Ofertas({ menu, sobreFoto = false, estilo = 'base', pape
           </div>
         )}
         <div className="shrink-0">
-          {titulo()}
+          {titulo('', papelitos)}
           <ul className={papelitos ? 'mt-[0.6rem] grid gap-[0.5rem] [@media(min-height:46rem)]:gap-[0.7rem]' : 'mt-[0.6rem] [@media(min-height:46rem)]:mt-[0.9rem]'}>
             {menu.ofertas.map((o, i) => (
               <li key={o.nombre} className={papelitos ? `bg-demo-surface px-[0.9rem] py-[0.55rem] [@media(min-height:46rem)]:py-[0.75rem] ${SOMBRA} ${i % 2 ? 'rotate-[0.8deg]' : '-rotate-[0.8deg]'}` : `border-t ${raya} py-[0.5rem] [@media(min-height:46rem)]:py-[0.75rem]`}>

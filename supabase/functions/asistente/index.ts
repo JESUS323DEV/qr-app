@@ -196,29 +196,46 @@ const ESQUEMA_DISENO_CARTA = {
   additionalProperties: false,
 }
 
-const INSTRUCCIONES_DISENO_CARTA = `Eres el asistente de Jesús, que hace cartas digitales para negocios locales de Barcelona (el cliente las abre con un QR en la mesa o en el mostrador).
+const INSTRUCCIONES_CARTA_COMUN = `Eres el asistente de Jesús, que hace cartas digitales para negocios locales de Barcelona (el cliente las abre con un QR en la mesa o en el mostrador).
 Ahora diseñas SOLO el aspecto de una carta nueva, sin partir de ninguna demo: tú decides cómo se ve, eligiendo SOLO entre las piezas que te paso. No escribes código, ni platos, ni precios, ni inventas valores: cada campo es la clave exacta de una de las listas. El contenido (platos, precios, menú del día) lo pone después el dueño.
 
 Cómo elegir:
 - Piensa en el negocio, en su barrio y en el tono que piden (elegante, cercano, joven, popular, serio...) y elige lo que mejor lo cuenta. No elijas la primera opción de cada lista por defecto ni repitas siempre la misma combinación: cada negocio tiene que tener su propio aspecto.
 - nombre: el nombre del negocio. Si te lo dan (o si el nombre que te paso no está vacío), ese, tal cual; manda siempre sobre el que veas escrito en una imagen. Si no hay nombre en ningún sitio, invéntate uno corto, creíble y propio de ese tipo de negocio y de su barrio; Jesús lo cambiará si quiere.
-- tipo: 'carta' si el negocio tiene platos y menú del día (restaurante, bar, cafetería, pastelería...) o 'promociones' si lo que enseña son ofertas y servicios con precio (belleza, estética, tiendas...).
+- tipo: te lo da Jesús al final de la petición ('carta' u 'promociones'); devuélvelo tal cual, sin cambiarlo.
 - estilo: el estilo de la carta, por su clave. Elige por el carácter de la marca y por si tiene buenas fotos (polaroid, galeria, inmersiva piden fotos buenas; base y revista aguantan cualquier cosa).
 - subdiseno: uno de SUS subdiseños si el estilo tiene (la clave tiene que ser del estilo elegido); si no tiene o no quieres, vacío.
 - tipografia: el id de una pareja de la lista, la que mejor vaya con la marca.
 - colores (formato #RRGGBB): lo más importante de tu trabajo. Una paleta completa y coherente a partir de los colores que pidan, del logo o de lo que transmita la marca (un asador, tonos cálidos y tierra; una cafetería, crema y marrones; una pastelería, rosas o pasteles; una barbería, negros y dorados; una marisquería, azules y blancos...). Piensa en que alguien lee una carta en el móvil, a veces con poca luz y con prisa.
-  · principal: el color fuerte. Va en los precios, la pestaña elegida y los botones: tiene que verse y no confundirse con el fondo.
-  · acento: el detalle. Va en los nombres de los grupos y secciones, subrayados y etiquetas.
+  · Cada color hace una cosa distinta según el estilo, y tienes que repartirlos pensando en eso:
+    - polaroid: el PRINCIPAL es el fondo de toda la página (grande, con las letras en blanco u oscuro automáticas), así que elígelo de tono medio u oscuro con carácter. El FONDO y el TEXTO son los de los papelitos (crema y marrón oscuro, por ejemplo). El ACENTO son los precios y los nombres de grupo sobre el papelito: tiene que ser un color que se lea bien sobre el color del fondo (nada de pasteles claros). El precio del menú del día va en el principal sobre el papelito, así que el principal debe leerse también sobre el fondo.
+    - galeria: el FONDO es el de toda la página (claro u oscuro) y el TEXTO va encima. El ACENTO son los precios y las secciones, y se lee sobre el fondo. El principal pesa poco.
+    - revista: el FONDO es el de la página y el TEXTO va encima. El PRINCIPAL son los precios y el plato destacado; el ACENTO son los nombres de grupo y el subrayado.
+    - inmersiva: manda la foto oscurecida; el texto va claro. El ACENTO son los nombres de grupo y tiene que verse sobre la foto oscura.
+    - base: el FONDO y el TEXTO son los de la carta, el PRINCIPAL los botones y los precios, y el ACENTO los detalles.
+  · En todos: cualquier color que vaya sobre otro tiene que contrastar con él (4,5 a 1 en el texto, 3 a 1 en los precios). Compruébalo mentalmente antes de responder.
+  · principal, acento, fondo y texto: elige los cuatro.
   · fondo y texto: los de la carta. Elige un fondo claro cálido (crema, hueso) o uno oscuro (casi negro con matiz, verde o granate muy oscuro) y un texto que contraste fuerte (4,5 a 1 como mínimo): evita el blanco y el negro puros, mejor un hueso y un casi negro de la marca. Con el estilo inmersiva, la carta se lee sobre una foto oscurecida: el texto va claro aunque el fondo sea claro, así que elígelo con eso en mente.
   · Las tarjetas y los textos suaves se calculan solos a partir del fondo y del texto: no los eligas. Evita paletas de más de tres colores distintos (principal, acento y neutros) y los colores chillones sobre fondo oscuro.
 - filtroIntensidad y filtroColor (solo con el estilo inmersiva; en los demás, 100 y vacío): el velo que oscurece la foto de fondo. Intensidad de 0 a 100 (100 es el de siempre, casi negro abajo): el texto es blanco, así que baja de 60 solo si la foto es muy oscura de por sí, y evita bajar mucho con fotos claras. Color en #RRGGBB: vacío para negro, o un tono MUY oscuro de la marca (granate, verde botella, azul noche) si quieres que la foto tome su color; nunca un color claro, porque el texto no se leería.
-- detallePrecio: el detalle que remarca el precio del menú del día, por su clave de la lista (hay líneas, círculos, formas rellenas y 'ninguno'). Que encaje con el carácter de la marca: elegante y sobria, 'ninguno', 'raya' o 'doble'; artesana o cercana, 'pincelada', 'ondulada' u 'ovalo'; popular o de oferta, 'estrella', 'burbuja' o 'etiqueta'. Las formas rellenas (estrella, pastilla, etiqueta, cinta, burbuja, rombo, escudo) llevan el número en el color del fondo, así que colorDetallePrecio tiene que contrastar con el fondo. No elijas siempre el mismo.
-- colorDetallePrecio: el color del detalle (#RRGGBB), vacío para el acento. colorPrecio: el color del número del precio (#RRGGBB), vacío para el del estilo (el principal, el acento, o blanco en inmersiva). Déjalos vacíos salvo que de verdad mejoren la carta; con detalle relleno el número ya va solo en el color del fondo.
-- tamanoPrecio: 'md' salvo que el precio deba destacar mucho ('xl') o ser discreto ('xs').
 - Si te paso una imagen de referencia de la marca (su logo o una captura), úsala SOLO como referencia, no la coloques: de ella saca el carácter de la marca y los colores. Los colores dominantes exactos te los doy en hexadecimal: usa esos para la paleta (principal, acento, y fondo y texto con buen contraste) en lugar de inventar otros parecidos, salvo que el texto pida otros.
 - Si una imagen trae texto (nombre del negocio, lema...), léelo y úsalo como si Jesús te lo hubiera escrito, sobre todo el nombre.
 - resumen: una o dos frases en castellano, sin guiones largos, diciendo cómo has montado el diseño y por qué. Con naturalidad: nada de frases de relleno del sector.
 No uses guiones largos (—) en ningún texto.`
+
+// Las dos pestañas del asistente en Carta: cada una con sus reglas (lo que cambia es el tipo y todo lo del precio)
+const REGLAS_CARTA = `
+Esta es una CARTA de platos: menú del día y platos por secciones, con alérgenos. Piensa en restaurante, bar, cafetería, pastelería o panadería: colores y estilo de hostelería, apetecibles y fáciles de leer a la luz de una mesa. El campo tipo es 'carta'.
+- detallePrecio: el detalle que remarca el precio del menú del día, por su clave de la lista (hay líneas, círculos, formas rellenas y 'ninguno'). Que encaje con el carácter de la marca: elegante y sobria, 'ninguno', 'raya' o 'doble'; artesana o cercana, 'pincelada', 'ondulada' u 'ovalo'; popular o de oferta, 'estrella', 'burbuja' o 'etiqueta'. Las formas rellenas (estrella, pastilla, etiqueta, cinta, burbuja, rombo, escudo) llevan el número en el color del fondo, así que colorDetallePrecio tiene que contrastar con el fondo. No elijas siempre el mismo.
+- colorDetallePrecio: el color del detalle (#RRGGBB), vacío para el acento. colorPrecio: el color del número del precio (#RRGGBB), vacío para el del estilo (el principal, el acento, o blanco en inmersiva). Déjalos vacíos salvo que de verdad mejoren la carta; con detalle relleno el número ya va solo en el color del fondo.
+- tamanoPrecio: 'md' salvo que el precio deba destacar mucho ('xl') o ser discreto ('xs').
+`
+
+const REGLAS_OFERTAS = `
+Esta es una carta de OFERTAS (promociones): cada oferta con su precio, el precio anterior tachado y hasta cuándo vale, y los servicios por secciones. Piensa en belleza, uñas, estética, tiendas o pastelerías con packs: colores que llamen la atención y den ganas de pedirla. Los precios son los protagonistas: el acento tiene que destacar con fuerza y leerse perfecto sobre el papelito o el fondo, sin pasteles claros. No hay menú del día: detallePrecio 'ninguno', colorDetallePrecio y colorPrecio vacíos y tamanoPrecio 'md'. El campo tipo es 'promociones'.
+`
+
+const instruccionesCarta = (tipo: string) => INSTRUCCIONES_CARTA_COMUN + (tipo === 'promociones' ? REGLAS_OFERTAS : REGLAS_CARTA)
 
 const INSTRUCCIONES_DISENO = `Eres el asistente de Jesús, que hace miniwebs para el móvil para negocios locales de Barcelona (el cliente las abre con un QR en el local). Una miniweb tiene un menú de navegación, una portada de Inicio con foto y texto, una barra de redes y la tarjeta de reseña de Google.
 Ahora diseñas una miniweb nueva, SIN partir de ninguna demo: tú decides cómo es, eligiendo SOLO entre las piezas que te paso. No escribes código ni inventas valores: cada campo es la clave exacta de una de las listas.
@@ -490,7 +507,7 @@ Deno.serve(async req => {
         betas: ['server-side-fallback-2026-07-01'],
         fallbacks: 'default',
         output_config: { effort: 'low', format: { type: 'json_schema', schema: ESQUEMA_DISENO_CARTA } },
-        system: INSTRUCCIONES_DISENO_CARTA,
+        system: instruccionesCarta(datos.tipo === 'promociones' ? 'promociones' : 'carta'),
         messages: [
           {
             role: 'user',
