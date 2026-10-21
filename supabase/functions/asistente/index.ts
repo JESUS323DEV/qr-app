@@ -184,9 +184,15 @@ const ESQUEMA_DISENO_CARTA = {
       required: ['principal', 'acento', 'texto', 'fondo'],
       additionalProperties: false,
     },
+    filtroIntensidad: { type: 'integer' },
+    filtroColor: { type: 'string' },
+    detallePrecio: { type: 'string' },
+    colorDetallePrecio: { type: 'string' },
+    colorPrecio: { type: 'string' },
+    tamanoPrecio: { type: 'string' },
     resumen: { type: 'string' },
   },
-  required: ['nombre', 'tipo', 'estilo', 'subdiseno', 'tipografia', 'colores', 'resumen'],
+  required: ['nombre', 'tipo', 'estilo', 'subdiseno', 'tipografia', 'colores', 'filtroIntensidad', 'filtroColor', 'detallePrecio', 'colorDetallePrecio', 'colorPrecio', 'tamanoPrecio', 'resumen'],
   additionalProperties: false,
 }
 
@@ -205,6 +211,10 @@ Cómo elegir:
   · acento: el detalle. Va en los nombres de los grupos y secciones, subrayados y etiquetas.
   · fondo y texto: los de la carta. Elige un fondo claro cálido (crema, hueso) o uno oscuro (casi negro con matiz, verde o granate muy oscuro) y un texto que contraste fuerte (4,5 a 1 como mínimo): evita el blanco y el negro puros, mejor un hueso y un casi negro de la marca. Con el estilo inmersiva, la carta se lee sobre una foto oscurecida: el texto va claro aunque el fondo sea claro, así que elígelo con eso en mente.
   · Las tarjetas y los textos suaves se calculan solos a partir del fondo y del texto: no los eligas. Evita paletas de más de tres colores distintos (principal, acento y neutros) y los colores chillones sobre fondo oscuro.
+- filtroIntensidad y filtroColor (solo con el estilo inmersiva; en los demás, 100 y vacío): el velo que oscurece la foto de fondo. Intensidad de 0 a 100 (100 es el de siempre, casi negro abajo): el texto es blanco, así que baja de 60 solo si la foto es muy oscura de por sí, y evita bajar mucho con fotos claras. Color en #RRGGBB: vacío para negro, o un tono MUY oscuro de la marca (granate, verde botella, azul noche) si quieres que la foto tome su color; nunca un color claro, porque el texto no se leería.
+- detallePrecio: el detalle que remarca el precio del menú del día, por su clave de la lista (hay líneas, círculos, formas rellenas y 'ninguno'). Que encaje con el carácter de la marca: elegante y sobria, 'ninguno', 'raya' o 'doble'; artesana o cercana, 'pincelada', 'ondulada' u 'ovalo'; popular o de oferta, 'estrella', 'burbuja' o 'etiqueta'. Las formas rellenas (estrella, pastilla, etiqueta, cinta, burbuja, rombo, escudo) llevan el número en el color del fondo, así que colorDetallePrecio tiene que contrastar con el fondo. No elijas siempre el mismo.
+- colorDetallePrecio: el color del detalle (#RRGGBB), vacío para el acento. colorPrecio: el color del número del precio (#RRGGBB), vacío para el del estilo (el principal, el acento, o blanco en inmersiva). Déjalos vacíos salvo que de verdad mejoren la carta; con detalle relleno el número ya va solo en el color del fondo.
+- tamanoPrecio: 'md' salvo que el precio deba destacar mucho ('xl') o ser discreto ('xs').
 - Si te paso una imagen de referencia de la marca (su logo o una captura), úsala SOLO como referencia, no la coloques: de ella saca el carácter de la marca y los colores. Los colores dominantes exactos te los doy en hexadecimal: usa esos para la paleta (principal, acento, y fondo y texto con buen contraste) en lugar de inventar otros parecidos, salvo que el texto pida otros.
 - Si una imagen trae texto (nombre del negocio, lema...), léelo y úsalo como si Jesús te lo hubiera escrito, sobre todo el nombre.
 - resumen: una o dos frases en castellano, sin guiones largos, diciendo cómo has montado el diseño y por qué. Con naturalidad: nada de frases de relleno del sector.

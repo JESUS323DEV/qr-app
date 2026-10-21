@@ -4,6 +4,7 @@ import { ALERGENOS } from '../../cartas'
 import { rutaNegocio } from '../../negocios'
 import Img from '../Img'
 import Ofertas from './Ofertas'
+import EnlaceNegocio, { ladoEnlace } from './EnlaceNegocio'
 
 /* Diseño de carta "revista": como una página de revista de cocina. Cabecera con el nombre grande, mucho aire,
    rayas finas y los precios en el color de la marca.
@@ -143,6 +144,7 @@ function HojaAlergenos({ claves, cerrar }) {
 }
 
 export default function CartaRevista({ carta, negocio }) {
+  const lado = ladoEnlace(carta, 'izquierda')
   const [modo, setModo] = useState(carta.menuDia ? 'menu' : 'carta')
   const [seccion, setSeccion] = useState(carta.secciones[0]?.nombre)
   const [idioma, setIdioma] = useState(carta.idiomas?.[0] ?? 'ES')
@@ -161,16 +163,14 @@ export default function CartaRevista({ carta, negocio }) {
       <main className="mx-auto flex h-full w-full max-w-[30rem] flex-col bg-demo-bg px-[1.25rem] pb-[0.9rem] pt-[0.9rem] [@media(min-height:46rem)]:px-[1.5rem] [@media(min-height:46rem)]:pb-[1.2rem] [@media(min-height:46rem)]:pt-[1.2rem]">
         {/* Cabecera de revista: idioma y enlace a la ficha arriba, el nombre grande y una raya */}
         <div className="flex shrink-0 items-center justify-between gap-[1rem] text-[0.78rem] text-demo-muted">
-          {carta.negocio ? (
-            <a href={rutaNegocio(negocio)} className="inline-flex items-center gap-[0.2rem] font-medium hover:text-demo-text">
-              {carta.conoce ?? `Conoce ${negocio.nombre}`}
-              <ArrowUpRight className="h-[0.8rem] w-[0.8rem]" aria-hidden="true" />
-            </a>
+          {lado === 'izquierda' ? (
+            <EnlaceNegocio carta={carta} negocio={negocio} className="inline-flex items-center gap-[0.2rem] font-medium hover:text-demo-text" />
           ) : (
             <span>{negocio.lema}</span>
           )}
           {carta.idiomas?.length > 1 && (
-            <span className="flex gap-[0.6rem]">
+            <span className="flex items-center gap-[0.6rem]">
+              {lado === 'derecha' && <EnlaceNegocio carta={carta} negocio={negocio} className="mr-[0.4rem] inline-flex items-center gap-[0.2rem] font-medium hover:text-demo-text" />}
               {carta.idiomas.map(i => (
                 <button
                   key={i}

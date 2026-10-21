@@ -2448,6 +2448,11 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
   const [colorPrecioTexto, setColorPrecioTexto] = useState('')
   // El tamaño del precio del menú de la carta: 'xs', 'md' (el de cada estilo) o 'xl'
   const [tamanoPrecio, setTamanoPrecio] = useState('md')
+  // Dónde va el enlace "Conoce [negocio]" de la carta: 'ninguno' (no sale), 'derecha' o 'izquierda'
+  const [enlaceNegocio, setEnlaceNegocio] = useState('ninguno')
+  // El velo de la foto de Inmersiva: intensidad (de 0 a 100; 100 es el de siempre) y color ('' : negro)
+  const [filtroCarta, setFiltroCarta] = useState(100)
+  const [colorFiltroCarta, setColorFiltroCarta] = useState('')
   // El diseño del detalle del precio del menú: 'raya' (el de siempre), 'ondulada', 'pincelada' o 'doble' (líneas); 'ovalo', 'repasado', 'arco', 'sello' o 'estrella' (círculos); o 'ninguno'
   const [detallePrecio, setDetallePrecio] = useState('raya')
   const [hero, setHero] = useState('polaroid')
@@ -2618,6 +2623,9 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
     esCarta && colorPrecio && `precio=${colorPrecio.slice(1)}`,
     esCarta && colorPrecioTexto && `ptxt=${colorPrecioTexto.slice(1)}`,
     esCarta && tamanoPrecio !== 'md' && `tprecio=${tamanoPrecio}`,
+    esCarta && `enlace=${enlaceNegocio}`,
+    esCarta && estilo === 'inmersiva' && filtroCarta !== 100 && `filtro=${filtroCarta}`,
+    esCarta && estilo === 'inmersiva' && colorFiltroCarta && `cfiltro=${colorFiltroCarta.slice(1)}`,
     esCarta && detallePrecio !== 'raya' && `dprecio=${detallePrecio}`,
     producto === 'miniweb' && filtroFoto !== 100 && `filtro=${filtroFoto}`,
     ...(producto === 'miniweb' ? lugares.map(([clave, valor]) => `${clave.toLowerCase()}=${valor}`) : []),
@@ -2696,6 +2704,10 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
         ...(colorPrecio ? { 'marca.theme.colors.precio': colorPrecio } : {}),
         ...(colorPrecioTexto ? { 'marca.theme.colors.precioTexto': colorPrecioTexto } : {}),
         ...(tamanoPrecio !== 'md' ? { tamanoPrecio } : {}),
+        // Una copia no enlaza a la miniweb de la demo de la que sale: sin enlace salvo que se elija
+        enlaceNegocio,
+        ...(estilo === 'inmersiva' && filtroCarta !== 100 ? { filtroFoto: filtroCarta } : {}),
+        ...(estilo === 'inmersiva' && colorFiltroCarta ? { colorFiltro: colorFiltroCarta } : {}),
         ...(detallePrecio !== 'raya' ? { detallePrecio } : {}),
         // La superficie de las tarjetas y el texto suave salen del fondo y del texto elegidos (no se quedan con los de la plantilla)
         ...(fondo || colorTexto ? { 'marca.theme.colors.surface': derivadosDeFondoYTexto(colorFondo, colorDelTexto).surface, 'marca.theme.colors.muted': derivadosDeFondoYTexto(colorFondo, colorDelTexto).muted } : {}),
@@ -2781,6 +2793,12 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
         if (c.colores.texto) setColorTexto(c.colores.texto)
         if (c.colores.fondo) setFondo(c.colores.fondo)
         if (c.nombre && !nombre.trim()) setNombre(c.nombre)
+        setFiltroCarta(c.filtro)
+        setColorFiltroCarta(c.colorFiltro ?? '')
+        setDetallePrecio(c.detallePrecio)
+        setColorPrecio(c.colorDetallePrecio ?? '')
+        setColorPrecioTexto(c.colorPrecio ?? '')
+        setTamanoPrecio(c.tamanoPrecio)
         setGenerado(true)
         setResumenDiseno(c.resumen)
         setDisenando(null)
@@ -2855,6 +2873,9 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
     colorPrecio,
     colorPrecioTexto,
     tamanoPrecio,
+    enlaceNegocio,
+    filtroCarta,
+    colorFiltroCarta,
     detallePrecio,
     hero,
     barra,
@@ -2929,6 +2950,9 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
     setColorPrecio(i.colorPrecio ?? '')
     setColorPrecioTexto(i.colorPrecioTexto ?? '')
     setTamanoPrecio(i.tamanoPrecio ?? 'md')
+    setEnlaceNegocio(i.enlaceNegocio ?? 'ninguno')
+    setFiltroCarta(i.filtroCarta ?? 100)
+    setColorFiltroCarta(i.colorFiltroCarta ?? '')
     setDetallePrecio(i.detallePrecio ?? 'raya')
     setTipoCarta(i.tipoCarta ?? (PLANTILLAS.find(p => p.clave === i.tema)?.carta === 'laca' ? 'promociones' : 'carta'))
     setHero(i.hero ?? 'polaroid')
@@ -3633,6 +3657,25 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                   <p className="text-[0.8rem] text-zinc-500">{subCarta === 'columna' ? 'Pestañas en columna' : 'Pestañas en fila'}</p>
                 </div>
               )}
+              {/* El velo que oscurece la foto de Inmersiva: de 0 (sin velo) a 100 (el de siempre) y su color (sin elegir, negro) */}
+              {estilo === 'inmersiva' && (
+                <div className="grid gap-[0.35rem]">
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-[0.8rem] font-semibold text-zinc-500">Filtro de la foto</span>
+                    <span className="text-[0.8rem] font-semibold">{filtroCarta === 100 ? 'El de siempre' : filtroCarta === 0 ? 'Sin filtro' : `${filtroCarta} %`}</span>
+                  </div>
+                  <input type="range" min="0" max="100" step="5" value={filtroCarta} onChange={e => setFiltroCarta(Number(e.target.value))} aria-label="Intensidad del filtro de la foto" className="w-full accent-zinc-900" />
+                  <div className="flex items-center gap-[0.75rem]">
+                    <span className="text-[0.8rem] font-semibold text-zinc-500">Color del filtro</span>
+                    <CampoColor valor={colorFiltroCarta || '#000000'} auto={!colorFiltroCarta} soloCirculo cambiar={setColorFiltroCarta} />
+                    {colorFiltroCarta && (
+                      <button type="button" title="Volver a negro" aria-label="Volver al color negro del filtro" onClick={() => setColorFiltroCarta('')} className="rounded-full p-[0.2rem] text-zinc-400 hover:text-zinc-900">
+                        <RotateCcw className="h-[0.95rem] w-[0.95rem]" strokeWidth={2.2} aria-hidden="true" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )}
           {/* El estilo del menú de navegación, debajo de la portada, con la misma fila de iconos */}
@@ -3836,6 +3879,38 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
             </div>
           </details>
           )}
+          {/* Carta: Estructura, dónde va cada pieza. De momento, el enlace "Conoce [negocio]" (a la miniweb del negocio) */}
+          {esCarta && (
+            <details className="group/estructuracarta rounded-[0.75rem] ring-1 ring-zinc-200">
+              <summary className="flex cursor-pointer list-none items-center gap-[0.75rem] px-[0.85rem] py-[0.8rem] [&::-webkit-details-marker]:hidden">
+                <span className="text-[1rem] font-bold">Estructura</span>
+                <ChevronDown className="ml-auto h-[1rem] w-[1rem] shrink-0 text-zinc-500 transition-transform group-open/estructuracarta:rotate-180" aria-hidden="true" />
+              </summary>
+              <div className="grid gap-[0.4rem] px-[0.85rem] pb-[0.85rem] pt-[0.2rem]">
+                <span className="text-[0.8rem] text-zinc-500">Enlace al negocio (Conoce...)</span>
+                <div className="flex flex-wrap items-center gap-[0.4rem]">
+                  {[
+                    ['ninguno', 'Sin enlace', '<path d="M9 8l6 6M15 8l-6 6" stroke-width="1.4"/>'],
+                    ['izquierda', 'Arriba a la izquierda', '<rect x="7.5" y="4" width="6" height="2.6" rx="1.3" fill="currentColor"/>'],
+                    ['derecha', 'Arriba a la derecha', '<rect x="10.5" y="4" width="6" height="2.6" rx="1.3" fill="currentColor"/>'],
+                  ].map(([clave, nombreLado, dibujo]) => (
+                    <button
+                      key={clave}
+                      type="button"
+                      title={nombreLado}
+                      aria-label={`Enlace al negocio: ${nombreLado}`}
+                      aria-pressed={enlaceNegocio === clave}
+                      onClick={() => setEnlaceNegocio(clave)}
+                      className={`flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 bg-white transition-transform duration-300 ${enlaceNegocio === clave ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
+                    >
+                      <svg viewBox="0 0 24 24" className="h-[1.5rem] w-[1.5rem]" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: '<rect x="5.5" y="2" width="13" height="20" rx="2.5"/>' + dibujo }} />
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[0.85rem] font-semibold">{{ ninguno: 'Sin enlace', izquierda: 'Arriba a la izquierda', derecha: 'Arriba a la derecha' }[enlaceNegocio]}</p>
+              </div>
+            </details>
+          )}
           {/* Carta: Tamaños de texto. De momento, solo el del precio del menú (MD es el de cada estilo) */}
           {esCarta && (
             <details className="group/tamanos rounded-[0.75rem] ring-1 ring-zinc-200">
@@ -3890,11 +3965,8 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                       ['etiqueta', 'Etiqueta de precio', '<path d="M2.5 12l3.5-5.5h15v11H6z" fill="currentColor" opacity=".2" stroke="none"/><circle cx="6.2" cy="12" r=".9" fill="white" stroke="none"/>'],
                       ['cinta', 'Cinta', '<path d="M2 6.5h20l-1.8 5.5 1.8 5.5H2l1.8-5.5z" fill="currentColor" opacity=".2" stroke="none"/>'],
                       ['burbuja', 'Burbuja', '<path d="M3.5 5.5h17v9.5H10l-3.5 3.5V15h-3z" fill="currentColor" opacity=".2" stroke="none"/>'],
-                      ['festoneado', 'Sello festoneado', '<ellipse cx="12" cy="12" rx="9" ry="6.5" fill="currentColor" opacity=".2" stroke="none"/><ellipse cx="12" cy="12" rx="9" ry="6.5" stroke-dasharray="1.6 1.3"/>'],
                       ['rombo', 'Rombo', '<path d="M5 6.5h14l3 5.5-3 5.5H5L2 12z" fill="currentColor" opacity=".2" stroke="none"/>'],
                       ['escudo', 'Escudo', '<path d="M4.5 5.5h15v8l-7.5 6-7.5-6z" fill="currentColor" opacity=".2" stroke="none"/>'],
-                      ['corazon', 'Corazón', '<path d="M12 19s-7-4.2-7-9.2a3.8 3.8 0 0 1 7-2 3.8 3.8 0 0 1 7 2c0 5-7 9.2-7 9.2z" fill="currentColor" opacity=".2" stroke="none"/>'],
-                      ['ticket', 'Ticket', '<path d="M4.5 6l1.6 1.5L7.7 6l1.6 1.5L10.9 6l1.6 1.5L14.1 6l1.6 1.5L17.3 6l1.6 1.5L20.5 6v12l-1.6-1.5-1.6 1.5-1.6-1.5-1.6 1.5-1.6-1.5-1.6 1.5-1.6-1.5-1.6 1.5-1.6-1.5z" fill="currentColor" opacity=".2" stroke="none"/>'],
                     ],
                   }
                   const familia = detallePrecio === 'ninguno' ? 'sin' : SUBESTILOS.lineas.some(([c]) => c === detallePrecio) ? 'lineas' : SUBESTILOS.formas.some(([c]) => c === detallePrecio) ? 'formas' : 'circulos'

@@ -27,6 +27,26 @@ const SUBDISENOS_CARTA = {
   ],
 }
 
+// El detalle que remarca el precio del menú del día: familia (línea, círculo o forma) y su clave; 'ninguno' es sin detalle
+const DETALLES_PRECIO_IA = [
+  { clave: 'ninguno', texto: 'Sin detalle: el precio solo, limpio.' },
+  { clave: 'raya', texto: 'Línea: una raya gruesa debajo del precio (la de siempre).' },
+  { clave: 'ondulada', texto: 'Línea: una raya en ola, suave y alegre.' },
+  { clave: 'pincelada', texto: 'Línea: un trazo irregular como de rotulador, artesano.' },
+  { clave: 'doble', texto: 'Línea: dos rayas finas paralelas, elegante.' },
+  { clave: 'ovalo', texto: 'Círculo: un óvalo a mano alrededor del precio.' },
+  { clave: 'repasado', texto: 'Círculo: un óvalo repasado dos veces, más rotulado.' },
+  { clave: 'arco', texto: 'Círculo: un óvalo abierto, que no se cierra del todo.' },
+  { clave: 'sello', texto: 'Círculo: un círculo de borde punteado, como un sello.' },
+  { clave: 'estrella', texto: 'Forma: sello dentado relleno de color, muy llamativo (oferta). El número va en el color del fondo.' },
+  { clave: 'pastilla', texto: 'Forma: una cápsula rellena, limpia. El número va en el color del fondo.' },
+  { clave: 'etiqueta', texto: 'Forma: etiqueta de precio con punta y agujero. El número va en el color del fondo.' },
+  { clave: 'cinta', texto: 'Forma: una cinta rellena con el final en V. El número va en el color del fondo.' },
+  { clave: 'burbuja', texto: 'Forma: globo de diálogo con colita, cercano. El número va en el color del fondo.' },
+  { clave: 'rombo', texto: 'Forma: hexágono alargado, geométrico. El número va en el color del fondo.' },
+  { clave: 'escudo', texto: 'Forma: escudo con la punta abajo, de calidad. El número va en el color del fondo.' },
+]
+
 export const estilosDeCarta = () => Object.values(FAMILIAS).filter(f => f.carta && ESTILOS_CARTA_IA[f.carta])
 
 export function catalogoCarta() {
@@ -34,6 +54,8 @@ export function catalogoCarta() {
     tipos: TIPOS_CARTA.map(t => ({ clave: t.clave, texto: t.descripcion })),
     estilos: estilosDeCarta().map(f => ({ clave: f.carta, nombre: f.nombre, texto: ESTILOS_CARTA_IA[f.carta], para: f.para, subdisenos: SUBDISENOS_CARTA[f.carta] ?? [] })),
     tipografias: TIPOGRAFIAS.map(t => ({ id: t.id, nombre: t.nombre, estilo: t.estilo })),
+    detallesPrecio: DETALLES_PRECIO_IA,
+    tamanosPrecio: [{ clave: 'xs', texto: 'pequeño' }, { clave: 'md', texto: 'el normal de cada estilo' }, { clave: 'xl', texto: 'grande' }],
   }
 }
 
@@ -52,6 +74,14 @@ export function validarDisenoCarta(res) {
     subdiseno: sub,
     tipografia: TIPOGRAFIAS.some(t => t.id === res.tipografia) ? res.tipografia : null,
     colores: { principal: color(colores.principal), acento: color(colores.acento), texto: color(colores.texto), fondo: color(colores.fondo) },
+    // El velo de la foto de Inmersiva (solo cuenta con ese estilo): intensidad de 0 a 100 y color (vacío: negro)
+    filtro: estilo === 'inmersiva' && Number.isFinite(Number(res.filtroIntensidad)) ? Math.max(0, Math.min(100, Math.round(Number(res.filtroIntensidad) / 5) * 5)) : 100,
+    colorFiltro: estilo === 'inmersiva' ? color(res.filtroColor) : null,
+    // El precio del menú: su detalle, el color del detalle y del número (vacíos: acento y el del estilo) y su tamaño
+    detallePrecio: DETALLES_PRECIO_IA.some(d => d.clave === res.detallePrecio) ? (res.detallePrecio === 'ninguno' ? 'ninguno' : res.detallePrecio) : 'raya',
+    colorDetallePrecio: color(res.colorDetallePrecio),
+    colorPrecio: color(res.colorPrecio),
+    tamanoPrecio: ['xs', 'md', 'xl'].includes(res.tamanoPrecio) ? res.tamanoPrecio : 'md',
     resumen: String(res.resumen ?? '').replace(/—/g, ',').trim(),
   }
 }

@@ -3,6 +3,7 @@ import { X } from 'lucide-react'
 import { ALERGENOS } from '../../cartas'
 import Img from '../Img'
 import Ofertas from './Ofertas'
+import EnlaceNegocio, { ladoEnlace } from './EnlaceNegocio'
 
 /* Diseño de carta "polaroid": cada plato es una polaroid con su foto y, debajo, su nombre y su precio escritos a mano.
    Las polaroids están pegadas un poco torcidas sobre el color de la marca, de dos en dos. Al tocar una se acerca y
@@ -175,6 +176,7 @@ function HojaAlergenos({ claves, cerrar }) {
 }
 
 export default function CartaPolaroid({ carta, negocio }) {
+  const lado = ladoEnlace(carta, 'derecha')
   const [modo, setModo] = useState(carta.menuDia ? 'menu' : 'carta')
   const [seccion, setSeccion] = useState(carta.secciones[0]?.nombre)
   const [idioma, setIdioma] = useState(carta.idiomas?.[0] ?? 'ES')
@@ -193,29 +195,34 @@ export default function CartaPolaroid({ carta, negocio }) {
   const filas = Math.ceil(platos.length / 2)
 
   return (
-    <div className="h-svh overflow-hidden bg-demo-primary font-demo-body text-white">
+    <div className="sp h-svh overflow-hidden bg-demo-primary font-demo-body">
       <main className="mx-auto flex h-full w-full max-w-[30rem] flex-col px-[1.1rem] pb-[0.9rem] pt-[0.9rem] [@media(min-height:46rem)]:px-[1.3rem] [@media(min-height:46rem)]:pb-[1.2rem] [@media(min-height:46rem)]:pt-[1.2rem]">
         {/* Nombre a mano y lema; idioma a la derecha */}
         <header className="flex shrink-0 items-start justify-between gap-[1rem]">
           <div className="min-w-0">
+            {lado === 'izquierda' && <EnlaceNegocio carta={carta} negocio={negocio} className="mb-[0.5rem] inline-flex items-center gap-[0.25rem] sp sp-fondo rounded-full px-[0.7rem] py-[0.3rem] text-[0.72rem] font-semibold" />}
             <h1 className="font-demo-heading text-[2.6rem] font-bold leading-[0.85] [@media(min-height:46rem)]:text-[3rem] [@media(min-height:56rem)]:text-[3.4rem]">{negocio.nombre}</h1>
-            {negocio.lema && <p className="mt-[0.25rem] text-[0.85rem] text-white/80 [@media(min-height:46rem)]:text-[0.92rem]">{negocio.lema}</p>}
+            {negocio.lema && <p className="mt-[0.25rem] text-[0.85rem] sp-80 [@media(min-height:46rem)]:text-[0.92rem]">{negocio.lema}</p>}
           </div>
+          {/* A la derecha: el idioma y, debajo, el enlace a la miniweb del negocio (si la carta es de un negocio con ficha) */}
+          <div className="flex shrink-0 flex-col items-end gap-[0.45rem]">
           {carta.idiomas?.length > 1 && (
-            <div className="mt-[0.3rem] flex shrink-0 gap-[0.15rem] rounded-full bg-black/20 p-[0.15rem]">
+            <div className="mt-[0.3rem] flex gap-[0.15rem] rounded-full sp-fondo p-[0.15rem]">
               {carta.idiomas.map(i => (
                 <button
                   key={i}
                   type="button"
                   aria-pressed={idioma === i}
                   onClick={() => setIdioma(i)}
-                  className={`rounded-full px-[0.55rem] py-[0.1rem] text-[0.75rem] font-semibold transition-colors ${idioma === i ? 'bg-white text-demo-primary' : 'text-white/80'}`}
+                  className={`rounded-full px-[0.55rem] py-[0.1rem] text-[0.75rem] font-semibold transition-colors ${idioma === i ? 'sp-solido text-demo-primary' : 'sp-80'}`}
                 >
                   {i}
                 </button>
               ))}
             </div>
           )}
+          {lado === 'derecha' && <EnlaceNegocio carta={carta} negocio={negocio} className="inline-flex items-center gap-[0.25rem] sp sp-fondo rounded-full px-[0.7rem] py-[0.3rem] text-[0.72rem] font-semibold" />}
+          </div>
         </header>
 
         {/* Menú del día y Carta; en la carta, sus secciones */}
@@ -226,7 +233,7 @@ export default function CartaPolaroid({ carta, negocio }) {
               type="button"
               aria-pressed={modo === p.key}
               onClick={() => setModo(p.key)}
-              className={`text-[0.98rem] font-semibold [@media(min-height:46rem)]:text-[1.05rem] ${modo === p.key ? 'underline decoration-2 underline-offset-[0.35em]' : 'text-white/65 hover:text-white'}`}
+              className={`text-[0.98rem] font-semibold [@media(min-height:46rem)]:text-[1.05rem] ${modo === p.key ? 'underline decoration-2 underline-offset-[0.35em]' : 'sp-65 sp-hover'}`}
             >
               {p.texto}
             </button>
@@ -240,7 +247,7 @@ export default function CartaPolaroid({ carta, negocio }) {
                 type="button"
                 aria-pressed={abierta?.nombre === s.nombre}
                 onClick={() => setSeccion(s.nombre)}
-                className={`shrink-0 font-demo-heading text-[1.45rem] font-bold leading-none [@media(min-height:46rem)]:text-[1.65rem] ${abierta?.nombre === s.nombre ? 'text-white' : 'text-white/55 hover:text-white'}`}
+                className={`shrink-0 font-demo-heading text-[1.45rem] font-bold leading-none [@media(min-height:46rem)]:text-[1.65rem] ${abierta?.nombre === s.nombre ? 'sp' : 'sp-55 sp-hover'}`}
               >
                 {s.nombre}
               </button>
@@ -266,7 +273,7 @@ export default function CartaPolaroid({ carta, negocio }) {
         </div>
 
         {modo === 'carta' && alergenos.length > 0 && (
-          <button type="button" onClick={() => setVerAlergenos(true)} className="mt-[0.7rem] shrink-0 self-start text-[0.85rem] font-semibold text-white/80 underline underline-offset-[0.25em] hover:text-white">
+          <button type="button" onClick={() => setVerAlergenos(true)} className="mt-[0.7rem] shrink-0 self-start text-[0.85rem] font-semibold sp-80 sp-hover underline underline-offset-[0.25em]">
             Ver alérgenos
           </button>
         )}

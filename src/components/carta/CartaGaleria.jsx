@@ -3,6 +3,7 @@ import { X } from 'lucide-react'
 import { ALERGENOS } from '../../cartas'
 import Img from '../Img'
 import Ofertas from './Ofertas'
+import EnlaceNegocio, { ladoEnlace } from './EnlaceNegocio'
 
 /* Diseño de carta "galería": las fotos de los platos son las protagonistas. Cada sección es un mosaico de fotos a
    sangre, sin marcos: el primer plato en grande arriba y los demás de dos en dos, con el nombre y el precio encima.
@@ -173,6 +174,7 @@ function HojaAlergenos({ claves, cerrar }) {
 }
 
 export default function CartaGaleria({ carta, negocio }) {
+  const lado = ladoEnlace(carta, 'derecha')
   const [modo, setModo] = useState(carta.menuDia ? 'menu' : 'carta')
   const [seccion, setSeccion] = useState(carta.secciones[0]?.nombre)
   const [idioma, setIdioma] = useState(carta.idiomas?.[0] ?? 'ES')
@@ -193,11 +195,14 @@ export default function CartaGaleria({ carta, negocio }) {
         {/* Nombre y lema; idioma a la derecha */}
         <header className="flex shrink-0 items-start justify-between gap-[1rem] px-[0.2rem]">
           <div className="min-w-0">
+            {lado === 'izquierda' && <EnlaceNegocio carta={carta} negocio={negocio} className="mb-[0.5rem] inline-flex items-center gap-[0.25rem] rounded-full bg-demo-surface px-[0.7rem] py-[0.3rem] text-[0.72rem] font-semibold text-demo-text" />}
             <h1 className="font-demo-heading text-[2.2rem] font-extrabold leading-[0.9] tracking-[-0.03em] [@media(min-height:46rem)]:text-[2.6rem] [@media(min-height:56rem)]:text-[3rem]">{negocio.nombre}</h1>
             {negocio.lema && <p className="mt-[0.25rem] text-[0.85rem] text-demo-muted [@media(min-height:46rem)]:text-[0.92rem]">{negocio.lema}</p>}
           </div>
+          {/* A la derecha: el idioma y, debajo, el enlace a la miniweb del negocio (si la carta es de un negocio con ficha) */}
+          <div className="flex shrink-0 flex-col items-end gap-[0.45rem]">
           {carta.idiomas?.length > 1 && (
-            <div className="mt-[0.25rem] flex shrink-0 gap-[0.15rem] rounded-full bg-demo-surface p-[0.15rem]">
+            <div className="mt-[0.25rem] flex gap-[0.15rem] rounded-full bg-demo-surface p-[0.15rem]">
               {carta.idiomas.map(i => (
                 <button
                   key={i}
@@ -211,6 +216,8 @@ export default function CartaGaleria({ carta, negocio }) {
               ))}
             </div>
           )}
+          {lado === 'derecha' && <EnlaceNegocio carta={carta} negocio={negocio} className="inline-flex items-center gap-[0.25rem] rounded-full bg-demo-surface px-[0.7rem] py-[0.3rem] text-[0.72rem] font-semibold text-demo-text" />}
+          </div>
         </header>
 
         {/* Menú del día y Carta (solo si hay menú del día) */}

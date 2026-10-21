@@ -8,6 +8,7 @@ const ESTILOS_CARTA = new Set(Object.values(FAMILIAS).map(f => f.carta).filter(B
 import { ArrowUpRight, ChevronLeft, ChevronRight } from 'lucide-react'
 import { cartas, fotoDe, rutaCarta, ALERGENOS } from '../cartas'
 import DemoPager from '../components/DemoPager'
+import EnlaceNegocio, { ladoEnlace } from '../components/carta/EnlaceNegocio'
 import DemoHomeButton from '../components/DemoHomeButton'
 import { rutaNegocio } from '../negocios'
 import { applyTheme, resetTheme } from '../lib/applyTheme'
@@ -251,7 +252,7 @@ function useAhora() {
 // El tamaño del precio del menú (carta.tamanoPrecio: xs, md o xl): el factor se pone en una variable del documento (--demo-precio-escala) que usan los estilos
 const FACTORES_PRECIO = { xs: 0.8, md: 1, xl: 1.25 }
 // Los diseños del detalle del precio (carta.detallePrecio; sin él, la raya): su dibujo está en main.css con data-precio en <html>
-export const DETALLES_PRECIO = ['raya', 'ondulada', 'pincelada', 'doble', 'ovalo', 'repasado', 'arco', 'sello', 'estrella', 'pastilla', 'etiqueta', 'cinta', 'burbuja', 'festoneado', 'rombo', 'escudo', 'corazon', 'ticket', 'ninguno']
+export const DETALLES_PRECIO = ['raya', 'ondulada', 'pincelada', 'doble', 'ovalo', 'repasado', 'arco', 'sello', 'estrella', 'pastilla', 'etiqueta', 'cinta', 'burbuja', 'rombo', 'escudo', 'ninguno']
 function CartaConTamanos(props) {
   const factor = FACTORES_PRECIO[props.carta?.tamanoPrecio] ?? 1
   useEffect(() => {
@@ -274,6 +275,9 @@ export default function CartaPage(props) {
   const pruebaSub = params.get('sub')
   const pruebaTPrecio = params.get('tprecio')
   const pruebaDPrecio = params.get('dprecio')
+  const pruebaEnlace = params.get('enlace')
+  const pruebaFiltro = params.get('filtro')
+  const pruebaCFiltro = params.get('cfiltro')
   // ?incrustada=1: la carta dentro de la pestaña del menú de una miniweb (sin flechas de demos ni enlace de vuelta a la miniweb)
   const incrustada = params.get('incrustada') === '1'
   const { cargando, fila } = useCartaRemota(slug)
@@ -301,6 +305,11 @@ export default function CartaPage(props) {
   if (carta?.demo && ['xs', 'md', 'xl'].includes(pruebaTPrecio)) carta = { ...carta, tamanoPrecio: pruebaTPrecio }
   // ?dprecio=ondulada|...: el diseño del detalle del precio (carta.detallePrecio), para la vista previa del Editor
   if (carta?.demo && DETALLES_PRECIO.includes(pruebaDPrecio)) carta = { ...carta, detallePrecio: pruebaDPrecio }
+  // ?enlace=ninguno|derecha|izquierda: dónde va el enlace a la miniweb (carta.enlaceNegocio), para la vista previa del Editor
+  if (carta?.demo && ['ninguno', 'derecha', 'izquierda'].includes(pruebaEnlace)) carta = { ...carta, enlaceNegocio: pruebaEnlace }
+  // ?filtro=0-100 y ?cfiltro=RRGGBB: la intensidad y el color del velo de Inmersiva (carta.filtroFoto y carta.colorFiltro), para la vista previa del Editor
+  if (carta?.demo && /^\d{1,3}$/.test(pruebaFiltro ?? '') && Number(pruebaFiltro) <= 100) carta = { ...carta, filtroFoto: Number(pruebaFiltro) }
+  if (carta?.demo && /^[0-9a-f]{6}$/i.test(pruebaCFiltro ?? '')) carta = { ...carta, colorFiltro: `#${pruebaCFiltro}` }
   // ?sub=columna: el subdiseño del estilo (por ahora, Inmersiva con las pestañas en columna); sin él, la base, en fila
   if (carta?.demo && ['fila', 'columna'].includes(pruebaSub)) carta = { ...carta, subdiseno: pruebaSub }
   // ?ia=N: los cambios de imágenes (y textos) hechos en el Editor, que deja en localStorage, solo en la vista previa de una demo
@@ -318,6 +327,7 @@ export default function CartaPage(props) {
 }
 
 function Carta({ carta, negocio, demo = false, incrustada = false }) {
+  const lado = ladoEnlace(carta, 'derecha')
   // Dos niveles: Menú del día o Carta; dentro de Carta, las secciones
   const [modo, setModo] = useState(carta?.menuDia ? 'menu' : 'carta')
   const [seccionActiva, setSeccionActiva] = useState(carta?.secciones?.[0]?.nombre)
@@ -401,6 +411,8 @@ function Carta({ carta, negocio, demo = false, incrustada = false }) {
           <Img src={carta.foto ?? fotoDe(negocio)} alt="" className="absolute inset-0 h-full w-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/25" />
 
+          {/* El enlace a la miniweb, si va a la izquierda: arriba a la izquierda de la foto */}
+          {lado === 'izquierda' && <EnlaceNegocio carta={carta} negocio={negocio} className="absolute left-[1.25rem] top-[0.9rem] inline-flex items-center gap-[0.25rem] rounded-full bg-black/45 px-[0.7rem] py-[0.3rem] text-[0.75rem] font-semibold text-white backdrop-blur-sm" />}
           {/* Idioma y enlace a la miniweb, superpuestos arriba a la derecha */}
           <div className="absolute right-[1.25rem] top-[0.9rem] flex flex-col items-end gap-[0.5rem]">
             <div className="flex gap-[0.2rem] rounded-full bg-black/45 p-[0.15rem] backdrop-blur-sm">
@@ -419,15 +431,7 @@ function Carta({ carta, negocio, demo = false, incrustada = false }) {
               ))}
             </div>
             {/* Enlace a la miniweb, solo si la carta es de un negocio con ficha */}
-            {carta.negocio && (
-              <a
-                href={rutaNegocio(negocio)}
-                className="inline-flex items-center gap-[0.25rem] rounded-full bg-black/45 px-[0.7rem] py-[0.3rem] text-[0.75rem] font-semibold text-white backdrop-blur-sm"
-              >
-                Conoce {negocio.nombre}
-                <ArrowUpRight className="h-[0.8rem] w-[0.8rem]" aria-hidden="true" />
-              </a>
-            )}
+            {lado === 'derecha' && <EnlaceNegocio carta={carta} negocio={negocio} className="inline-flex items-center gap-[0.25rem] rounded-full bg-black/45 px-[0.7rem] py-[0.3rem] text-[0.75rem] font-semibold text-white backdrop-blur-sm" />}
           </div>
 
           <div className="absolute inset-x-0 bottom-0 px-[1.25rem] pb-[1rem] text-white">
