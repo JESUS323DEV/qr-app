@@ -92,7 +92,7 @@ export function marcaDePrueba(marca, params) {
   if (params.has('tp')) textos.descripcion = (params.get('tp') ?? '').trim().slice(0, 300)
   if (params.has('ti')) textos.info = (params.get('ti') ?? '').trim().slice(0, 100)
   // Tamaño del nombre (hero.tamanoNombre)
-  const tamanoNombre = ['xs', 'xl'].includes(params.get('tamano')) ? params.get('tamano') : null
+  const tamanoNombre = ['xxs', 'xs', 'xl'].includes(params.get('tamano')) ? params.get('tamano') : null
   // Dónde van las redes, el menú y compartir (solo los valores que existen)
   const lugares = {
     ...(['lateral', 'medio', 'abajo'].includes(params.get('redesen')) ? { redesEn: params.get('redesen') } : {}),

@@ -2458,7 +2458,7 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
   const [horarioVar, setHorarioVar] = useState('clasica')
   // La intensidad del filtro que oscurece la foto de la portada, de 0 a 100 (100: el de cada diseño)
   const [filtroFoto, setFiltroFoto] = useState(100)
-  // El tamaño del nombre del negocio arriba: 'xs', 'md' (el de cada diseño) o 'xl'
+  // El tamaño del nombre del negocio arriba: 'xxs', 'xs', 'md' (el de cada diseño) o 'xl'
   const [tamanoNombre, setTamanoNombre] = useState('md')
   const lugares = Object.entries(estructura).filter(([clave, valor]) => valor !== ESTRUCTURA_DEFECTO[clave])
   // Fondo de cabecera: solo en los diseños que la tienen (sin elegir, el principal, como siempre)
@@ -3005,7 +3005,7 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
             {!esCarta && (
               <div className="grid justify-items-start gap-[0.25rem]">
                 <div className="flex gap-[0.4rem]">
-                  {['xs', 'md', 'xl'].map(t => (
+                  {['xxs', 'xs', 'md', 'xl'].map(t => (
                     <button
                       key={t}
                       type="button"

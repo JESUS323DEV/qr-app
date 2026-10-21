@@ -5,10 +5,10 @@ import { useRol } from './ColoresPortada'
    de arriba lo recoge en NombreMarca, sin tener que pasarlo de pieza en pieza */
 export const LogoNegocio = createContext(null)
 
-/* El tamaño del nombre (hero.tamanoNombre): 'xs', 'md' (el de siempre, de cada diseño) o 'xl'. La página lo pone con
+/* El tamaño del nombre (hero.tamanoNombre): 'xxs', 'xs', 'md' (el de siempre, de cada diseño) o 'xl'. La página lo pone con
    TamanoNombre y el nombre (y su logo) se escalan con el factor */
 export const TamanoNombre = createContext('md')
-const FACTORES = { xs: 0.8, md: 1, xl: 1.25 }
+const FACTORES = { xxs: 0.6, xs: 0.8, md: 1, xl: 1.25 }
 export const useFactorNombre = () => FACTORES[useContext(TamanoNombre)] ?? 1
 
 // Medidas fijas del logo, según el sitio: como mucho este alto y este ancho en rem, sin deformarlo (con el nombre al
