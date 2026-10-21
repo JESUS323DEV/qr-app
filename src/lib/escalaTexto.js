@@ -25,4 +25,12 @@ export const ESCALA_LANDING = {
   seoTitulo: 'text-[length:min(1.65rem,calc(1.2rem_+_max(0px,100svh_-_640px)_*_0.0228))]',
   seoEtiqueta: 'text-[length:min(1.2rem,calc(0.95rem_+_max(0px,100svh_-_640px)_*_0.0158))]',
   planTexto: 'text-[length:min(1.05rem,calc(0.88rem_+_max(0px,100svh_-_640px)_*_0.0086))]',
+  // Formulario de Contacto
+  formTitulo: 'text-[length:min(3rem,calc(clamp(1.9rem,1.5rem_+_2vw,2.5rem)_+_max(0px,100svh_-_640px)_*_0.0379))]',
+  formAire: 'gap-[min(0.9rem,calc(0.5rem_+_max(0px,100svh_-_640px)_*_0.0202))]',
+  formCampo: 'min-h-[min(3.4rem,calc(2.5rem_+_max(0px,100svh_-_640px)_*_0.0455))]',
+  formTexto: 'text-[length:min(1.08rem,calc(0.92rem_+_max(0px,100svh_-_640px)_*_0.0081))]',
+  formArea: 'min-h-[min(7.6rem,calc(5.1rem_+_max(0px,100svh_-_640px)_*_0.1265))]',
+  formAceptar: 'text-[length:min(0.92rem,calc(0.78rem_+_max(0px,100svh_-_640px)_*_0.0071))]',
+  formBoton: 'min-h-[min(3.4rem,calc(2.75rem_+_max(0px,100svh_-_640px)_*_0.0329))] text-[length:min(1.1rem,calc(1rem_+_max(0px,100svh_-_640px)_*_0.005))]',
 }

@@ -9,6 +9,7 @@ import CatalogoPage from './pages/CatalogoPage'
 import PlanesPage from './pages/PlanesPage'
 import PanelPage from './pages/PanelPage'
 import LegalPage from './pages/LegalPage'
+import { DOMINIO } from './lib/dominio'
 
 // El panel de Jesús y el escaparate de diseños se cargan aparte: los visitantes de las páginas no descargan su código
 const AdminPage = lazy(() => import('./pages/AdminPage'))
@@ -23,11 +24,10 @@ const GestionPage = import.meta.env.DEV ? lazy(() => import('./pages/GestionPage
 // El SEO de cada ruta, que se pone al cambiar de página (todas salen del mismo HTML): la dirección canónica en mostraq.es (sin parámetros, así
 // Google se queda con ella aunque la web se abra por la dirección de Netlify o con ?utm_... de Instagram), si se indexa o no y la descripción.
 // Los paneles, las demos y las copias para enseñar no se indexan.
-const DOMINIO = 'https://mostraq.es'
 const NO_INDEXAR = ['/demo', '/admin', '/mi-carta', '/mi-qr', '/panel', '/disenos', '/gestion', '/miniweb']
 const DESCRIPCIONES = {
   '/catalogo': 'Mira los diseños de Mostraq para negocios locales: miniwebs y cartas para restaurantes, belleza, salud y tiendas.',
-  '/planes': 'Los planes de Mostraq: tu página con enlace propio para Instagram y la placa con QR para tu local.',
+  '/planes': 'Los planes de Mostraq: la miniweb básica y la plataforma completa, con carta digital, SEO y placas con QR para tu local.',
   '/aviso-legal': 'Aviso legal de Mostraq.',
   '/privacidad': 'Política de privacidad de Mostraq.',
 }

@@ -9,6 +9,7 @@ import { enlaceWhatsapp } from '../lib/whatsapp'
 import { marca, hero, pasos, comoFunciona, ventajas, seo, planes, precio, contactoForm, webCompleta, cartasMiniwebs, escaparate, menu } from '../landing/contenido'
 import useVueltaPestanas from '../lib/useVueltaPestanas'
 import { ESCALA_LANDING } from '../lib/escalaTexto'
+import { DOMINIO } from '../lib/dominio'
 
 /* Formulario de la pestaña Contacto: nombre, teléfono, la idea y aceptar la privacidad.
    Sin servidor: al enviar, abre WhatsApp con el mensaje ya ordenado (quién es, su teléfono, el motivo y su idea).
@@ -30,21 +31,21 @@ function FormularioContacto({ motivo = 'contacto' }) {
     window.open(enlaceWhatsapp(marca.whatsapp, mensaje), '_blank', 'noopener')
   }
 
-  const campo = 'w-full rounded-[0.7rem] border border-linea bg-papel px-[0.85rem] text-[0.92rem] text-tinta placeholder:text-suave/70 focus:border-acento focus:outline-none'
+  const campo = 'w-full rounded-[0.7rem] border border-linea bg-papel px-[0.85rem] text-tinta placeholder:text-suave/70 focus:border-acento focus:outline-none'
 
   return (
     // Más compacto: el título y el texto del presupuesto arriba, y el formulario centrado en el alto que queda
-    <form onSubmit={enviar} className="flex flex-1 flex-col justify-center gap-[0.5rem] px-[1.25rem] pb-[1rem] pt-[0.9rem]">
-      <h2 className="font-titulo text-[clamp(1.9rem,1.5rem+2vw,2.5rem)] font-black leading-[1] tracking-tight">{contactoForm.titulo}</h2>
-      <p className="mb-[0.4rem] text-[0.88rem] leading-[1.45] text-suave">{precio.texto}</p>
-      <input name="nombre" required autoComplete="name" placeholder={contactoForm.nombre} aria-label={contactoForm.nombre} className={`${campo} min-h-[2.5rem]`} />
-      <input name="telefono" type="tel" required autoComplete="tel" placeholder={contactoForm.telefono} aria-label={contactoForm.telefono} className={`${campo} min-h-[2.5rem]`} />
-      <textarea name="idea" required rows={3} defaultValue={m.idea} placeholder={contactoForm.idea} aria-label={contactoForm.idea} className={`${campo} resize-none py-[0.6rem]`} />
-      <label className="flex items-start gap-[0.55rem] text-[0.78rem] leading-[1.4] text-suave">
+    <form onSubmit={enviar} className={`flex flex-1 flex-col justify-center ${ESCALA_LANDING.formAire} px-[1.25rem] pb-[1rem] pt-[0.9rem]`}>
+      <h2 className={`font-titulo ${ESCALA_LANDING.formTitulo} font-black leading-[1] tracking-tight`}>{contactoForm.titulo}</h2>
+      <p className={`mb-[0.4rem] ${ESCALA_LANDING.planTexto} leading-[1.45] text-suave`}>{m.intro}</p>
+      <input name="nombre" required autoComplete="name" placeholder={contactoForm.nombre} aria-label={contactoForm.nombre} className={`${campo} ${ESCALA_LANDING.formCampo} ${ESCALA_LANDING.formTexto}`} />
+      <input name="telefono" type="tel" required autoComplete="tel" placeholder={contactoForm.telefono} aria-label={contactoForm.telefono} className={`${campo} ${ESCALA_LANDING.formCampo} ${ESCALA_LANDING.formTexto}`} />
+      <textarea name="idea" required rows={3} defaultValue={m.idea} placeholder={contactoForm.idea} aria-label={contactoForm.idea} className={`${campo} ${ESCALA_LANDING.formTexto} ${ESCALA_LANDING.formArea} resize-none py-[0.6rem]`} />
+      <label className={`flex items-start gap-[0.55rem] ${ESCALA_LANDING.formAceptar} leading-[1.4] text-suave`}>
         <input type="checkbox" name="acepto" required className="mt-[0.15rem] h-[1rem] w-[1rem] shrink-0 accent-[var(--color-acento)]" />
         {contactoForm.acepto}
       </label>
-      <button type="submit" className="min-h-[2.75rem] rounded-full bg-acento font-bold text-papel transition-colors hover:bg-acento-oscuro">
+      <button type="submit" className={`${ESCALA_LANDING.formBoton} rounded-full bg-acento font-bold text-papel transition-colors hover:bg-acento-oscuro`}>
         {contactoForm.enviar}
       </button>
     </form>
@@ -529,7 +530,7 @@ function HeroMiniweb() {
                 <Suspense fallback={<div className="aspect-[3/4] w-full" />}>
                   <GeneradorQR
                     modo="placa"
-                    url={`${window.location.origin}/`}
+                    url={`${DOMINIO}/`}
                     nombre={marca.nombre}
                     diseno={DISENOS_LANDING[color].clave}
                     formaPuntos={FORMAS.find(f => f.key === forma)?.puntos}

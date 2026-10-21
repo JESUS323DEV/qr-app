@@ -3,12 +3,12 @@
    - sitemap.xml: la landing y las páginas de clientes reales (los archivos de src/negocios y src/cartas sin demo: true).
    - La landing (/) con su dirección canónica, su tarjeta para compartir y sus datos de negocio para Google.
      El resto de páginas se sirven desde app.html (el mismo HTML, sin eso), para que ninguna diga ser la landing.
-   El dominio sale de Netlify (variable URL, la dirección principal del sitio): al conectar el dominio propio y
-   publicar otra vez, todo pasa a usarlo solo. Para forzar otro, la variable DOMINIO. */
+   El dominio es mostraq.es, siempre (no el de Netlify, que cambiaría el sitemap y las direcciones al publicar desde otra dirección).
+   Para probar con otro, la variable DOMINIO. La dirección canónica y og:url ya vienen en index.html y las pone cada ruta en App.jsx. */
 import { readFileSync, writeFileSync, readdirSync } from 'node:fs'
 
 const DIST = 'dist'
-const dominio = (process.env.DOMINIO || process.env.URL || 'http://localhost:4173').replace(/\/+$/, '')
+const dominio = (process.env.DOMINIO || 'https://mostraq.es').replace(/\/+$/, '')
 
 // Rutas que Google no tiene que ver: lo interno y las demos
 const PRIVADAS = ['/admin', '/mi-carta', '/panel', '/gestion', '/disenos', '/miniweb', '/demo/', '/mi-qr/']
@@ -55,8 +55,6 @@ const datos = {
   address: { '@type': 'PostalAddress', addressLocality: 'Barcelona', addressCountry: 'ES' },
 }
 const extra = [
-  `<link rel="canonical" href="${dominio}/" />`,
-  `<meta property="og:url" content="${dominio}/" />`,
   `<script type="application/ld+json">${JSON.stringify(datos)}</script>`,
 ].join('\n    ')
 writeFileSync(`${DIST}/index.html`, html.replace('</head>', `    ${extra}\n  </head>`))

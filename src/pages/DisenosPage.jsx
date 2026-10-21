@@ -7,6 +7,7 @@ import { BARRAS } from '../fichas/barras'
 import { tipoDe } from '../lib/tematicas'
 import { FAMILIAS, fichaPorPiezas } from '../familias'
 import Movil from '../components/Movil'
+import { DOMINIO } from '../lib/dominio'
 
 /* Escaparate de diseños (/disenos): para probar y enseñar las fichas por piezas. Se elige con qué datos verla
    (los de una demo: su marca, sus fotos y sus textos), el diseño de arriba y el estilo de pestañas, y se ve en un
@@ -39,7 +40,7 @@ export default function DisenosPage() {
 
   const copiar = async () => {
     try {
-      await navigator.clipboard.writeText(`${window.location.origin}${ruta}`)
+      await navigator.clipboard.writeText(`${DOMINIO}${ruta}`)
       setCopiado(true)
       setTimeout(() => setCopiado(false), 2000)
     } catch {

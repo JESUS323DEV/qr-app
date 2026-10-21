@@ -1,5 +1,5 @@
 // Todo el texto y los datos de la landing están aquí para cambiarlos sin tocar el diseño.
-// Provisional: nombre de la marca y precios.
+// Provisional: los precios.
 
 export const marca = {
   nombre: 'Mostraq',
@@ -135,7 +135,7 @@ export const pasos = {
     },
     {
       titulo: 'La mantengo al día',
-      texto: 'Me encargo de que esté siempre al día. Cualquier cambio, un mensaje y listo, sin reimprimir el QR.',
+      texto: 'Me ocupo de que tu página esté siempre al día y funcionando. Si hay que cambiar algo, me escribes y lo hago, sin reimprimir el QR.',
     },
   ],
 }
@@ -217,9 +217,9 @@ export const contactoForm = {
   // Para qué escribe: lo que llega en la línea "Motivo" del WhatsApp y, si ya se sabe, la idea escrita de antemano.
   // Los botones de presupuesto y de salir en Google llevan aquí (/?contacto=presupuesto o /?contacto=google)
   motivos: {
-    contacto: { texto: 'Consulta', idea: '' },
-    presupuesto: { texto: 'Presupuesto', idea: '' },
-    google: { texto: 'Salir en Google', idea: 'Quiero salir en Google con mi negocio: mi página y mi ficha de Google Maps.' },
+    contacto: { texto: 'Consulta', intro: 'Cuéntame qué tienes y qué te gustaría conseguir. Te respondo por WhatsApp.', idea: '' },
+    presupuesto: { texto: 'Presupuesto', intro: 'Cada negocio necesita cosas distintas. Cuéntame qué tienes y te paso un presupuesto sin compromiso.', idea: '' },
+    google: { texto: 'Salir en Google', intro: 'Cuéntame tu negocio y te digo cómo hacer que te encuentren en Google y en Google Maps.', idea: 'Quiero salir en Google con mi negocio: mi página y mi ficha de Google Maps.' },
   },
 }
 

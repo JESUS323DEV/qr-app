@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import GeneradorQR from '../components/GeneradorQR'
 import { TIPOGRAFIAS } from '../asistente/tipografias'
+import { conDominio } from '../lib/dominio'
 
 /* Editor de QR para el cliente (/mi-qr/slug), con los colores y las letras de la landing (tema-landing). Jesús le pasa el enlace y un PIN (se crean en /admin).
    Sin PIN: se ve su QR (el diseño que envió o, si aún no, uno con los colores de su marca).
@@ -58,7 +59,7 @@ export default function MiQrPage() {
     }
   }
 
-  const comunes = info && { url: info.url, nombre: info.nombre, colores: info.colores ?? undefined, fuentes: info.fuentes ?? undefined, estadoInicial: info.diseno ?? undefined }
+  const comunes = info && { url: conDominio(info.url), nombre: info.nombre, colores: info.colores ?? undefined, fuentes: info.fuentes ?? undefined, estadoInicial: info.diseno ?? undefined }
 
   return (
     <div className="tema-landing min-h-svh bg-papel font-texto text-tinta">

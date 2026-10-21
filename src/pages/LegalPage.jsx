@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { legales, marca } from '../landing/contenido'
+import { DOMINIO } from '../lib/dominio'
 
 /* Textos legales (/aviso-legal y /privacidad), con el estilo de la landing, como /planes.
    tipo: 'avisoLegal' o 'privacidad' (los textos, en landing/contenido.js) */
@@ -13,7 +14,7 @@ export default function LegalPage({ tipo }) {
   }, [pagina])
 
   // La dirección de la web, la que sea (la de Netlify ahora, el dominio propio después)
-  const conDominio = texto => texto.replaceAll('{dominio}', window.location.host)
+  const conDominio = texto => texto.replaceAll('{dominio}', new URL(DOMINIO).host)
 
   return (
     <div className="min-h-svh bg-papel font-texto text-tinta">

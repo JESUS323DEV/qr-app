@@ -33,6 +33,7 @@ import { tipoDe } from '../lib/tematicas'
 import { HEROS } from '../heros'
 import { BARRAS } from '../fichas/barras'
 import { FAMILIAS } from '../familias'
+import { DOMINIO, rutaDe, conDominio } from '../lib/dominio'
 
 /* Panel de Jesús (/admin): cambiar textos, fotos y colores de cualquier ficha, miniweb o carta desde el móvil,
    sin tocar código, y duplicar una demo para adaptarla en segundos al negocio que tiene delante.
@@ -3025,6 +3026,12 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
       cambios = { ...cambios, _nuevoPerfil: instantanea() }
       // La marca de cliente (Exportar para cliente) se conserva
       if ((filas ?? []).find(f => f.tipo === copiaCargada.tipo && f.slug === copiaCargada.slug)?.cambios?._cliente) cambios._cliente = true
+      // El menú del día de una carta vive en su panel (tabla cartas) y manda sobre el de la copia: se cambia también allí, para que lo que se
+      // guarda sea lo que se ve en su dirección (y en su QR)
+      if (copiaCargada.tipo === 'carta') {
+        const { error: errorMenu } = await supabase.from('cartas').update({ menu_dia: menuDelPanel(aplicar(cartaBase, cambios).menuDia) }).eq('slug', copiaCargada.slug)
+        if (errorMenu) throw new Error('No se ha podido cambiar el menú del día de la carta.')
+      }
       const { error } = await supabase
         .from('ediciones')
         .update({ base, cambios, ...(historial.length ? { historial } : {}) })
@@ -4181,7 +4188,7 @@ function QRSuelto({ copias }) {
       {/* key: al cambiar de página, el generador empieza de cero con lo de esa página */}
       <GeneradorQR
         key={clave || 'suelto'}
-        url={`${window.location.origin}${pagina?.ruta ?? '/'}`}
+        url={`${DOMINIO}${pagina?.ruta ?? '/'}`}
         nombre={pagina?.nombre ?? ''}
         colores={pagina?.colores}
         fuentes={pagina?.fuentes}
@@ -4226,7 +4233,7 @@ function EditorClientes({ copias }) {
   }, [])
   useEffect(cargar, [cargar])
 
-  const enlaceDe = slug => `${window.location.origin}/mi-qr/${slug}`
+  const enlaceDe = slug => `${DOMINIO}/mi-qr/${slug}`
 
   // Crea (o renueva) la sesión de una página con un PIN nuevo
   const crear = async p => {
@@ -4237,7 +4244,7 @@ function EditorClientes({ copias }) {
         accion: 'crear',
         slug: p.sesion,
         nombre: p.nombre,
-        url: `${window.location.origin}${p.ruta}`,
+        url: `${DOMINIO}${p.ruta}`,
         colores: p.colores ?? null,
         fuentes: p.fuentes ?? null,
       })
@@ -4271,12 +4278,6 @@ function EditorClientes({ copias }) {
       <p className="text-[0.88rem] leading-[1.45] text-zinc-600">
         Crea un enlace con PIN para que el cliente diseñe su placa (con 2 propuestas de la IA). Sin el PIN, el enlace solo enseña su QR. Caduca a los 7 días.
       </p>
-      {/* El enlace y la dirección del QR salen de la web donde se crea: desde el ordenador serían de localhost */}
-      {/localhost|127\.0\.0\.1/.test(window.location.host) && (
-        <p className="text-[0.85rem] font-semibold text-amber-700">
-          Estás en tu ordenador: el enlace y el QR saldrían con localhost. Para un cliente de verdad, créalo desde la web publicada.
-        </p>
-      )}
       <div className="grid gap-[0.5rem]">
         <ElegirPagina paginas={paginas} valor={clave} cambiar={setClave} vacio="Elige la página del cliente" />
         <button type="button" onClick={() => pagina && crear(pagina)} disabled={!pagina || creando} className={BOTON}>
@@ -4340,7 +4341,7 @@ function EditorClientes({ copias }) {
                 )}
                 <button
                   type="button"
-                  onClick={() => crear({ sesion: s.slug, nombre: s.nombre, ruta: s.url.replace(window.location.origin, ''), colores: s.colores, fuentes: s.fuentes })}
+                  onClick={() => crear({ sesion: s.slug, nombre: s.nombre, ruta: rutaDe(s.url), colores: s.colores, fuentes: s.fuentes })}
                   className="underline underline-offset-[0.2em]"
                 >
                   PIN nuevo
@@ -4352,7 +4353,7 @@ function EditorClientes({ copias }) {
               {/* El diseño del cliente, en el generador: se revisa, se retoca si hace falta y se descarga */}
               {viendo?.slug === s.slug && (
                 <div className="mt-[0.5rem] border-t border-zinc-200 pt-[0.75rem]">
-                  <GeneradorQR key={`${s.slug}-${s.enviado}`} url={s.url} nombre={s.nombre} colores={s.colores ?? undefined} fuentes={s.fuentes ?? undefined} estadoInicial={s.diseno} />
+                  <GeneradorQR key={`${s.slug}-${s.enviado}`} url={conDominio(s.url)} nombre={s.nombre} colores={s.colores ?? undefined} fuentes={s.fuentes ?? undefined} estadoInicial={s.diseno} />
                 </div>
               )}
             </li>
