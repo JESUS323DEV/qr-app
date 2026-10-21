@@ -178,8 +178,8 @@ const GeneradorQR = lazy(() => import('../components/GeneradorQR'))
 
 // Capturas de las demos a tamaño de móvil (src/assets/capturas/<slug>.jpg; las cartas, <slug>-carta.jpg).
 // Las demos sin captura salen igual, con el móvil en negro y su nombre dentro.
-const CAPTURAS = import.meta.glob('../assets/capturas/*.{jpg,png}', { eager: true, import: 'default' })
-const captura = archivo => CAPTURAS[`../assets/capturas/${archivo}.jpg`] ?? CAPTURAS[`../assets/capturas/${archivo}.png`]
+const CAPTURAS = import.meta.glob('../assets/capturas/*.webp', { eager: true, import: 'default' })
+const captura = archivo => CAPTURAS[`../assets/capturas/${archivo}.webp`]
 // Solo las destacadas (con destacada: false se quitan del escaparate; en el catálogo salen todas)
 const enEscaparate = d => d.destacada !== false
 
@@ -200,12 +200,12 @@ const WEBS_Y_CARTAS = [
     .map(c => ({ foto: captura(`${c.slug}-carta`), nombre: marcaDe(c)?.nombre, ...cartasMiniwebs.tipos.carta, ruta: rutaCarta(c) })),
 ]
 // Pestaña Ejemplos, subpestaña Miniwebs (la de por defecto): de momento, tres miniwebs hechas en el Editor (copias en Supabase, en /demo/slug)
-// con su captura (src/assets/capturas/<slug>.png)
+// con su captura (src/assets/capturas/<slug>.webp)
 const MINIWEBS = [
   { slug: 'lilac-nails', nombre: 'Lilac Nails', etiqueta: 'Estudio de uñas' },
   { slug: 'barberia-cuervo', nombre: 'Barbería Cuervo', etiqueta: 'Barbería' },
-  { slug: 'obrador-mimosa', nombre: 'Obrador Mimosa', etiqueta: 'Pastelería' },
-].map(m => ({ foto: captura(m.slug), nombre: m.nombre, titulo: m.nombre, etiqueta: m.etiqueta, ruta: `/demo/${m.slug}` }))
+  { slug: 'restaurante-brasas', nombre: 'Restaurante Brasas', etiqueta: 'Restaurante' },
+].map(m => ({ foto: captura(m.captura ?? m.slug), nombre: m.nombre, titulo: m.nombre, etiqueta: m.etiqueta, ruta: `/demo/${m.slug}` }))
 
 /* El hero es una miniweb, con la misma estructura que las de los clientes:
    escenario con la marca, el texto (cambia con la pestaña) y una fila de móviles con las capturas
@@ -255,7 +255,7 @@ function QrMostraq() {
 }
 
 // Las capturas que pasan una tras otra en el móvil del hero, y cada cuánto cambian
-const CAPTURAS_HERO = ['lilac-nails', 'barberia-cuervo', 'obrador-mimosa']
+const CAPTURAS_HERO = ['lilac-nails', 'barberia-cuervo', 'restaurante-brasas']
 const CAMBIO_CAPTURA_MS = 4000
 
 function MockupMiniweb({ activo }) {
@@ -267,8 +267,13 @@ function MockupMiniweb({ activo }) {
     return () => clearInterval(id)
   }, [activo])
   return (
-    <div aria-hidden="true" className="relative min-h-0 flex-1 overflow-hidden pt-[1.2rem]">
-      <div className="relative mx-auto w-[13.2rem] -translate-x-[1.6rem]">
+    <div aria-hidden="true" className="relative flex min-h-0 flex-1 flex-col overflow-hidden pt-[1.2rem]">
+      {/* --ancho: el ancho del móvil. 13,2 rem como siempre y, solo en pantallas largas (cuando el hueco es mayor que el móvil), crece hasta llenarlo, con
+          un máximo; my-auto lo centra en el hueco y, si no cabe, se queda arriba y se recorta por abajo. El QR y el desplazamiento, proporcionales */}
+      <div
+        className="relative mx-auto my-auto"
+        style={{ '--ancho': 'clamp(13.2rem, calc((100svh - 25rem) * 0.462), 22rem)', width: 'var(--ancho)', transform: 'translateX(calc(var(--ancho) * -0.12))' }}
+      >
         {/* Móvil con la captura de una miniweb */}
         <div className="rounded-[1.6rem] border border-white/20 bg-[#1d1d1b] p-[0.35rem] shadow-[0_1.2rem_2.4rem_-0.8rem_rgb(0_0_0/0.8)]">
           {/* Apiladas en el mismo sitio (el marco toma el alto de la más alta) y con un fundido al pasar */}
@@ -279,7 +284,10 @@ function MockupMiniweb({ activo }) {
           </div>
         </div>
         {/* El QR, a la derecha del móvil y apoyado en él, un poco inclinado */}
-        <div className="absolute -right-[3rem] top-[1.6rem] w-[4.6rem] rotate-[7deg] rounded-[0.6rem] bg-white p-[0.35rem] shadow-[0_0.9rem_1.8rem_-0.5rem_rgb(0_0_0/0.75)]">
+        <div
+          className="absolute rotate-[7deg] rounded-[0.6rem] bg-white p-[0.35rem] shadow-[0_0.9rem_1.8rem_-0.5rem_rgb(0_0_0/0.75)]"
+          style={{ width: 'calc(var(--ancho) * 0.348)', right: 'calc(var(--ancho) * -0.227)', top: 'calc(var(--ancho) * 0.12)' }}
+        >
           <QrMostraq />
         </div>
       </div>
@@ -445,12 +453,14 @@ function HeroMiniweb() {
                     <Link
                       to={d.ruta}
                       aria-label={`Abrir la demo de ${d.nombre}`}
-                      className={`relative block aspect-[390/844] h-full rounded-[1.2rem] border border-white/15 bg-[#1d1d1b] p-[0.3rem] shadow-[0_1rem_2rem_-0.8rem_rgb(0_0_0/0.7)] transition-[opacity,transform] duration-500 ${
+                      className={`relative block ${d.foto ? '' : 'aspect-[390/844]'} h-full rounded-[1.2rem] border border-white/15 bg-[#1d1d1b] p-[0.3rem] shadow-[0_1rem_2rem_-0.8rem_rgb(0_0_0/0.7)] transition-[opacity,transform] duration-500 ${
                         i === actualCarta ? 'opacity-100' : 'scale-[0.92] opacity-55'
                       }`}
                     >
                       {d.foto ? (
-                        <img src={d.foto} alt={`Ejemplo: ${d.nombre}`} className="h-full w-full rounded-[0.95rem] object-cover object-top" />
+                        <span className="block h-full overflow-hidden rounded-[0.95rem]">
+                          <img src={d.foto} alt={`Ejemplo: ${d.nombre}`} className="block h-full w-auto max-w-none" />
+                        </span>
                       ) : (
                         <span className="flex h-full w-full flex-col items-center justify-center rounded-[0.95rem] bg-papel px-[0.8rem] text-center">
                           <span className="font-titulo text-[1.05rem] font-black leading-[1.1]">{d.titulo}</span>
@@ -692,14 +702,10 @@ function HeroMiniweb() {
             </div>
         </Panel>
 
-        {/* Pestaña Inicio (clave ejemplos, la primera): el hero de Mostraq, con el diseño Fullbleed: fondo de color con un
-            resplandor del acento, el titular grande abajo y, debajo, qué hace Mostraq y el botón a los ejemplos */}
+        {/* Pestaña Inicio (clave ejemplos, la primera): el hero de Mostraq, con fondo oscuro liso, el titular grande y, debajo,
+            qué hace Mostraq y el móvil con una miniweb y un QR */}
         <Panel clave="ejemplos" pestana={pestana}>
           <div className="relative mt-[0.5rem] flex min-h-[12rem] flex-1 flex-col justify-between px-[1.25rem] pt-[1.4rem]">
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_85%_18%,rgb(255_210_58/0.28),transparent_55%),radial-gradient(circle_at_5%_100%,rgb(255_210_58/0.12),transparent_50%)]"
-            />
             <div className="relative">
             <h1 className="font-titulo text-[clamp(2.6rem,2rem+4vw,3.6rem)] font-black leading-[0.98] tracking-tight">
               {hero.titulo}
