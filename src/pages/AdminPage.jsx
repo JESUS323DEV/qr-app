@@ -3013,6 +3013,7 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
     setAviso('')
     setError('')
     setCreando('Guardando...')
+    let guardado = false
     try {
       const nombreGuardar = nombre.trim() || 'Prueba'
       const { base, cambios: cambiosBase } = armar(nombreGuardar)
@@ -3041,10 +3042,12 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
       await recargar()
       empezarDeNuevo()
       setAviso(`Cambios guardados en «${nombreGuardar}».`)
+      guardado = true
     } catch (e) {
       setError(e.message)
     }
     setCreando(null)
+    return guardado
   }
 
   // muestra (true): exporta el diseño a las muestras, en la lista de Miniwebs (con el nombre escrito o, sin él, «Muestra») en lugar de crear un perfil
@@ -3092,6 +3095,99 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
       setCreando(null)
     }
   }
+
+  /* Modo calle (miniwebs): cambiar en un solo paso lo que enseña un QR ya impreso. Se elige la copia (su dirección no cambia), se escribe el
+     negocio y una línea sobre él, y el asistente monta el diseño, escribe los textos, busca las fotos y lo guarda encima de esa copia.
+     Va por fases porque cada paso necesita ver lo que dejó el anterior (cargar la copia, montar, y guardar cuando el asistente acaba). */
+  const [calleSlug, setCalleSlug] = useState('')
+  const [calleNombre, setCalleNombre] = useState('')
+  const [calleCuento, setCalleCuento] = useState('')
+  // null (parado) | 'cargada' (copia y datos puestos) | 'esperando' (el asistente trabaja) | 'guardando' | 'listo'
+  const [calleFase, setCalleFase] = useState(null)
+  const copiasCalle = (filas ?? []).filter(f => f.tipo === 'negocio' && f.cambios?._nuevoPerfil && f.cambios?.muestra !== true)
+  const trabajandoCalle = ['cargada', 'esperando', 'guardando'].includes(calleFase)
+
+  const montarEnCalle = () => {
+    const fila = copiasCalle.find(f => f.slug === calleSlug)
+    if (!fila || !calleNombre.trim() || trabajandoCalle || disenando || creando) return
+    cargarCopia(fila)
+    setProducto('miniweb')
+    setNombre(calleNombre.trim())
+    setCuento(calleCuento.trim())
+    // Lo del negocio anterior que el asistente no vuelve a decidir
+    setLogo('')
+    setCabecera('')
+    setColoresMini({})
+    setTextosMini({})
+    setCambiosExtra({})
+    setCambiosIA(null)
+    setCalleFase('cargada')
+  }
+  useEffect(() => {
+    if (calleFase !== 'cargada') return
+    setCalleFase('esperando')
+    montar()
+  }, [calleFase]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (calleFase !== 'esperando' || disenando || creando) return
+    if (error) {
+      setCalleFase(null)
+      return
+    }
+    if (!cambiosIA) return
+    setCalleFase('guardando')
+    guardarCopia().then(bien => setCalleFase(bien ? 'listo' : null))
+  }, [calleFase, disenando, creando, cambiosIA, error]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const modoCalle = (
+    <details className="rounded-[1rem] bg-white ring-1 ring-zinc-200">
+      <summary className="flex cursor-pointer list-none items-center gap-[0.5rem] px-[1rem] py-[0.9rem] [&::-webkit-details-marker]:hidden">
+        <span className="text-[1.05rem] font-bold">Modo calle</span>
+        <ChevronDown className="ml-auto h-[1.1rem] w-[1.1rem] text-zinc-500" aria-hidden="true" />
+      </summary>
+      <div className="mx-auto grid w-full max-w-[32rem] gap-[0.75rem] border-t border-zinc-200 px-[1rem] py-[1rem]">
+        <p className="text-[0.88rem] leading-[1.45] text-zinc-600">Cambia lo que enseña un QR ya impreso: elige su miniweb, cuenta el negocio y el asistente lo monta y lo guarda ahí.</p>
+        <Etiqueta texto="Qué QR cambias">
+          <select value={calleSlug} onChange={e => setCalleSlug(e.target.value)} disabled={trabajandoCalle} className={CAMPO}>
+            <option value="">Elige una miniweb</option>
+            {copiasCalle.map(f => (
+              <option key={f.slug} value={f.slug}>{`/${f.slug}`}</option>
+            ))}
+          </select>
+        </Etiqueta>
+        <Etiqueta texto="Nombre del negocio">
+          <input value={calleNombre} onChange={e => setCalleNombre(e.target.value)} disabled={trabajandoCalle} className={CAMPO} placeholder="Pastelería Dolç Antoni" />
+        </Etiqueta>
+        <textarea
+          value={calleCuento}
+          onChange={e => setCalleCuento(e.target.value)}
+          disabled={trabajandoCalle}
+          rows={3}
+          aria-label="Una línea sobre el negocio"
+          placeholder="Una línea: pastelería en Gràcia, colores chocolate y rosa, pedidos por WhatsApp"
+          className={`${CAMPO} resize-y`}
+        />
+        <button type="button" onClick={montarEnCalle} disabled={!calleSlug || !calleNombre.trim() || trabajandoCalle || Boolean(disenando) || Boolean(creando)} className={BOTON}>
+          {trabajandoCalle ? disenando ?? creando ?? 'Trabajando...' : 'Montar y publicar'}
+        </button>
+        {error && calleFase === null && <p className="text-[0.9rem] font-semibold text-red-600">{error}</p>}
+        {calleFase === 'listo' && (
+          <div className="grid gap-[0.5rem] rounded-[0.75rem] bg-emerald-50 p-[0.9rem] ring-1 ring-emerald-200">
+            <p className="text-[0.9rem] font-semibold">Listo: tu QR ya enseña «{nombre}»</p>
+            <a href={`${DOMINIO}/${calleSlug}`} target="_blank" rel="noreferrer" className="break-all text-[0.85rem] underline underline-offset-[0.2em]">{`${DOMINIO}/${calleSlug}`}</a>
+            <button
+              type="button"
+              onClick={() => crear()}
+              disabled={Boolean(creando) || Boolean(disenando)}
+              className="rounded-[0.7rem] bg-white px-[1rem] py-[0.7rem] text-[0.95rem] font-semibold ring-1 ring-zinc-300 hover:ring-zinc-500 disabled:opacity-50"
+            >
+              Guardar como suya (con su nombre)
+            </button>
+          </div>
+        )}
+      </div>
+    </details>
+  )
 
   const titulo = 'text-[0.8rem] font-semibold text-zinc-500'
   const opcion = activa => `rounded-[0.6rem] px-[0.75rem] py-[0.45rem] text-[0.9rem] font-medium ring-1 ${activa ? 'bg-zinc-900 text-white ring-zinc-900' : 'bg-white ring-zinc-300'}`
@@ -3217,7 +3313,9 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
   )
 
   return (
-    // peer: abierto, se oculta el botón de "Crear con el asistente" que va justo debajo (en Lista)
+    <>
+    {modoCalle}
+    {/* peer: abierto, se oculta el botón de "Crear con el asistente" que va justo debajo (en Lista) */}
     <details open={abierto} onToggle={e => setAbierto(e.currentTarget.open)} className="group/perfil peer rounded-[1rem] bg-white ring-1 ring-zinc-200">
       {/* Cerrado: "Nuevo perfil" con una flecha para abrir. Abierto: solo un icono pequeño de plegar, para que la
           vista previa empiece casi arriba */}
@@ -4125,6 +4223,7 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
         </div>
       </div>
     </details>
+    </>
   )
 }
 
