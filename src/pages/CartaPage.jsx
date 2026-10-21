@@ -132,7 +132,7 @@ function MenuDia({ menu }) {
 
       <div className="mt-[0.6rem] flex items-end justify-between gap-[1rem] border-t border-dashed border-demo-text/20 pt-[0.5rem]">
         <p className="text-[0.8rem] leading-[1.4] text-demo-muted">{menu.incluye}</p>
-        <p className="shrink-0 font-demo-heading text-[1.5rem] leading-none text-[color:var(--demo-precio-texto,var(--demo-primary))]">{menu.precio}</p>
+        <p className="shrink-0 whitespace-nowrap precio-detalle font-demo-heading text-[length:calc(1.5rem*var(--demo-precio-escala,1))] leading-none text-[color:var(--demo-precio-texto,var(--demo-primary))]">{menu.precio}</p>
       </div>
     </div>
   )
@@ -250,12 +250,19 @@ function useAhora() {
 
 // El tamaño del precio del menú (carta.tamanoPrecio: xs, md o xl): el factor se pone en una variable del documento (--demo-precio-escala) que usan los estilos
 const FACTORES_PRECIO = { xs: 0.8, md: 1, xl: 1.25 }
+// Los diseños del detalle del precio (carta.detallePrecio; sin él, la raya): su dibujo está en main.css con data-precio en <html>
+export const DETALLES_PRECIO = ['raya', 'ondulada', 'pincelada', 'doble', 'ovalo', 'repasado', 'arco', 'sello', 'estrella', 'pastilla', 'etiqueta', 'cinta', 'burbuja', 'festoneado', 'rombo', 'escudo', 'corazon', 'ticket', 'ninguno']
 function CartaConTamanos(props) {
   const factor = FACTORES_PRECIO[props.carta?.tamanoPrecio] ?? 1
   useEffect(() => {
     document.documentElement.style.setProperty('--demo-precio-escala', String(factor))
     return () => document.documentElement.style.removeProperty('--demo-precio-escala')
   }, [factor])
+  const detalle = DETALLES_PRECIO.includes(props.carta?.detallePrecio) ? props.carta.detallePrecio : 'raya'
+  useEffect(() => {
+    document.documentElement.dataset.precio = detalle
+    return () => delete document.documentElement.dataset.precio
+  }, [detalle])
   return <Carta {...props} />
 }
 
@@ -266,6 +273,7 @@ export default function CartaPage(props) {
   const pruebaDiseno = params.get('diseno')
   const pruebaSub = params.get('sub')
   const pruebaTPrecio = params.get('tprecio')
+  const pruebaDPrecio = params.get('dprecio')
   // ?incrustada=1: la carta dentro de la pestaña del menú de una miniweb (sin flechas de demos ni enlace de vuelta a la miniweb)
   const incrustada = params.get('incrustada') === '1'
   const { cargando, fila } = useCartaRemota(slug)
@@ -291,6 +299,8 @@ export default function CartaPage(props) {
   if (carta?.demo && ESTILOS_CARTA.has(pruebaDiseno)) carta = { ...carta, diseno: pruebaDiseno }
   // ?tprecio=xs|xl: el tamaño del precio del menú (carta.tamanoPrecio), para la vista previa del Editor
   if (carta?.demo && ['xs', 'md', 'xl'].includes(pruebaTPrecio)) carta = { ...carta, tamanoPrecio: pruebaTPrecio }
+  // ?dprecio=ondulada|...: el diseño del detalle del precio (carta.detallePrecio), para la vista previa del Editor
+  if (carta?.demo && DETALLES_PRECIO.includes(pruebaDPrecio)) carta = { ...carta, detallePrecio: pruebaDPrecio }
   // ?sub=columna: el subdiseño del estilo (por ahora, Inmersiva con las pestañas en columna); sin él, la base, en fila
   if (carta?.demo && ['fila', 'columna'].includes(pruebaSub)) carta = { ...carta, subdiseno: pruebaSub }
   // ?ia=N: los cambios de imágenes (y textos) hechos en el Editor, que deja en localStorage, solo en la vista previa de una demo

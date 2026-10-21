@@ -25,11 +25,12 @@ function MenuDia({ menu }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex shrink-0 items-end justify-between gap-[1rem]">
-        <div className="min-w-0">
-          <h2 className="font-demo-heading text-[2rem] leading-[0.95] [@media(min-height:46rem)]:text-[2.4rem] [@media(min-height:56rem)]:text-[2.8rem]">{menu.titulo}</h2>
+        {/* w-min: la columna del título mide lo que mide el título (que va en una sola línea) y el texto de cuándo se parte dentro de ese ancho */}
+        <div className="w-min min-w-0">
+          <h2 className="whitespace-nowrap font-demo-heading text-[2rem] leading-[0.95] [@media(min-height:46rem)]:text-[2.4rem] [@media(min-height:56rem)]:text-[2.8rem]">{menu.titulo}</h2>
           {menu.cuando && <p className="mt-[0.3rem] text-[0.82rem] text-demo-muted [@media(min-height:46rem)]:text-[0.9rem]">{menu.cuando}</p>}
         </div>
-        <p className="shrink-0 font-demo-heading text-[1.8rem] italic leading-none text-[color:var(--demo-precio-texto,var(--demo-primary))] [@media(min-height:46rem)]:text-[2.1rem] [@media(min-height:56rem)]:text-[2.4rem]">{menu.precio}</p>
+        <p className="shrink-0 whitespace-nowrap precio-detalle font-demo-heading text-[length:calc(1.8rem*var(--demo-precio-escala,1))] italic leading-none text-[color:var(--demo-precio-texto,var(--demo-primary))] [@media(min-height:46rem)]:text-[length:calc(2.1rem*var(--demo-precio-escala,1))] [@media(min-height:56rem)]:text-[length:calc(2.4rem*var(--demo-precio-escala,1))]">{menu.precio}</p>
       </div>
 
       {/* Foto del menú: llena el hueco que queda (se encoge en móviles bajos) */}

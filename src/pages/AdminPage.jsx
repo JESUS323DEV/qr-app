@@ -2448,6 +2448,8 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
   const [colorPrecioTexto, setColorPrecioTexto] = useState('')
   // El tamaño del precio del menú de la carta: 'xs', 'md' (el de cada estilo) o 'xl'
   const [tamanoPrecio, setTamanoPrecio] = useState('md')
+  // El diseño del detalle del precio del menú: 'raya' (el de siempre), 'ondulada', 'pincelada' o 'doble' (líneas); 'ovalo', 'repasado', 'arco', 'sello' o 'estrella' (círculos); o 'ninguno'
+  const [detallePrecio, setDetallePrecio] = useState('raya')
   const [hero, setHero] = useState('polaroid')
   const [barra, setBarra] = useState('')
   const [estilo, setEstilo] = useState('revista')
@@ -2616,6 +2618,7 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
     esCarta && colorPrecio && `precio=${colorPrecio.slice(1)}`,
     esCarta && colorPrecioTexto && `ptxt=${colorPrecioTexto.slice(1)}`,
     esCarta && tamanoPrecio !== 'md' && `tprecio=${tamanoPrecio}`,
+    esCarta && detallePrecio !== 'raya' && `dprecio=${detallePrecio}`,
     producto === 'miniweb' && filtroFoto !== 100 && `filtro=${filtroFoto}`,
     ...(producto === 'miniweb' ? lugares.map(([clave, valor]) => `${clave.toLowerCase()}=${valor}`) : []),
     producto === 'miniweb' && barra && `barra=${barra}`,
@@ -2693,6 +2696,7 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
         ...(colorPrecio ? { 'marca.theme.colors.precio': colorPrecio } : {}),
         ...(colorPrecioTexto ? { 'marca.theme.colors.precioTexto': colorPrecioTexto } : {}),
         ...(tamanoPrecio !== 'md' ? { tamanoPrecio } : {}),
+        ...(detallePrecio !== 'raya' ? { detallePrecio } : {}),
         // La superficie de las tarjetas y el texto suave salen del fondo y del texto elegidos (no se quedan con los de la plantilla)
         ...(fondo || colorTexto ? { 'marca.theme.colors.surface': derivadosDeFondoYTexto(colorFondo, colorDelTexto).surface, 'marca.theme.colors.muted': derivadosDeFondoYTexto(colorFondo, colorDelTexto).muted } : {}),
         ...(tipografia ? { 'marca.theme.fonts': tipografia.fonts } : {}),
@@ -2851,6 +2855,7 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
     colorPrecio,
     colorPrecioTexto,
     tamanoPrecio,
+    detallePrecio,
     hero,
     barra,
     estilo,
@@ -2924,6 +2929,7 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
     setColorPrecio(i.colorPrecio ?? '')
     setColorPrecioTexto(i.colorPrecioTexto ?? '')
     setTamanoPrecio(i.tamanoPrecio ?? 'md')
+    setDetallePrecio(i.detallePrecio ?? 'raya')
     setTipoCarta(i.tipoCarta ?? (PLANTILLAS.find(p => p.clave === i.tema)?.carta === 'laca' ? 'promociones' : 'carta'))
     setHero(i.hero ?? 'polaroid')
     setBarra(i.barra ?? '')
@@ -3852,6 +3858,82 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                     </button>
                   ))}
                 </div>
+              </div>
+            </details>
+          )}
+          {/* Carta: Diseño del precio, el detalle que remarca el precio del menú. Primero la familia (Sin estilo, Líneas o Círculos) y debajo sus subestilos */}
+          {esCarta && (
+            <details className="group/dprecio rounded-[0.75rem] ring-1 ring-zinc-200">
+              <summary className="flex cursor-pointer list-none items-center gap-[0.75rem] px-[0.85rem] py-[0.8rem] [&::-webkit-details-marker]:hidden">
+                <span className="text-[1rem] font-bold">Diseño del precio</span>
+                <ChevronDown className="ml-auto h-[1rem] w-[1rem] shrink-0 text-zinc-500 transition-transform group-open/dprecio:rotate-180" aria-hidden="true" />
+              </summary>
+              <div className="grid gap-[0.7rem] px-[0.85rem] pb-[0.85rem] pt-[0.2rem]">
+                {(() => {
+                  const TEXTO = '<text x="12" y="13" text-anchor="middle" font-size="9" font-weight="700" fill="currentColor" stroke="none">12€</text>'
+                  const SUBESTILOS = {
+                    lineas: [
+                      ['raya', 'Raya', '<path d="M4 18h16" stroke-width="2.5"/>'],
+                      ['ondulada', 'Ondulada', '<path d="M3 18c1.6-2 3.2-2 4.8 0s3.2 2 4.8 0 3.2-2 4.8 0 2.2 1.4 2.6 0"/>'],
+                      ['pincelada', 'Pincelada', '<path d="M3.5 18.5c4.5-2.2 9 1.2 17-1.2" stroke-width="2.2"/>'],
+                      ['doble', 'Doble línea', '<path d="M4 17h16M4 20h16" stroke-width="1.2"/>'],
+                    ],
+                    circulos: [
+                      ['ovalo', 'Óvalo a mano', '<ellipse cx="12" cy="12" rx="9.5" ry="6.2" transform="rotate(-3 12 12)"/>'],
+                      ['repasado', 'Óvalo repasado', '<ellipse cx="12" cy="12" rx="9.5" ry="6" transform="rotate(-4 12 12)"/><ellipse cx="12" cy="12" rx="9" ry="6.6" transform="rotate(4 12 12)"/>'],
+                      ['arco', 'Arco abierto', '<path d="M6 17A9.5 6.2 0 1 0 5.5 8.5"/>'],
+                      ['sello', 'Sello de puntos', '<ellipse cx="12" cy="12" rx="9.5" ry="6.2" stroke-dasharray="0.1 2.4"/>'],
+                    ],
+                    formas: [
+                      ['estrella', 'Estrella de oferta', '<path d="M12 3l1.6 2.2 2.6-.7.5 2.7 2.6 1-1.2 2.4 1.2 2.4-2.6 1-.5 2.7-2.6-.7L12 21l-1.6-2.2-2.6.7-.5-2.7-2.6-1L5.9 13 4.7 10.6l2.6-1 .5-2.7 2.6.7z" fill="currentColor" opacity=".2" stroke="none"/>'],
+                      ['pastilla', 'Pastilla', '<rect x="2.5" y="6.5" width="19" height="11" rx="5.5" fill="currentColor" opacity=".2" stroke="none"/>'],
+                      ['etiqueta', 'Etiqueta de precio', '<path d="M2.5 12l3.5-5.5h15v11H6z" fill="currentColor" opacity=".2" stroke="none"/><circle cx="6.2" cy="12" r=".9" fill="white" stroke="none"/>'],
+                      ['cinta', 'Cinta', '<path d="M2 6.5h20l-1.8 5.5 1.8 5.5H2l1.8-5.5z" fill="currentColor" opacity=".2" stroke="none"/>'],
+                      ['burbuja', 'Burbuja', '<path d="M3.5 5.5h17v9.5H10l-3.5 3.5V15h-3z" fill="currentColor" opacity=".2" stroke="none"/>'],
+                      ['festoneado', 'Sello festoneado', '<ellipse cx="12" cy="12" rx="9" ry="6.5" fill="currentColor" opacity=".2" stroke="none"/><ellipse cx="12" cy="12" rx="9" ry="6.5" stroke-dasharray="1.6 1.3"/>'],
+                      ['rombo', 'Rombo', '<path d="M5 6.5h14l3 5.5-3 5.5H5L2 12z" fill="currentColor" opacity=".2" stroke="none"/>'],
+                      ['escudo', 'Escudo', '<path d="M4.5 5.5h15v8l-7.5 6-7.5-6z" fill="currentColor" opacity=".2" stroke="none"/>'],
+                      ['corazon', 'Corazón', '<path d="M12 19s-7-4.2-7-9.2a3.8 3.8 0 0 1 7-2 3.8 3.8 0 0 1 7 2c0 5-7 9.2-7 9.2z" fill="currentColor" opacity=".2" stroke="none"/>'],
+                      ['ticket', 'Ticket', '<path d="M4.5 6l1.6 1.5L7.7 6l1.6 1.5L10.9 6l1.6 1.5L14.1 6l1.6 1.5L17.3 6l1.6 1.5L20.5 6v12l-1.6-1.5-1.6 1.5-1.6-1.5-1.6 1.5-1.6-1.5-1.6 1.5-1.6-1.5-1.6 1.5-1.6-1.5z" fill="currentColor" opacity=".2" stroke="none"/>'],
+                    ],
+                  }
+                  const familia = detallePrecio === 'ninguno' ? 'sin' : SUBESTILOS.lineas.some(([c]) => c === detallePrecio) ? 'lineas' : SUBESTILOS.formas.some(([c]) => c === detallePrecio) ? 'formas' : 'circulos'
+                  const nombreDe = [...SUBESTILOS.lineas, ...SUBESTILOS.circulos, ...SUBESTILOS.formas].find(([c]) => c === detallePrecio)?.[1]
+                  const boton = (clave, nombreBoton, dibujo, activo, alTocar) => (
+                    <button
+                      key={clave}
+                      type="button"
+                      title={nombreBoton}
+                      aria-label={nombreBoton}
+                      aria-pressed={activo}
+                      onClick={alTocar}
+                      className={`flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 bg-white transition-transform duration-300 ${activo ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
+                    >
+                      <svg viewBox="0 0 24 24" className="h-[1.5rem] w-[1.5rem]" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: TEXTO + dibujo }} />
+                    </button>
+                  )
+                  return (
+                    <>
+                      <div className="grid gap-[0.35rem]">
+                        <div className="flex gap-[0.4rem]">
+                          {boton('sin', 'Sin estilo', '', familia === 'sin', () => setDetallePrecio('ninguno'))}
+                          {boton('lineas', 'Líneas', '<path d="M4 18h16" stroke-width="2.5"/>', familia === 'lineas', () => familia !== 'lineas' && setDetallePrecio('raya'))}
+                          {boton('circulos', 'Círculos', '<ellipse cx="12" cy="12" rx="9.5" ry="6.2" transform="rotate(-3 12 12)"/>', familia === 'circulos', () => familia !== 'circulos' && setDetallePrecio('ovalo'))}
+                          {boton('formas', 'Formas', '<path d="M4 6.5h16l2 5.5-2 5.5H4l-2-5.5z" fill="currentColor" opacity=".2" stroke="none"/>', familia === 'formas', () => familia !== 'formas' && setDetallePrecio('estrella'))}
+                        </div>
+                        <p className="text-[0.85rem] font-semibold">{{ sin: 'Sin estilo', lineas: 'Líneas', circulos: 'Círculos', formas: 'Formas' }[familia]}</p>
+                      </div>
+                      {familia !== 'sin' && (
+                        <div className="grid gap-[0.35rem]">
+                          <div className="flex flex-wrap gap-[0.4rem]">
+                            {SUBESTILOS[familia].map(([clave, nombreSub, dibujo]) => boton(clave, nombreSub, dibujo, detallePrecio === clave, () => setDetallePrecio(clave)))}
+                          </div>
+                          <p className="text-[0.8rem] text-zinc-500">{nombreDe}</p>
+                        </div>
+                      )}
+                    </>
+                  )
+                })()}
               </div>
             </details>
           )}

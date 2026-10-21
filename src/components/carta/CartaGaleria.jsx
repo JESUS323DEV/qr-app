@@ -115,7 +115,7 @@ function MenuDia({ menu }) {
             <p className="font-demo-heading text-[1.6rem] font-bold leading-none text-white [@media(min-height:46rem)]:text-[1.9rem] [@media(min-height:56rem)]:text-[2.2rem]">{menu.titulo}</p>
             {menu.cuando && <p className="mt-[0.25rem] text-[0.82rem] text-white/80 [@media(min-height:46rem)]:text-[0.9rem]">{menu.cuando}</p>}
           </div>
-          <p className="shrink-0 font-demo-heading text-[1.6rem] font-bold leading-none text-[color:var(--demo-precio-texto,var(--demo-accent))] [@media(min-height:46rem)]:text-[1.9rem] [@media(min-height:56rem)]:text-[2.2rem]">{menu.precio}</p>
+          <p className="shrink-0 whitespace-nowrap precio-detalle font-demo-heading text-[length:calc(1.6rem*var(--demo-precio-escala,1))] font-bold leading-none text-[color:var(--demo-precio-texto,var(--demo-accent))] [@media(min-height:46rem)]:text-[length:calc(1.9rem*var(--demo-precio-escala,1))] [@media(min-height:56rem)]:text-[length:calc(2.2rem*var(--demo-precio-escala,1))]">{menu.precio}</p>
         </div>
       </div>
 

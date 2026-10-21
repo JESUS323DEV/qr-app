@@ -108,8 +108,12 @@ function MenuDia({ menu }) {
           </div>
           {/* El precio, en su sitio (a la derecha del título), más grande que él y con una línea gruesa debajo que lo remarca (del color "Detalle del precio" de la carta o, sin él, el de acento) */}
           <div className="flex shrink-0 items-center justify-between gap-[0.5rem] px-[0.3rem] pb-[0.8rem] pt-[0.7rem]">
-            <span className="whitespace-nowrap font-demo-heading text-[1.3rem] font-bold leading-none [@media(min-height:46rem)]:text-[1.5rem]">{menu.titulo}</span>
-            <span className="shrink-0 whitespace-nowrap border-b-[0.3rem] border-[color:var(--demo-precio,var(--demo-accent))] pb-[0.15rem] font-demo-heading text-[length:calc(1.9rem*var(--demo-precio-escala,1))] font-bold leading-none text-[color:var(--demo-precio-texto,var(--demo-primary))] [@media(min-height:46rem)]:text-[length:calc(2.2rem*var(--demo-precio-escala,1))] [@media(min-height:56rem)]:text-[length:calc(2.5rem*var(--demo-precio-escala,1))]">{menu.precio}</span>
+            <div className="min-w-0 flex-1">
+              <span className="block whitespace-nowrap font-demo-heading text-[1.3rem] font-bold leading-none [@media(min-height:46rem)]:text-[1.5rem]">{menu.titulo}</span>
+              {/* Cuándo vale el menú (de martes a viernes, a mediodía...), justo debajo del título */}
+              {menu.cuando && <span className="mt-[0.3rem] block text-[0.82rem] leading-[1.25] text-demo-muted [@media(min-height:46rem)]:text-[0.9rem]">{menu.cuando}</span>}
+            </div>
+            <span className="shrink-0 whitespace-nowrap precio-detalle font-demo-heading text-[length:calc(1.9rem*var(--demo-precio-escala,1))] font-bold leading-none text-[color:var(--demo-precio-texto,var(--demo-primary))] [@media(min-height:46rem)]:text-[length:calc(2.2rem*var(--demo-precio-escala,1))] [@media(min-height:56rem)]:text-[length:calc(2.5rem*var(--demo-precio-escala,1))]">{menu.precio}</span>
           </div>
         </div>
       )}
@@ -121,7 +125,8 @@ function MenuDia({ menu }) {
             <span className="font-demo-heading text-[length:calc(2.4rem*var(--demo-precio-escala,1))] font-bold leading-none text-[color:var(--demo-precio-texto,var(--demo-primary))]">{menu.precio}</span>
           </div>
         )}
-        {menu.cuando && <p className="text-[0.8rem] text-demo-muted [@media(min-height:46rem)]:text-[0.88rem]">{menu.cuando}</p>}
+        {/* Sin foto, el cuándo va aquí, bajo el título; con foto, ya va en su polaroid */}
+        {!menu.foto && menu.cuando && <p className="text-[0.8rem] text-demo-muted [@media(min-height:46rem)]:text-[0.88rem]">{menu.cuando}</p>}
         <div className={`mt-[0.35rem] grid gap-[0.35rem] [@media(min-height:46rem)]:mt-[0.5rem] [@media(min-height:46rem)]:gap-[0.5rem] ${menu.grupos.length > 3 ? 'grid-cols-2 gap-x-[0.8rem]' : ''}`}>
           {menu.grupos.map(g => (
             <div key={g.nombre}>

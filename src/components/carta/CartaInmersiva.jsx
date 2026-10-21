@@ -34,7 +34,7 @@ function MenuDia({ menu }) {
 
       <div className="mt-[0.7rem] flex items-end justify-between gap-[1rem] border-t border-dashed border-white/25 pt-[0.6rem] [@media(min-height:50rem)]:mt-[0.9rem] [@media(min-height:50rem)]:pt-[0.8rem]">
         <p className="text-[0.8rem] leading-[1.4] text-white/70 [@media(min-height:50rem)]:text-[0.88rem]">{menu.incluye}</p>
-        <p className="shrink-0 font-demo-heading text-[1.75rem] leading-none text-[color:var(--demo-precio-texto,#fff)] [@media(min-height:50rem)]:text-[2.1rem]">{menu.precio}</p>
+        <p className="shrink-0 whitespace-nowrap precio-detalle font-demo-heading text-[length:calc(1.75rem*var(--demo-precio-escala,1))] leading-none text-[color:var(--demo-precio-texto,#fff)] [@media(min-height:50rem)]:text-[length:calc(2.1rem*var(--demo-precio-escala,1))]">{menu.precio}</p>
       </div>
     </div>
   )

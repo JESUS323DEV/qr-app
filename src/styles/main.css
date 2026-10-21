@@ -92,3 +92,235 @@ html {
 body {
   background: var(--color-papel);
 }
+
+/* El detalle del precio del menú de una carta (Editor > Diseño del precio): el estilo lo pone CartaPage en <html data-precio="...">. Se dibuja con
+   ::before y ::after (sin cambiar el tamaño del precio) y con el color "Detalle del precio" (--demo-precio) o, sin él, el de acento */
+.precio-detalle {
+  position: relative;
+  isolation: isolate;
+  padding-bottom: 0.4rem;
+  --detalle: var(--demo-precio, var(--demo-accent));
+}
+.precio-detalle::before,
+.precio-detalle::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+}
+/* Raya (la de siempre) */
+.precio-detalle::after {
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 0.3rem;
+  background: var(--detalle);
+  border-radius: 0.15rem;
+}
+:root[data-precio='ondulada'] .precio-detalle::after {
+  height: 0.5rem;
+  border-radius: 0;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'16'%20height%3D'8'%20viewBox%3D'0%200%2016%208'%3E%3Cpath%20d%3D'M0%204Q4%200%208%204T16%204'%20fill%3D'none'%20stroke%3D'black'%20stroke-width%3D'2'%2F%3E%3C%2Fsvg%3E") repeat-x 0 50% / 1rem 0.5rem;
+  mask: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'16'%20height%3D'8'%20viewBox%3D'0%200%2016%208'%3E%3Cpath%20d%3D'M0%204Q4%200%208%204T16%204'%20fill%3D'none'%20stroke%3D'black'%20stroke-width%3D'2'%2F%3E%3C%2Fsvg%3E") repeat-x 0 50% / 1rem 0.5rem;
+}
+:root[data-precio='pincelada'] .precio-detalle::after {
+  height: 0.5rem;
+  bottom: -0.05rem;
+  border-radius: 0;
+  transform: rotate(-1.5deg);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%20120%208'%20preserveAspectRatio%3D'none'%3E%3Cpath%20d%3D'M2%205C20%201%2040%207%2060%203S96%206%20118%202'%20fill%3D'none'%20stroke%3D'black'%20stroke-width%3D'4'%20stroke-linecap%3D'round'%20vector-effect%3D'non-scaling-stroke'%2F%3E%3C%2Fsvg%3E") no-repeat 0 50% / 100% 100%;
+  mask: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%20120%208'%20preserveAspectRatio%3D'none'%3E%3Cpath%20d%3D'M2%205C20%201%2040%207%2060%203S96%206%20118%202'%20fill%3D'none'%20stroke%3D'black'%20stroke-width%3D'4'%20stroke-linecap%3D'round'%20vector-effect%3D'non-scaling-stroke'%2F%3E%3C%2Fsvg%3E") no-repeat 0 50% / 100% 100%;
+}
+:root[data-precio='doble'] .precio-detalle::after {
+  height: 0.4rem;
+  border-radius: 0;
+  background: linear-gradient(var(--detalle), var(--detalle)) top / 100% 0.1rem no-repeat, linear-gradient(var(--detalle), var(--detalle)) bottom / 100% 0.1rem no-repeat;
+}
+:root[data-precio='ovalo'] .precio-detalle::after {
+  inset: -0.3em -0.55em -0.1em;
+  height: auto;
+  background: none;
+  border: 0.15rem solid var(--detalle);
+  border-radius: 52% 48% 50% 50% / 58% 44% 56% 42%;
+  transform: rotate(-2deg);
+}
+/* Círculos: el óvalo a mano (dibujado con ::after), el repasado (dos trazos), el arco abierto, la pegatina (un fondo relleno: el número pasa al color del fondo),
+   el sello de borde punteado, la estrella de oferta (un sello dentado relleno) y la mancha suave (un círculo difuminado) */
+:root[data-precio='repasado'] .precio-detalle::before {
+  inset: -0.35em -0.6em -0.15em;
+  border: 0.12rem solid var(--detalle);
+  border-radius: 46% 54% 52% 48% / 52% 46% 54% 48%;
+  transform: rotate(2.5deg);
+}
+:root[data-precio='repasado'] .precio-detalle::after {
+  inset: -0.28em -0.5em -0.08em;
+  height: auto;
+  background: none;
+  border: 0.12rem solid var(--detalle);
+  border-radius: 52% 48% 50% 50% / 58% 44% 56% 42%;
+  transform: rotate(-2.5deg);
+}
+:root[data-precio='arco'] .precio-detalle::after {
+  inset: -0.3em -0.55em -0.1em;
+  height: auto;
+  background: none;
+  border: 0.15rem solid var(--detalle);
+  border-left-color: transparent;
+  border-radius: 52% 48% 50% 50% / 58% 44% 56% 42%;
+  transform: rotate(-12deg);
+}
+:root[data-precio='sello'] .precio-detalle::after {
+  inset: -0.35em -0.6em -0.15em;
+  height: auto;
+  background: none;
+  border: 0.2rem dotted var(--detalle);
+  border-radius: 50%;
+}
+/* Formas: figuras rellenas del color (::before, recortadas con clip-path) con el número encima en el color del fondo. No cambian el tamaño del precio */
+:root[data-precio='estrella'] .precio-detalle {
+  color: var(--demo-bg) !important;
+}
+:root[data-precio='estrella'] .precio-detalle::before {
+  inset: -0.55em -0.85em -0.35em;
+  clip-path: polygon(100.0% 50.0%, 89.6% 60.6%, 93.3% 75.0%, 79.0% 79.0%, 75.0% 93.3%, 60.6% 89.6%, 50.0% 100.0%, 39.4% 89.6%, 25.0% 93.3%, 21.0% 79.0%, 6.7% 75.0%, 10.4% 60.6%, 0.0% 50.0%, 10.4% 39.4%, 6.7% 25.0%, 21.0% 21.0%, 25.0% 6.7%, 39.4% 10.4%, 50.0% 0.0%, 60.6% 10.4%, 75.0% 6.7%, 79.0% 21.0%, 93.3% 25.0%, 89.6% 39.4%);
+  z-index: -1;
+  background: var(--detalle);
+}
+:root[data-precio='estrella'] .precio-detalle::after {
+  display: none;
+}
+:root[data-precio='pastilla'] .precio-detalle {
+  color: var(--demo-bg) !important;
+}
+:root[data-precio='pastilla'] .precio-detalle::before {
+  inset: -0.25em -0.6em -0.05em;
+  border-radius: 999px;
+  z-index: -1;
+  background: var(--detalle);
+}
+:root[data-precio='pastilla'] .precio-detalle::after {
+  display: none;
+}
+:root[data-precio='etiqueta'] .precio-detalle {
+  color: var(--demo-bg) !important;
+}
+:root[data-precio='etiqueta'] .precio-detalle::before {
+  inset: -0.3em -0.65em -0.1em -1em;
+  clip-path: polygon(0% 50%, 11% 0%, 100% 0%, 100% 100%, 11% 100%);
+  z-index: -1;
+  background: var(--detalle);
+}
+:root[data-precio='etiqueta'] .precio-detalle::after {
+  display: none;
+}
+:root[data-precio='etiqueta'] .precio-detalle::after {
+  display: block;
+  left: -0.6em;
+  top: 50%;
+  bottom: auto;
+  width: 0.4em;
+  height: 0.4em;
+  margin-top: -0.25em;
+  border-radius: 50%;
+  background: var(--demo-bg);
+}
+:root[data-precio='cinta'] .precio-detalle {
+  color: var(--demo-bg) !important;
+}
+:root[data-precio='cinta'] .precio-detalle::before {
+  inset: -0.3em -1em -0.1em -0.8em;
+  clip-path: polygon(0% 0%, 100% 0%, 94% 50%, 100% 100%, 0% 100%, 6% 50%);
+  z-index: -1;
+  background: var(--detalle);
+}
+:root[data-precio='cinta'] .precio-detalle::after {
+  display: none;
+}
+:root[data-precio='burbuja'] .precio-detalle {
+  color: var(--demo-bg) !important;
+}
+:root[data-precio='burbuja'] .precio-detalle::before {
+  inset: -0.3em -0.65em -0.1em;
+  border-radius: 0.7em;
+  z-index: -1;
+  background: var(--detalle);
+}
+:root[data-precio='burbuja'] .precio-detalle::after {
+  display: none;
+}
+:root[data-precio='burbuja'] .precio-detalle::after {
+  display: block;
+  left: 0.3em;
+  right: auto;
+  bottom: -0.55em;
+  width: 0;
+  height: 0;
+  z-index: -1;
+  background: none;
+  border-radius: 0;
+  border-top: 0.6em solid var(--detalle);
+  border-left: 0.15em solid transparent;
+  border-right: 0.6em solid transparent;
+}
+:root[data-precio='festoneado'] .precio-detalle {
+  color: var(--demo-bg) !important;
+}
+:root[data-precio='festoneado'] .precio-detalle::before {
+  inset: -0.6em -1em -0.4em;
+  clip-path: polygon(97.0% 50.0%, 99.5% 53.2%, 99.2% 56.5%, 96.1% 59.2%, 92.9% 61.5%, 92.0% 64.3%, 93.4% 68.0%, 94.5% 71.9%, 93.0% 74.8%, 89.1% 76.1%, 85.2% 77.0%, 83.4% 79.3%, 83.2% 83.2%, 82.7% 87.3%, 80.2% 89.3%, 76.1% 89.1%, 72.2% 88.5%, 69.6% 89.8%, 68.0% 93.4%, 65.9% 97.0%, 62.8% 97.9%, 59.2% 96.1%, 55.8% 94.0%, 52.9% 94.3%, 50.0% 97.0%, 46.8% 99.5%, 43.5% 99.2%, 40.8% 96.1%, 38.5% 92.9%, 35.7% 92.0%, 32.0% 93.4%, 28.1% 94.5%, 25.2% 93.0%, 23.9% 89.1%, 23.0% 85.2%, 20.7% 83.4%, 16.8% 83.2%, 12.7% 82.7%, 10.7% 80.2%, 10.9% 76.1%, 11.5% 72.2%, 10.2% 69.6%, 6.6% 68.0%, 3.0% 65.9%, 2.1% 62.8%, 3.9% 59.2%, 6.0% 55.8%, 5.7% 52.9%, 3.0% 50.0%, 0.5% 46.8%, 0.8% 43.5%, 3.9% 40.8%, 7.1% 38.5%, 8.0% 35.7%, 6.6% 32.0%, 5.5% 28.1%, 7.0% 25.2%, 10.9% 23.9%, 14.8% 23.0%, 16.6% 20.7%, 16.8% 16.8%, 17.3% 12.7%, 19.8% 10.7%, 23.9% 10.9%, 27.8% 11.5%, 30.4% 10.2%, 32.0% 6.6%, 34.1% 3.0%, 37.2% 2.1%, 40.8% 3.9%, 44.2% 6.0%, 47.1% 5.7%, 50.0% 3.0%, 53.2% 0.5%, 56.5% 0.8%, 59.2% 3.9%, 61.5% 7.1%, 64.3% 8.0%, 68.0% 6.6%, 71.9% 5.5%, 74.8% 7.0%, 76.1% 10.9%, 77.0% 14.8%, 79.3% 16.6%, 83.2% 16.8%, 87.3% 17.3%, 89.3% 19.8%, 89.1% 23.9%, 88.5% 27.8%, 89.8% 30.4%, 93.4% 32.0%, 97.0% 34.1%, 97.9% 37.2%, 96.1% 40.8%, 94.0% 44.2%, 94.3% 47.1%);
+  z-index: -1;
+  background: var(--detalle);
+}
+:root[data-precio='festoneado'] .precio-detalle::after {
+  display: none;
+}
+:root[data-precio='rombo'] .precio-detalle {
+  color: var(--demo-bg) !important;
+}
+:root[data-precio='rombo'] .precio-detalle::before {
+  inset: -0.3em -1.1em -0.1em;
+  clip-path: polygon(12% 0%, 88% 0%, 100% 50%, 88% 100%, 12% 100%, 0% 50%);
+  z-index: -1;
+  background: var(--detalle);
+}
+:root[data-precio='rombo'] .precio-detalle::after {
+  display: none;
+}
+:root[data-precio='escudo'] .precio-detalle {
+  color: var(--demo-bg) !important;
+}
+:root[data-precio='escudo'] .precio-detalle::before {
+  inset: -0.35em -0.7em -0.75em;
+  clip-path: polygon(0% 0%, 100% 0%, 100% 58%, 50% 100%, 0% 58%);
+  z-index: -1;
+  background: var(--detalle);
+}
+:root[data-precio='escudo'] .precio-detalle::after {
+  display: none;
+}
+:root[data-precio='corazon'] .precio-detalle {
+  color: var(--demo-bg) !important;
+}
+:root[data-precio='corazon'] .precio-detalle::before {
+  inset: -0.7em -1em -0.5em;
+  clip-path: polygon(50.0% 23.9%, 50.0% 23.3%, 50.3% 21.8%, 50.9% 19.3%, 52.0% 16.2%, 53.8% 12.7%, 56.3% 9.1%, 59.4% 5.8%, 63.3% 3.0%, 67.7% 1.0%, 72.5% 0.0%, 77.5% 0.1%, 82.5% 1.4%, 87.2% 3.7%, 91.5% 7.1%, 95.1% 11.4%, 97.8% 16.3%, 99.4% 21.7%, 100.0% 27.3%, 99.4% 33.1%, 97.8% 38.8%, 95.1% 44.5%, 91.5% 49.9%, 87.2% 55.1%, 82.5% 60.2%, 77.5% 65.1%, 72.5% 69.8%, 67.7% 74.4%, 63.3% 78.8%, 59.4% 83.1%, 56.3% 87.1%, 53.8% 90.7%, 52.0% 93.8%, 50.9% 96.4%, 50.3% 98.4%, 50.0% 99.6%, 50.0% 100.0%, 50.0% 99.6%, 49.7% 98.4%, 49.1% 96.4%, 48.0% 93.8%, 46.2% 90.7%, 43.7% 87.1%, 40.6% 83.1%, 36.7% 78.8%, 32.3% 74.4%, 27.5% 69.8%, 22.5% 65.1%, 17.5% 60.2%, 12.8% 55.1%, 8.5% 49.9%, 4.9% 44.5%, 2.2% 38.8%, 0.6% 33.1%, 0.0% 27.3%, 0.6% 21.7%, 2.2% 16.3%, 4.9% 11.4%, 8.5% 7.1%, 12.8% 3.7%, 17.5% 1.4%, 22.5% 0.1%, 27.5% 0.0%, 32.3% 1.0%, 36.7% 3.0%, 40.6% 5.8%, 43.8% 9.1%, 46.2% 12.7%, 48.0% 16.2%, 49.1% 19.3%, 49.7% 21.8%, 50.0% 23.3%);
+  z-index: -1;
+  background: var(--detalle);
+}
+:root[data-precio='corazon'] .precio-detalle::after {
+  display: none;
+}
+:root[data-precio='ticket'] .precio-detalle {
+  color: var(--demo-bg) !important;
+}
+:root[data-precio='ticket'] .precio-detalle::before {
+  inset: -0.35em -0.7em -0.15em;
+  clip-path: polygon(0.0% 0.0%, 10.0% 14.0%, 20.0% 0.0%, 30.0% 14.0%, 40.0% 0.0%, 50.0% 14.0%, 60.0% 0.0%, 70.0% 14.0%, 80.0% 0.0%, 90.0% 14.0%, 100.0% 0.0%, 100.0% 100.0%, 90.0% 86.0%, 80.0% 100.0%, 70.0% 86.0%, 60.0% 100.0%, 50.0% 86.0%, 40.0% 100.0%, 30.0% 86.0%, 20.0% 100.0%, 10.0% 86.0%, 0.0% 100.0%);
+  z-index: -1;
+  background: var(--detalle);
+}
+:root[data-precio='ticket'] .precio-detalle::after {
+  display: none;
+}
+:root[data-precio='ninguno'] .precio-detalle::after {
+  display: none;
+}
