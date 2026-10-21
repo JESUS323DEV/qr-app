@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import TextoInicio from '../components/TextoInicio'
+import CtaPortada from '../components/CtaPortada'
 import NombreMarca from '../components/NombreMarca'
 import { Phone } from 'lucide-react'
 import Img from '../components/Img'
@@ -203,6 +204,8 @@ export default function HeroFullbleed({ hero, nombre, sinBarra = false, inicio, 
   }
 
   const enMapa = tipoComun(pestanas[activa]?.tipo) === 'ubicacion'
+  // Como en Cortes: en una miniweb, el botón, compartir y la frase extra van arriba, bajo el nombre, y abajo solo el titular y la descripción
+  const ctaArriba = Boolean(sinBarra && inicio?.boton && inicio?.botonA)
   const disposicion = disposicionDe(hero.disposicion)
   // El filtro que oscurece la foto bajo el texto: intensidad y color regulables (hero.filtro y hero.colores.filtroFoto)
   const filtro = useFiltro()
@@ -239,14 +242,17 @@ export default function HeroFullbleed({ hero, nombre, sinBarra = false, inicio, 
         {sinBarra && disposicion.velo && <div className={`pointer-events-none absolute inset-0 ${disposicion.velo}`} />}
 
         {/* Marca arriba y, a la derecha, compartir (en el mapa se desvanecen) */}
-        <div className={`pointer-events-none absolute inset-x-0 top-0 flex flex-wrap items-center justify-between px-[1.25rem] pt-[1rem] text-white transition-opacity duration-700 ${enMapa ? 'opacity-0' : 'opacity-100'}`}>
-          <p className={`font-demo-heading leading-none ${sinBarra ? 'text-[2.1rem]' : 'text-[1.5rem]'}`}><NombreMarca nombre={nombre} tamano={sinBarra ? 'grande' : 'normal'} /></p>
-          {!enMapa && <BotonCompartir titulo={nombre} className="pointer-events-auto" />}
+        <div className={`pointer-events-none absolute inset-x-0 top-0 px-[1.25rem] pt-[1rem] text-white transition-opacity duration-700 ${ctaArriba ? 'bg-gradient-to-b from-black/60 via-black/30 to-transparent pb-[1.6rem]' : ''} ${enMapa ? 'opacity-0' : 'opacity-100'}`}>
+          <div className="flex flex-wrap items-center justify-between">
+            <p className={`font-demo-heading leading-none ${sinBarra ? 'text-[2.1rem]' : 'text-[1.5rem]'}`}><NombreMarca nombre={nombre} tamano={sinBarra ? 'grande' : 'normal'} /></p>
+            {!enMapa && <BotonCompartir titulo={nombre} className="pointer-events-auto" />}
+          </div>
+          {ctaArriba && !enMapa && <CtaPortada inicio={inicio} irA={irA} nombre={nombre} className="pointer-events-auto mt-[0.7rem]" />}
         </div>
 
         {/* Portada de una miniweb: el texto de Inicio (texto grande, pequeño y el botón) encima de la foto, abajo, sobre un degradado oscuro para que se lea */}
         {sinBarra && (
-          <TextoInicio inicio={inicio} irA={irA} nombre={nombre} color="text-white" className={disposicion.texto} estilo={degradadoTexto} />
+          <TextoInicio inicio={inicio} irA={irA} nombre={nombre} sinBoton={ctaArriba} color="text-white" className={disposicion.texto} estilo={degradadoTexto} />
         )}
       </div>
 

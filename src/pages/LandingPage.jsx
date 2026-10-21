@@ -1,11 +1,9 @@
-import { rutaNegocio } from '../negocios'
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight, ArrowUpRight, Menu, X, QrCode } from 'lucide-react'
 import { DISENOS, mascaraSilueta } from '../lib/siluetas'
 import { SocialIcon } from '../components/SocialIcons'
 import { COLORES_REDES } from '../lib/coloresRedes'
-import { secuenciaDemos, tipoDe } from '../lib/tematicas'
 import { cartas, marcaDe, rutaCarta } from '../cartas'
 import { enlaceWhatsapp } from '../lib/whatsapp'
 import { marca, hero, pasos, comoFunciona, ventajas, seo, planes, precio, contactoForm, webCompleta, cartasMiniwebs, escaparate, menu } from '../landing/contenido'
@@ -180,8 +178,8 @@ const GeneradorQR = lazy(() => import('../components/GeneradorQR'))
 
 // Capturas de las demos a tamaño de móvil (src/assets/capturas/<slug>.jpg; las cartas, <slug>-carta.jpg).
 // Las demos sin captura salen igual, con el móvil en negro y su nombre dentro.
-const CAPTURAS = import.meta.glob('../assets/capturas/*.jpg', { eager: true, import: 'default' })
-const captura = archivo => CAPTURAS[`../assets/capturas/${archivo}.jpg`]
+const CAPTURAS = import.meta.glob('../assets/capturas/*.{jpg,png}', { eager: true, import: 'default' })
+const captura = archivo => CAPTURAS[`../assets/capturas/${archivo}.jpg`] ?? CAPTURAS[`../assets/capturas/${archivo}.png`]
 // Solo las destacadas (con destacada: false se quitan del escaparate; en el catálogo salen todas)
 const enEscaparate = d => d.destacada !== false
 
@@ -201,10 +199,13 @@ const WEBS_Y_CARTAS = [
     .filter(c => c.demo && enEscaparate(c))
     .map(c => ({ foto: captura(`${c.slug}-carta`), nombre: marcaDe(c)?.nombre, ...cartasMiniwebs.tipos.carta, ruta: rutaCarta(c) })),
 ]
-// Pestaña Ejemplos, subpestaña Miniwebs (la de por defecto): las miniwebs de demo
-const MINIWEBS = secuenciaDemos
-  .filter(n => tipoDe(n) === 'miniweb' && enEscaparate(n))
-  .map(n => ({ foto: captura(n.slug), nombre: n.nombre, ...cartasMiniwebs.tipos.miniweb, ruta: rutaNegocio(n) }))
+// Pestaña Ejemplos, subpestaña Miniwebs (la de por defecto): de momento, tres miniwebs hechas en el Editor (copias en Supabase, en /demo/slug)
+// con su captura (src/assets/capturas/<slug>.png)
+const MINIWEBS = [
+  { slug: 'lilac-nails', nombre: 'Lilac Nails', etiqueta: 'Estudio de uñas' },
+  { slug: 'barberia-cuervo', nombre: 'Barbería Cuervo', etiqueta: 'Barbería' },
+  { slug: 'obrador-mimosa', nombre: 'Obrador Mimosa', etiqueta: 'Pastelería' },
+].map(m => ({ foto: captura(m.slug), nombre: m.nombre, titulo: m.nombre, etiqueta: m.etiqueta, ruta: `/demo/${m.slug}` }))
 
 /* El hero es una miniweb, con la misma estructura que las de los clientes:
    escenario con la marca, el texto (cambia con la pestaña) y una fila de móviles con las capturas
@@ -224,57 +225,62 @@ const PESTANAS_ABAJO = [
 const ORDEN_PESTANAS = [...PESTANAS, ...PESTANAS_ABAJO]
 const CLAVE_PESTANA = 'landing-pestana'
 
-// Dibujo del hero de Inicio (provisional, hasta tener capturas de miniwebs de verdad): arriba de una miniweb en un móvil
-// recortado por abajo y, solapado en la esquina, el QR que la abre. Ocupa el hueco que sobra y, si no hay, se recorta o desaparece.
-const QR_CELDAS = (() => {
-  const n = 9
-  const ojo = (x, y) => (x < 3 && y < 3) || (x > n - 4 && y < 3) || (x < 3 && y > n - 4)
-  return Array.from({ length: n * n }, (_, i) => {
-    const x = i % n
-    const y = Math.floor(i / n)
-    return ojo(x, y) || (x * 7 + y * 13 + x * y) % 3 === 0
-  })
-})()
+// El hero de Inicio: un móvil con la captura de una miniweb hecha en el Editor y, a su derecha y apoyado en él, un QR de verdad.
+// Ocupa el hueco que sobra y, si no hay, se recorta o desaparece.
+function QrMostraq() {
+  const caja = useRef(null)
+  useEffect(() => {
+    let vivo = true
+    import('qr-code-styling').then(({ default: QRCodeStyling }) => {
+      if (!vivo || !caja.current) return
+      caja.current.replaceChildren()
+      new QRCodeStyling({
+        width: 220,
+        height: 220,
+        type: 'svg',
+        data: 'https://mostraq.es',
+        margin: 0,
+        qrOptions: { errorCorrectionLevel: 'M' },
+        dotsOptions: { type: 'rounded', color: '#141414' },
+        cornersSquareOptions: { type: 'extra-rounded', color: '#141414' },
+        cornersDotOptions: { type: 'dot', color: '#141414' },
+        backgroundOptions: { color: '#FFFFFF' },
+      }).append(caja.current)
+    })
+    return () => {
+      vivo = false
+    }
+  }, [])
+  return <div ref={caja} className="aspect-square w-full [&_svg]:h-full [&_svg]:w-full" />
+}
 
-function MockupMiniweb() {
+// Las capturas que pasan una tras otra en el móvil del hero, y cada cuánto cambian
+const CAPTURAS_HERO = ['lilac-nails', 'barberia-cuervo', 'obrador-mimosa']
+const CAMBIO_CAPTURA_MS = 4000
+
+function MockupMiniweb({ activo }) {
+  const [actual, setActual] = useState(0)
+  // Cambian solas mientras se ve la pestaña Inicio; con la opción de reducir animaciones, se queda la primera
+  useEffect(() => {
+    if (!activo || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
+    const id = setInterval(() => setActual(a => (a + 1) % CAPTURAS_HERO.length), CAMBIO_CAPTURA_MS)
+    return () => clearInterval(id)
+  }, [activo])
   return (
     <div aria-hidden="true" className="relative min-h-0 flex-1 overflow-hidden pt-[1.2rem]">
-      <div className="relative mx-auto h-[26rem] w-[11.5rem]">
-        {/* Móvil */}
-        <div className="h-full rounded-[1.6rem] border border-white/20 bg-[#1d1d1b] p-[0.35rem] shadow-[0_1.2rem_2.4rem_-0.8rem_rgb(0_0_0/0.8)]">
-          <div className="flex h-full flex-col overflow-hidden rounded-[1.3rem] bg-[#f3e9dc] text-[#2b1d17]">
-            <div className="flex items-center justify-between px-[0.7rem] pt-[0.7rem]">
-              <span className="text-[0.62rem] font-black">Café Lola</span>
-              <span className="flex flex-col gap-[0.15rem]">
-                <span className="h-[0.1rem] w-[0.7rem] rounded-full bg-[#2b1d17]" />
-                <span className="h-[0.1rem] w-[0.7rem] rounded-full bg-[#2b1d17]" />
-              </span>
-            </div>
-            <div className="mx-[0.5rem] mt-[0.6rem] flex h-[6.8rem] flex-col justify-end rounded-[0.8rem] bg-[linear-gradient(160deg,#c8553d,#8a2f21)] p-[0.6rem] text-white">
-              <span className="text-[0.95rem] font-black leading-[1]">Café de barrio, pan de masa madre</span>
-              <span className="mt-[0.3rem] text-[0.48rem] opacity-80">Abierto hasta las 20:00</span>
-            </div>
-            <div className="mt-[0.5rem] flex gap-[0.25rem] px-[0.5rem]">
-              {['Fotos', 'Ubicación', 'Horario', 'Carta'].map((t, i) => (
-                <span key={t} className={`rounded-full px-[0.4rem] py-[0.2rem] text-[0.45rem] font-bold ${i === 0 ? 'bg-[#c8553d] text-white' : 'bg-[#2b1d17]/10'}`}>{t}</span>
-              ))}
-            </div>
-            <div className="mx-[0.5rem] mt-[0.5rem] rounded-[0.7rem] bg-white p-[0.55rem]">
-              <span className="text-[0.55rem] font-black">¿Qué tal ha ido?</span>
-              <span className="mt-[0.15rem] block text-[0.7rem] tracking-[0.1rem] text-[#e0a400]">★★★★★</span>
-              <span className="mt-[0.3rem] block h-[0.1rem] w-full rounded-full bg-[#2b1d17]/15" />
-              <span className="mt-[0.2rem] block h-[0.1rem] w-[70%] rounded-full bg-[#2b1d17]/15" />
-            </div>
-            <div className="mx-[0.5rem] mt-[0.5rem] h-[2.2rem] rounded-[0.7rem] bg-[#2b1d17]/10" />
-          </div>
-        </div>
-        {/* QR solapado en la esquina */}
-        <div className="absolute -right-[3.2rem] bottom-[0.9rem] w-[4.6rem] rotate-[6deg] rounded-[0.6rem] bg-white p-[0.4rem] shadow-[0_0.8rem_1.6rem_-0.5rem_rgb(0_0_0/0.7)]">
-          <div className="grid grid-cols-9 gap-0">
-            {QR_CELDAS.map((on, i) => (
-              <span key={i} className={`aspect-square ${on ? 'bg-[#141414]' : ''}`} />
+      <div className="relative mx-auto w-[13.2rem] -translate-x-[1.6rem]">
+        {/* Móvil con la captura de una miniweb */}
+        <div className="rounded-[1.6rem] border border-white/20 bg-[#1d1d1b] p-[0.35rem] shadow-[0_1.2rem_2.4rem_-0.8rem_rgb(0_0_0/0.8)]">
+          {/* Apiladas en el mismo sitio (el marco toma el alto de la más alta) y con un fundido al pasar */}
+          <div className="grid overflow-hidden rounded-[1.3rem]">
+            {CAPTURAS_HERO.map((slug, i) => (
+              <img key={slug} src={captura(slug)} alt="" className={`col-start-1 row-start-1 block h-auto w-full transition-opacity duration-700 ${i === actual ? 'opacity-100' : 'opacity-0'}`} />
             ))}
           </div>
+        </div>
+        {/* El QR, a la derecha del móvil y apoyado en él, un poco inclinado */}
+        <div className="absolute -right-[3rem] top-[1.6rem] w-[4.6rem] rotate-[7deg] rounded-[0.6rem] bg-white p-[0.35rem] shadow-[0_0.9rem_1.8rem_-0.5rem_rgb(0_0_0/0.75)]">
+          <QrMostraq />
         </div>
       </div>
     </div>
@@ -689,7 +695,7 @@ function HeroMiniweb() {
         {/* Pestaña Inicio (clave ejemplos, la primera): el hero de Mostraq, con el diseño Fullbleed: fondo de color con un
             resplandor del acento, el titular grande abajo y, debajo, qué hace Mostraq y el botón a los ejemplos */}
         <Panel clave="ejemplos" pestana={pestana}>
-          <div className="relative mt-[0.5rem] flex min-h-[12rem] flex-1 flex-col justify-between px-[1.25rem] pb-[1.4rem] pt-[1.4rem]">
+          <div className="relative mt-[0.5rem] flex min-h-[12rem] flex-1 flex-col justify-between px-[1.25rem] pt-[1.4rem]">
             <div
               aria-hidden="true"
               className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_85%_18%,rgb(255_210_58/0.28),transparent_55%),radial-gradient(circle_at_5%_100%,rgb(255_210_58/0.12),transparent_50%)]"
@@ -702,15 +708,7 @@ function HeroMiniweb() {
               {hero.texto}
             </p>
             </div>
-            <MockupMiniweb />
-            <button
-              type="button"
-              onClick={() => { setPestana('cartas'); setActualCarta(0); setTocadoCarta(false) }}
-              className="relative inline-flex min-h-[3rem] w-fit items-center gap-[0.4rem] rounded-full bg-acento px-[1.5rem] text-[0.98rem] font-bold text-papel transition-colors hover:bg-acento-oscuro"
-            >
-              {hero.enlace}
-              <ArrowRight className="h-[1rem] w-[1rem]" aria-hidden="true" />
-            </button>
+            <MockupMiniweb activo={pestana === 'ejemplos'} />
           </div>
         </Panel>
       </div>

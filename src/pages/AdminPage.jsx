@@ -848,7 +848,7 @@ function CampoLogo({ valor, cambiar }) {
   )
 }
 
-function CampoFoto({ valor, cambiar, carpeta, sugerencia, orientacion }) {
+function CampoFoto({ valor, cambiar, carpeta, sugerencia, orientacion, quitar }) {
   const [subiendo, setSubiendo] = useState(false)
   const [error, setError] = useState('')
   const [buscando, setBuscando] = useState(false)
@@ -887,6 +887,12 @@ function CampoFoto({ valor, cambiar, carpeta, sugerencia, orientacion }) {
             <Search className="h-[1rem] w-[1rem]" aria-hidden="true" />
             Buscar
           </button>
+          {/* Quitar esta foto de la lista (solo en los diseños donde puede haber más o menos) */}
+          {quitar && (
+            <button type="button" onClick={quitar} title="Quitar esta foto" aria-label="Quitar esta foto" className="inline-flex items-center justify-center rounded-[0.6rem] px-[0.7rem] py-[0.55rem] text-zinc-600 ring-1 ring-zinc-300">
+              <X className="h-[1rem] w-[1rem]" aria-hidden="true" />
+            </button>
+          )}
         </div>
         {error && <p className="text-[0.82rem] font-semibold text-red-600">{error}</p>}
       </div>
@@ -1814,6 +1820,23 @@ function PanelColoresMiniweb({ valores, cambiar, autos = {}, sinTitulo = false }
   )
 }
 
+// Cuántas fotos usa la portada de cada diseño en la pestaña Inicio: Retrato, la del fondo y tres abajo; Polaroid y Galería, cuatro;
+// Mosaico, tres que rotan; Fullbleed y Editorial, tres que pasan. Cortes (Diagonal) usa una sola
+const FOTOS_PORTADA = { retrato: 4, polaroid: 4, galeria: 4, mosaico: 3, fullbleed: 3, editorial: 3 }
+
+// Cuántas fotos admite cada diseño en Inicio, de un mínimo a un máximo (con X para quitar y Añadir foto en Imágenes); los demás, un número fijo
+const RANGO_FOTOS = { galeria: [1, 8], fullbleed: [2, 8], editorial: [2, 8], polaroid: [1, 4] }
+
+// Completa las fotos de una pestaña de Inicio hasta las que pide su portada, repitiendo las que hay (son de relleno: se cambian en Imágenes).
+// Sin ninguna foto, no hay con qué rellenar y se deja como está
+function conFotosDePortada(pestana, cuantas) {
+  const base = pestana?.fotos?.length ? pestana.fotos : pestana?.foto ? [{ src: pestana.foto, alt: '' }] : []
+  if (!cuantas || !base.length || base.length >= cuantas) return pestana
+  const fotos = [...base]
+  for (let i = 0; fotos.length < cuantas; i++) fotos.push({ ...base[i % base.length] })
+  return { ...pestana, fotos }
+}
+
 // El texto extra con el que empiezan Editorial, Cortes (Diagonal) y Fullbleed
 const TEXTO_EXTRA_EJEMPLO = 'De martes a domingo, de 13:00 a 23:00'
 
@@ -2120,6 +2143,19 @@ function ImagenesPorPestana({ original, cambios, cambiar }) {
     ]
   }, [datos])
   if (!grupos.length) return <p className="text-[0.8rem] text-zinc-500">Esta página no tiene imágenes que cambiar.</p>
+  // Las fotos de Inicio (hero.pestanas.0.fotos) pueden ser más o menos según el diseño: se quitan con la X y se añaden con Añadir foto.
+  // Se guarda la lista entera (con lo ya cambiado) y se quitan los cambios sueltos de cada foto, que ya no valdrían
+  const listaInicio = datos.hero?.pestanas?.[0]?.fotos
+  const rango = RANGO_FOTOS[datos.hero?.portada]
+  const puedeEditarLista = Boolean(rango && Array.isArray(listaInicio) && listaInicio.length > 0 && listaInicio.every(f => f && typeof f === 'object'))
+  const guardarLista = nuevas => {
+    for (const ruta of Object.keys(cambios)) {
+      if (ruta.startsWith('hero.pestanas.0.fotos.')) cambiar(ruta, leerRuta(original, ruta))
+    }
+    cambiar('hero.pestanas.0.fotos', nuevas)
+  }
+  const quitarFoto = i => guardarLista(listaInicio.filter((_, k) => k !== i))
+  const anadirFoto = () => guardarLista([...listaInicio, { ...listaInicio[0] }])
   return (
     <div className="grid gap-[1.1rem]">
       {grupos.map(g => (
@@ -2135,9 +2171,25 @@ function ImagenesPorPestana({ original, cambios, cambiar }) {
                   </button>
                 )}
               </div>
-              <CampoFoto valor={leerRuta(datos, c.ruta) ?? ''} cambiar={v => cambiar(c.ruta, v)} carpeta="negocio/nuevo" sugerencia={datos.sector ?? ''} />
+              <CampoFoto
+                valor={leerRuta(datos, c.ruta) ?? ''}
+                cambiar={v => cambiar(c.ruta, v)}
+                carpeta="negocio/nuevo"
+                sugerencia={datos.sector ?? ''}
+                quitar={(() => {
+                  const m = c.ruta.match(/^hero\.pestanas\.0\.fotos\.(\d+)\.src$/)
+                  return puedeEditarLista && m && listaInicio.length > rango[0] ? () => quitarFoto(Number(m[1])) : undefined
+                })()}
+              />
             </div>
           ))}
+          {/* Añadir una foto más a Inicio, hasta el máximo del diseño: empieza repitiendo la primera, para cambiarla con Buscar o Subir */}
+          {g.clave === 'p0' && puedeEditarLista && listaInicio.length < rango[1] && (
+            <button type="button" onClick={anadirFoto} className="inline-flex items-center gap-[0.4rem] justify-self-start rounded-[0.6rem] px-[0.9rem] py-[0.55rem] text-[0.92rem] font-semibold ring-1 ring-zinc-300">
+              <Plus className="h-[1rem] w-[1rem]" aria-hidden="true" />
+              Añadir foto
+            </button>
+          )}
         </div>
       ))}
     </div>
@@ -2613,7 +2665,7 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
         ...(producto === 'ficha'
           ? { 'hero.diseno': hero, ...(barra ? { 'hero.barra': barra } : {}), ...(hero === 'diagonal' && corte !== 'diagonal' ? { 'hero.corte': corte } : {}), ...(hero === 'editorial' && formato !== 'clasica' ? { 'hero.formato': formato } : {}), ...(hero === 'fullbleed' && disposicion !== 'clasica' ? { 'hero.disposicion': disposicion } : {}), ...(hero === 'mosaico' && composicion !== 'clasica' ? { 'hero.composicion': composicion } : {}), ...(hero === 'retrato' && distribucion !== 'clasica' ? { 'hero.distribucion': distribucion } : {}), ...(hero === 'galeria' && pase !== 'clasica' ? { 'hero.pase': pase } : {}), ...(hero === 'polaroid' && montaje !== 'clasica' ? { 'hero.montaje': montaje } : {}) }
           : deChalaquita
-            ? { 'hero.portada': hero, ...inicioCambio, ...Object.fromEntries(Object.entries(textosEscritos).map(([clave, valor]) => [`hero.pestanas.0.${clave}`, valor])) }
+            ? { 'hero.portada': hero, ...inicioCambio, ...Object.fromEntries(Object.entries(textosEscritos).map(([clave, valor]) => [`hero.pestanas.0.${clave}`, valor])), ...(conFotosDePortada(getNegocio(plantilla.miniweb)?.hero?.pestanas?.[0], FOTOS_PORTADA[hero])?.fotos ? { 'hero.pestanas.0.fotos': conFotosDePortada(getNegocio(plantilla.miniweb).hero.pestanas[0], FOTOS_PORTADA[hero]).fotos } : {}) }
             : {
                 'hero.diseno': 'web',
                 'hero.portada': hero,
@@ -2621,7 +2673,7 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                 // El titular propio de la ficha (el que iba sobre la foto) sobra en una miniweb: ya está el Texto inicio
                 ...LIMPIAR_FICHA,
                 ...inicioCambio,
-                'hero.pestanas': pestanasDeMiniweb(negocioBase).map((p, i) => (i === 0 ? { ...p, ...textosEscritos } : p)),
+                'hero.pestanas': pestanasDeMiniweb(negocioBase).map((p, i) => (i === 0 ? conFotosDePortada({ ...p, ...textosEscritos }, FOTOS_PORTADA[hero]) : p)),
                 tipo: 'miniweb',
               }),
       }

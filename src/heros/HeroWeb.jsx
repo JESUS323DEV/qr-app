@@ -710,7 +710,8 @@ function PaginaPortada({ pestana, cuerpo, negocio, lema, portada, heroBase, inic
     <div className="flex h-full flex-col overflow-y-auto [scrollbar-width:none]">
       <div className="relative flex min-h-[22rem] flex-1 flex-col" style={fondoPortada ? { background: fondoPortada, '--demo-header': fondoPortada } : undefined}>
         <LugarCompartir.Provider value={lugarCompartir}>
-          {Portada && <Portada hero={{ ...heroBase, diseno: portada, pestanas: [pestana] }} nombre={negocio} lema={lema} inicio={inicio} irA={irA} sinBarra />}
+          {/* El lema no se pinta en las portadas de una miniweb (así, con logo, el nombre se adapta a todo el sitio); solo Retrato lo usa, si no hay titular */}
+          {Portada && <Portada hero={{ ...heroBase, diseno: portada, pestanas: [pestana] }} nombre={negocio} lema={portada === 'retrato' ? lema : undefined} inicio={inicio} irA={irA} sinBarra />}
         </LugarCompartir.Provider>
         {/* Redes en lateral: una columna de iconos pegada al lado derecho de la portada */}
         {redesEn === 'lateral' && hayRedes && (
