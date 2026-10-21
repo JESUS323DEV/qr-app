@@ -2,14 +2,15 @@ import { useEffect, useState } from 'react'
 import { X } from 'lucide-react'
 import Img from '../Img'
 
-/* Bloque de ofertas de una carta con perfil de belleza o de tienda: va en el hueco del menú del día de cualquier
-   diseño (cada diseño, en su MenuDia, lo pinta si el bloque trae ofertas). Toma los colores y la letra de la
-   carta (demo-*). sobreFoto: el diseño lo pone encima de una foto oscura (historias, inmersiva...), y entonces
-   va en blanco.
-   Si las ofertas traen fotos (los trabajos del negocio), encima de la lista sale una fila de polaroids un poco
-   torcidas, como en el hero Polaroid de las fichas; al tocar una se abre grande. Las polaroids se encogen para
-   dejar sitio a la lista, así todo cabe en una pantalla.
-   menu: { titulo, cuando?, fotos?[url], ofertas[{ nombre, descripcion?, precio, antes?, hasta? }] } (ya sin las caducadas) */
+/* Bloque de ofertas de una carta con perfil de belleza o de tienda (Promociones): va en el hueco del menú del día de cualquier
+   estilo (cada estilo, en su MenuDia, lo pinta si el bloque trae ofertas) y se ve a la manera de cada estilo:
+   - 'polaroid': una fila de polaroids con los trabajos (si hay fotos) y cada oferta en un papelito un poco torcido.
+   - 'revista': una foto grande, la primera oferta destacada y el resto en lista editorial.
+   - 'galeria': un mosaico de fotos a sangre y las ofertas en filas grandes, con el precio a la derecha.
+   - 'inmersiva': sobre la foto de fondo, cada oferta en una tarjeta de cristal y letra blanca.
+   - 'base': la sencilla, una lista en su tarjeta (sin fotos).
+   Toma los colores y la letra de la carta (demo-*).
+   menu: { titulo, cuando?, foto?, fotos?[url], ofertas[{ nombre, descripcion?, precio, antes?, hasta? }] } (ya sin las caducadas) */
 
 // "2026-10-31" → "31 de octubre"
 const fecha = iso => {
@@ -42,57 +43,186 @@ function FotoAbierta({ src, cerrar }) {
   )
 }
 
-export default function Ofertas({ menu, sobreFoto = false }) {
+// El precio de una oferta y, si lo hay, el de antes tachado
+function Precio({ o, suave, clase = '' }) {
+  return (
+    <div className="shrink-0 text-right">
+      <p className={`font-demo-heading leading-none text-demo-accent ${clase || 'text-[1.4rem] [@media(min-height:46rem)]:text-[1.6rem]'}`}>{o.precio}</p>
+      {o.antes && <p className={`mt-[0.2rem] text-[0.85rem] line-through ${suave}`}>{o.antes}</p>}
+    </div>
+  )
+}
+
+// El nombre de una oferta, su descripción y hasta cuándo vale
+function Datos({ o, suave, nombre = 'text-[1rem] font-semibold leading-tight [@media(min-height:46rem)]:text-[1.08rem]' }) {
+  return (
+    <div className="min-w-0">
+      <p className={nombre}>{o.nombre}</p>
+      {o.descripcion && <p className={`mt-[0.15rem] text-[0.85rem] leading-[1.35] ${suave}`}>{o.descripcion}</p>}
+      {o.hasta && <p className={`mt-[0.2rem] text-[0.78rem] ${suave}`}>Hasta el {fecha(o.hasta)}</p>}
+    </div>
+  )
+}
+
+// papelitos: en el estilo polaroid, cada oferta en un papelito torcido (false: en una lista sencilla con rayas, como en la pestaña Servicios de una miniweb)
+export default function Ofertas({ menu, sobreFoto = false, estilo = 'base', papelitos = true }) {
   const [abierta, setAbierta] = useState(null)
   const texto = sobreFoto ? 'text-white' : 'text-demo-text'
   const suave = sobreFoto ? 'text-white/70' : 'text-demo-muted'
   const raya = sobreFoto ? 'border-white/20' : 'border-demo-text/15'
   const fotos = (menu.fotos ?? []).slice(0, 3)
+  const [primera, ...resto] = menu.ofertas
 
-  return (
-    <div className={`flex min-h-0 flex-1 flex-col ${texto}`}>
-      {/* Polaroids de los trabajos: llenan el hueco que deja la lista */}
-      {fotos.length > 0 && (
-        <div className="mb-[0.9rem] grid min-h-[5.5rem] flex-1 gap-[0.7rem] px-[0.3rem] pt-[0.3rem] [@media(min-height:46rem)]:mb-[1.1rem]" style={{ gridTemplateColumns: `repeat(${fotos.length}, minmax(0, 1fr))` }}>
-          {fotos.map((src, i) => (
-            <button
-              key={src}
-              type="button"
-              onClick={() => setAbierta(src)}
-              className={`flex min-h-0 flex-col bg-white p-[0.3rem] pb-[1.1rem] transition-transform duration-200 hover:rotate-0 hover:scale-[1.04] ${SOMBRA} ${GIROS[i % GIROS.length]}`}
-            >
-              <span className="relative block min-h-0 w-full flex-1 overflow-hidden bg-black/5">
-                <Img src={src} alt="" className="absolute inset-0 h-full w-full object-cover" />
-              </span>
-            </button>
-          ))}
+  const titulo = (clase = '') => (
+    <>
+      <h2 className={`font-demo-heading leading-none ${clase || 'text-[1.9rem] [@media(min-height:46rem)]:text-[2.3rem] [@media(min-height:56rem)]:text-[2.6rem]'}`}>{menu.titulo}</h2>
+      {menu.cuando && <p className={`mt-[0.3rem] text-[0.85rem] ${suave} [@media(min-height:46rem)]:text-[0.92rem]`}>{menu.cuando}</p>}
+    </>
+  )
+
+  let cuerpo
+
+  if (estilo === 'polaroid') {
+    // Fila de polaroids con los trabajos y, debajo, cada oferta en un papelito un poco torcido
+    cuerpo = (
+      <>
+        {fotos.length > 0 && (
+          <div className="mb-[0.8rem] grid min-h-[5.5rem] flex-1 gap-[0.7rem] px-[0.3rem] pt-[0.3rem]" style={{ gridTemplateColumns: `repeat(${fotos.length}, minmax(0, 1fr))` }}>
+            {fotos.map((src, i) => (
+              <button
+                key={src}
+                type="button"
+                onClick={() => setAbierta(src)}
+                className={`flex min-h-0 flex-col bg-white p-[0.3rem] pb-[1.1rem] transition-transform duration-200 hover:rotate-0 hover:scale-[1.04] ${SOMBRA} ${GIROS[i % GIROS.length]}`}
+              >
+                <span className="relative block min-h-0 w-full flex-1 overflow-hidden bg-black/5">
+                  <Img src={src} alt="" className="absolute inset-0 h-full w-full object-cover" />
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+        <div className="shrink-0">
+          {titulo()}
+          <ul className={papelitos ? 'mt-[0.6rem] grid gap-[0.5rem] [@media(min-height:46rem)]:gap-[0.7rem]' : 'mt-[0.6rem] [@media(min-height:46rem)]:mt-[0.9rem]'}>
+            {menu.ofertas.map((o, i) => (
+              <li key={o.nombre} className={papelitos ? `bg-demo-surface px-[0.9rem] py-[0.55rem] [@media(min-height:46rem)]:py-[0.75rem] ${SOMBRA} ${i % 2 ? 'rotate-[0.8deg]' : '-rotate-[0.8deg]'}` : `border-t ${raya} py-[0.5rem] [@media(min-height:46rem)]:py-[0.75rem]`}>
+                <div className="flex items-start justify-between gap-[1rem]">
+                  <Datos o={o} suave={suave} />
+                  <Precio o={o} suave={suave} />
+                </div>
+              </li>
+            ))}
+          </ul>
         </div>
-      )}
-
+      </>
+    )
+  } else if (estilo === 'revista') {
+    // Una foto grande, la primera oferta destacada y el resto en lista editorial
+    const foto = fotos[0] ?? menu.foto
+    cuerpo = (
+      <>
+        {foto && (
+          <div className="relative mb-[0.7rem] min-h-[4.5rem] flex-1 overflow-hidden rounded-[0.6rem]">
+            <Img src={foto} alt="" className="absolute inset-0 h-full w-full object-cover" />
+          </div>
+        )}
+        <div className="shrink-0">
+          {titulo('italic text-[2rem] [@media(min-height:46rem)]:text-[2.4rem]')}
+          {primera && (
+            <div className={`mt-[0.7rem] border-y ${raya} py-[0.6rem] [@media(min-height:46rem)]:py-[0.8rem]`}>
+              <div className="flex items-baseline justify-between gap-[1rem]">
+                <h3 className="font-demo-heading text-[1.5rem] italic leading-tight [@media(min-height:46rem)]:text-[1.75rem]">{primera.nombre}</h3>
+                <Precio o={primera} suave={suave} clase="text-[1.5rem] italic [@media(min-height:46rem)]:text-[1.75rem]" />
+              </div>
+              {primera.descripcion && <p className={`mt-[0.15rem] text-[0.88rem] leading-[1.4] ${suave}`}>{primera.descripcion}</p>}
+              {primera.hasta && <p className={`mt-[0.2rem] text-[0.78rem] ${suave}`}>Hasta el {fecha(primera.hasta)}</p>}
+            </div>
+          )}
+          <ul>
+            {resto.map(o => (
+              <li key={o.nombre} className={`border-b ${raya} py-[0.5rem] [@media(min-height:46rem)]:py-[0.65rem]`}>
+                <div className="flex items-baseline justify-between gap-[1rem]">
+                  <p className="text-[0.98rem] font-medium leading-tight">{o.nombre}</p>
+                  <p className="shrink-0 font-demo-heading text-[1.05rem] italic text-demo-accent">
+                    {o.antes && <span className={`mr-[0.4rem] text-[0.82rem] line-through ${suave}`}>{o.antes}</span>}
+                    {o.precio}
+                  </p>
+                </div>
+                {o.descripcion && <p className={`mt-[0.1rem] text-[0.82rem] leading-[1.35] ${suave}`}>{o.descripcion}</p>}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </>
+    )
+  } else if (estilo === 'galeria') {
+    // Un mosaico de fotos a sangre (la primera grande y dos pequeñas) y las ofertas en filas grandes
+    cuerpo = (
+      <>
+        {fotos.length > 0 && (
+          <div className={`mb-[0.8rem] grid min-h-[6rem] flex-1 gap-[0.3rem] ${fotos.length >= 3 ? 'grid-cols-2 grid-rows-2' : fotos.length === 2 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+            {fotos.map((src, i) => (
+              <button key={src} type="button" onClick={() => setAbierta(src)} className={`relative min-h-0 overflow-hidden rounded-[0.6rem] ${fotos.length >= 3 && i === 0 ? 'row-span-2' : ''}`}>
+                <Img src={src} alt="" className="absolute inset-0 h-full w-full object-cover" />
+              </button>
+            ))}
+          </div>
+        )}
+        <div className="shrink-0">
+          {titulo('font-extrabold tracking-[-0.02em] text-[1.9rem] [@media(min-height:46rem)]:text-[2.3rem]')}
+          <ul className="mt-[0.5rem]">
+            {menu.ofertas.map(o => (
+              <li key={o.nombre} className={`border-t ${raya} py-[0.55rem] [@media(min-height:46rem)]:py-[0.75rem]`}>
+                <div className="flex items-center justify-between gap-[1rem]">
+                  <Datos o={o} suave={suave} nombre="text-[1.05rem] font-bold leading-tight [@media(min-height:46rem)]:text-[1.15rem]" />
+                  <Precio o={o} suave={suave} clase="text-[1.5rem] font-bold [@media(min-height:46rem)]:text-[1.7rem]" />
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </>
+    )
+  } else if (estilo === 'inmersiva') {
+    // Sobre la foto de fondo: cada oferta en una tarjeta de cristal
+    cuerpo = (
       <div className="shrink-0">
-        <h2 className="font-demo-heading text-[1.9rem] leading-none [@media(min-height:46rem)]:text-[2.3rem] [@media(min-height:56rem)]:text-[2.6rem]">{menu.titulo}</h2>
-        {menu.cuando && <p className={`mt-[0.3rem] text-[0.85rem] ${suave} [@media(min-height:46rem)]:text-[0.92rem]`}>{menu.cuando}</p>}
-
-        <ul className="mt-[0.6rem] [@media(min-height:46rem)]:mt-[0.9rem]">
+        {titulo()}
+        <ul className="mt-[0.7rem] grid gap-[0.5rem] [@media(min-height:46rem)]:gap-[0.7rem]">
           {menu.ofertas.map(o => (
-            <li key={o.nombre} className={`border-t ${raya} py-[0.5rem] [@media(min-height:46rem)]:py-[0.75rem]`}>
+            <li key={o.nombre} className="rounded-[0.9rem] bg-black/35 px-[0.9rem] py-[0.6rem] backdrop-blur-sm [@media(min-height:46rem)]:py-[0.8rem]">
               <div className="flex items-start justify-between gap-[1rem]">
-                <div className="min-w-0">
-                  <p className="text-[1rem] font-semibold leading-tight [@media(min-height:46rem)]:text-[1.08rem]">{o.nombre}</p>
-                  {o.descripcion && <p className={`mt-[0.15rem] text-[0.85rem] leading-[1.35] ${suave}`}>{o.descripcion}</p>}
-                  {o.hasta && <p className={`mt-[0.2rem] text-[0.78rem] ${suave}`}>Hasta el {fecha(o.hasta)}</p>}
-                </div>
-                {/* Precio de oferta y, si lo hay, el de antes tachado */}
-                <div className="shrink-0 text-right">
-                  <p className="font-demo-heading text-[1.4rem] leading-none text-demo-accent [@media(min-height:46rem)]:text-[1.6rem]">{o.precio}</p>
-                  {o.antes && <p className={`mt-[0.2rem] text-[0.85rem] line-through ${suave}`}>{o.antes}</p>}
-                </div>
+                <Datos o={o} suave={suave} />
+                <Precio o={o} suave={suave} />
               </div>
             </li>
           ))}
         </ul>
       </div>
+    )
+  } else {
+    // Base: la lista sencilla, sin fotos
+    cuerpo = (
+      <div className="shrink-0">
+        {titulo()}
+        <ul className="mt-[0.6rem] [@media(min-height:46rem)]:mt-[0.9rem]">
+          {menu.ofertas.map(o => (
+            <li key={o.nombre} className={`border-t ${raya} py-[0.5rem] [@media(min-height:46rem)]:py-[0.75rem]`}>
+              <div className="flex items-start justify-between gap-[1rem]">
+                <Datos o={o} suave={suave} />
+                <Precio o={o} suave={suave} />
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+    )
+  }
 
+  return (
+    <div className={`flex min-h-0 flex-1 flex-col ${texto}`}>
+      {cuerpo}
       {abierta && <FotoAbierta src={abierta} cerrar={() => setAbierta(null)} />}
     </div>
   )

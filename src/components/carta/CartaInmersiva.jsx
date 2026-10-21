@@ -7,14 +7,15 @@ import Ofertas from './Ofertas'
 
 /* Diseño de carta "inmersiva": la foto ocupa toda la pantalla y se queda quieta detrás.
    El overlay casi no la tapa arriba y oscurece abajo en degradado.
-   Arriba a la izquierda el nombre y, en columna, Menú del día y Carta; arriba a la derecha idioma y enlace a la miniweb.
+   Arriba a la izquierda el nombre; arriba a la derecha idioma y enlace a la miniweb. Las pestañas (Menú del día y Carta, y las secciones) van
+   en una fila debajo del nombre (la base) o, con el subdiseño carta.subdiseno = 'columna', en columna debajo del nombre.
    El contenido empieza abajo, encima de la foto, y sube por encima de ella al deslizar. */
 
 // Menú del día: cabe en una pantalla. Un solo bloque con separaciones fijas; en móviles altos
 // (50rem de alto o más) el texto crece un poco. Si sobra espacio, queda abajo, debajo del precio.
 function MenuDia({ menu }) {
   // Perfil de belleza o de tienda: en el hueco del menú del día van las ofertas
-  if (menu.ofertas) return <Ofertas menu={menu} sobreFoto />
+  if (menu.ofertas) return <Ofertas menu={menu} sobreFoto estilo="inmersiva" />
   return (
     <div>
       <h1 className="font-demo-heading text-[1.75rem] leading-none [@media(min-height:50rem)]:text-[2.1rem]">{menu.titulo}</h1>
@@ -33,7 +34,7 @@ function MenuDia({ menu }) {
 
       <div className="mt-[0.7rem] flex items-end justify-between gap-[1rem] border-t border-dashed border-white/25 pt-[0.6rem] [@media(min-height:50rem)]:mt-[0.9rem] [@media(min-height:50rem)]:pt-[0.8rem]">
         <p className="text-[0.8rem] leading-[1.4] text-white/70 [@media(min-height:50rem)]:text-[0.88rem]">{menu.incluye}</p>
-        <p className="shrink-0 font-demo-heading text-[1.75rem] leading-none [@media(min-height:50rem)]:text-[2.1rem]">{menu.precio}</p>
+        <p className="shrink-0 font-demo-heading text-[1.75rem] leading-none text-[color:var(--demo-precio-texto,#fff)] [@media(min-height:50rem)]:text-[2.1rem]">{menu.precio}</p>
       </div>
     </div>
   )
@@ -73,6 +74,7 @@ export default function CartaInmersiva({ carta, negocio, foto }) {
   const [seccionActiva, setSeccionActiva] = useState(carta.secciones?.[0]?.nombre)
   const [idioma, setIdioma] = useState(carta.idiomas?.[0] ?? 'ES')
   const seccion = carta.secciones.find(s => s.nombre === seccionActiva)
+  const columna = carta.subdiseno === 'columna'
 
   const principales = [
     ...(carta.menuDia ? [{ key: 'menu', texto: carta.menuDia.texto }] : []),
@@ -94,7 +96,8 @@ export default function CartaInmersiva({ carta, negocio, foto }) {
             <p className="font-demo-heading text-[2.4rem] leading-[0.95] [text-shadow:0_0.1rem_1rem_rgb(0_0_0/0.35)]">{negocio.nombre}</p>
             {negocio.lema && <p className="mt-[0.35rem] text-[0.85rem] text-white/85">{negocio.lema}</p>}
 
-            {/* Menú del día y Carta, en columna debajo del nombre */}
+            {/* Subdiseño en columna: Menú del día y Carta, en columna debajo del nombre */}
+            {columna && (
             <nav className="mt-[1.1rem] flex flex-col items-start gap-[0.4rem]">
               {principales.map(p => (
                 <button
@@ -129,6 +132,7 @@ export default function CartaInmersiva({ carta, negocio, foto }) {
                 </div>
               )}
             </nav>
+            )}
           </div>
 
           {/* Idioma y enlace a la miniweb */}
@@ -160,6 +164,44 @@ export default function CartaInmersiva({ carta, negocio, foto }) {
             )}
           </div>
         </div>
+
+        {/* La base: las pestañas en una fila (Menú del día y Carta) y, con la carta abierta, sus secciones en otra fila (que salta de línea si no caben) */}
+        {!columna && (
+          <nav className="px-[1.25rem] pb-[0.5rem]">
+            <div className="flex flex-wrap gap-[0.4rem]">
+              {principales.map(p => (
+                <button
+                  key={p.key}
+                  type="button"
+                  aria-pressed={modo === p.key}
+                  onClick={() => setModo(p.key)}
+                  className={`rounded-full px-[1rem] py-[0.45rem] text-[0.9rem] font-semibold backdrop-blur-sm transition-colors ${
+                    modo === p.key ? 'bg-white text-[#141414]' : 'bg-black/40 text-white hover:bg-black/55'
+                  }`}
+                >
+                  {p.texto}
+                </button>
+              ))}
+            </div>
+            {modo === 'carta' && (
+              <div className="mt-[0.4rem] flex flex-wrap gap-[0.3rem]">
+                {carta.secciones.map(s => (
+                  <button
+                    key={s.nombre}
+                    type="button"
+                    aria-pressed={seccionActiva === s.nombre}
+                    onClick={() => setSeccionActiva(s.nombre)}
+                    className={`rounded-full border px-[0.85rem] py-[0.3rem] text-[0.8rem] font-semibold backdrop-blur-sm transition-colors ${
+                      seccionActiva === s.nombre ? 'border-white bg-white/15 text-white' : 'border-transparent bg-black/40 text-white/80 hover:text-white'
+                    }`}
+                  >
+                    {s.nombre}
+                  </button>
+                ))}
+              </div>
+            )}
+          </nav>
+        )}
 
         {/* Contenido justo debajo de las pestañas, encima de la foto: un oscurecido suave detrás
             deja ver la foto apagada sin pelearse con el texto */}

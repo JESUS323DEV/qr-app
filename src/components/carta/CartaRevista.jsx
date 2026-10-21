@@ -21,7 +21,7 @@ const abreviaturas = lista => (lista?.length ? lista.map(a => ALERGENOS[a]?.cort
 
 function MenuDia({ menu }) {
   // Perfil de belleza o de tienda: en el hueco del menú del día van las ofertas
-  if (menu.ofertas) return <Ofertas menu={menu} />
+  if (menu.ofertas) return <Ofertas menu={menu} estilo="revista" />
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex shrink-0 items-end justify-between gap-[1rem]">
@@ -29,7 +29,7 @@ function MenuDia({ menu }) {
           <h2 className="font-demo-heading text-[2rem] leading-[0.95] [@media(min-height:46rem)]:text-[2.4rem] [@media(min-height:56rem)]:text-[2.8rem]">{menu.titulo}</h2>
           {menu.cuando && <p className="mt-[0.3rem] text-[0.82rem] text-demo-muted [@media(min-height:46rem)]:text-[0.9rem]">{menu.cuando}</p>}
         </div>
-        <p className="shrink-0 font-demo-heading text-[1.8rem] italic leading-none text-demo-primary [@media(min-height:46rem)]:text-[2.1rem] [@media(min-height:56rem)]:text-[2.4rem]">{menu.precio}</p>
+        <p className="shrink-0 font-demo-heading text-[1.8rem] italic leading-none text-[color:var(--demo-precio-texto,var(--demo-primary))] [@media(min-height:46rem)]:text-[2.1rem] [@media(min-height:56rem)]:text-[2.4rem]">{menu.precio}</p>
       </div>
 
       {/* Foto del menú: llena el hueco que queda (se encoge en móviles bajos) */}

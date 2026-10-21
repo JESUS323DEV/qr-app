@@ -98,7 +98,7 @@ function PolaroidAbierta({ plato, cerrar }) {
 // El menú del día con foto es como una polaroid de verdad: la foto casi cuadrada y más pequeña, y debajo el borde grueso con el título y el precio grandes
 function MenuDia({ menu }) {
   // Perfil de belleza o de tienda: en el hueco del menú del día van las ofertas
-  if (menu.ofertas) return <div className={`bg-demo-surface px-[1rem] py-[0.9rem] text-demo-text rotate-[1deg] ${SOMBRA}`}><Ofertas menu={menu} /></div>
+  if (menu.ofertas) return <Ofertas menu={menu} estilo="polaroid" />
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-[0.9rem] [@media(min-height:46rem)]:gap-[1.2rem]">
       {menu.foto && (
@@ -106,9 +106,10 @@ function MenuDia({ menu }) {
           <div className="relative aspect-[5/4] min-h-[5rem] overflow-hidden">
             <Img src={menu.foto} alt="" className="absolute inset-0 h-full w-full object-cover" />
           </div>
-          <div className="flex shrink-0 items-baseline justify-between gap-[0.5rem] px-[0.3rem] pb-[0.9rem] pt-[0.8rem]">
-            <span className="whitespace-nowrap font-demo-heading text-[1.6rem] font-bold leading-none [@media(min-height:46rem)]:text-[1.85rem] [@media(min-height:56rem)]:text-[2.1rem]">{menu.titulo}</span>
-            <span className="shrink-0 whitespace-nowrap font-demo-heading text-[1.6rem] font-bold leading-none text-demo-accent [@media(min-height:46rem)]:text-[1.85rem] [@media(min-height:56rem)]:text-[2.1rem]">{menu.precio}</span>
+          {/* El precio, en su sitio (a la derecha del título), más grande que él y con una línea gruesa debajo que lo remarca (del color "Detalle del precio" de la carta o, sin él, el de acento) */}
+          <div className="flex shrink-0 items-center justify-between gap-[0.5rem] px-[0.3rem] pb-[0.8rem] pt-[0.7rem]">
+            <span className="whitespace-nowrap font-demo-heading text-[1.3rem] font-bold leading-none [@media(min-height:46rem)]:text-[1.5rem]">{menu.titulo}</span>
+            <span className="shrink-0 whitespace-nowrap border-b-[0.3rem] border-[color:var(--demo-precio,var(--demo-accent))] pb-[0.15rem] font-demo-heading text-[length:calc(1.9rem*var(--demo-precio-escala,1))] font-bold leading-none text-[color:var(--demo-precio-texto,var(--demo-primary))] [@media(min-height:46rem)]:text-[length:calc(2.2rem*var(--demo-precio-escala,1))] [@media(min-height:56rem)]:text-[length:calc(2.5rem*var(--demo-precio-escala,1))]">{menu.precio}</span>
           </div>
         </div>
       )}
@@ -116,8 +117,8 @@ function MenuDia({ menu }) {
       <div className={`shrink-0 bg-demo-surface px-[0.9rem] py-[0.7rem] text-demo-text rotate-[1deg] [@media(min-height:46rem)]:px-[1.1rem] [@media(min-height:46rem)]:py-[0.9rem] ${SOMBRA}`}>
         {!menu.foto && (
           <div className="mb-[0.4rem] flex items-baseline justify-between gap-[0.5rem]">
-            <span className="font-demo-heading text-[1.8rem] font-bold leading-none">{menu.titulo}</span>
-            <span className="font-demo-heading text-[1.8rem] font-bold leading-none text-demo-accent">{menu.precio}</span>
+            <span className="font-demo-heading text-[1.6rem] font-bold leading-none">{menu.titulo}</span>
+            <span className="font-demo-heading text-[length:calc(2.4rem*var(--demo-precio-escala,1))] font-bold leading-none text-[color:var(--demo-precio-texto,var(--demo-primary))]">{menu.precio}</span>
           </div>
         )}
         {menu.cuando && <p className="text-[0.8rem] text-demo-muted [@media(min-height:46rem)]:text-[0.88rem]">{menu.cuando}</p>}

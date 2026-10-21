@@ -1,3 +1,4 @@
+import { derivadosDeFondoYTexto } from './mezclarColores'
 import { TIPOGRAFIAS } from '../asistente/tipografias'
 import { CLAVES_COLORES_MINIWEB } from './coloresMiniweb'
 import { CLAVES_CORTES } from './cortes'
@@ -110,7 +111,7 @@ export function marcaDePrueba(marca, params) {
     ...((redes || inicio || tamanoNombre || corte || formato || disposicion || composicion || distribucion || pase || montaje || carta || horario || horarioVar || filtro !== null || Object.keys(textos).length || Object.keys(coloresElegidos).length || Object.keys(lugares).length) && marca.hero ? { hero: { ...marca.hero, ...(Object.keys(coloresElegidos).length ? { colores: { ...marca.hero.colores, ...coloresElegidos } } : {}), ...(redes ? { colorRedes: redes } : {}), ...(inicio ? { fondoInicio: inicio } : {}), ...(tamanoNombre ? { tamanoNombre } : {}), ...(corte ? { corte } : {}), ...(formato ? { formato } : {}), ...(disposicion ? { disposicion } : {}), ...(composicion ? { composicion } : {}), ...(distribucion ? { distribucion } : {}), ...(pase ? { pase } : {}), ...(montaje ? { montaje } : {}), ...(carta ? { carta } : {}), ...(horario ? { horario } : {}), ...(horarioVar ? { horarioVariante: horarioVar } : {}), ...(filtro !== null ? { filtro } : {}), ...(Object.keys(textos).length && marca.hero.pestanas ? { pestanas: marca.hero.pestanas.map((p, i) => (i === 0 ? { ...p, ...textos } : p)) } : {}), ...lugares } } : {}),
     theme: {
       ...marca.theme,
-      colors: { ...marca.theme?.colors, ...(principal ? { primary: principal } : {}), ...(acento ? { accent: acento } : {}), ...(texto ? { text: texto } : {}), ...(fondo ? { bg: fondo } : {}), ...(cabecera ? { header: cabecera } : {}) },
+      colors: { ...marca.theme?.colors, ...(params.get('derivar') === '1' && (fondo || texto) ? derivadosDeFondoYTexto(fondo ?? marca.theme?.colors?.bg, texto ?? marca.theme?.colors?.text) : {}), ...(hex(params.get('precio')) ? { precio: hex(params.get('precio')) } : {}), ...(hex(params.get('ptxt')) ? { precioTexto: hex(params.get('ptxt')) } : {}), ...(principal ? { primary: principal } : {}), ...(acento ? { accent: acento } : {}), ...(texto ? { text: texto } : {}), ...(fondo ? { bg: fondo } : {}), ...(cabecera ? { header: cabecera } : {}) },
       ...(letra ? { fonts: letra.fonts } : {}),
     },
   }

@@ -169,6 +169,47 @@ const ESQUEMA_DISENO = {
   additionalProperties: false,
 }
 
+// El diseño de una carta nueva: solo claves de las listas que manda el panel
+const ESQUEMA_DISENO_CARTA = {
+  type: 'object',
+  properties: {
+    nombre: { type: 'string' },
+    tipo: { type: 'string' },
+    estilo: { type: 'string' },
+    subdiseno: { type: 'string' },
+    tipografia: { type: 'string' },
+    colores: {
+      type: 'object',
+      properties: { principal: { type: 'string' }, acento: { type: 'string' }, texto: { type: 'string' }, fondo: { type: 'string' } },
+      required: ['principal', 'acento', 'texto', 'fondo'],
+      additionalProperties: false,
+    },
+    resumen: { type: 'string' },
+  },
+  required: ['nombre', 'tipo', 'estilo', 'subdiseno', 'tipografia', 'colores', 'resumen'],
+  additionalProperties: false,
+}
+
+const INSTRUCCIONES_DISENO_CARTA = `Eres el asistente de Jesús, que hace cartas digitales para negocios locales de Barcelona (el cliente las abre con un QR en la mesa o en el mostrador).
+Ahora diseñas SOLO el aspecto de una carta nueva, sin partir de ninguna demo: tú decides cómo se ve, eligiendo SOLO entre las piezas que te paso. No escribes código, ni platos, ni precios, ni inventas valores: cada campo es la clave exacta de una de las listas. El contenido (platos, precios, menú del día) lo pone después el dueño.
+
+Cómo elegir:
+- Piensa en el negocio, en su barrio y en el tono que piden (elegante, cercano, joven, popular, serio...) y elige lo que mejor lo cuenta. No elijas la primera opción de cada lista por defecto ni repitas siempre la misma combinación: cada negocio tiene que tener su propio aspecto.
+- nombre: el nombre del negocio. Si te lo dan (o si el nombre que te paso no está vacío), ese, tal cual; manda siempre sobre el que veas escrito en una imagen. Si no hay nombre en ningún sitio, invéntate uno corto, creíble y propio de ese tipo de negocio y de su barrio; Jesús lo cambiará si quiere.
+- tipo: 'carta' si el negocio tiene platos y menú del día (restaurante, bar, cafetería, pastelería...) o 'promociones' si lo que enseña son ofertas y servicios con precio (belleza, estética, tiendas...).
+- estilo: el estilo de la carta, por su clave. Elige por el carácter de la marca y por si tiene buenas fotos (polaroid, galeria, inmersiva piden fotos buenas; base y revista aguantan cualquier cosa).
+- subdiseno: uno de SUS subdiseños si el estilo tiene (la clave tiene que ser del estilo elegido); si no tiene o no quieres, vacío.
+- tipografia: el id de una pareja de la lista, la que mejor vaya con la marca.
+- colores (formato #RRGGBB): lo más importante de tu trabajo. Una paleta completa y coherente a partir de los colores que pidan, del logo o de lo que transmita la marca (un asador, tonos cálidos y tierra; una cafetería, crema y marrones; una pastelería, rosas o pasteles; una barbería, negros y dorados; una marisquería, azules y blancos...). Piensa en que alguien lee una carta en el móvil, a veces con poca luz y con prisa.
+  · principal: el color fuerte. Va en los precios, la pestaña elegida y los botones: tiene que verse y no confundirse con el fondo.
+  · acento: el detalle. Va en los nombres de los grupos y secciones, subrayados y etiquetas.
+  · fondo y texto: los de la carta. Elige un fondo claro cálido (crema, hueso) o uno oscuro (casi negro con matiz, verde o granate muy oscuro) y un texto que contraste fuerte (4,5 a 1 como mínimo): evita el blanco y el negro puros, mejor un hueso y un casi negro de la marca. Con el estilo inmersiva, la carta se lee sobre una foto oscurecida: el texto va claro aunque el fondo sea claro, así que elígelo con eso en mente.
+  · Las tarjetas y los textos suaves se calculan solos a partir del fondo y del texto: no los eligas. Evita paletas de más de tres colores distintos (principal, acento y neutros) y los colores chillones sobre fondo oscuro.
+- Si te paso una imagen de referencia de la marca (su logo o una captura), úsala SOLO como referencia, no la coloques: de ella saca el carácter de la marca y los colores. Los colores dominantes exactos te los doy en hexadecimal: usa esos para la paleta (principal, acento, y fondo y texto con buen contraste) en lugar de inventar otros parecidos, salvo que el texto pida otros.
+- Si una imagen trae texto (nombre del negocio, lema...), léelo y úsalo como si Jesús te lo hubiera escrito, sobre todo el nombre.
+- resumen: una o dos frases en castellano, sin guiones largos, diciendo cómo has montado el diseño y por qué. Con naturalidad: nada de frases de relleno del sector.
+No uses guiones largos (—) en ningún texto.`
+
 const INSTRUCCIONES_DISENO = `Eres el asistente de Jesús, que hace miniwebs para el móvil para negocios locales de Barcelona (el cliente las abre con un QR en el local). Una miniweb tiene un menú de navegación, una portada de Inicio con foto y texto, una barra de redes y la tarjeta de reseña de Google.
 Ahora diseñas una miniweb nueva, SIN partir de ninguna demo: tú decides cómo es, eligiendo SOLO entre las piezas que te paso. No escribes código ni inventas valores: cada campo es la clave exacta de una de las listas.
 
@@ -367,11 +408,11 @@ Deno.serve(async req => {
   } catch {
     return responder({ error: 'Petición no válida.' }, 400)
   }
-  const paso = datos?.paso as keyof typeof INSTRUCCIONES | 'colores-qr' | 'diseno-miniweb'
+  const paso = datos?.paso as keyof typeof INSTRUCCIONES | 'colores-qr' | 'diseno-miniweb' | 'diseno-carta'
   const pasoValido =
     paso === 'colores-qr'
       ? Boolean(datos.colores || datos.descripcion?.trim())
-      : paso === 'diseno-miniweb'
+      : paso === 'diseno-miniweb' || paso === 'diseno-carta'
         ? Boolean(datos.peticion?.trim() && datos.catalogo)
         : Boolean(INSTRUCCIONES[paso as keyof typeof INSTRUCCIONES] && datos.peticion?.trim())
   if (!pasoValido) return responder({ error: 'Petición no válida.' }, 400)
@@ -424,6 +465,22 @@ Deno.serve(async req => {
         fallbacks: 'default',
         output_config: { effort: 'low', format: { type: 'json_schema', schema: ESQUEMA_DISENO } },
         system: INSTRUCCIONES_DISENO,
+        messages: [
+          {
+            role: 'user',
+            content: contenidoDiseno(datos, `Nombre del negocio: ${String(datos.nombre || 'sin nombre').slice(0, 80)}\n\nLo que cuenta Jesús del negocio:\n${String(datos.peticion).trim().slice(0, 800)}\n\nPiezas disponibles (JSON; usa solo estas claves):\n${JSON.stringify(datos.catalogo)}`),
+          },
+        ],
+      })
+    } else if (paso === 'diseno-carta') {
+      // El diseño de una carta nueva: de gusto, así que Sonnet. Solo claves de las listas del panel
+      respuesta = await claude.beta.messages.create({
+        model: MODELO,
+        max_tokens: 3000,
+        betas: ['server-side-fallback-2026-07-01'],
+        fallbacks: 'default',
+        output_config: { effort: 'low', format: { type: 'json_schema', schema: ESQUEMA_DISENO_CARTA } },
+        system: INSTRUCCIONES_DISENO_CARTA,
         messages: [
           {
             role: 'user',

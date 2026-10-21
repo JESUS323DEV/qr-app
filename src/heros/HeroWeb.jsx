@@ -642,7 +642,7 @@ function PaginaMenuPropia({ pestana }) {
       <div className="flex-1 overflow-y-auto px-[1.25rem] pb-[1.25rem] pt-[1rem]">
         {vista === 'menu' && pestana.menuDia && <MenuDelDia menu={pestana.menuDia} />}
         {vista === 'menu' && !pestana.menuDia && ofertas && (
-          <Ofertas menu={{ titulo: ofertas.titulo ?? 'Ofertas', cuando: ofertas.cuando, fotos: ofertas.fotos, ofertas: ofertas.lista ?? [] }} />
+          <Ofertas estilo="polaroid" papelitos={false} menu={{ titulo: ofertas.titulo ?? 'Ofertas', cuando: ofertas.cuando, fotos: ofertas.fotos, ofertas: ofertas.lista ?? [] }} />
         )}
         {vista === 'carta' && seccion && <SeccionCarta seccion={seccion} />}
       </div>

@@ -104,7 +104,7 @@ function Visor({ platos, inicio, cerrar }) {
 // los grupos de platos y lo que incluye
 function MenuDia({ menu }) {
   // Perfil de belleza o de tienda: en el hueco del menú del día van las ofertas
-  if (menu.ofertas) return <Ofertas menu={menu} />
+  if (menu.ofertas) return <Ofertas menu={menu} estilo="galeria" />
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-[0.5rem] [@media(min-height:46rem)]:gap-[0.6rem]">
       <div className="relative min-h-[5rem] flex-1 overflow-hidden rounded-[0.9rem] bg-demo-surface">
@@ -115,7 +115,7 @@ function MenuDia({ menu }) {
             <p className="font-demo-heading text-[1.6rem] font-bold leading-none text-white [@media(min-height:46rem)]:text-[1.9rem] [@media(min-height:56rem)]:text-[2.2rem]">{menu.titulo}</p>
             {menu.cuando && <p className="mt-[0.25rem] text-[0.82rem] text-white/80 [@media(min-height:46rem)]:text-[0.9rem]">{menu.cuando}</p>}
           </div>
-          <p className="shrink-0 font-demo-heading text-[1.6rem] font-bold leading-none text-demo-accent [@media(min-height:46rem)]:text-[1.9rem] [@media(min-height:56rem)]:text-[2.2rem]">{menu.precio}</p>
+          <p className="shrink-0 font-demo-heading text-[1.6rem] font-bold leading-none text-[color:var(--demo-precio-texto,var(--demo-accent))] [@media(min-height:46rem)]:text-[1.9rem] [@media(min-height:56rem)]:text-[2.2rem]">{menu.precio}</p>
         </div>
       </div>
 

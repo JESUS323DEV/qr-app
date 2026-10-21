@@ -14,7 +14,7 @@ import { applyTheme, resetTheme } from '../lib/applyTheme'
 import Img from '../components/Img'
 import { supabase } from '../lib/supabase'
 import { menuActivo, textoHorario } from '../lib/horarioMenu'
-import { conEdicion, useEdicion } from '../lib/ediciones'
+import { aplicar, conEdicion, useEdicion } from '../lib/ediciones'
 import CartaInmersiva from '../components/carta/CartaInmersiva'
 import CartaRevista from '../components/carta/CartaRevista'
 import CartaPolaroid from '../components/carta/CartaPolaroid'
@@ -113,7 +113,7 @@ function Alergenos({ lista }) {
 
 function MenuDia({ menu }) {
   // Perfil de belleza o de tienda: en el hueco del menú del día van las ofertas
-  if (menu.ofertas) return <div className="rounded-[1.1rem] bg-demo-surface px-[1rem] py-[1rem]"><Ofertas menu={menu} /></div>
+  if (menu.ofertas) return <div className="rounded-[1.1rem] bg-demo-surface px-[1rem] py-[1rem]"><Ofertas menu={menu} estilo="base" /></div>
   return (
     <div className="rounded-[1.1rem] bg-demo-surface px-[1rem] py-[0.8rem]">
       <h1 className="font-demo-heading text-[1.5rem] leading-none">{menu.titulo}</h1>
@@ -132,7 +132,7 @@ function MenuDia({ menu }) {
 
       <div className="mt-[0.6rem] flex items-end justify-between gap-[1rem] border-t border-dashed border-demo-text/20 pt-[0.5rem]">
         <p className="text-[0.8rem] leading-[1.4] text-demo-muted">{menu.incluye}</p>
-        <p className="shrink-0 font-demo-heading text-[1.5rem] leading-none text-demo-primary">{menu.precio}</p>
+        <p className="shrink-0 font-demo-heading text-[1.5rem] leading-none text-[color:var(--demo-precio-texto,var(--demo-primary))]">{menu.precio}</p>
       </div>
     </div>
   )
@@ -248,11 +248,24 @@ function useAhora() {
   return ahora
 }
 
+// El tamaño del precio del menú (carta.tamanoPrecio: xs, md o xl): el factor se pone en una variable del documento (--demo-precio-escala) que usan los estilos
+const FACTORES_PRECIO = { xs: 0.8, md: 1, xl: 1.25 }
+function CartaConTamanos(props) {
+  const factor = FACTORES_PRECIO[props.carta?.tamanoPrecio] ?? 1
+  useEffect(() => {
+    document.documentElement.style.setProperty('--demo-precio-escala', String(factor))
+    return () => document.documentElement.style.removeProperty('--demo-precio-escala')
+  }, [factor])
+  return <Carta {...props} />
+}
+
 // Al pasar de una carta a otra con las flechas, la página empieza de cero (pestañas, sección e idioma)
 export default function CartaPage(props) {
   const { slug } = useParams()
   const [params] = useSearchParams()
   const pruebaDiseno = params.get('diseno')
+  const pruebaSub = params.get('sub')
+  const pruebaTPrecio = params.get('tprecio')
   // ?incrustada=1: la carta dentro de la pestaña del menú de una miniweb (sin flechas de demos ni enlace de vuelta a la miniweb)
   const incrustada = params.get('incrustada') === '1'
   const { cargando, fila } = useCartaRemota(slug)
@@ -276,10 +289,22 @@ export default function CartaPage(props) {
   let carta = conOfertas(conHorario(juntar(conCambios, fila), ahora), ahora)
   // En las demos, el estilo de carta se puede probar desde la dirección (?diseno=polaroid): lo usa /admin
   if (carta?.demo && ESTILOS_CARTA.has(pruebaDiseno)) carta = { ...carta, diseno: pruebaDiseno }
+  // ?tprecio=xs|xl: el tamaño del precio del menú (carta.tamanoPrecio), para la vista previa del Editor
+  if (carta?.demo && ['xs', 'md', 'xl'].includes(pruebaTPrecio)) carta = { ...carta, tamanoPrecio: pruebaTPrecio }
+  // ?sub=columna: el subdiseño del estilo (por ahora, Inmersiva con las pestañas en columna); sin él, la base, en fila
+  if (carta?.demo && ['fila', 'columna'].includes(pruebaSub)) carta = { ...carta, subdiseno: pruebaSub }
+  // ?ia=N: los cambios de imágenes (y textos) hechos en el Editor, que deja en localStorage, solo en la vista previa de una demo
+  if (carta?.demo && params.get('ia')) {
+    try {
+      carta = aplicar(carta, JSON.parse(localStorage.getItem('mostraq-vista-ia') ?? 'null'))
+    } catch {
+      // Sin ellos, la carta se ve como está guardada
+    }
+  }
   if (incrustada && carta) carta = { ...carta, negocio: null }
   // La clave cambia si el menú del día aparece o desaparece (horario, interruptor): la carta empieza de cero
   // en lo que toca, y no se queda en blanco en la pestaña del menú que ya no existe
-  return <Carta key={`${slug}-${Boolean(carta?.menuDia)}`} carta={carta} negocio={negocio} incrustada={incrustada} {...props} />
+  return <CartaConTamanos key={`${slug}-${Boolean(carta?.menuDia)}`} carta={carta} negocio={negocio} incrustada={incrustada} {...props} />
 }
 
 function Carta({ carta, negocio, demo = false, incrustada = false }) {

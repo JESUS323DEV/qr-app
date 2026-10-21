@@ -13,6 +13,8 @@ import { TIPOGRAFIAS, parejaDe } from '../asistente/tipografias'
 import { DISENOS_ASISTENTE, DISENOS_CARTA } from '../asistente/disenos'
 import { GRUPOS_PLANTILLAS, PLANTILLAS } from '../plantillas'
 import { PORTADAS_IA, catalogoMiniweb, validarDiseno } from '../asistente/miniweb'
+import { TIPOS_CARTA, catalogoCarta, validarDisenoCarta } from '../asistente/carta'
+import { derivadosDeFondoYTexto } from '../lib/mezclarColores'
 import { DIBUJOS_MENU, GRUPOS_MENU } from '../lib/estilosMenu'
 import { leerReferencia } from '../asistente/referencia'
 import { ICONOS_ESTRUCTURA } from '../lib/iconosEstructura'
@@ -1379,7 +1381,7 @@ function Editor({ tipo, slug, fila, volver, recargar, abrir, irANuevoPerfil }) {
   const verInfo = esCopia && !editando
   const nombre = tipo === 'negocio' ? vista.nombre : marcaDe(vista)?.nombre ?? slug
   const ruta =
-    tipo === 'negocio' ? (esCopia ? (fila?.cambios?._cliente ? `/${slug}` : `/demo/${slug}`) : rutaNegocio(original)) : esCopia ? `/demo/${slug}/carta` : rutaCarta(original)
+    tipo === 'negocio' ? (esCopia ? (fila?.cambios?._cliente ? `/${slug}` : `/demo/${slug}`) : rutaNegocio(original)) : esCopia ? (fila?.cambios?._cliente ? `/${slug}/carta` : `/demo/${slug}/carta`) : rutaCarta(original)
 
   // Un cambio que deja el dato como en el archivo se quita (así el archivo manda si luego se corrige allí)
   const cambiar = (r, valor) =>
@@ -1570,14 +1572,13 @@ function Editor({ tipo, slug, fila, volver, recargar, abrir, irANuevoPerfil }) {
           historial={historial}
           ruta={ruta}
           onEditar={() => irANuevoPerfil(`${tipo}:${slug}`)}
-          onExportar={
-            tipo === 'negocio'
-              ? () =>
-                  cambios._cliente
-                    ? setPregunta({ titulo: '¿Volver a demo?', texto: `Dejará de abrirse en /${slug} y pasará a /demo/${slug}. Si ya has impreso el QR con la dirección corta, dejaría de funcionar.`, boton: 'Volver a demo', peligro: true, accion: () => marcarCliente(false) })
-                    : setPregunta({ titulo: '¿Exportar para cliente?', texto: `La página pasa a /${slug}, la dirección corta del QR, y deja de verse en /demo/${slug}. Una vez impreso el QR, no cambies nunca esta dirección.`, boton: 'Exportar', accion: () => marcarCliente(true) })
-              : undefined
-          }
+          onExportar={() => {
+            // La dirección: la de una miniweb o ficha es /slug; la de una carta, /slug/carta
+            const fin = tipo === 'carta' ? '/carta' : ''
+            return cambios._cliente
+              ? setPregunta({ titulo: '¿Volver a demo?', texto: `Dejará de abrirse en /${slug}${fin} y pasará a /demo/${slug}${fin}.${tipo === 'carta' ? ' Las miniwebs que la usen en su menú dejarán de enseñarla.' : ''} Si ya has impreso el QR con la dirección corta, dejaría de funcionar.`, boton: 'Volver a demo', peligro: true, accion: () => marcarCliente(false) })
+              : setPregunta({ titulo: '¿Exportar para cliente?', texto: `Pasa a /${slug}${fin}, la dirección corta del QR, y deja de verse en /demo/${slug}${fin}.${tipo === 'carta' ? ' Así podrás elegirla en el menú de una miniweb.' : ''} Una vez impreso el QR, no cambies nunca esta dirección.`, boton: 'Exportar', accion: () => marcarCliente(true) })
+          }}
         />}
       {esCopia && editando && <Retocar historial={historial} enviar={retocar} />}
 
@@ -1982,7 +1983,7 @@ function FilaHorario({ valor, cambiar, variante, cambiarVariante }) {
 }
 
 // La carta que pinta el menú de la miniweb: una de las cartas hechas (con su diseño) o, sin elegir, el menú propio de la miniweb
-function SelectorCartaMiniweb({ valor, cambiar }) {
+function SelectorCartaMiniweb({ valor, cambiar, exportadas = [] }) {
   return (
     <Etiqueta texto="Carta del menú">
       <select value={valor ?? ''} onChange={e => cambiar(e.target.value || undefined)} className={CAMPO}>
@@ -1990,6 +1991,12 @@ function SelectorCartaMiniweb({ valor, cambiar }) {
         {cartas.map(c => (
           <option key={c.slug} value={c.slug}>
             {marcaDe(c)?.nombre ?? c.slug} ({c.diseno})
+          </option>
+        ))}
+        {/* Las cartas que has diseñado y exportado para cliente (Exportar para cliente en su pantalla de información) */}
+        {exportadas.map(f => (
+          <option key={f.slug} value={f.slug}>
+            {f.cambios?.['marca.nombre'] ?? f.cambios?.marca?.nombre ?? f.slug} ({f.cambios?.diseno ?? 'carta'}, exportada)
           </option>
         ))}
       </select>
@@ -2132,11 +2139,26 @@ function ImagenesPorPestana({ original, cambios, cambiar }) {
     const pestanas = datos.hero?.pestanas ?? []
     const porPestana = new Map()
     const otras = []
+    // Una carta (con secciones): sus fotos por zonas, la portada, el menú del día, las ofertas y cada sección con sus platos
+    const deCarta = Array.isArray(datos.secciones)
+    const zonas = new Map()
+    const zonaDe = ruta => {
+      const [primero, indice] = ruta.split('.')
+      if (primero === 'foto') return ['0', 'Portada']
+      if (primero === 'menuDia') return ['1', 'Menú del día']
+      if (primero === 'ofertas') return ['2', 'Ofertas']
+      if (primero === 'secciones') return [`3-${indice}`, datos.secciones[Number(indice)]?.nombre ?? `Sección ${Number(indice) + 1}`]
+      return ['9', 'Otras imágenes']
+    }
     for (const c of fotos) {
       const m = c.ruta.match(/^hero\.pestanas\.(\d+)\./)
       if (m) porPestana.set(Number(m[1]), [...(porPestana.get(Number(m[1])) ?? []), c])
-      else otras.push(c)
+      else if (deCarta) {
+        const [clave, titulo] = zonaDe(c.ruta)
+        zonas.set(clave, { clave, titulo, campos: [...(zonas.get(clave)?.campos ?? []), c] })
+      } else otras.push(c)
     }
+    if (deCarta) return [...zonas.values()].sort((x, y) => x.clave.localeCompare(y.clave, 'es', { numeric: true }))
     return [
       ...[...porPestana.entries()].sort((a, b) => a[0] - b[0]).map(([i, campos]) => ({ clave: `p${i}`, titulo: pestanas[i]?.texto ?? `Pestaña ${i + 1}`, campos })),
       ...(otras.length ? [{ clave: 'otras', titulo: 'Otras imágenes', campos: otras }] : []),
@@ -2407,10 +2429,6 @@ const CARTA_DE_TIPO = { carta: 'almendra', promociones: 'laca' }
 // Un icono por estilo de carta (la clave es la del diseño de carta) y por tipo de carta, como en la fila de portadas de las miniwebs
 const ICONOS_ESTILO_CARTA = { polaroid: Camera, galeria: GalleryHorizontal, revista: Newspaper, inmersiva: Maximize, base: List }
 const ICONOS_TIPO_CARTA = { carta: UtensilsCrossed, promociones: BadgePercent }
-const TIPOS_CARTA = [
-  { clave: 'carta', texto: 'Carta', descripcion: 'Menú del día y platos por secciones, con precios y alérgenos.' },
-  { clave: 'promociones', texto: 'Promociones', descripcion: 'Ofertas con su precio anterior tachado y servicios por secciones.' },
-]
 
 function NuevoPerfil({ filas, recargar, abrir, cargar }) {
   const [tema, setTema] = useState(PLANTILLAS[0].clave)
@@ -2422,6 +2440,14 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
   const [producto, setProducto] = useState('miniweb')
   // En el modo Carta, el tipo de carta (en lugar de la temática): 'carta' (menú del día y platos) o 'promociones' (ofertas y servicios)
   const [tipoCarta, setTipoCarta] = useState('carta')
+  // El subdiseño del estilo de carta (Inmersiva): 'fila' (la base) o 'columna'
+  const [subCarta, setSubCarta] = useState('fila')
+  // El color del detalle del precio del menú de la carta ('' : el de acento)
+  const [colorPrecio, setColorPrecio] = useState('')
+  // El color del número del precio del menú ('' : el de cada estilo)
+  const [colorPrecioTexto, setColorPrecioTexto] = useState('')
+  // El tamaño del precio del menú de la carta: 'xs', 'md' (el de cada estilo) o 'xl'
+  const [tamanoPrecio, setTamanoPrecio] = useState('md')
   const [hero, setHero] = useState('polaroid')
   const [barra, setBarra] = useState('')
   const [estilo, setEstilo] = useState('revista')
@@ -2585,6 +2611,11 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
     producto === 'miniweb' && cartaMini && `carta=${cartaMini}`,
     producto === 'miniweb' && horarioMini && `horario=${horarioMini}`,
     producto === 'miniweb' && horarioVar !== 'clasica' && `horariovar=${horarioVar}`,
+    esCarta && estilo === 'inmersiva' && subCarta === 'columna' && 'sub=columna',
+    esCarta && 'derivar=1',
+    esCarta && colorPrecio && `precio=${colorPrecio.slice(1)}`,
+    esCarta && colorPrecioTexto && `ptxt=${colorPrecioTexto.slice(1)}`,
+    esCarta && tamanoPrecio !== 'md' && `tprecio=${tamanoPrecio}`,
     producto === 'miniweb' && filtroFoto !== 100 && `filtro=${filtroFoto}`,
     ...(producto === 'miniweb' ? lugares.map(([clave, valor]) => `${clave.toLowerCase()}=${valor}`) : []),
     producto === 'miniweb' && barra && `barra=${barra}`,
@@ -2654,10 +2685,16 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
       cambios = fusionar(inicio, {
         'marca.nombre': nombreCrear,
         diseno: estilo,
+        ...(estilo === 'inmersiva' && subCarta === 'columna' ? { subdiseno: 'columna' } : {}),
         ...(principal ? { 'marca.theme.colors.primary': principal } : {}),
         ...(acento ? { 'marca.theme.colors.accent': acento } : {}),
         ...(colorTexto ? { 'marca.theme.colors.text': colorTexto } : {}),
         ...(fondo ? { 'marca.theme.colors.bg': fondo } : {}),
+        ...(colorPrecio ? { 'marca.theme.colors.precio': colorPrecio } : {}),
+        ...(colorPrecioTexto ? { 'marca.theme.colors.precioTexto': colorPrecioTexto } : {}),
+        ...(tamanoPrecio !== 'md' ? { tamanoPrecio } : {}),
+        // La superficie de las tarjetas y el texto suave salen del fondo y del texto elegidos (no se quedan con los de la plantilla)
+        ...(fondo || colorTexto ? { 'marca.theme.colors.surface': derivadosDeFondoYTexto(colorFondo, colorDelTexto).surface, 'marca.theme.colors.muted': derivadosDeFondoYTexto(colorFondo, colorDelTexto).muted } : {}),
         ...(tipografia ? { 'marca.theme.fonts': tipografia.fonts } : {}),
       })
     } else {
@@ -2727,6 +2764,24 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
     setCambiosIA(null)
     setCambiosExtra({})
     try {
+      // Con Carta elegida, solo el diseño: tipo, estilo (y subdiseño), tipografía, colores y nombre. El contenido es de /mi-carta
+      if (producto === 'carta') {
+        const { resultado: res } = await llamar('asistente', { paso: 'diseno-carta', peticion: cuento.trim() || 'Sin más indicaciones: decide tú el estilo.', nombre: nombre.trim(), catalogo: catalogoCarta(), ...(referencia ? { referencia: { imagen: referencia.imagen, tipo: referencia.tipo, colores: referencia.colores } } : {}), ...(captura ? { captura: { imagen: captura.imagen, tipo: captura.tipo } } : {}) })
+        const c = validarDisenoCarta(res)
+        if (c.tipo) setTipoCarta(c.tipo)
+        if (c.estilo) setEstilo(c.estilo)
+        setSubCarta(c.subdiseno ?? 'fila')
+        if (c.tipografia) setLetra(c.tipografia)
+        if (c.colores.principal) setPrincipal(c.colores.principal)
+        if (c.colores.acento) setAcento(c.colores.acento)
+        if (c.colores.texto) setColorTexto(c.colores.texto)
+        if (c.colores.fondo) setFondo(c.colores.fondo)
+        if (c.nombre && !nombre.trim()) setNombre(c.nombre)
+        setGenerado(true)
+        setResumenDiseno(c.resumen)
+        setDisenando(null)
+        return
+      }
       const { resultado } = await llamar('asistente', { paso: 'diseno-miniweb', peticion: cuento.trim() || 'Sin más indicaciones: decide tú el estilo.', nombre: nombre.trim(), catalogo: catalogoMiniweb(), ...(referencia ? { referencia: { imagen: referencia.imagen, tipo: referencia.tipo, colores: referencia.colores } } : {}), ...(captura ? { captura: { imagen: captura.imagen, tipo: captura.tipo } } : {}) })
       const d = validarDiseno(resultado)
       setProducto('miniweb')
@@ -2792,6 +2847,10 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
     producto,
     tema,
     tipoCarta,
+    subCarta,
+    colorPrecio,
+    colorPrecioTexto,
+    tamanoPrecio,
     hero,
     barra,
     estilo,
@@ -2861,6 +2920,10 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
     setProducto(i.producto ?? 'miniweb')
     setTema(i.tema ?? PLANTILLAS[0].clave)
     // Las copias de antes de este selector: la carta de la temática que tenían decide el tipo (Laca, promociones; el resto, carta)
+    setSubCarta(i.subCarta ?? 'fila')
+    setColorPrecio(i.colorPrecio ?? '')
+    setColorPrecioTexto(i.colorPrecioTexto ?? '')
+    setTamanoPrecio(i.tamanoPrecio ?? 'md')
     setTipoCarta(i.tipoCarta ?? (PLANTILLAS.find(p => p.clave === i.tema)?.carta === 'laca' ? 'promociones' : 'carta'))
     setHero(i.hero ?? 'polaroid')
     setBarra(i.barra ?? '')
@@ -3041,10 +3104,9 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
 
   // Los datos de la página tal como están ahora (la base con el diseño elegido y, si lo hay, lo que ha hecho el asistente), sin los cambios a mano
   const datosEnBruto = useMemo(() => {
-    if (esCarta) return null
     try {
       const { base, cambios } = armar(nombre.trim() || 'Prueba')
-      return aplicar(getNegocio(base), cambiosIA ? fusionar(cambios, cambiosIA.cambios) : cambios)
+      return aplicar(esCarta ? getCarta(base) : getNegocio(base), cambiosIA ? fusionar(cambios, cambiosIA.cambios) : cambios)
     } catch {
       return null
     }
@@ -3158,6 +3220,28 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
         {/* El asistente: un cuadro donde pedirle lo que sea y un solo botón que lo monta todo (diseño, nombre, textos y fotos) */}
         {pestana === 'asistente' && (
         <div className="order-3 grid gap-[0.6rem] lg:order-none">
+          {/* Qué diseña el asistente: una miniweb o una carta (la ficha ya no se vende) */}
+          <div className="grid grid-cols-3 gap-[0.3rem] rounded-[0.75rem] bg-zinc-200 p-[0.25rem]">
+            {[
+              ['miniweb', 'Miniweb'],
+              ['carta', 'Carta'],
+              ['ficha', 'Ficha'],
+            ].map(([clave, texto]) => (
+              <button
+                key={clave}
+                type="button"
+                aria-pressed={producto === clave}
+                disabled={clave === 'ficha' || Boolean(disenando) || Boolean(creando)}
+                onClick={() => {
+                  setProducto(clave)
+                  if (clave === 'miniweb' && SIN_PORTADA_MINIWEB.includes(hero)) setHero('editorial')
+                }}
+                className={`rounded-[0.55rem] py-[0.5rem] text-[0.95rem] font-semibold disabled:opacity-40 ${producto === clave ? 'bg-white shadow-[0_0.05rem_0.2rem_rgb(0_0_0/0.15)]' : 'text-zinc-600'}`}
+              >
+                {texto}
+              </button>
+            ))}
+          </div>
           {/* Lo único seguro: el nombre. Si se escribe, el asistente lo usa tal cual; si no, lo saca de la captura o se lo inventa */}
           <Etiqueta texto="Nombre del negocio">
             <input value={nombre} onChange={e => setNombre(e.target.value)} disabled={Boolean(disenando) || Boolean(creando)} className={CAMPO} placeholder="Peluquería Ranita" />
@@ -3519,6 +3603,30 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                 })}
               </div>
               <p className="text-[0.85rem] font-semibold">{estilos.find(f => f.carta === estilo)?.nombre}</p>
+              {/* Subdiseños de Inmersiva: las pestañas en fila (la base) o en columna */}
+              {estilo === 'inmersiva' && (
+                <div className="grid gap-[0.4rem]">
+                  <div className="flex flex-wrap gap-[0.4rem]">
+                    {[
+                      ['fila', 'Pestañas en fila', '<rect x="3" y="9" width="5" height="6" rx="3"/><rect x="9.5" y="9" width="5" height="6" rx="3"/><rect x="16" y="9" width="5" height="6" rx="3"/>'],
+                      ['columna', 'Pestañas en columna', '<rect x="7" y="3" width="10" height="5" rx="2.5"/><rect x="7" y="9.5" width="10" height="5" rx="2.5"/><rect x="7" y="16" width="10" height="5" rx="2.5"/>'],
+                    ].map(([clave, nombreSub, dibujo]) => (
+                      <button
+                        key={clave}
+                        type="button"
+                        title={nombreSub}
+                        aria-label={nombreSub}
+                        aria-pressed={subCarta === clave}
+                        onClick={() => setSubCarta(clave)}
+                        className={`flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 bg-white transition-transform duration-300 ${subCarta === clave ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
+                      >
+                        <svg viewBox="0 0 24 24" className="h-[1.4rem] w-[1.4rem]" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: dibujo }} />
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-[0.8rem] text-zinc-500">{subCarta === 'columna' ? 'Pestañas en columna' : 'Pestañas en fila'}</p>
+                </div>
+              )}
             </div>
           )}
           {/* El estilo del menú de navegación, debajo de la portada, con la misma fila de iconos */}
@@ -3599,7 +3707,49 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
           {/* 4. Marca: el nombre del negocio, el icono del logo y el tamaño. En ficha y carta, aquí suelto; en miniweb, dentro de Textos */}
           {producto !== 'miniweb' && bloqueNombre}
           {/* La paleta base de la marca: suelta en ficha y carta; en miniweb va dentro de Colores generales, como Personalizado */}
-          {producto !== 'miniweb' && paletaMarca}
+          {producto === 'ficha' && paletaMarca}
+          {/* Carta: sus colores en un desplegable Colores generales, con un círculo por color, como en las miniwebs */}
+          {esCarta && (
+            <details className="group/colores rounded-[0.75rem] ring-1 ring-zinc-200">
+              <summary className="flex cursor-pointer list-none items-center gap-[0.75rem] px-[0.85rem] py-[0.8rem] [&::-webkit-details-marker]:hidden">
+                <span className="text-[1rem] font-bold">Colores generales</span>
+                <ChevronDown className="ml-auto h-[1rem] w-[1rem] shrink-0 text-zinc-500 transition-transform group-open/colores:rotate-180" aria-hidden="true" />
+              </summary>
+              <div className="flex flex-wrap items-start gap-x-[1.2rem] gap-y-[0.8rem] px-[0.85rem] pb-[0.85rem] pt-[0.2rem]">
+                {[
+                  ['Principal', 'Botones, precios y lo que tiene que destacar.', colorPrincipal, setPrincipal],
+                  ['Acento', 'Precios, subrayados y detalles.', colorAcento, setAcento],
+                  ['Fondo', 'El fondo de la carta: claro u oscuro.', colorFondo, setFondo],
+                  ['Texto', 'Las letras sobre el fondo.', colorDelTexto, setColorTexto],
+                ].map(([nombreColor, ayuda, valor, poner]) => (
+                  <div key={nombreColor} className="grid justify-items-center gap-[0.25rem]" title={ayuda}>
+                    <p className="text-[0.8rem] font-semibold text-zinc-500">{nombreColor}</p>
+                    <CampoColor valor={valor} cambiar={poner} soloCirculo />
+                  </div>
+                ))}
+                {/* El color del número del precio del menú: su color propio; con el borde de rayitas, el de cada estilo (el principal, el de acento o blanco) */}
+                <div className="grid justify-items-center gap-[0.25rem]" title="El color del número del precio del menú del día. Sin elegir, el de cada estilo.">
+                  <p className="text-[0.8rem] font-semibold text-zinc-500">Color del precio</p>
+                  <CampoColor valor={colorPrecioTexto || (estilo === 'galeria' ? colorAcento : estilo === 'inmersiva' ? '#FFFFFF' : colorPrincipal)} auto={!colorPrecioTexto} soloCirculo cambiar={setColorPrecioTexto} />
+                  {colorPrecioTexto && (
+                    <button type="button" title="Volver al color del estilo" aria-label="Volver al color del precio de cada estilo" onClick={() => setColorPrecioTexto('')} className="rounded-full p-[0.2rem] text-zinc-400 hover:text-zinc-900">
+                      <RotateCcw className="h-[0.95rem] w-[0.95rem]" strokeWidth={2.2} aria-hidden="true" />
+                    </button>
+                  )}
+                </div>
+                {/* El detalle del precio del menú (la línea bajo el precio): su color propio; con el borde de rayitas, el de acento */}
+                <div className="grid justify-items-center gap-[0.25rem]" title="La línea que remarca el precio del menú del día. Sin elegir, el color de acento.">
+                  <p className="text-[0.8rem] font-semibold text-zinc-500">Detalle del precio</p>
+                  <CampoColor valor={colorPrecio || colorAcento} auto={!colorPrecio} soloCirculo cambiar={setColorPrecio} />
+                  {colorPrecio && (
+                    <button type="button" title="Volver al color de acento" aria-label="Volver al color de acento en el detalle del precio" onClick={() => setColorPrecio('')} className="rounded-full p-[0.2rem] text-zinc-400 hover:text-zinc-900">
+                      <RotateCcw className="h-[0.95rem] w-[0.95rem]" strokeWidth={2.2} aria-hidden="true" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            </details>
+          )}
           {/* Los textos de la portada: el grande (en dos líneas) y el pequeño, con su máximo de caracteres (el de ahora con margen) */}
           {/* Cuarto desplegable (solo miniweb): Textos, con el nombre del negocio y los textos de la miniweb, tal como estaban */}
           {producto === 'miniweb' && (
@@ -3680,10 +3830,35 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
             </div>
           </details>
           )}
+          {/* Carta: Tamaños de texto. De momento, solo el del precio del menú (MD es el de cada estilo) */}
+          {esCarta && (
+            <details className="group/tamanos rounded-[0.75rem] ring-1 ring-zinc-200">
+              <summary className="flex cursor-pointer list-none items-center gap-[0.75rem] px-[0.85rem] py-[0.8rem] [&::-webkit-details-marker]:hidden">
+                <span className="text-[1rem] font-bold">Tamaño de textos</span>
+                <ChevronDown className="ml-auto h-[1rem] w-[1rem] shrink-0 text-zinc-500 transition-transform group-open/tamanos:rotate-180" aria-hidden="true" />
+              </summary>
+              <div className="grid gap-[0.4rem] px-[0.85rem] pb-[0.85rem] pt-[0.2rem]">
+                <span className="text-[0.8rem] font-semibold text-zinc-500">Precio</span>
+                <div className="flex gap-[0.4rem]">
+                  {['xs', 'md', 'xl'].map(t => (
+                    <button
+                      key={t}
+                      type="button"
+                      aria-pressed={tamanoPrecio === t}
+                      onClick={() => setTamanoPrecio(t)}
+                      className={`rounded-full px-[0.8rem] py-[0.25rem] text-[0.78rem] font-semibold uppercase ring-1 transition-colors ${tamanoPrecio === t ? 'bg-zinc-900 text-white ring-zinc-900' : 'bg-white text-zinc-600 ring-zinc-300 hover:ring-zinc-500'}`}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </details>
+          )}
           {/* La tipografía: en miniweb va dentro de Textos de la miniweb, abajo del todo */}
           {producto !== 'miniweb' && campoTipografia}
             {/* Imágenes: todas las de la página, por pestaña, con el buscador de fotos y para subir la tuya */}
-            {!esCarta && datosEnBruto && (
+            {datosEnBruto && (
               <details className="group/imagenes rounded-[0.75rem] ring-1 ring-zinc-200">
                 <summary className="flex cursor-pointer list-none items-center gap-[0.75rem] px-[0.85rem] py-[0.8rem] [&::-webkit-details-marker]:hidden">
                   <span className="text-[1rem] font-bold">Imágenes</span>
@@ -3697,7 +3872,7 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
             {/* Todos los datos editables en bruto, en sus desplegables (los del editor de un perfil) */}
             {!esCarta && datosEnBruto && <EditorEnBruto original={datosEnBruto} cambios={cambiosExtra} cambiar={cambiarExtra} />}
             {/* La carta del menú, abajo del todo */}
-            {producto === 'miniweb' && <SelectorCartaMiniweb valor={cartaMini} cambiar={valor => setCartaMini(valor ?? '')} />}
+            {producto === 'miniweb' && <SelectorCartaMiniweb valor={cartaMini} cambiar={valor => setCartaMini(valor ?? '')} exportadas={(filas ?? []).filter(f => f.tipo === 'carta' && f.base && f.cambios?._cliente)} />}
           </div>
           )}
 
@@ -4049,9 +4224,32 @@ function Lista({ filas, abrir, recargar, copia }) {
     </li>
   )
 
-  // Grupo desplegable: cerrado, con su número; al tocarlo se abre la lista
-  const Grupo = ({ titulo, filas: lista }) =>
-    lista.length > 0 && (
+  // Grupo desplegable: cerrado, con su número; al tocarlo se abre la lista. Con secciones (titulo + filas), la lista se separa en partes con su título
+  const Grupo = ({ titulo, filas: lista, secciones }) =>
+    lista.length > 0 && secciones ? (
+      <details className="rounded-[1rem] bg-white ring-1 ring-zinc-200 [&[open]>summary]:border-b [&[open]>summary]:border-zinc-200">
+        <summary className="flex cursor-pointer items-baseline justify-between gap-[1rem] px-[1rem] py-[0.9rem]">
+          <span className="text-[1.05rem] font-bold">{titulo}</span>
+          <span className="text-[0.9rem] text-zinc-500">{lista.length}</span>
+        </summary>
+        {secciones
+          .filter(s => s.filas.length > 0)
+          .map(s => (
+            <div key={s.titulo}>
+              <p className="flex items-baseline justify-between border-y border-zinc-200 bg-zinc-50 px-[1rem] py-[0.5rem] text-[0.9rem] font-bold first:border-t-0">
+                {s.titulo}
+                <span className="text-[0.8rem] font-normal text-zinc-500">{s.filas.length}</span>
+              </p>
+              <ul className="px-[1rem]">
+                {s.filas.map(f => (
+                  <Fila key={f.clave} {...f} />
+                ))}
+              </ul>
+            </div>
+          ))}
+      </details>
+    ) : (
+      lista.length > 0 && (
       <details className="rounded-[1rem] bg-white ring-1 ring-zinc-200 [&[open]>summary]:border-b [&[open]>summary]:border-zinc-200">
         <summary className="flex cursor-pointer items-baseline justify-between gap-[1rem] px-[1rem] py-[0.9rem]">
           <span className="text-[1.05rem] font-bold">{titulo}</span>
@@ -4063,6 +4261,7 @@ function Lista({ filas, abrir, recargar, copia }) {
           ))}
         </ul>
       </details>
+      )
     )
 
   const aFila = n => ({ clave: `negocio:${n.slug}`, nombre: n.nombre, detalle: n.demo ? 'Demo' : 'Cliente', ruta: rutaNegocio(n) })
@@ -4103,7 +4302,15 @@ function Lista({ filas, abrir, recargar, copia }) {
 
       {/* Todo lo que hay, por producto, en desplegables cerrados */}
       <div className="grid gap-[0.6rem]">
-        <Grupo titulo="Copias para enseñar" filas={copias.map(aFilaCopia)} />
+        {/* Las copias, separadas en Miniwebs y Cartas: cada copia que se guarda cae sola en el suyo, según lo que sea */}
+        <Grupo
+          titulo="Copias para enseñar"
+          filas={copias.map(aFilaCopia)}
+          secciones={[
+            { titulo: 'Miniwebs', filas: copias.filter(c => c.tipo !== 'carta').map(aFilaCopia) },
+            { titulo: 'Cartas', filas: copias.filter(c => c.tipo === 'carta').map(aFilaCopia) },
+          ]}
+        />
         <Grupo titulo="Fichas" filas={negocios.filter(n => tipoDe(n) === 'ficha').map(aFila)} />
         {/* Las miniwebs de siempre y, con ellas, las que se exportan a muestras desde Nuevo perfil */}
         <Grupo titulo="Miniwebs" filas={negocios.filter(n => tipoDe(n) === 'miniweb').map(aFila)} />
