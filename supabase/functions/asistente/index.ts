@@ -174,7 +174,7 @@ Ahora diseñas una miniweb nueva, SIN partir de ninguna demo: tú decides cómo 
 
 Cómo elegir:
 - Piensa en el negocio, en su barrio y en el tono que piden (elegante, cercano, joven, popular, serio...) y elige las piezas que mejor lo cuentan. No elijas la primera opción de cada lista por defecto ni repitas siempre la misma combinación: cada negocio tiene que tener su propio aspecto.
-- nombre: el nombre del negocio. Si te lo dan en lo que cuentan (o si el nombre que te paso no está vacío), ese, tal cual. Si no hay nombre, invéntate uno corto, creíble y propio de ese tipo de negocio y de su barrio (sin tópicos del sector); Jesús lo cambiará si quiere.
+- nombre: el nombre del negocio. Si te lo dan en lo que cuentan (o si el nombre que te paso no está vacío), ese, tal cual; el nombre que te paso manda siempre sobre el que veas escrito en una imagen. Si no hay nombre en ningún sitio, invéntate uno corto, creíble y propio de ese tipo de negocio y de su barrio (sin tópicos del sector); Jesús lo cambiará si quiere.
 - tema: la temática más cercana al negocio, entre las de la lista (solo sirve para el contenido de ejemplo; el aspecto no depende de ella).
 - portada y subdiseno: una portada y uno de SUS subdiseños (cada portada tiene los suyos; la clave del subdiseno tiene que ser de la portada elegida).
 - redesEn, redesVinculadas, menuEn y compartirEn: dónde va cada pieza. redesVinculadas en true pega la barra de redes siempre al menú (en ese caso redesEn no se usa, pero rellénalo igual). Una estructura sencilla suele ser mejor que una rara: usa lateral, medio o menú abajo cuando encajen con la marca y no por variar.

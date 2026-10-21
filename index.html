@@ -3,15 +3,42 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Mostraq · Placas QR con la marca de tu negocio</title>
-    <meta name="description" content="Una placa con un QR en tu mostrador que abre una página con tu marca: reseñas en Google, redes, WhatsApp y citas. Barcelona." />
+    <title>Mostraq · Tu página web en un solo enlace</title>
+    <meta name="description" content="Tu marca, tu horario, tus reseñas y tu WhatsApp en una página lista para poner en Instagram." />
     <meta name="theme-color" content="#0f0f0e" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <meta name="author" content="Mostraq" />
+    <!-- Datos estructurados: qué es el sitio y quién lo publica (solo datos reales) -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://mostraq.es/#organizacion",
+            "name": "Mostraq",
+            "url": "https://mostraq.es/",
+            "description": "Páginas web para negocios locales: tu marca, tu horario, tus reseñas y tu WhatsApp en un solo enlace para Instagram, y placas con QR para el local."
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://mostraq.es/#web",
+            "url": "https://mostraq.es/",
+            "name": "Mostraq",
+            "inLanguage": "es",
+            "publisher": { "@id": "https://mostraq.es/#organizacion" }
+          }
+        ]
+      }
+    </script>
     <!-- Tarjeta al compartir (WhatsApp, Instagram...). Falta og:image: una imagen de 1200 × 630 en public/ -->
     <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://mostraq.es/" />
+    <link rel="canonical" href="https://mostraq.es/" />
     <meta property="og:locale" content="es_ES" />
     <meta property="og:site_name" content="Mostraq" />
-    <meta property="og:title" content="Mostraq · Placas QR con la marca de tu negocio" />
-    <meta property="og:description" content="Una placa con un QR en tu mostrador que abre una página con tu marca: reseñas en Google, redes, WhatsApp y citas. Barcelona." />
+    <meta property="og:title" content="Mostraq · Tu página web en un solo enlace" />
+    <meta property="og:description" content="Tu marca, tu horario, tus reseñas y tu WhatsApp en una página lista para poner en Instagram." />
     <meta name="twitter:card" content="summary_large_image" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -19,6 +46,11 @@
   </head>
   <body>
     <div id="root"></div>
+    <noscript>
+      <h1>Mostraq · Tu página web en un solo enlace</h1>
+      <p>Tu marca, tu horario, tus reseñas y tu WhatsApp en una página lista para poner en Instagram, y placas con QR para tu local.</p>
+      <p><a href="/catalogo">Ver el catálogo de diseños</a> · <a href="/planes">Ver los planes</a></p>
+    </noscript>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+# Paneles y páginas internas: no se indexan
+Disallow: /admin
+Disallow: /mi-carta
+Disallow: /mi-qr/
+Disallow: /panel
+Disallow: /disenos
+Disallow: /gestion
+# Las demos y las copias para enseñar a un negocio no se indexan
+Disallow: /demo/
+
+Sitemap: https://mostraq.es/sitemap.xml

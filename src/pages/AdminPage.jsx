@@ -2584,7 +2584,7 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
     avisar('Escribiendo los textos...')
     const { resultado } = await llamar('asistente', {
       paso: 'copy',
-      peticion: infoImagen ? `${cuento.trim()}\n\nDatos leídos de la imagen de referencia de la marca (úsalos tal cual):\n${infoImagen}` : cuento.trim(),
+      peticion: infoImagen ? `${cuento.trim()}\n\nDatos leídos de la imagen de referencia de la marca (úsalos tal cual):\n${infoImagen}`.trim() : cuento.trim() || 'Sin más indicaciones.',
       perfil: producto,
       nombre: nombreCrear,
       campos,
@@ -2600,14 +2600,14 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
   // El botón del asistente, en dos tiempos: 1) elige el diseño (y el nombre, si falta) y lo pone en los selectores; 2) con esos
   // selectores ya puestos (efecto de más abajo), escribe los textos y busca las fotos. La vista previa lo enseña todo
   const montar = async () => {
-    if (!cuento.trim() || disenando) return
+    if (!(nombre.trim() || cuento.trim() || referencia || captura) || disenando) return
     setDisenando('Montando el diseño...')
     setError('')
     setResumenDiseno('')
     setCambiosIA(null)
     setCambiosExtra({})
     try {
-      const { resultado } = await llamar('asistente', { paso: 'diseno-miniweb', peticion: cuento.trim(), nombre: nombre.trim(), catalogo: catalogoMiniweb(), ...(referencia ? { referencia: { imagen: referencia.imagen, tipo: referencia.tipo, colores: referencia.colores } } : {}), ...(captura ? { captura: { imagen: captura.imagen, tipo: captura.tipo } } : {}) })
+      const { resultado } = await llamar('asistente', { paso: 'diseno-miniweb', peticion: cuento.trim() || 'Sin más indicaciones: decide tú el estilo.', nombre: nombre.trim(), catalogo: catalogoMiniweb(), ...(referencia ? { referencia: { imagen: referencia.imagen, tipo: referencia.tipo, colores: referencia.colores } } : {}), ...(captura ? { captura: { imagen: captura.imagen, tipo: captura.tipo } } : {}) })
       const d = validarDiseno(resultado)
       setProducto('miniweb')
       if (d.tema) setTema(d.tema)
@@ -3007,13 +3007,17 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
         {/* El asistente: un cuadro donde pedirle lo que sea y un solo botón que lo monta todo (diseño, nombre, textos y fotos) */}
         {pestana === 'asistente' && (
         <div className="order-3 grid gap-[0.6rem] lg:order-none">
+          {/* Lo único seguro: el nombre. Si se escribe, el asistente lo usa tal cual; si no, lo saca de la captura o se lo inventa */}
+          <Etiqueta texto="Nombre del negocio">
+            <input value={nombre} onChange={e => setNombre(e.target.value)} disabled={Boolean(disenando) || Boolean(creando)} className={CAMPO} placeholder="Peluquería Ranita" />
+          </Etiqueta>
           <textarea
             value={cuento}
             onChange={e => setCuento(e.target.value)}
             disabled={Boolean(disenando) || Boolean(creando)}
-            rows={5}
+            rows={3}
             aria-label="Pídele al asistente lo que quieras"
-            placeholder="Barbería de barrio en Sants, clásica pero cercana, colores verde y crema. Cita por WhatsApp al 612 345 678. Abre de martes a sábado de 10 a 20."
+            placeholder="Opcional: lo que quieras añadir (estilo, colores, datos). Con el nombre y una captura de su Instagram ya basta."
             className={`${CAMPO} resize-y`}
           />
           {/* Dos imágenes opcionales para el asistente, que solo las mira (no se colocan en la miniweb): el logo de referencia (colores y carácter
@@ -3022,7 +3026,7 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
             <CampoImagenAsistente titulo="Añadir logo de referencia" valor={referencia} cambiar={setReferencia} conColores bloqueado={Boolean(disenando) || Boolean(creando)} avisar={setError} />
             <CampoImagenAsistente titulo="Añadir captura con información" valor={captura} cambiar={setCaptura} bloqueado={Boolean(disenando) || Boolean(creando)} avisar={setError} />
           </div>
-          <button type="button" onClick={montar} disabled={!cuento.trim() || Boolean(disenando) || Boolean(creando)} className={BOTON}>
+          <button type="button" onClick={montar} disabled={!(nombre.trim() || cuento.trim() || referencia || captura) || Boolean(disenando) || Boolean(creando)} className={BOTON}>
             {disenando ?? 'Montar el diseño con el asistente'}
           </button>
           {resumenDiseno && <p className="text-[0.85rem] font-semibold text-zinc-800">{resumenDiseno}</p>}
