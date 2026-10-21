@@ -195,17 +195,16 @@ function VerTodas({ to, children }) {
   )
 }
 
-// Inicio: las fichas
-const ESCAPARATE = secuenciaDemos
-  .filter(n => tipoDe(n) === 'ficha' && enEscaparate(n))
-  .map(n => ({ foto: captura(n.slug), nombre: n.nombre, sector: n.sector, ruta: rutaNegocio(n) }))
-
 // Pestaña Cartas: las cartas de demo. Las miniwebs no salen en la landing (se enseñan en /miniweb)
 const WEBS_Y_CARTAS = [
   ...cartas
     .filter(c => c.demo && enEscaparate(c))
     .map(c => ({ foto: captura(`${c.slug}-carta`), nombre: marcaDe(c)?.nombre, ...cartasMiniwebs.tipos.carta, ruta: rutaCarta(c) })),
 ]
+// Pestaña Ejemplos, subpestaña Miniwebs (la de por defecto): las miniwebs de demo
+const MINIWEBS = secuenciaDemos
+  .filter(n => tipoDe(n) === 'miniweb' && enEscaparate(n))
+  .map(n => ({ foto: captura(n.slug), nombre: n.nombre, ...cartasMiniwebs.tipos.miniweb, ruta: rutaNegocio(n) }))
 
 /* El hero es una miniweb, con la misma estructura que las de los clientes:
    escenario con la marca, el texto (cambia con la pestaña) y una fila de móviles con las capturas
@@ -225,8 +224,64 @@ const PESTANAS_ABAJO = [
 const ORDEN_PESTANAS = [...PESTANAS, ...PESTANAS_ABAJO]
 const CLAVE_PESTANA = 'landing-pestana'
 
+// Dibujo del hero de Inicio (provisional, hasta tener capturas de miniwebs de verdad): arriba de una miniweb en un móvil
+// recortado por abajo y, solapado en la esquina, el QR que la abre. Ocupa el hueco que sobra y, si no hay, se recorta o desaparece.
+const QR_CELDAS = (() => {
+  const n = 9
+  const ojo = (x, y) => (x < 3 && y < 3) || (x > n - 4 && y < 3) || (x < 3 && y > n - 4)
+  return Array.from({ length: n * n }, (_, i) => {
+    const x = i % n
+    const y = Math.floor(i / n)
+    return ojo(x, y) || (x * 7 + y * 13 + x * y) % 3 === 0
+  })
+})()
+
+function MockupMiniweb() {
+  return (
+    <div aria-hidden="true" className="relative min-h-0 flex-1 overflow-hidden pt-[1.2rem]">
+      <div className="relative mx-auto h-[26rem] w-[11.5rem]">
+        {/* Móvil */}
+        <div className="h-full rounded-[1.6rem] border border-white/20 bg-[#1d1d1b] p-[0.35rem] shadow-[0_1.2rem_2.4rem_-0.8rem_rgb(0_0_0/0.8)]">
+          <div className="flex h-full flex-col overflow-hidden rounded-[1.3rem] bg-[#f3e9dc] text-[#2b1d17]">
+            <div className="flex items-center justify-between px-[0.7rem] pt-[0.7rem]">
+              <span className="text-[0.62rem] font-black">Café Lola</span>
+              <span className="flex flex-col gap-[0.15rem]">
+                <span className="h-[0.1rem] w-[0.7rem] rounded-full bg-[#2b1d17]" />
+                <span className="h-[0.1rem] w-[0.7rem] rounded-full bg-[#2b1d17]" />
+              </span>
+            </div>
+            <div className="mx-[0.5rem] mt-[0.6rem] flex h-[6.8rem] flex-col justify-end rounded-[0.8rem] bg-[linear-gradient(160deg,#c8553d,#8a2f21)] p-[0.6rem] text-white">
+              <span className="text-[0.95rem] font-black leading-[1]">Café de barrio, pan de masa madre</span>
+              <span className="mt-[0.3rem] text-[0.48rem] opacity-80">Abierto hasta las 20:00</span>
+            </div>
+            <div className="mt-[0.5rem] flex gap-[0.25rem] px-[0.5rem]">
+              {['Fotos', 'Ubicación', 'Horario', 'Carta'].map((t, i) => (
+                <span key={t} className={`rounded-full px-[0.4rem] py-[0.2rem] text-[0.45rem] font-bold ${i === 0 ? 'bg-[#c8553d] text-white' : 'bg-[#2b1d17]/10'}`}>{t}</span>
+              ))}
+            </div>
+            <div className="mx-[0.5rem] mt-[0.5rem] rounded-[0.7rem] bg-white p-[0.55rem]">
+              <span className="text-[0.55rem] font-black">¿Qué tal ha ido?</span>
+              <span className="mt-[0.15rem] block text-[0.7rem] tracking-[0.1rem] text-[#e0a400]">★★★★★</span>
+              <span className="mt-[0.3rem] block h-[0.1rem] w-full rounded-full bg-[#2b1d17]/15" />
+              <span className="mt-[0.2rem] block h-[0.1rem] w-[70%] rounded-full bg-[#2b1d17]/15" />
+            </div>
+            <div className="mx-[0.5rem] mt-[0.5rem] h-[2.2rem] rounded-[0.7rem] bg-[#2b1d17]/10" />
+          </div>
+        </div>
+        {/* QR solapado en la esquina */}
+        <div className="absolute -right-[3.2rem] bottom-[0.9rem] w-[4.6rem] rotate-[6deg] rounded-[0.6rem] bg-white p-[0.4rem] shadow-[0_0.8rem_1.6rem_-0.5rem_rgb(0_0_0/0.7)]">
+          <div className="grid grid-cols-9 gap-0">
+            {QR_CELDAS.map((on, i) => (
+              <span key={i} className={`aspect-square ${on ? 'bg-[#141414]' : ''}`} />
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function HeroMiniweb() {
-  const [actual, setActual] = useState(0)
   // Al volver de una demo (se abren en la misma pestaña), la landing se abre en la pestaña de donde venías.
   // Se guarda solo durante la visita (sessionStorage); al cerrar el navegador se olvida
   const [pestana, setPestana] = useState(() => {
@@ -267,7 +322,6 @@ function HeroMiniweb() {
     }, CAMBIO_SUBPESTANA_MS)
     return () => clearInterval(id)
   }, [pestana, subSola])
-  const [tocado, setTocado] = useState(false)
   // Placa de Tu QR: el diseño y la forma de los puntos elegidos
   const [color, setColor] = useState(0)
   const [forma, setForma] = useState('redondo')
@@ -288,34 +342,19 @@ function HeroMiniweb() {
     }, CAMBIO_PLACA_MS)
     return () => clearInterval(id)
   }, [pestana, placaSola])
-  const fila = useRef(null)
-  const demo = ESCAPARATE[actual]
-
-  // Lleva la fila hasta un móvil concreto
-  const irA = (i, suave = true) => {
-    const el = fila.current?.children[i]
-    if (el) fila.current.scrollTo({ left: el.offsetLeft - fila.current.offsetLeft - (fila.current.clientWidth - el.clientWidth) / 2, behavior: suave ? 'smooth' : 'instant' })
-  }
-
-  // Pasa sola al siguiente móvil hasta que el visitante toca la fila (no empieza hasta que acaba la vuelta de pestañas).
-  // Solo cuenta estando en Inicio: si no, se gastaría el turno con la fila fuera de pantalla y se quedaría parada
-  useEffect(() => {
-    if (pestana !== 'ejemplos' || enVuelta || tocado || ESCAPARATE.length < 2) return
-    const t = setTimeout(() => irA((actual + 1) % ESCAPARATE.length), TURNO_DEMOS_MS)
-    return () => clearTimeout(t)
-  }, [pestana, actual, tocado, enVuelta])
-
   // Las filas de móviles siguen en la página aunque su pestaña esté oculta: al volver a ella, empiezan otra vez
   // por el primero (antes se volvían a pintar desde cero)
   useEffect(() => {
-    if (pestana === 'ejemplos') fila.current?.scrollTo({ left: 0, behavior: 'instant' })
     if (pestana === 'cartas') filaCartas.current?.scrollTo({ left: 0, behavior: 'instant' })
   }, [pestana])
 
   // Fila de Cartas y ofertas: el móvil del centro es el que se nombra debajo
   const [actualCarta, setActualCarta] = useState(0)
   const filaCartas = useRef(null)
-  const ejemploCarta = WEBS_Y_CARTAS[actualCarta]
+  // Subpestaña de Ejemplos: Miniwebs (por defecto) o Cartas
+  const [subEj, setSubEj] = useState(cartasMiniwebs.subpestanas[0].key)
+  const listaEj = subEj === 'cartas' ? WEBS_Y_CARTAS : MINIWEBS
+  const ejemploCarta = listaEj[actualCarta] ?? listaEj[0]
   const [tocadoCarta, setTocadoCarta] = useState(false)
 
   const irACarta = i => {
@@ -327,10 +366,10 @@ function HeroMiniweb() {
   // Como en Inicio: pasa sola al siguiente móvil mientras se está en Cartas y ofertas, hasta que se toca la fila.
   // Al volver a la pestaña empieza otra vez desde el primero
   useEffect(() => {
-    if (pestana !== 'cartas' || enVuelta || tocadoCarta || WEBS_Y_CARTAS.length < 2) return
-    const t = setTimeout(() => irACarta((actualCarta + 1) % WEBS_Y_CARTAS.length), TURNO_DEMOS_MS)
+    if (pestana !== 'cartas' || enVuelta || tocadoCarta || listaEj.length < 2) return
+    const t = setTimeout(() => irACarta((actualCarta + 1) % listaEj.length), TURNO_DEMOS_MS)
     return () => clearTimeout(t)
-  }, [pestana, actualCarta, tocadoCarta, enVuelta])
+  }, [pestana, actualCarta, tocadoCarta, enVuelta, listaEj])
 
   // El móvil que queda en el centro de la fila f es el "actual" (nombre, sector y rayitas)
   const alDeslizar = (f, fijar) => {
@@ -362,21 +401,40 @@ function HeroMiniweb() {
 
         {/* Pestaña Cartas y miniwebs: como Inicio, primero las miniwebs y después las cartas; tocarlos abre la demo */}
         <Panel clave="cartas" pestana={pestana}>
+            <nav className="flex gap-[1.4rem] border-b border-linea px-[1.25rem] pt-[0.9rem]">
+              {cartasMiniwebs.subpestanas.map(s => (
+                <button
+                  key={s.key}
+                  type="button"
+                  aria-pressed={subEj === s.key}
+                  onClick={() => { setSubEj(s.key); setActualCarta(0); setTocadoCarta(false) }}
+                  className={`relative pb-[0.5rem] text-[0.92rem] font-semibold transition-colors ${subEj === s.key ? 'text-tinta' : 'text-suave hover:text-tinta'}`}
+                >
+                  {s.texto}
+                  <span className={`absolute inset-x-0 bottom-0 h-[0.15rem] rounded-full bg-acento transition-transform duration-300 ${subEj === s.key ? 'scale-x-100' : 'scale-x-0'}`} />
+                </button>
+              ))}
+            </nav>
             <div className="px-[1.25rem] pt-[0.9rem]">
               <h2 className="font-titulo text-[clamp(1.9rem,1.5rem+2vw,2.5rem)] font-black leading-[1] tracking-tight">
-                {cartasMiniwebs.titulo}
+                {subEj === 'cartas' ? cartasMiniwebs.titulo : cartasMiniwebs.tituloMiniwebs}
               </h2>
-              <VerTodas to="/catalogo?tipo=carta">{escaparate.verCartasMiniwebs}</VerTodas>
+              {subEj === 'cartas' ? (
+                <VerTodas to="/catalogo?tipo=carta">{escaparate.verCartasMiniwebs}</VerTodas>
+              ) : (
+                <VerTodas to="/miniweb">{escaparate.verMiniwebs}</VerTodas>
+              )}
             </div>
             <div className="relative mt-[1rem] min-h-[9rem] flex-1">
               <ul
+                key={subEj}
                 ref={filaCartas}
                 onScroll={() => alDeslizar(filaCartas.current, setActualCarta)}
                 onTouchStart={() => setTocadoCarta(true)}
                 onMouseDown={() => setTocadoCarta(true)}
                 className="absolute inset-0 flex snap-x snap-mandatory gap-[0.9rem] overflow-x-auto px-[25%] [scrollbar-width:none]"
               >
-                {WEBS_Y_CARTAS.map((d, i) => (
+                {listaEj.map((d, i) => (
                   <li key={d.ruta} className="h-full shrink-0 snap-center py-[0.2rem]">
                     <Link
                       to={d.ruta}
@@ -410,11 +468,11 @@ function HeroMiniweb() {
             {/* Qué ejemplo se ve y rayitas */}
             <div className="flex items-center justify-between gap-[0.75rem] px-[1.25rem] py-[0.8rem]">
               <p className="min-w-0 truncate text-[0.82rem]">
-                <span className="font-semibold">{ejemploCarta.nombre}</span>{' '}
-                <span className="text-suave">· {ejemploCarta.etiqueta}</span>
+                <span className="font-semibold">{ejemploCarta?.nombre}</span>{' '}
+                <span className="text-suave">· {ejemploCarta?.etiqueta}</span>
               </p>
               <div className="flex shrink-0 gap-[0.3rem]">
-                {WEBS_Y_CARTAS.map((d, i) => (
+                {listaEj.map((d, i) => (
                   <button
                     key={d.ruta}
                     type="button"
@@ -628,78 +686,32 @@ function HeroMiniweb() {
             </div>
         </Panel>
 
-        {/* Pestaña Inicio (clave ejemplos, la primera): fila de móviles con las capturas, como el catálogo en pequeño; se ajusta al alto que queda.
-            Se desliza con el dedo; tocar un móvil abre la demo de verdad. */}
+        {/* Pestaña Inicio (clave ejemplos, la primera): el hero de Mostraq, con el diseño Fullbleed: fondo de color con un
+            resplandor del acento, el titular grande abajo y, debajo, qué hace Mostraq y el botón a los ejemplos */}
         <Panel clave="ejemplos" pestana={pestana}>
-        <div className="px-[1.25rem] pt-[0.9rem]">
-          <h1 className="font-titulo text-[clamp(1.9rem,1.5rem+2vw,2.5rem)] font-black leading-[1] tracking-tight">
-            {hero.titulo}
-          </h1>
-          <VerTodas to="/catalogo?tipo=ficha">{escaparate.verFichas}</VerTodas>
-        </div>
-        <div className="relative mt-[1rem] min-h-[9rem] flex-1">
-          <ul
-            ref={fila}
-            onScroll={() => alDeslizar(fila.current, setActual)}
-            onTouchStart={() => setTocado(true)}
-            onMouseDown={() => setTocado(true)}
-            className="absolute inset-0 flex snap-x snap-mandatory gap-[0.9rem] overflow-x-auto px-[25%] [scrollbar-width:none]"
-          >
-            {ESCAPARATE.map((d, i) => (
-              <li key={d.nombre} className="h-full shrink-0 snap-center py-[0.2rem]">
-                <Link
-                  to={d.ruta}
-                  aria-label={`Abrir la demo de ${d.nombre}`}
-                  className={`relative block aspect-[390/844] h-full rounded-[1.2rem] border border-white/15 bg-[#1d1d1b] p-[0.3rem] shadow-[0_1rem_2rem_-0.8rem_rgb(0_0_0/0.7)] transition-[opacity,transform] duration-500 ${
-                    i === actual ? 'opacity-100' : 'scale-[0.92] opacity-55'
-                  }`}
-                >
-                  {d.foto ? (
-                    <img src={d.foto} alt={`Ejemplo: ${d.nombre}`} className="h-full w-full rounded-[0.95rem] object-cover object-top" />
-                  ) : (
-                    <span className="flex h-full w-full flex-col items-center justify-center rounded-[0.95rem] bg-papel px-[0.8rem] text-center">
-                      <span className="font-titulo text-[1.05rem] font-black leading-[1.1]">{d.nombre}</span>
-                      <span className="mt-[0.4rem] text-[0.78rem] text-suave">{d.sector}</span>
-                    </span>
-                  )}
-                  {/* Etiqueta dentro del móvil del centro, abajo, debajo de la card de redes */}
-                  <span
-                    className={`pointer-events-none absolute bottom-[0.7rem] left-1/2 flex -translate-x-1/2 items-center gap-[0.3rem] whitespace-nowrap rounded-full bg-black/75 px-[0.75rem] py-[0.3rem] text-[0.72rem] font-semibold text-white backdrop-blur-sm transition-opacity duration-500 ${
-                      i === actual ? 'opacity-100' : 'opacity-0'
-                    }`}
-                  >
-                    {hero.pista}
-                    <ArrowUpRight className="h-[0.8rem] w-[0.8rem]" aria-hidden="true" />
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Qué demo se ve y rayitas */}
-        <div className="flex items-center justify-between gap-[0.75rem] px-[1.25rem] py-[0.8rem]">
-          <p className="min-w-0 truncate text-[0.82rem]">
-            {demo ? (
-              <>
-                <span className="font-semibold">{demo.nombre}</span> <span className="text-suave">· {demo.sector}</span>
-              </>
-            ) : (
-              <span className="text-suave">{ESCAPARATE.length} ejemplos</span>
-            )}
-          </p>
-          <div className="flex shrink-0 gap-[0.3rem]">
-            {ESCAPARATE.map((d, i) => (
-              <button
-                key={d.nombre}
-                type="button"
-                aria-label={`Ver ${d.nombre}`}
-                onClick={() => { setTocado(true); irA(i) }}
-                className={`h-[0.2rem] rounded-full transition-all duration-500 ${i === actual ? 'w-[1.3rem] bg-acento' : 'w-[0.5rem] bg-tinta/25'}`}
-              />
-            ))}
+          <div className="relative mt-[0.5rem] flex min-h-[12rem] flex-1 flex-col justify-between px-[1.25rem] pb-[1.4rem] pt-[1.4rem]">
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_85%_18%,rgb(255_210_58/0.28),transparent_55%),radial-gradient(circle_at_5%_100%,rgb(255_210_58/0.12),transparent_50%)]"
+            />
+            <div className="relative">
+            <h1 className="font-titulo text-[clamp(2.6rem,2rem+4vw,3.6rem)] font-black leading-[0.98] tracking-tight">
+              {hero.titulo}
+            </h1>
+            <p className="mt-[0.9rem] max-w-[26rem] text-[clamp(0.92rem,0.85rem+0.3vw,1.02rem)] leading-[1.5] text-suave">
+              {hero.texto}
+            </p>
+            </div>
+            <MockupMiniweb />
+            <button
+              type="button"
+              onClick={() => { setPestana('cartas'); setActualCarta(0); setTocadoCarta(false) }}
+              className="relative inline-flex min-h-[3rem] w-fit items-center gap-[0.4rem] rounded-full bg-acento px-[1.5rem] text-[0.98rem] font-bold text-papel transition-colors hover:bg-acento-oscuro"
+            >
+              {hero.enlace}
+              <ArrowRight className="h-[1rem] w-[1rem]" aria-hidden="true" />
+            </button>
           </div>
-        </div>
         </Panel>
       </div>
 
@@ -723,8 +735,6 @@ function HeroMiniweb() {
                   // Al tocar Ventajas, sus subpestañas empiezan a cambiar solas desde la primera (salvo que ya eligiera una)
                   setSubSola(p.key === 'como' && !subElegida)
                   if (p.key === 'como' && !subElegida) setSubComo(comoFunciona.subpestanas[0].key)
-                  // La fila de Ejemplos empieza siempre por la primera demo
-                  if (p.key === 'ejemplos') { setActual(0); setTocado(false) }
                   if (p.key === 'cartas') { setActualCarta(0); setTocadoCarta(false) }
                 }}
                 className={`rounded-[0.7rem] py-[0.65rem] text-[0.82rem] font-semibold transition-colors ${

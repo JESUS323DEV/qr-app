@@ -20,7 +20,7 @@ import { CLAVES_HORARIOS, CLAVES_VARIANTES_HORARIO } from './horarios'
    &corte=punta|onda|...: el corte del borde de abajo de la foto de Diagonal (claves de lib/cortes.js).
    &disposicion=centrada|tarjeta|...: la disposición del texto de Fullbleed (claves de lib/disposiciones.js).
    &composicion=arriba|abajo|panel: la composición de Mosaico (claves de lib/composiciones.js).
-   &distribucion=redondas|destacada|arriba: la distribución de las fotos de Retrato (claves de lib/distribuciones.js).
+   &distribucion=destacada|arriba: la distribución de las fotos de Retrato (claves de lib/distribuciones.js).
    &pase=marco|sobre|carrusel: el estilo de Galería (claves de lib/galerias.js).
    &montaje=rectas|monton|arriba: el montaje de Polaroid (claves de lib/montajes.js).
    &carta=almendra|tumi|...: la carta (de src/cartas) que pinta el menú de la miniweb (hero.carta).
@@ -99,6 +99,7 @@ export function marcaDePrueba(marca, params) {
     ...(params.get('menuen') === 'abajo' ? { menuEn: 'abajo' } : {}),
     ...(params.get('redesvinculadas') === 'true' ? { redesVinculadas: true } : {}),
     ...(['abajo', 'redes'].includes(params.get('compartiren')) ? { compartirEn: params.get('compartiren') } : {}),
+    ...(['boton', 'reserva', 'cita', 'formulario'].includes(params.get('contactoen')) ? { contactoEn: params.get('contactoen') } : {}),
   }
   if (!nombre && !principal && !acento && !texto && !fondo && !letra && !redes && !cabecera && !logo && !resena && !inicio && !tamanoNombre && !corte && !formato && !disposicion && !composicion && !distribucion && !pase && !montaje && !carta && !horario && !horarioVar && filtro === null && !Object.keys(textos).length && !Object.keys(coloresElegidos).length && !Object.keys(lugares).length) return marca
   return {

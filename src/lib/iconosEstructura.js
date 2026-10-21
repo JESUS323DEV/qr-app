@@ -22,4 +22,11 @@ export const ICONOS_ESTRUCTURA = {
     abajo: `${MOVIL}<rect x="7.5" y="15" width="6" height="3.4" rx="1.2" fill="currentColor"/><circle cx="16" cy="16.7" r="1.2"/>`,
     redes: `${MOVIL}<rect x="7.5" y="4" width="9" height="3.4" rx="1"/><circle cx="9.6" cy="5.7" r="0.6" fill="currentColor"/><circle cx="11.8" cy="5.7" r="0.6" fill="currentColor"/><circle cx="14.4" cy="5.7" r="0.9" fill="currentColor"/>`,
   },
+  contactoEn: {
+    // Botón de WhatsApp: una foto arriba y un botón grande debajo; formulario de reserva: campos, uno a media fila (las personas y el día) y el botón;
+    // formulario de cita: tres campos a todo el ancho (nombre, servicio y hora) y el botón
+    boton: `${MOVIL}<rect x="7.5" y="4" width="9" height="8" rx="1"/><path d="M8.5 14.4h5" stroke-width="1.3"/><rect x="7.5" y="16.4" width="9" height="3.4" rx="1.2" fill="currentColor"/>`,
+    reserva: `${MOVIL}<rect x="7.5" y="4.6" width="9" height="2.6" rx="0.8"/><rect x="7.5" y="8.6" width="4.2" height="2.6" rx="0.8"/><rect x="12.3" y="8.6" width="4.2" height="2.6" rx="0.8"/><rect x="7.5" y="12.6" width="9" height="2.6" rx="0.8"/><rect x="7.5" y="16.6" width="9" height="3" rx="1" fill="currentColor"/>`,
+    cita: `${MOVIL}<rect x="7.5" y="4.6" width="9" height="2.6" rx="0.8"/><rect x="7.5" y="8.6" width="9" height="2.6" rx="0.8"/><rect x="7.5" y="12.6" width="9" height="2.6" rx="0.8"/><rect x="7.5" y="16.6" width="9" height="3" rx="1" fill="currentColor"/>`,
+  },
 }

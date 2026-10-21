@@ -61,10 +61,10 @@ export default function HeroRetratoWeb({ hero, nombre, lema, inicio, irA }) {
   // La distribución de las tres fotos (hero.distribucion): al final (siempre tres, tocando una se abre en grande) o bajo el nombre
   const distribucion = distribucionDe(hero.distribucion)
   const filaFotos = fila.length > 0 && (
-    <div className={`relative mx-[1.25rem] ${distribucion.arriba ? 'mt-[0.9rem]' : 'mb-[1rem] mt-[0.9rem]'} grid ${distribucion.rejilla}`}>
+    <div className={`relative mx-[1.25rem] ${distribucion.arriba ? 'mt-[0.9rem]' : 'mb-[1rem] mt-[0.9rem]'} grid ${distribucion.rejilla} ${distribucion.contenedor}`}>
       {fila.map((src, i) => (
         <button key={i} type="button" onClick={() => setAbierta(i)} aria-label={`Ver la foto ${i + 1} en grande`} className={`block overflow-hidden ${distribucion.boton(i)}`}>
-          <Img src={src} alt="" className={`w-full object-cover transition-transform duration-300 hover:scale-105 ${distribucion.imagen(i)}`} />
+          <Img src={src} alt="" className={`object-cover transition-transform duration-300 hover:scale-105 ${distribucion.imagen(i)}`} />
         </button>
       ))}
     </div>
@@ -105,7 +105,7 @@ export default function HeroRetratoWeb({ hero, nombre, lema, inicio, irA }) {
       {distribucion.arriba && filaFotos}
 
       {/* Centro: lo que cuenta el negocio, anclado abajo (lo que se añade crece hacia arriba) */}
-      <div className={`relative flex min-h-[9rem] flex-1 flex-col justify-end px-[1.25rem] pt-[1rem] ${distribucion.arriba ? 'pb-[1.4rem]' : ''}`}>
+      <div className={`relative flex min-h-[9rem] flex-[1_0_auto] flex-col justify-center px-[1.25rem] pt-[1rem] ${distribucion.arriba ? 'pb-[1.4rem]' : ''}`}>
         {titular.length > 0 && (
           <h1 style={rolTitular} className="font-demo-heading text-[clamp(2rem,1.6rem+2vw,2.5rem)] font-bold leading-[1.02] text-white">
             {titular.map((l, i) => (

@@ -1053,7 +1053,7 @@ function Diseno({ tipo, slug, vista, original, cambiar, abrir }) {
 
         {producto === 'miniweb' && (
           <>
-            <EstructuraMiniweb valores={hero} cambiar={(clave, valor) => cambiar(`hero.${clave}`, valor === ESTRUCTURA_DEFECTO[clave] ? undefined : valor)} />
+            <EstructuraMiniweb contactoPorDefecto={hero.pestanas?.some(p => p.tipo === 'reservar') ? 'reserva' : 'boton'} valores={hero} cambiar={(clave, valor) => cambiar(`hero.${clave}`, valor === ESTRUCTURA_DEFECTO[clave] ? undefined : valor)} />
             {hero.portada === 'editorial' && (
               <Etiqueta texto="Formato (Formatos)">
                 <select value={hero.formato ?? 'clasica'} onChange={e => cambiar('hero.formato', e.target.value === 'clasica' ? undefined : e.target.value)} className={CAMPO}>
@@ -1259,7 +1259,7 @@ function DisenoFicha({ hero, cambiar }) {
 
 // La tarjeta de información de una copia para enseñar (nada se edita aquí): de qué trata, su sector, su estilo, sus colores y cómo se creó.
 // Debajo, el botón para pasar al editor
-function InfoCopia({ vista, tipo, fila, historial, ruta, onEditar }) {
+function InfoCopia({ vista, tipo, fila, historial, ruta, onEditar, onExportar }) {
   const esCarta = tipo === 'carta'
   const marca = esCarta ? marcaDe(vista) : vista
   const colores = marca?.theme?.colors ?? {}
@@ -1324,9 +1324,22 @@ function InfoCopia({ vista, tipo, fila, historial, ruta, onEditar }) {
           {creacion.resumen && <p className="text-[0.88rem] leading-[1.45] text-zinc-600">{creacion.resumen}</p>}
         </div>
       )}
-      <button type="button" onClick={onEditar} className={`${BOTON} justify-self-start`}>
-        Editar
-      </button>
+      <div className="flex flex-wrap items-center gap-[0.6rem]">
+        <button type="button" onClick={onEditar} className={BOTON}>
+          Editar
+        </button>
+        {/* Solo las miniwebs y fichas: pasan de demo a página de un cliente, en la dirección corta del QR */}
+        {onExportar && (
+          <button type="button" onClick={onExportar} className="rounded-[0.6rem] bg-white px-[1rem] py-[0.75rem] text-[1rem] font-semibold text-zinc-900 ring-1 ring-zinc-300">
+            {fila?.cambios?._cliente ? 'Volver a demo' : 'Exportar para cliente'}
+          </button>
+        )}
+      </div>
+      {fila?.cambios?._cliente && (
+        <p className="text-[0.85rem] leading-[1.45] text-zinc-600">
+          Es la página de un cliente: su dirección es <span className="font-semibold">{ruta}</span>, la que va en el QR. No cambies nunca su dirección una vez impreso.
+        </p>
+      )}
     </div>
   )
 }
@@ -1360,7 +1373,7 @@ function Editor({ tipo, slug, fila, volver, recargar, abrir, irANuevoPerfil }) {
   const verInfo = esCopia && !editando
   const nombre = tipo === 'negocio' ? vista.nombre : marcaDe(vista)?.nombre ?? slug
   const ruta =
-    tipo === 'negocio' ? (esCopia ? `/demo/${slug}` : rutaNegocio(original)) : esCopia ? `/demo/${slug}/carta` : rutaCarta(original)
+    tipo === 'negocio' ? (esCopia ? (fila?.cambios?._cliente ? `/${slug}` : `/demo/${slug}`) : rutaNegocio(original)) : esCopia ? `/demo/${slug}/carta` : rutaCarta(original)
 
   // Un cambio que deja el dato como en el archivo se quita (así el archivo manda si luego se corrige allí)
   const cambiar = (r, valor) =>
@@ -1478,6 +1491,20 @@ function Editor({ tipo, slug, fila, volver, recargar, abrir, irANuevoPerfil }) {
     </details>
   )
 
+  // Exportar para cliente: la copia pasa de demo (/demo/slug) a página de cliente (/slug, la dirección corta del QR); o vuelve a demo.
+  // Se guarda como la marca _cliente de sus cambios
+  const marcarCliente = async valor => {
+    const nuevos = { ...cambios }
+    if (valor) nuevos._cliente = true
+    else delete nuevos._cliente
+    const { error } = await supabase.from('ediciones').upsert({ tipo, slug, base: fila?.base ?? null, cambios: nuevos })
+    if (error) return setEstado('error')
+    setCambios(nuevos)
+    setGuardados(nuevos)
+    setVersion(v => v + 1)
+    recargar()
+  }
+
   const borrarCopia = async () => {
     const { error } = await supabase.from('ediciones').delete().eq('tipo', tipo).eq('slug', slug)
     if (error) return setEstado('error')
@@ -1530,7 +1557,22 @@ function Editor({ tipo, slug, fila, volver, recargar, abrir, irANuevoPerfil }) {
       </div>
 
       {/* Una copia se abre con su información y un botón Editar; el chat con el asistente y los ajustes solo con Editar */}
-      {verInfo && <InfoCopia vista={vista} tipo={tipo} fila={fila} historial={historial} ruta={ruta} onEditar={() => irANuevoPerfil(`${tipo}:${slug}`)} />}
+      {verInfo && <InfoCopia
+          vista={vista}
+          tipo={tipo}
+          fila={{ ...fila, cambios }}
+          historial={historial}
+          ruta={ruta}
+          onEditar={() => irANuevoPerfil(`${tipo}:${slug}`)}
+          onExportar={
+            tipo === 'negocio'
+              ? () =>
+                  cambios._cliente
+                    ? setPregunta({ titulo: '¿Volver a demo?', texto: `Dejará de abrirse en /${slug} y pasará a /demo/${slug}. Si ya has impreso el QR con la dirección corta, dejaría de funcionar.`, boton: 'Volver a demo', peligro: true, accion: () => marcarCliente(false) })
+                    : setPregunta({ titulo: '¿Exportar para cliente?', texto: `La página pasa a /${slug}, la dirección corta del QR, y deja de verse en /demo/${slug}. Una vez impreso el QR, no cambies nunca esta dirección.`, boton: 'Exportar', accion: () => marcarCliente(true) })
+              : undefined
+          }
+        />}
       {esCopia && editando && <Retocar historial={historial} enviar={retocar} />}
 
       {/* En las cartas, el menú del día no se edita aquí: es del dueño */}
@@ -1780,6 +1822,7 @@ const ESTRUCTURA_MINIWEB = [
   ['redesEn', 'Redes', [['arriba', 'Arriba'], ['lateral', 'Lateral'], ['medio', 'Medio'], ['abajo', 'Abajo']]],
   ['menuEn', 'Menú de navegación (Inicio, Menú, Horario...)', [['arriba', 'Arriba'], ['abajo', 'Abajo']]],
   ['compartirEn', 'Compartir', [['diseno', 'Como el diseño'], ['abajo', 'Junto al botón'], ['redes', 'En las redes']]],
+  ['contactoEn', 'Contacto (Reservar, Cita, Encargos...)', [['boton', 'Botón de WhatsApp'], ['reserva', 'Formulario de reserva (restauración)'], ['cita', 'Formulario de cita (estética)']]],
 ]
 const ESTRUCTURA_DEFECTO = { redesVinculadas: false, redesEn: 'arriba', menuEn: 'arriba', compartirEn: 'diseno' }
 
@@ -1931,13 +1974,14 @@ function SelectorCartaMiniweb({ valor, cambiar }) {
   )
 }
 
-function EstructuraMiniweb({ valores, cambiar, sinTitulo = false }) {
+// contactoPorDefecto: lo que hace la miniweb si no se elige nada (las de comida, el formulario de reserva; las demás, el botón de WhatsApp)
+function EstructuraMiniweb({ valores, cambiar, sinTitulo = false, contactoPorDefecto = 'boton' }) {
   return (
     <div className="grid gap-[0.9rem] lg:grid-cols-2 lg:items-start lg:gap-x-[1.75rem]">
       {!sinTitulo && <span className="text-[0.8rem] font-semibold text-zinc-500 lg:col-span-2">Estructura: dónde va cada pieza</span>}
       {ESTRUCTURA_MINIWEB.map(([clave, texto, opciones]) => {
         // Los valores viejos de las redes ('barra' y 'boton') son 'arriba' y 'medio'
-        const actual = ({ barra: 'arriba', boton: 'medio' })[valores[clave]] ?? valores[clave] ?? ESTRUCTURA_DEFECTO[clave]
+        const actual = clave === 'contactoEn' ? (valores[clave] === 'formulario' ? (contactoPorDefecto === 'reserva' ? 'reserva' : 'cita') : valores[clave] ?? contactoPorDefecto) : ({ barra: 'arriba', boton: 'medio' })[valores[clave]] ?? valores[clave] ?? ESTRUCTURA_DEFECTO[clave]
         // Con las redes vinculadas al menú, su sitio lo decide el menú: las opciones se bloquean
         const bloqueada = clave === 'redesEn' && Boolean(valores.redesVinculadas)
         return (
@@ -2422,6 +2466,14 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
   const conTextoExtra = ['editorial', 'diagonal', 'fullbleed'].includes(hero)
   const MAX_TEXTO_EXTRA = 60
   const textosEditados = Object.keys(textosMini).length > 0
+  // Los textos escritos de la portada, tal como pasan a la vista previa (la primera pestaña, Inicio): igual que al crear, pero al momento
+  const textosPrevia = producto === 'miniweb'
+    ? {
+        ...(textosMini.titular !== undefined ? { 'hero.pestanas.0.titular': [textoGrande.trim()].filter(Boolean) } : {}),
+        ...(textosMini.descripcion !== undefined ? { 'hero.pestanas.0.descripcion': textoPequeno.trim() } : {}),
+        ...(textosMini.info !== undefined ? { 'hero.pestanas.0.info': textoExtra.trim() } : {}),
+      }
+    : {}
   const colorDelTexto = colorTexto || marcaBase?.theme?.colors?.text || '#000000'
   const colorFondo = fondo || marcaBase?.theme?.colors?.bg || '#FFFFFF'
   const colorCabecera = cabecera || marcaBase?.theme?.colors?.header || colorPrincipal
@@ -2472,7 +2524,7 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
     producto === 'miniweb' && barra && `barra=${barra}`,
     conCabecera && cabecera && `cabecera=${cabecera.slice(1)}`,
     logoElegido && `logo=${encodeURIComponent(logoElegido)}`,
-    (cambiosIA || Object.keys(cambiosExtra).length > 0) && `ia=${versionIA}-${versionExtra}`,
+    (cambiosIA || Object.keys(cambiosExtra).length > 0 || Object.keys(textosPrevia).length > 0) && `ia=${versionIA}-${versionExtra}`,
   ]
     .filter(Boolean)
     .map(p => `&${p}`)
@@ -2549,6 +2601,8 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
       cambios = {
         nombre: nombreCrear,
         ...(logoElegido ? { logo: logoElegido } : {}),
+        // El enlace de "escribir reseña" del Google del negocio: vacío al principio, para que salga el campo en Reseña de Google y se pueda pegar
+        ...(getNegocio(base)?.resena?.url ? {} : { 'resena.url': '' }),
         ...(principal ? { 'theme.colors.primary': principal } : {}),
         ...(acento ? { 'theme.colors.accent': acento } : {}),
         ...(colorTexto ? { 'theme.colors.text': colorTexto } : {}),
@@ -2703,6 +2757,30 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
     resumenDiseno,
   })
 
+  // Cambios sin guardar: la huella de todo lo elegido ahora comparada con la de la última vez que se abrió el editor, se cargó una copia o se guardó.
+  // marcarBase pide que la próxima huella pase a ser la de partida (versionBase hace que se compruebe aunque la huella no cambie)
+  const huella = JSON.stringify(instantanea())
+  const [huellaBase, setHuellaBase] = useState(null)
+  const [versionBase, setVersionBase] = useState(0)
+  const marcarBase = useRef(true)
+  useEffect(() => {
+    if (!marcarBase.current) return
+    marcarBase.current = false
+    setHuellaBase(huella)
+  }, [huella, versionBase]) // eslint-disable-line react-hooks/exhaustive-deps
+  const sinGuardar = huellaBase !== null && huella !== huellaBase
+  const empezarDeNuevo = () => {
+    marcarBase.current = true
+    setVersionBase(v => v + 1)
+  }
+  // Al cerrar o recargar la pestaña con cambios sin guardar, el navegador pregunta
+  useEffect(() => {
+    if (!sinGuardar) return
+    const avisar = e => e.preventDefault()
+    window.addEventListener('beforeunload', avisar)
+    return () => window.removeEventListener('beforeunload', avisar)
+  }, [sinGuardar])
+
   // Carga una copia en Nuevo perfil a partir de su instantánea. Las copias antiguas (de antes de Nuevo perfil) no la tienen y no se pueden abrir aquí
   const cargarCopia = fila => {
     const i = fila?.cambios?._nuevoPerfil
@@ -2753,6 +2831,7 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
       // Sin almacenamiento, la vista previa no enseña lo del asistente, pero al guardar sí se conserva
     }
     setCopiaCargada({ tipo: fila.tipo, slug: fila.slug })
+    empezarDeNuevo()
   }
 
   // Si se llega con ?copia=tipo:slug (botón Editar de la pantalla de información), se abre Nuevo perfil con esa copia
@@ -2783,6 +2862,8 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
       }
       if (Object.keys(cambiosExtra).length) cambios = fusionar(cambios, cambiosExtra)
       cambios = { ...cambios, _nuevoPerfil: instantanea() }
+      // La marca de cliente (Exportar para cliente) se conserva
+      if ((filas ?? []).find(f => f.tipo === copiaCargada.tipo && f.slug === copiaCargada.slug)?.cambios?._cliente) cambios._cliente = true
       const { error } = await supabase
         .from('ediciones')
         .update({ base, cambios, ...(historial.length ? { historial } : {}) })
@@ -2790,6 +2871,7 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
         .eq('slug', copiaCargada.slug)
       if (error) throw new Error('No se han podido guardar los cambios.')
       await recargar()
+      empezarDeNuevo()
       setAviso(`Cambios guardados en «${nombreGuardar}».`)
     } catch (e) {
       setError(e.message)
@@ -2909,14 +2991,14 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
   useEffect(() => {
     const t = setTimeout(() => {
       try {
-        localStorage.setItem('mostraq-vista-ia', JSON.stringify({ ...(cambiosIA?.cambios ?? {}), ...cambiosExtra }))
+        localStorage.setItem('mostraq-vista-ia', JSON.stringify({ ...(cambiosIA?.cambios ?? {}), ...textosPrevia, ...cambiosExtra }))
       } catch {
         // Sin almacenamiento, la vista previa no enseña estos cambios, pero al crear sí se guardan
       }
       setVersionExtra(v => v + 1)
     }, 600)
     return () => clearTimeout(t)
-  }, [cambiosExtra]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [cambiosExtra, textosMini]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // La tipografía (la pareja de fuentes de la marca)
   const campoTipografia = (
@@ -3374,7 +3456,7 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
               <ChevronDown className="ml-auto h-[1rem] w-[1rem] shrink-0 text-zinc-500 transition-transform group-open/estructura:rotate-180" aria-hidden="true" />
             </summary>
             <div className="px-[0.85rem] pb-[0.85rem] pt-[0.2rem]">
-              <EstructuraMiniweb sinTitulo valores={estructura} cambiar={(clave, valor) => setEstructura(e => ({ ...e, [clave]: valor }))} />
+              <EstructuraMiniweb sinTitulo contactoPorDefecto={plantilla.miniweb ? 'reserva' : 'boton'} valores={estructura} cambiar={(clave, valor) => setEstructura(e => ({ ...e, [clave]: valor }))} />
             </div>
           </details>
           )}
@@ -3508,6 +3590,8 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
               value={copiaCargada ? `${copiaCargada.tipo}:${copiaCargada.slug}` : ''}
               onChange={e => {
                 if (!e.target.value) return setCopiaCargada(null)
+                // Con cambios sin guardar, cargar otra copia los perdería: se pregunta antes (si se cancela, el desplegable se queda como estaba)
+                if (sinGuardar && !window.confirm('Tienes cambios sin guardar. Si cambias de copia, se pierden. ¿Quieres cambiar de todos modos?')) return
                 const [t, sl] = e.target.value.split(':')
                 cargarCopia((filas ?? []).find(f => f.tipo === t && f.slug === sl))
               }}
@@ -3823,7 +3907,7 @@ function Lista({ filas, abrir, recargar, copia }) {
             detalle: `Carta, copia de ${marcaDe(getCarta(f.base) ?? {})?.nombre ?? f.base}`,
             ruta: `/demo/${f.slug}/carta`,
           }
-        : { ...f, nombre: f.cambios?.nombre ?? f.slug, detalle: `Copia de ${getNegocio(f.base)?.nombre ?? f.base}`, ruta: `/demo/${f.slug}` },
+        : { ...f, nombre: f.cambios?.nombre ?? f.slug, detalle: `Copia de ${getNegocio(f.base)?.nombre ?? f.base}`, ruta: f.cambios?._cliente ? `/${f.slug}` : `/demo/${f.slug}` },
     )
 
   const Fila = ({ clave, nombre, detalle, ruta }) => (

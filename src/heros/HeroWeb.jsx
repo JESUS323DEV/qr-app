@@ -234,7 +234,9 @@ const mensajeReserva = ({ negocio, dia, hora, datos }) => {
   ].filter(l => l !== null && l !== undefined && l !== false).join('\n')
 }
 
-function PaginaReservar({ pestana, negocio }) {
+function PaginaReservar({ pestana, negocio, modo = 'reserva' }) {
+  // En modo cita (peluquerías, uñas, barberías...) el campo de las personas es el servicio y no hay zonas
+  const esCita = modo === 'cita'
   const [dia, setDia] = useState(null)
   const [hora, setHora] = useState('')
   // Qué se ha desplegado: 'dia' (el calendario), 'hora' (las píldoras) o nada
@@ -281,11 +283,18 @@ function PaginaReservar({ pestana, negocio }) {
       return
     }
     const datos = new FormData(e.currentTarget)
-    window.open(enlaceWhatsapp(numeroWhatsapp(pestana.whatsapp), mensajeReserva({ negocio, dia, hora, datos })), '_blank', 'noopener')
+    const mensaje = esCita ? mensajeCita({ negocio, dia, hora, datos, encargo: pestana.tipo === 'encargos' }) : mensajeReserva({ negocio, dia, hora, datos })
+    window.open(enlaceWhatsapp(numeroWhatsapp(pestana.whatsapp), mensaje), '_blank', 'noopener')
+  }
+
+  // Los campos y los textos suaves salen del fondo y del texto de la miniweb (no del color de superficie de la plantilla): combinan con cualquier color elegido
+  const coloresFormulario = {
+    '--color-demo-surface': 'color-mix(in srgb, var(--demo-text) 9%, var(--demo-bg))',
+    '--color-demo-muted': 'color-mix(in srgb, var(--demo-text) 62%, var(--demo-bg))',
   }
 
   return (
-    <div className="h-full">
+    <div className="h-full" style={coloresFormulario}>
       <form onSubmit={enviar} className="flex h-full flex-col justify-between gap-[0.7rem] px-[1.25rem] pb-[1rem] pt-[1rem]">
         <div>
           <h2 className="font-demo-heading text-[1.7rem] font-extrabold leading-none">{pestana.titulo}</h2>
@@ -304,13 +313,25 @@ function PaginaReservar({ pestana, negocio }) {
 
           {/* Personas y día; el calendario se despliega debajo, a todo el ancho, por encima del resto */}
           <div ref={filaDia} className="relative z-10 grid grid-cols-2 gap-x-[0.6rem]">
-            <Campo etiqueta="Personas">
-              <Desplegable name="personas" defaultValue="2" required>
-                {Array.from({ length: 12 }, (_, i) => (
-                  <option key={i + 1} value={i + 1}>{i + 1} {i === 0 ? 'persona' : 'personas'}</option>
-                ))}
-              </Desplegable>
-            </Campo>
+            {esCita ? (
+              <Campo etiqueta={pestana.tipo === 'encargos' ? 'Encargo' : 'Servicio'}>
+                {pestana.servicios?.length > 0 ? (
+                  <Desplegable name="servicio" defaultValue={pestana.servicios[0]} required>
+                    {pestana.servicios.map(s => <option key={s} value={s}>{s}</option>)}
+                  </Desplegable>
+                ) : (
+                  <input name="servicio" required className={CAMPO} />
+                )}
+              </Campo>
+            ) : (
+              <Campo etiqueta="Personas">
+                <Desplegable name="personas" defaultValue="2" required>
+                  {Array.from({ length: 12 }, (_, i) => (
+                    <option key={i + 1} value={i + 1}>{i + 1} {i === 0 ? 'persona' : 'personas'}</option>
+                  ))}
+                </Desplegable>
+              </Campo>
+            )}
             <Campo etiqueta="Día" como="div">
               <button
                 type="button"
@@ -383,11 +404,11 @@ function PaginaReservar({ pestana, negocio }) {
           </div>
 
           <Campo etiqueta="Comentario (opcional)">
-            <textarea name="comentario" rows={3} placeholder="Alergias, trona, un cumpleaños..." className={`${CAMPO} resize-none py-[0.65rem]`} />
+            <textarea name="comentario" rows={3} placeholder={esCita ? 'Algo que debamos saber' : 'Alergias, trona, un cumpleaños...'} className={`${CAMPO} resize-none py-[0.65rem]`} />
           </Campo>
           {/* Información sobre los datos (sin casilla: solo se usan para la reserva que pide el cliente) */}
           <p className="-mt-[0.35rem] text-[0.72rem] text-demo-muted">
-            Usamos tus datos solo para gestionar tu reserva.{' '}
+            Usamos tus datos solo para gestionar tu {esCita ? 'cita' : 'reserva'}.{' '}
             <a href="/privacidad" target="_blank" rel="noreferrer" className="underline underline-offset-[0.2em]">
               Política de privacidad
             </a>
@@ -411,6 +432,110 @@ function PaginaReservar({ pestana, negocio }) {
         </div>
       </form>
     </div>
+  )
+}
+
+// Mensaje de una cita (o encargo) que le llega al negocio por WhatsApp, con el mismo orden que el de las reservas
+const mensajeCita = ({ negocio, dia, hora, datos, encargo }) => {
+  const fecha = fechaLarga(dia)
+  const comentario = datos.get('comentario')?.trim()
+  return [
+    `Hola, quiero ${encargo ? 'hacer un encargo' : 'pedir cita'}${negocio ? ` en ${negocio}` : ''}:`,
+    '',
+    `*${encargo ? 'Encargo' : 'Servicio'}:* ${datos.get('servicio').trim()}`,
+    `*Día:* ${fecha.charAt(0).toUpperCase()}${fecha.slice(1)}`,
+    `*Hora:* ${hora}`,
+    '',
+    `*Nombre:* ${datos.get('nombre').trim()}`,
+    `*Teléfono:* ${telefonoOrdenado(datos.get('telefono'))}`,
+    ...(comentario ? ['', `*Comentario:* ${comentario}`] : []),
+  ].join('\n')
+}
+
+/* Los días y las horas de una cita, sacados de las líneas del horario del negocio ("Martes a viernes" / "10:00 a 14:00 y 16:00 a 20:00"):
+   turnos con sus horas cada media hora y los días de cierre, con el formato que ya usa el formulario de reservas (getDay: 0 = domingo) */
+const DIA_DE = { lunes: 1, martes: 2, miercoles: 3, jueves: 4, viernes: 5, sabado: 6, domingo: 0 }
+const ORDEN_SEMANA = [1, 2, 3, 4, 5, 6, 0]
+const sinTildes = t => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+const dosCifras = n => String(n).padStart(2, '0')
+
+function diasDe(texto) {
+  const dias = new Set()
+  const nombres = 'lunes|martes|miercoles|jueves|viernes|sabado|domingo'
+  for (const m of sinTildes(texto).matchAll(new RegExp(`(${nombres})(?:\\s+a\\s+(${nombres}))?`, 'g'))) {
+    if (!m[2]) {
+      dias.add(DIA_DE[m[1]])
+      continue
+    }
+    const fin = ORDEN_SEMANA.indexOf(DIA_DE[m[2]])
+    for (let k = ORDEN_SEMANA.indexOf(DIA_DE[m[1]]); ; k = (k + 1) % 7) {
+      dias.add(ORDEN_SEMANA[k])
+      if (k === fin) break
+    }
+  }
+  return [...dias]
+}
+
+function agendaDeHorario(lineas = []) {
+  const turnos = []
+  const abiertos = new Set()
+  for (const l of lineas) {
+    const dias = diasDe(l.dias ?? '')
+    for (const t of String(l.horas ?? '').matchAll(/(\d{1,2})[:.](\d{2})\s*a\s*(\d{1,2})[:.](\d{2})/g)) {
+      const ini = Number(t[1]) * 60 + Number(t[2])
+      const fin = Number(t[3]) * 60 + Number(t[4])
+      const horas = []
+      for (let m = ini; m <= fin - 30; m += 30) horas.push(`${dosCifras(Math.floor(m / 60))}:${dosCifras(m % 60)}`)
+      if (!horas.length || !dias.length) continue
+      turnos.push({ nombre: ini < 14 * 60 ? 'Mañana' : ini < 20 * 60 ? 'Tarde' : 'Noche', horas, dias })
+      dias.forEach(d => abiertos.add(d))
+    }
+  }
+  return { turnos, cerrado: abiertos.size ? ORDEN_SEMANA.filter(d => !abiertos.has(d)) : [] }
+}
+
+// Formulario de cita o de reserva en cualquier pestaña de contacto (hero.contactoEn: 'cita' o 'reserva'), con el mismo formulario que las
+// reservas: en modo cita, el servicio en lugar de las personas; en modo reserva, las personas (y la zona, si la pestaña la trae).
+// Los días y las horas salen del horario del negocio, salvo en la pestaña Reservar de comida, que trae sus propios turnos
+function PaginaFormulario({ modo, pestana, heroBase, negocio }) {
+  const pestanas = heroBase?.pestanas ?? []
+  const propia = Boolean(pestana.turnos)
+  const agenda = agendaDeHorario(pestanas.find(p => tipoComun(p.tipo) === 'horario')?.lineas)
+  // Sin horario del que sacar las horas, de diez a ocho cada media hora
+  const generales = [{ nombre: 'Mañana', horas: ['10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30'] }, { nombre: 'Tarde', horas: ['16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30'] }]
+  const servicios = [...new Set(pestanas.filter(p => p.tipo === 'servicios').flatMap(p => (p.secciones ?? []).flatMap(s => (s.platos ?? []).map(x => x.nombre))))]
+  const sintetica = {
+    tipo: pestana.tipo,
+    titulo: pestana.titulo,
+    texto_reserva: pestana.texto_reserva ?? pestana.texto_encargo,
+    // El botón de WhatsApp de una pestaña de contacto ("Pedir cita por WhatsApp") pasa a ser el de enviar el formulario
+    boton: pestana.turnos ? pestana.boton : pestana.boton?.replace(/\s*por WhatsApp/i, '').trim() || 'Enviar',
+    whatsapp: pestana.whatsapp ?? pestana.url?.match(/wa\.me\/(\d+)/)?.[1],
+    telefono: pestana.telefono,
+    zonas: pestana.zonas,
+    turnos: propia ? pestana.turnos : agenda.turnos.length ? agenda.turnos : generales,
+    cerrado: propia ? pestana.cerrado : agenda.cerrado,
+    servicios,
+  }
+  return <PaginaReservar pestana={sintetica} negocio={negocio} modo={modo} />
+}
+const PaginaCitaFormulario = props => <PaginaFormulario {...props} modo="cita" />
+const PaginaReservaFormulario = props => <PaginaFormulario {...props} modo="reserva" />
+
+// La reserva con solo el botón de WhatsApp (hero.contactoEn: 'boton'), como la pantalla de contacto de las demás miniwebs
+function PaginaReservarComoBoton({ pestana, negocio, respaldo }) {
+  return (
+    <PaginaContacto
+      respaldo={respaldo}
+      pestana={{
+        foto: respaldo,
+        titulo: pestana.titulo,
+        texto_encargo: pestana.texto_reserva,
+        boton: pestana.boton,
+        url: enlaceWhatsapp(numeroWhatsapp(pestana.whatsapp), `Hola, quiero reservar${negocio ? ` en ${negocio}` : ''}.`),
+        telefono: pestana.telefono,
+      }}
+    />
   )
 }
 
@@ -695,14 +820,19 @@ function PaginaPrecios({ pestana, respaldo }) {
 }
 
 // Página de cada pestaña: la propia de la miniweb (inicio, horario, reservar, menu) o la común de su tipo
-const paginaDe = (tipo, portada) => {
+// contactoEn (hero.contactoEn) para las pestañas de reserva, cita y encargos: 'boton' (la pantalla con el botón de WhatsApp), 'reserva' (el
+// formulario de restauración) o 'cita' (el de estética). Sin él, la reserva es el formulario de reserva y el resto, el botón.
+// 'formulario' es el valor de antes: el formulario de siempre de cada pestaña
+const paginaDe = (tipo, portada, contactoEn) => {
   // Con portada elegida, también el Inicio de las miniwebs propias (Chalaquita) es la portada
   if (tipo === 'inicio' && portada) return PaginaPortada
+  const modo = contactoEn === 'formulario' ? (tipo === 'reservar' ? 'reserva' : 'cita') : contactoEn
+  if (tipo === 'reservar') return modo === 'boton' ? PaginaReservarComoBoton : modo === 'cita' ? PaginaCitaFormulario : PaginaReservar
   if (PAGINAS[tipo]) return PAGINAS[tipo]
   const comun = tipoComun(tipo)
   if (comun === 'fotos') return portada ? PaginaPortada : PaginaVacia
   if (comun === 'horario') return PaginaHorario
-  if (comun === 'contacto') return PaginaContacto
+  if (comun === 'contacto') return modo === 'cita' ? PaginaCitaFormulario : modo === 'reserva' ? PaginaReservaFormulario : PaginaContacto
   if (comun === 'ubicacion') return PaginaUbicacion
   if (comun === 'precios') return PaginaPrecios
   return PaginaVacia
@@ -843,7 +973,7 @@ export default function HeroWeb({ hero, nombre, lema, cuerpo, redes, redesTexto 
           El mapa del horario se carga desde el principio, para que esté listo cuando la vuelta llegue a él */}
       <div className={`relative min-h-[30rem] flex-1 overflow-hidden ${menuAbajo ? 'order-1' : 'order-3'}`}>
         {pestanas.map((p, i) => {
-          const Pagina = paginaDe(p.tipo, portada)
+          const Pagina = paginaDe(p.tipo, portada, hero.contactoEn)
           return (
             <div
               key={`${p.tipo}-${i}`}

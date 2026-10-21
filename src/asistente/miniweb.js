@@ -54,7 +54,6 @@ const TEXTO_SUBDISENO = {
   'composicion.arriba': 'todo el texto arriba y las fotos al final',
   'composicion.abajo': 'solo el nombre arriba, las fotos y todo el texto debajo',
   'distribucion.clasica': 'tres fotos verticales en fila al final',
-  'distribucion.redondas': 'tres fotos en círculo, más suave y personal',
   'distribucion.destacada': 'una foto grande y dos pequeñas (pide pantalla alta)',
   'distribucion.arriba': 'las fotos justo bajo el nombre y el texto al final',
   'pase.clasica': 'una foto con flechas, el titular sobre ella y el texto debajo',

@@ -62,6 +62,7 @@ export function conEdicion(tipo, slug, fila) {
   const base = propio ?? (fila?.base ? buscar(fila.base) : null)
   if (!base) return null
   const datos = aplicar(base, fila?.cambios)
-  // Una copia es una demo más, en su propia dirección; copia: sin flechas a otras demos
-  return propio ? datos : { ...datos, slug, demo: true, copia: true }
+  // Una copia es una demo más, en su propia dirección; copia: sin flechas a otras demos.
+  // Con la marca _cliente (Exportar para cliente en /admin) es una página de cliente: en la raíz, sin ser demo
+  return propio ? datos : { ...datos, slug, demo: !fila?.cambios?._cliente, copia: true }
 }

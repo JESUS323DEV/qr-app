@@ -29,7 +29,7 @@ export const hero = {
   titulo: 'Tu negocio entero, a un escaneo.',
   pista: 'Ver demo',
   texto:
-    'Una placa en tu mostrador. Tus clientes la escanean y lo tienen todo: reseñas, horario, cómo llegar y reservas. Yo la monto y la mantengo.',
+    'Una placa en tu mostrador. Tus clientes la escanean y lo tienen todo: reseñas, horario, cómo llegar y reservas.',
   boton: 'Escríbeme por WhatsApp',
   enlace: 'Ver ejemplos',
   // Debajo del móvil, mientras pasan las demos
@@ -232,11 +232,17 @@ export const webCompleta = {
 export const escaparate = {
   verFichas: 'Ver todas las fichas',
   verCartasMiniwebs: 'Ver todas las cartas',
+  verMiniwebs: 'Ver todas las miniwebs',
 }
 
 export const cartasMiniwebs = {
-  pestana: 'Cartas',
+  pestana: 'Ejemplos',
   titulo: 'Tu carta, en la palma de la mano.',
+  tituloMiniwebs: 'Tu negocio, en la palma de la mano.',
+  subpestanas: [
+    { key: 'miniwebs', texto: 'Miniwebs' },
+    { key: 'cartas', texto: 'Cartas' },
+  ],
   // Lo que pone debajo de cada móvil y dentro, si no hay captura
   tipos: {
     miniweb: { etiqueta: 'Miniweb', titulo: 'Miniweb' },
