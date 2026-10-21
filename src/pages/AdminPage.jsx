@@ -3476,6 +3476,24 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                 <span className="text-[0.8rem] font-semibold">{filtroFoto === 100 ? 'El de cada diseño' : filtroFoto === 0 ? 'Sin filtro' : `${filtroFoto} %`}</span>
               </div>
               <input type="range" min="0" max="100" step="5" value={filtroFoto} onChange={e => setFiltroFoto(Number(e.target.value))} aria-label="Intensidad del filtro de la foto" className="w-full accent-zinc-900" />
+              {/* El color del filtro, debajo de su barra: solo en Cortes (todos sus cortes) y en Fullbleed con el Velo de color, que son los que lo usan.
+                  Sin elegir, el de cada diseño (el círculo con borde de rayitas) */}
+              {(hero === 'diagonal' || (hero === 'fullbleed' && disposicion === 'velo')) && (
+                <div className="flex items-center gap-[0.75rem]">
+                  <span className="text-[0.8rem] font-semibold text-zinc-500">Color del filtro</span>
+                  <CampoColor
+                    valor={coloresMini.filtroFoto ?? (hero === 'fullbleed' ? colorCabecera : coloresAutomaticos({ colors: { ...marcaBase?.theme?.colors, bg: colorFondo, primary: colorPrincipal, accent: colorAcento, text: colorDelTexto, header: colorCabecera } }, { barra, portada: hero }, coloresMini).filtroFoto) ?? '#000000'}
+                    auto={!coloresMini.filtroFoto}
+                    soloCirculo
+                    cambiar={v => cambiarColorMini('filtroFoto', v)}
+                  />
+                  {coloresMini.filtroFoto && (
+                    <button type="button" title="Volver al color de cada diseño" aria-label="Volver al color del filtro de cada diseño" onClick={() => cambiarColorMini('filtroFoto', undefined)} className="rounded-full p-[0.2rem] text-zinc-400 hover:text-zinc-900">
+                      <RotateCcw className="h-[0.95rem] w-[0.95rem]" strokeWidth={2.2} aria-hidden="true" />
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           )}
           {producto === 'miniweb' && <FilaEstiloMenu valor={barra} cambiar={setBarra} />}

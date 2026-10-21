@@ -11,9 +11,9 @@ import { Share2 } from 'lucide-react'
 export const LugarCompartir = createContext('diseno')
 
 // El compartir que va al lado del botón de la portada: solo se pinta si el lugar es 'boton'
-export function CompartirJuntoAlBoton({ titulo }) {
+export function CompartirJuntoAlBoton({ titulo, className = '' }) {
   const lugar = useContext(LugarCompartir)
-  return lugar === 'boton' ? <BotonCompartir titulo={titulo} alLado /> : null
+  return lugar === 'boton' ? <BotonCompartir titulo={titulo} alLado className={className} /> : null
 }
 
 // Aspectos: 'oscuro' (sobre fotos), 'suave' (sobre fondos lisos de la marca, del color del texto) o 'enlace' (solo texto

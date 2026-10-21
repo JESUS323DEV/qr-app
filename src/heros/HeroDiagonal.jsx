@@ -7,6 +7,7 @@ import Escena, { fotoDeRespaldo, tipoComun } from '../fichas/escenas'
 import BarraPestanas from '../fichas/barras'
 import { clipDeCorte } from '../lib/cortes'
 import CtaPortada from '../components/CtaPortada'
+import { ESCALA_TEXTO } from '../lib/escalaTexto'
 import { degradadoFiltro, useFiltro } from '../components/ColoresPortada'
 
 /* Diagonal (adaptado del Editorial de platform). Hero por piezas: el marco es suyo y las escenas y la barra de
@@ -67,7 +68,15 @@ export default function HeroDiagonal({ hero, nombre, sinBarra = false, inicio, i
             <NombreMarca nombre={nombre} tamano="grande" />
             {ctaArriba && !enMapa && (
               <>
-                <CtaPortada inicio={inicio} irA={irA} nombre={nombre} className="pointer-events-auto mt-[0.7rem] font-sans" />
+                <CtaPortada
+                  inicio={inicio}
+                  irA={irA}
+                  nombre={nombre}
+                  className="pointer-events-auto mt-[0.7rem] font-sans"
+                  claseBoton={ESCALA_TEXTO.boton}
+                  claseCompartir={ESCALA_TEXTO.compartir}
+                  claseExtra={ESCALA_TEXTO.extra}
+                />
                 <BotonCompartir titulo={nombre} className="pointer-events-auto absolute right-[1.25rem] top-[1rem] font-sans" />
               </>
             )}
@@ -91,7 +100,7 @@ export default function HeroDiagonal({ hero, nombre, sinBarra = false, inicio, i
         </div>
       </div>
 
-      {sinBarra && <TextoInicio inicio={inicio} irA={irA} nombre={nombre} sinBoton={ctaArriba} fondo={hero.fondoInicio} color="text-demo-text" className="px-[1.25rem] pb-[1.6rem] pt-[1.6rem]" />}
+      {sinBarra && <TextoInicio inicio={inicio} irA={irA} nombre={nombre} sinBoton={ctaArriba} fondo={hero.fondoInicio} color="text-demo-text" className="px-[1.25rem] pb-[1.6rem] pt-[1.6rem]" claseTitular={ESCALA_TEXTO.titular} claseDescripcion={ESCALA_TEXTO.descripcion} />}
       {!sinBarra && (
         <div className="px-[1.25rem] pt-[1.4rem]">
           <BarraPestanas estilo={hero.barra ?? 'subrayado'} pestanas={pestanas} activa={activa} tocar={tocar} />

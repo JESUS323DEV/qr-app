@@ -10,6 +10,7 @@ import BarraPestanas from '../fichas/barras'
 import { useRol } from '../components/ColoresPortada'
 import { formatoDe } from '../lib/formatos'
 import CtaPortada from '../components/CtaPortada'
+import { ESCALA_TEXTO } from '../lib/escalaTexto'
 
 /* Editorial (adaptado del Apetece de platform). La foto grande cambia según la pestaña:
    - platos: las fotos van pasando solas con una cortina de tiras.
@@ -280,7 +281,15 @@ export default function HeroEditorial({ hero, nombre, lema, sinBarra = false, in
           {tipoComun(pestanas[activa]?.tipo) !== 'ubicacion' &&
             (ctaArriba ? (
               <>
-                <CtaPortada inicio={inicio} irA={irA} nombre={nombre} className="pointer-events-auto mt-[0.7rem]" />
+                <CtaPortada
+                inicio={inicio}
+                irA={irA}
+                nombre={nombre}
+                className="pointer-events-auto mt-[0.7rem]"
+                claseBoton={ESCALA_TEXTO.boton}
+                claseCompartir={ESCALA_TEXTO.compartir}
+                claseExtra={ESCALA_TEXTO.extra}
+              />
                 <BotonCompartir titulo={nombre} className="pointer-events-auto absolute right-[1.25rem] top-[1.1rem]" />
               </>
             ) : (
@@ -289,7 +298,7 @@ export default function HeroEditorial({ hero, nombre, lema, sinBarra = false, in
         </div>
       </div>
 
-      {sinBarra && <TextoInicio inicio={inicio} irA={irA} nombre={nombre} sinBoton={ctaArriba} fondo={hero.fondoInicio} color="text-demo-text" className={`${formato.bloque} pb-[1.6rem]! pt-[1.6rem]!`} />}
+      {sinBarra && <TextoInicio inicio={inicio} irA={irA} nombre={nombre} sinBoton={ctaArriba} fondo={hero.fondoInicio} color="text-demo-text" className={`${formato.bloque} pb-[1.6rem]! pt-[1.6rem]!`} claseTitular={ESCALA_TEXTO.titular} claseDescripcion={ESCALA_TEXTO.descripcion} />}
       {!sinBarra && (
         <div className={formato.bloque}>
           <BarraPestanas estilo={hero.barra ?? 'revista'} pestanas={pestanas} activa={activa} tocar={tocar} />

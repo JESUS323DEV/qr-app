@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import TextoInicio from '../components/TextoInicio'
 import CtaPortada from '../components/CtaPortada'
+import { ESCALA_TEXTO } from '../lib/escalaTexto'
 import NombreMarca from '../components/NombreMarca'
 import { Phone } from 'lucide-react'
 import Img from '../components/Img'
@@ -247,12 +248,20 @@ export default function HeroFullbleed({ hero, nombre, sinBarra = false, inicio, 
             <p className={`font-demo-heading leading-none ${sinBarra ? 'text-[2.1rem]' : 'text-[1.5rem]'}`}><NombreMarca nombre={nombre} tamano={sinBarra ? 'grande' : 'normal'} /></p>
             {!enMapa && <BotonCompartir titulo={nombre} className="pointer-events-auto" />}
           </div>
-          {ctaArriba && !enMapa && <CtaPortada inicio={inicio} irA={irA} nombre={nombre} className="pointer-events-auto mt-[0.7rem]" />}
+          {ctaArriba && !enMapa && <CtaPortada
+              inicio={inicio}
+              irA={irA}
+              nombre={nombre}
+              className="pointer-events-auto mt-[0.7rem]"
+              claseBoton={ESCALA_TEXTO.boton}
+              claseCompartir={ESCALA_TEXTO.compartir}
+              claseExtra={ESCALA_TEXTO.extra}
+            />}
         </div>
 
         {/* Portada de una miniweb: el texto de Inicio (texto grande, pequeño y el botón) encima de la foto, abajo, sobre un degradado oscuro para que se lea */}
         {sinBarra && (
-          <TextoInicio inicio={inicio} irA={irA} nombre={nombre} sinBoton={ctaArriba} color="text-white" className={disposicion.texto} estilo={degradadoTexto} />
+          <TextoInicio inicio={inicio} irA={irA} nombre={nombre} sinBoton={ctaArriba} color="text-white" className={disposicion.texto} estilo={degradadoTexto} claseTitular={ESCALA_TEXTO.titular} claseDescripcion={ESCALA_TEXTO.descripcion} />
         )}
       </div>
 
