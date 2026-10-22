@@ -1286,7 +1286,58 @@ function DisenoFicha({ hero, cambiar }) {
 
 // La tarjeta de información de una copia para enseñar (nada se edita aquí): de qué trata, su sector, su estilo, sus colores y cómo se creó.
 // Debajo, el botón para pasar al editor
-function InfoCopia({ vista, tipo, fila, historial, ruta, onEditar, onExportar }) {
+/* El grupo de una copia: una carpeta con nombre (por ejemplo, un cliente con varios diseños). Se elige uno de los que ya hay, ninguno, o uno nuevo
+   escribiendo su nombre. Se guarda en la propia copia (cambios._grupo). */
+function SelectorGrupo({ actual, grupos, cambiar }) {
+  const [nuevo, setNuevo] = useState(false)
+  const [nombre, setNombre] = useState('')
+  const lista = actual && !grupos.includes(actual) ? [actual, ...grupos] : grupos
+  return (
+    <div className="grid gap-[0.4rem]">
+      <label className="grid gap-[0.3rem]">
+        <span className="text-[0.8rem] font-semibold text-zinc-500">Grupo</span>
+        <select
+          value={nuevo ? '__nuevo' : actual}
+          onChange={e => {
+            if (e.target.value === '__nuevo') setNuevo(true)
+            else {
+              setNuevo(false)
+              cambiar(e.target.value)
+            }
+          }}
+          className={CAMPO}
+        >
+          <option value="">Sin grupo</option>
+          {lista.map(g => (
+            <option key={g} value={g}>
+              {g}
+            </option>
+          ))}
+          <option value="__nuevo">Nuevo grupo...</option>
+        </select>
+      </label>
+      {nuevo && (
+        <div className="flex gap-[0.5rem]">
+          <input value={nombre} onChange={e => setNombre(e.target.value)} className={CAMPO} placeholder="Claudia Holguin" />
+          <button
+            type="button"
+            disabled={!nombre.trim()}
+            onClick={() => {
+              cambiar(nombre.trim())
+              setNuevo(false)
+              setNombre('')
+            }}
+            className={BOTON}
+          >
+            Crear
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function InfoCopia({ vista, tipo, fila, historial, ruta, onEditar, onExportar, grupos = [], onGrupo }) {
   const esCarta = tipo === 'carta'
   const marca = esCarta ? marcaDe(vista) : vista
   const colores = marca?.theme?.colors ?? {}
@@ -1362,6 +1413,7 @@ function InfoCopia({ vista, tipo, fila, historial, ruta, onEditar, onExportar })
           </button>
         )}
       </div>
+      {onGrupo && <SelectorGrupo actual={fila?.cambios?._grupo ?? ''} grupos={grupos} cambiar={onGrupo} />}
       {fila?.cambios?._cliente && (
         <p className="text-[0.85rem] leading-[1.45] text-zinc-600">
           Es la página de un cliente: su dirección es <span className="font-semibold">{ruta}</span>, la que va en el QR. No cambies nunca su dirección una vez impreso.
@@ -1371,7 +1423,7 @@ function InfoCopia({ vista, tipo, fila, historial, ruta, onEditar, onExportar })
   )
 }
 
-function Editor({ tipo, slug, fila, volver, recargar, abrir, irANuevoPerfil }) {
+function Editor({ tipo, slug, fila, filas, volver, recargar, abrir, irANuevoPerfil }) {
   const buscar = tipo === 'negocio' ? getNegocio : getCarta
   const original = buscar(slug) ?? (fila?.base ? buscar(fila.base) : null)
   const esCopia = Boolean(fila?.base)
@@ -1532,6 +1584,20 @@ function Editor({ tipo, slug, fila, volver, recargar, abrir, irANuevoPerfil }) {
     recargar()
   }
 
+  // El grupo de la copia (una carpeta con nombre, en Copias para enseñar): vacío, sin grupo. Se guarda como cambios._grupo
+  const gruposExistentes = [...new Set((filas ?? []).map(f => f.cambios?._grupo).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'))
+  const ponerGrupo = async nombre => {
+    const nuevos = { ...cambios }
+    if (nombre?.trim()) nuevos._grupo = nombre.trim()
+    else delete nuevos._grupo
+    const { error } = await supabase.from('ediciones').upsert({ tipo, slug, base: fila?.base ?? null, cambios: nuevos })
+    if (error) return setEstado('error')
+    setCambios(nuevos)
+    setGuardados(nuevos)
+    setVersion(v => v + 1)
+    recargar()
+  }
+
   const borrarCopia = async () => {
     const { error } = await supabase.from('ediciones').delete().eq('tipo', tipo).eq('slug', slug)
     if (error) return setEstado('error')
@@ -1591,6 +1657,8 @@ function Editor({ tipo, slug, fila, volver, recargar, abrir, irANuevoPerfil }) {
           historial={historial}
           ruta={ruta}
           onEditar={() => irANuevoPerfil(`${tipo}:${slug}`)}
+          grupos={gruposExistentes}
+          onGrupo={ponerGrupo}
           onExportar={() => {
             // La dirección: la de una miniweb o ficha es /slug; la de una carta, /slug/carta
             const fin = tipo === 'carta' ? '/carta' : ''
@@ -3044,7 +3112,10 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
       if (Object.keys(cambiosExtra).length) cambios = fusionar(cambios, cambiosExtra)
       cambios = { ...cambios, _nuevoPerfil: instantanea() }
       // La marca de cliente (Exportar para cliente) se conserva
-      if ((filas ?? []).find(f => f.tipo === copiaCargada.tipo && f.slug === copiaCargada.slug)?.cambios?._cliente) cambios._cliente = true
+      const previa = (filas ?? []).find(f => f.tipo === copiaCargada.tipo && f.slug === copiaCargada.slug)?.cambios
+      if (previa?._cliente) cambios._cliente = true
+      // Y su grupo
+      if (previa?._grupo) cambios._grupo = previa._grupo
       // El menú del día de una carta vive en su panel (tabla cartas) y manda sobre el de la copia: se cambia también allí, para que lo que se
       // guarda sea lo que se ve en su dirección (y en su QR)
       if (copiaCargada.tipo === 'carta') {
@@ -4556,8 +4627,125 @@ function EditorClientes({ copias }) {
   )
 }
 
+/* Nuevo grupo, al principio de Copias para enseñar: se escribe el nombre y se marcan las copias que entran. El grupo nace con ellas (se guarda en cada
+   una como cambios._grupo, sin Supabase aparte). Si el nombre ya existe, se suman al que hay; las que ya estaban en otro grupo se pasan a este. */
+function NuevoGrupo({ copias: todas, recargar }) {
+  // Solo las que no tienen grupo; para pasar una de un grupo a otro, se marca en su fila y se usa "Mover a..."
+  const copias = todas.filter(c => !c.cambios?._grupo)
+  // El desplegable se cierra al crear el grupo
+  const [abierto, setAbierto] = useState(false)
+  const [nombre, setNombre] = useState('')
+  const [elegidas, setElegidas] = useState([])
+  const [guardando, setGuardando] = useState(false)
+  const [error, setError] = useState('')
+  const clave = c => `${c.tipo}:${c.slug}`
+  const alternar = c => setElegidas(e => (e.includes(clave(c)) ? e.filter(x => x !== clave(c)) : [...e, clave(c)]))
+
+  const crear = async () => {
+    if (!nombre.trim() || !elegidas.length || guardando) return
+    setGuardando(true)
+    setError('')
+    const resultados = await Promise.all(
+      copias
+        .filter(c => elegidas.includes(clave(c)))
+        .map(c => supabase.from('ediciones').upsert({ tipo: c.tipo, slug: c.slug, base: c.base ?? null, cambios: { ...c.cambios, _grupo: nombre.trim() } })),
+    )
+    setGuardando(false)
+    if (resultados.some(r => r.error)) return setError('No se han podido guardar todas las copias en el grupo.')
+    setNombre('')
+    setElegidas([])
+    setAbierto(false)
+    recargar()
+  }
+
+  return (
+    <details open={abierto} onToggle={e => setAbierto(e.currentTarget.open)} className="border-b border-zinc-200">
+      <summary className="cursor-pointer px-[1rem] py-[0.75rem] text-[0.95rem] font-semibold">+ Nuevo grupo</summary>
+      <div className="grid gap-[0.7rem] px-[1rem] pb-[1rem]">
+        <input value={nombre} onChange={e => setNombre(e.target.value)} className={CAMPO} placeholder="Nombre del grupo (por ejemplo, Claudia Holguin)" />
+        <p className="text-[0.8rem] font-semibold text-zinc-500">{copias.length ? 'Elige las copias que entran (las que no tienen grupo)' : 'Todas las copias están ya en un grupo'}</p>
+        <ul className="max-h-[18rem] overflow-y-auto rounded-[0.6rem] ring-1 ring-zinc-200">
+          {copias.map(c => (
+            <li key={clave(c)} className="border-b border-zinc-200 last:border-b-0">
+              <label className="flex cursor-pointer items-center gap-[0.7rem] px-[0.8rem] py-[0.6rem]">
+                <input type="checkbox" checked={elegidas.includes(clave(c))} onChange={() => alternar(c)} className="h-[1.1rem] w-[1.1rem] shrink-0 accent-zinc-900" />
+                <span className="min-w-0">
+                  <span className="block truncate font-semibold">{c.nombre}</span>
+                  <span className="block truncate text-[0.8rem] text-zinc-500">
+                    {c.detalle}
+                  </span>
+                </span>
+              </label>
+            </li>
+          ))}
+        </ul>
+        {error && <p className="text-[0.85rem] font-semibold text-red-600">{error}</p>}
+        <button type="button" onClick={crear} disabled={!nombre.trim() || !elegidas.length || guardando} className={BOTON}>
+          {guardando ? 'Creando...' : elegidas.length ? `Crear grupo con ${elegidas.length}` : 'Crear grupo'}
+        </button>
+      </div>
+    </details>
+  )
+}
+
+/* Mover las copias marcadas (casillas de Copias para enseñar) a un grupo que ya existe, o sacarlas de su grupo. Solo se ve con alguna marcada. */
+function MoverCopias({ marcadas, copias, recargar, limpiar }) {
+  const [destino, setDestino] = useState('')
+  const [guardando, setGuardando] = useState(false)
+  const [error, setError] = useState('')
+  if (!marcadas.length) return null
+  const grupos = [...new Set(copias.map(c => c.cambios?._grupo).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'))
+
+  const mover = async () => {
+    if (!destino || guardando) return
+    setGuardando(true)
+    setError('')
+    const resultados = await Promise.all(
+      copias
+        .filter(c => marcadas.includes(`${c.tipo}:${c.slug}`))
+        .map(c => {
+          const cambios = { ...c.cambios }
+          if (destino === '__ninguno') delete cambios._grupo
+          else cambios._grupo = destino
+          return supabase.from('ediciones').upsert({ tipo: c.tipo, slug: c.slug, base: c.base ?? null, cambios })
+        }),
+    )
+    setGuardando(false)
+    if (resultados.some(r => r.error)) return setError('No se han podido mover todas las copias.')
+    setDestino('')
+    limpiar()
+    recargar()
+  }
+
+  return (
+    <div className="grid gap-[0.5rem] border-b border-zinc-200 bg-zinc-50 px-[1rem] py-[0.7rem]">
+      <div className="flex flex-wrap items-center gap-[0.6rem]">
+        <span className="text-[0.88rem] font-semibold">{marcadas.length === 1 ? '1 marcada' : `${marcadas.length} marcadas`}</span>
+        <select value={destino} onChange={e => setDestino(e.target.value)} className={`${CAMPO} max-w-[15rem]`} aria-label="Mover las marcadas a un grupo">
+          <option value="">Mover a...</option>
+          {grupos.map(g => (
+            <option key={g} value={g}>
+              {g}
+            </option>
+          ))}
+          <option value="__ninguno">Sin grupo</option>
+        </select>
+        <button type="button" onClick={mover} disabled={!destino || guardando} className={BOTON}>
+          {guardando ? 'Moviendo...' : 'Mover'}
+        </button>
+        <button type="button" onClick={limpiar} className="text-[0.85rem] font-semibold text-zinc-500 underline underline-offset-[0.2em]">
+          Quitar marcas
+        </button>
+      </div>
+      {error && <p className="text-[0.85rem] font-semibold text-red-600">{error}</p>}
+    </div>
+  )
+}
+
 function Lista({ filas, abrir, recargar, copia }) {
   const editadas = new Set((filas ?? []).map(f => `${f.tipo}:${f.slug}`))
+  // Las copias marcadas con su casilla (para moverlas a un grupo)
+  const [marcadas, setMarcadas] = useState([])
   // Copias de fichas, miniwebs y cartas, con el nombre que les has puesto
   const copias = (filas ?? [])
     .filter(f => f.base)
@@ -4572,8 +4760,17 @@ function Lista({ filas, abrir, recargar, copia }) {
         : { ...f, nombre: f.cambios?.nombre ?? f.slug, detalle: `Copia de ${getNegocio(f.base)?.nombre ?? f.base}`, ruta: f.cambios?._cliente ? `/${f.slug}` : `/demo/${f.slug}` },
     )
 
-  const Fila = ({ clave, nombre, detalle, ruta }) => (
-    <li className="flex items-center gap-[0.75rem] border-b border-zinc-200 last:border-b-0">
+  const Fila = ({ clave, nombre, detalle, ruta, marcable }) => (
+    <li key={clave} className="flex items-center gap-[0.75rem] border-b border-zinc-200 last:border-b-0">
+      {marcable && (
+        <input
+          type="checkbox"
+          aria-label={`Marcar ${nombre}`}
+          checked={marcadas.includes(clave)}
+          onChange={() => setMarcadas(m => (m.includes(clave) ? m.filter(x => x !== clave) : [...m, clave]))}
+          className="h-[1.1rem] w-[1.1rem] shrink-0 accent-zinc-900"
+        />
+      )}
       <button type="button" onClick={() => abrir(clave)} className="min-w-0 flex-1 py-[0.8rem] text-left">
         <span className="block truncate font-semibold">{nombre}</span>
         <span className="block text-[0.82rem] text-zinc-500">
@@ -4588,13 +4785,55 @@ function Lista({ filas, abrir, recargar, copia }) {
   )
 
   // Grupo desplegable: cerrado, con su número; al tocarlo se abre la lista. Con secciones (titulo + filas), la lista se separa en partes con su título
-  const Grupo = ({ titulo, filas: lista, secciones }) =>
+  // Disolver un grupo: se borra el grupo y sus copias se quedan (sin grupo)
+  const disolverGrupo = async nombre => {
+    if (!window.confirm(`¿Disolver el grupo «${nombre}»? Sus copias no se borran: se quedan sin grupo.`)) return
+    const resultados = await Promise.all(
+      copias
+        .filter(c => c.cambios?._grupo === nombre)
+        .map(c => {
+          const cambios = { ...c.cambios }
+          delete cambios._grupo
+          return supabase.from('ediciones').upsert({ tipo: c.tipo, slug: c.slug, base: c.base ?? null, cambios })
+        }),
+    )
+    if (resultados.some(r => r.error)) window.alert('No se han podido sacar todas las copias del grupo.')
+    recargar()
+  }
+
+  const Grupo = ({ titulo, filas: lista, secciones, carpetas, cabecera }) =>
     lista.length > 0 && secciones ? (
       <details className="rounded-[1rem] bg-white ring-1 ring-zinc-200 [&[open]>summary]:border-b [&[open]>summary]:border-zinc-200">
         <summary className="flex cursor-pointer items-baseline justify-between gap-[1rem] px-[1rem] py-[0.9rem]">
           <span className="text-[1.05rem] font-bold">{titulo}</span>
           <span className="text-[0.9rem] text-zinc-500">{lista.length}</span>
         </summary>
+        {cabecera}
+        {/* Los grupos (carpetas con nombre, con sus copias dentro), antes de lo que no tiene grupo */}
+        {(carpetas ?? []).map(c => (
+          <details key={c.titulo} className="border-b border-zinc-200">
+            <summary className="flex cursor-pointer items-baseline justify-between gap-[1rem] bg-zinc-50 px-[1rem] py-[0.6rem] text-[0.9rem] font-bold">
+              {c.titulo}
+              <span className="flex items-baseline gap-[0.9rem]">
+                <button
+                  type="button"
+                  onClick={e => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    disolverGrupo(c.titulo)
+                  }}
+                  className="text-[0.78rem] font-semibold text-red-600 underline underline-offset-[0.2em]"
+                >
+                  Disolver grupo
+                </button>
+                <span className="text-[0.8rem] font-normal text-zinc-500">{c.filas.length}</span>
+              </span>
+            </summary>
+            <ul className="px-[1rem]">
+              {c.filas.map(f => Fila(f))}
+            </ul>
+          </details>
+        ))}
         {secciones
           .filter(s => s.filas.length > 0)
           .map(s => (
@@ -4604,9 +4843,7 @@ function Lista({ filas, abrir, recargar, copia }) {
                 <span className="text-[0.8rem] font-normal text-zinc-500">{s.filas.length}</span>
               </p>
               <ul className="px-[1rem]">
-                {s.filas.map(f => (
-                  <Fila key={f.clave} {...f} />
-                ))}
+                {s.filas.map(f => Fila(f))}
               </ul>
             </div>
           ))}
@@ -4619,9 +4856,7 @@ function Lista({ filas, abrir, recargar, copia }) {
           <span className="text-[0.9rem] text-zinc-500">{lista.length}</span>
         </summary>
         <ul className="px-[1rem]">
-          {lista.map(f => (
-            <Fila key={f.clave} {...f} />
-          ))}
+          {lista.map(f => Fila(f))}
         </ul>
       </details>
       )
@@ -4633,7 +4868,17 @@ function Lista({ filas, abrir, recargar, copia }) {
   const [versionQR, setVersionQR] = useState(0)
 
   const aFila = n => ({ clave: `negocio:${n.slug}`, nombre: n.nombre, detalle: n.demo ? 'Demo' : 'Cliente', ruta: rutaNegocio(n) })
-  const aFilaCopia = f => ({ clave: `${f.tipo}:${f.slug}`, nombre: f.nombre, detalle: f.detalle, ruta: f.ruta })
+  const aFilaCopia = f => ({ clave: `${f.tipo}:${f.slug}`, nombre: f.nombre, detalle: f.detalle, ruta: f.ruta, marcable: true })
+  // Los grupos de las copias (cambios._grupo), por orden alfabético; lo que no tiene grupo sigue en Miniwebs y Cartas
+  const carpetasCopias = Object.entries(
+    copias.reduce((acc, c) => {
+      const g = c.cambios?._grupo
+      if (g) (acc[g] ??= []).push(aFilaCopia(c))
+      return acc
+    }, {}),
+  )
+    .sort(([a], [b]) => a.localeCompare(b, 'es'))
+    .map(([titulo, filas]) => ({ titulo, filas }))
   // Una copia exportada a muestras (botón de Nuevo perfil): sale en Miniwebs y no en Copias para enseñar
   const esMuestra = f => f.tipo === 'negocio' && f.cambios?.muestra === true
 
@@ -4692,16 +4937,23 @@ function Lista({ filas, abrir, recargar, copia }) {
       <div className="grid gap-[0.6rem]">
         <h2 className="px-[0.25rem] text-[0.85rem] font-semibold text-zinc-500">Páginas</h2>
         {/* Las copias, separadas en Miniwebs y Cartas: cada copia que se guarda cae sola en el suyo, según lo que sea */}
-        <Grupo
-          titulo="Copias para enseñar"
-          filas={copias.map(aFilaCopia)}
-          secciones={[
-            { titulo: 'Miniwebs', filas: copias.filter(c => c.tipo !== 'carta').map(aFilaCopia) },
-            { titulo: 'Cartas', filas: copias.filter(c => c.tipo === 'carta').map(aFilaCopia) },
-          ]}
-        />
+        {Grupo({
+          titulo: 'Copias para enseñar',
+          filas: copias.map(aFilaCopia),
+          carpetas: carpetasCopias,
+          cabecera: (
+            <>
+              <NuevoGrupo copias={copias} recargar={recargar} />
+              <MoverCopias marcadas={marcadas} copias={copias} recargar={recargar} limpiar={() => setMarcadas([])} />
+            </>
+          ),
+          secciones: [
+            { titulo: 'Miniwebs', filas: copias.filter(c => c.tipo !== 'carta' && !c.cambios?._grupo).map(aFilaCopia) },
+            { titulo: 'Cartas', filas: copias.filter(c => c.tipo === 'carta' && !c.cambios?._grupo).map(aFilaCopia) },
+          ],
+        })}
         {/* Las miniwebs de siempre y, con ellas, las que se exportan a muestras desde Nuevo perfil */}
-        <Grupo titulo="Miniwebs" filas={negocios.filter(n => tipoDe(n) === 'miniweb').map(aFila)} />
+        {Grupo({ titulo: 'Miniwebs', filas: negocios.filter(n => tipoDe(n) === 'miniweb').map(aFila) })}
         <CopiasQR
           version={versionQR}
           abrir={f => {
@@ -4710,11 +4962,11 @@ function Lista({ filas, abrir, recargar, copia }) {
             setTimeout(() => document.getElementById('editor-qr')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
           }}
         />
-        <Grupo
-          titulo="Cartas"
-          filas={cartas.map(c => ({ clave: `carta:${c.slug}`, nombre: marcaDe(c)?.nombre ?? c.slug, detalle: c.demo ? 'Demo' : 'Cliente', ruta: rutaCarta(c) }))}
-        />
-        <Grupo titulo="Fichas" filas={negocios.filter(n => tipoDe(n) === 'ficha').map(aFila)} />
+        {Grupo({
+          titulo: 'Cartas',
+          filas: cartas.map(c => ({ clave: `carta:${c.slug}`, nombre: marcaDe(c)?.nombre ?? c.slug, detalle: c.demo ? 'Demo' : 'Cliente', ruta: rutaCarta(c) })),
+        })}
+        {Grupo({ titulo: 'Fichas', filas: negocios.filter(n => tipoDe(n) === 'ficha').map(aFila) })}
       </div>
     </div>
   )
@@ -4867,6 +5119,7 @@ export default function AdminPage() {
                 tipo={tipo}
                 slug={slug}
                 fila={fila}
+                filas={filas}
                 volver={() => abrir(null)}
                 recargar={recargar}
                 abrir={abrir}

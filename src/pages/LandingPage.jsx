@@ -281,12 +281,14 @@ const WEBS_Y_CARTAS = [
     .filter(c => c.demo && enEscaparate(c))
     .map(c => ({ foto: captura(`${c.slug}-carta`), nombre: marcaDe(c)?.nombre, ...cartasMiniwebs.tipos.carta, ruta: rutaCarta(c) })),
 ]
-// Pestaña Ejemplos, subpestaña Miniwebs (la de por defecto): de momento, tres miniwebs hechas en el Editor (copias en Supabase, en /demo/slug)
+// Pestaña Ejemplos, subpestaña Miniwebs (la de por defecto): miniwebs hechas en el Editor (copias en Supabase, en /demo/slug)
 // con su captura (src/assets/capturas/<slug>.webp)
 const MINIWEBS = [
   { slug: 'lilac-nails', nombre: 'Lilac Nails', etiqueta: 'Estudio de uñas' },
   { slug: 'barberia-cuervo', nombre: 'Barbería Cuervo', etiqueta: 'Barbería' },
   { slug: 'restaurante-brasas', nombre: 'Restaurante Brasas', etiqueta: 'Restaurante' },
+  { slug: 'peluqueria-styles', nombre: 'Peluquería Styles', etiqueta: 'Peluquería' },
+  { slug: 'delicias-de-barcelona', nombre: 'Delicias de Barcelona', etiqueta: 'Pastelería' },
 ].map(m => ({ foto: captura(m.captura ?? m.slug), nombre: m.nombre, titulo: m.nombre, etiqueta: m.etiqueta, ruta: `/demo/${m.slug}` }))
 
 /* El hero es una miniweb, con la misma estructura que las de los clientes:
