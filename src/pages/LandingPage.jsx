@@ -247,12 +247,6 @@ const CAMBIO_PLACA_MS = 2500
 // Cada cuánto cambian solas las subpestañas de Ventajas
 const CAMBIO_SUBPESTANA_MS = 5000
 
-// Formas de los puntos del QR que se pueden elegir en la placa de Tu QR (puntos: la del generador)
-const FORMAS = [
-  { key: 'cuadrado', texto: 'cuadrados', clase: '', puntos: 'square' },
-  { key: 'redondo', texto: 'redondeados', clase: 'rounded-[0.15rem]', puntos: 'rounded' },
-  { key: 'punto', texto: 'redondos', clase: 'rounded-full', puntos: 'dots' },
-]
 // Diseños de la placa de Tu QR: los 5 primeros del editor (el clásico y las primeras siluetas con sus colores)
 const DISENOS_LANDING = DISENOS.slice(0, 5)
 // La placa de verdad (la del generador), cargada solo al abrir Tu QR: lleva la librería del QR
@@ -427,7 +421,6 @@ function HeroMiniweb() {
   }, [pestana, subSola])
   // Placa de Tu QR: el diseño y la forma de los puntos elegidos
   const [color, setColor] = useState(0)
-  const [forma, setForma] = useState('redondo')
   // Placa que se prueba diseños sola: empieza cuando el usuario toca la pestaña Tu QR (no en la vuelta inicial)
   // y se para en cuanto toca la placa o sus botones. Si ya eligió algo, no vuelve a moverse.
   const [placaSola, setPlacaSola] = useState(false)
@@ -441,7 +434,6 @@ function HeroMiniweb() {
     if (pestana !== 'qr' || !placaSola) return
     const id = setInterval(() => {
       setColor(c => (c + 1) % DISENOS_LANDING.length)
-      setForma(f => FORMAS[(FORMAS.findIndex(x => x.key === f) + 1) % FORMAS.length].key)
     }, CAMBIO_PLACA_MS)
     return () => clearInterval(id)
   }, [pestana, placaSola])
@@ -603,70 +595,67 @@ function HeroMiniweb() {
               </h2>
             </div>
             {/* Tocar la placa o sus botones para los cambios solos */}
-            <div onPointerDown={pararPlaca} className="flex min-h-[10rem] flex-1 items-center justify-center py-[1rem]">
-              {/* La placa de verdad (la misma que hace el generador), con su silueta y sus colores; mientras carga, un
-                  hueco del mismo tamaño */}
-              <div className={`${ESCALA_LANDING.placa} -rotate-[4deg] drop-shadow-[0_1.25rem_1.5rem_rgb(0_0_0/0.5)]`}>
-                <Suspense fallback={<div className="aspect-[3/4] w-full" />}>
-                  <GeneradorQR
-                    modo="placa"
-                    url={`${DOMINIO}/`}
-                    nombre={marca.nombre}
-                    diseno={DISENOS_LANDING[color].clave}
-                    formaPuntos={FORMAS.find(f => f.key === forma)?.puntos}
-                  />
-                </Suspense>
-              </div>
-            </div>
-
-            <div onPointerDown={pararPlaca} className="flex items-center justify-between gap-[1rem] px-[1.25rem] pb-[1rem]">
-              {/* Diseños de la placa: cada uno con su silueta en sus colores (el clásico, un QR) */}
-              <div className="flex gap-[0.35rem]">
-                {DISENOS_LANDING.map((d, i) => (
-                  <button
-                    key={d.clave}
-                    type="button"
-                    title={d.nombre}
-                    aria-label={`Diseño ${d.nombre}`}
-                    aria-pressed={i === color}
-                    onClick={() => setColor(i)}
-                    className={`flex h-[1.9rem] w-[1.9rem] items-center justify-center rounded-[0.4rem] border-2 transition-transform duration-300 ${i === color ? 'scale-110 border-acento' : 'border-white/15 hover:scale-105'}`}
-                  >
-                    {!d.silueta ? (
-                      <span className="flex h-[1.35rem] w-[1.35rem] items-center justify-center rounded-[0.2rem]" style={{ background: '#FFFFFF', color: d.qr }}>
-                        <QrCode className="h-[1.05rem] w-[1.05rem]" strokeWidth={2.5} aria-hidden="true" />
-                      </span>
-                    ) : (
-                      <span
-                        className="block h-[1.35rem] w-[1.35rem]"
-                        style={{
-                          background: d.degradado ? `linear-gradient(45deg, ${d.degradado.join(', ')})` : (d.muestra ?? d.qr),
-                          maskImage: mascaraSilueta(d.silueta),
-                          WebkitMaskImage: mascaraSilueta(d.silueta),
-                          maskSize: 'contain',
-                          WebkitMaskSize: 'contain',
-                          maskRepeat: 'no-repeat',
-                          WebkitMaskRepeat: 'no-repeat',
-                        }}
+            <div onPointerDown={pararPlaca} className="flex min-h-[10rem] flex-1 items-center py-[1rem]">
+              <div className="flex w-full items-stretch gap-[0.9rem]">
+                {/* Izquierda: la placa (recta) y, debajo, sus estilos. El ancho de esta columna es el de la placa */}
+                <div className={`${ESCALA_LANDING.placa} ml-[1.25rem] shrink-0`}>
+                  {/* La placa de verdad (la misma que hace el generador), con su silueta y sus colores; mientras carga, un
+                      hueco del mismo tamaño */}
+                  <div className="drop-shadow-[0_1.25rem_1.5rem_rgb(0_0_0/0.5)]">
+                    <Suspense fallback={<div className="aspect-[3/4] w-full" />}>
+                      <GeneradorQR
+                        modo="placa"
+                        url={`${DOMINIO}/`}
+                        nombre={hero.placa.nombre}
+                        textoAbajo={hero.placa.texto}
+                        redes={hero.placa.redes}
+                        diseno={DISENOS_LANDING[color].clave}
                       />
-                    )}
-                  </button>
-                ))}
-              </div>
-              {/* Forma de los puntos del QR */}
-              <div className="flex gap-[0.3rem] rounded-full bg-papel p-[0.2rem]">
-                {FORMAS.map(f => (
-                  <button
-                    key={f.key}
-                    type="button"
-                    aria-label={`Puntos ${f.texto}`}
-                    aria-pressed={forma === f.key}
-                    onClick={() => setForma(f.key)}
-                    className={`flex h-[1.7rem] w-[1.7rem] items-center justify-center rounded-full transition-colors ${forma === f.key ? 'bg-acento text-papel' : 'text-suave hover:text-tinta'}`}
-                  >
-                    <span className={`block h-[0.6rem] w-[0.6rem] bg-current ${f.clase}`} />
-                  </button>
-                ))}
+                    </Suspense>
+                  </div>
+                  <div className="mt-[0.9rem]">
+              {/* Diseños de la placa: cada uno con su silueta en sus colores (el clásico, un QR) */}
+                  <div className="flex gap-[0.35rem]">
+                    {DISENOS_LANDING.map((d, i) => (
+                      <button
+                        key={d.clave}
+                        type="button"
+                        title={d.nombre}
+                        aria-label={`Diseño ${d.nombre}`}
+                        aria-pressed={i === color}
+                        onClick={() => setColor(i)}
+                        className={`flex h-[1.9rem] w-[1.9rem] items-center justify-center rounded-[0.4rem] border-2 transition-transform duration-300 ${i === color ? 'scale-110 border-acento' : 'border-white/15 hover:scale-105'}`}
+                      >
+                        {!d.silueta ? (
+                          <span className="flex h-[1.35rem] w-[1.35rem] items-center justify-center rounded-[0.2rem]" style={{ background: '#FFFFFF', color: d.qr }}>
+                            <QrCode className="h-[1.05rem] w-[1.05rem]" strokeWidth={2.5} aria-hidden="true" />
+                          </span>
+                        ) : (
+                          <span
+                            className="block h-[1.35rem] w-[1.35rem]"
+                            style={{
+                              background: d.degradado ? `linear-gradient(45deg, ${d.degradado.join(', ')})` : (d.muestra ?? d.qr),
+                              maskImage: mascaraSilueta(d.silueta),
+                              WebkitMaskImage: mascaraSilueta(d.silueta),
+                              maskSize: 'contain',
+                              WebkitMaskSize: 'contain',
+                              maskRepeat: 'no-repeat',
+                              WebkitMaskRepeat: 'no-repeat',
+                            }}
+                          />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                  </div>
+                </div>
+                {/* Derecha: el subtítulo y "Leer más", a la altura de la placa */}
+                <div className="mr-[1.25rem] flex min-w-0 flex-1 flex-col items-start justify-between">
+                  <div>
+                    <p className="text-[0.9rem] leading-[1.35] text-suave">{hero.inicio.subtitulo}</p>
+                    <VerTodas to="/crear-qr">{hero.inicio.leerMas}</VerTodas>
+                  </div>
+                </div>
               </div>
             </div>
         </Panel>
@@ -839,7 +828,6 @@ function LandingEscritorio() {
 
   // La placa de Tu QR: el diseño y la forma de los puntos elegidos
   const [color, setColor] = useState(0)
-  const [forma, setForma] = useState('redondo')
 
   return (
     <div className="hidden bg-papel font-texto text-tinta lg:block">
@@ -902,7 +890,7 @@ function LandingEscritorio() {
       <Seccion id="tu-qr" fondo>
         <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-center gap-[4rem]">
           <div>
-            <TituloSeccion>{hero.inicio.titulo}</TituloSeccion>
+            <TituloSeccion texto={hero.inicio.subtitulo}>{hero.inicio.titulo}</TituloSeccion>
             {/* Diseños de la placa: cada uno con su silueta en sus colores (el clásico, un QR) */}
             <div className="mt-[2rem] flex flex-wrap gap-[0.5rem]">
               {DISENOS_LANDING.map((d, i) => (
@@ -936,26 +924,13 @@ function LandingEscritorio() {
                 </button>
               ))}
             </div>
-            {/* Forma de los puntos del QR */}
-            <div className="mt-[1.25rem] inline-flex gap-[0.3rem] rounded-full bg-papel p-[0.25rem]">
-              {FORMAS.map(f => (
-                <button
-                  key={f.key}
-                  type="button"
-                  aria-pressed={f.key === forma}
-                  onClick={() => setForma(f.key)}
-                  className={`rounded-full px-[1rem] py-[0.45rem] text-[0.9rem] font-semibold transition-colors ${f.key === forma ? 'bg-acento text-papel' : 'text-suave hover:text-tinta'}`}
-                >
-                  {f.texto}
-                </button>
-              ))}
-            </div>
+            <VerTodas to="/crear-qr">{hero.inicio.leerMas}</VerTodas>
           </div>
           <div className="flex justify-center py-[1rem]">
             <div className="w-[min(20rem,100%)] -rotate-[4deg] drop-shadow-[0_1.25rem_1.5rem_rgb(0_0_0/0.5)]">
               {escritorio && (
                 <Suspense fallback={<div className="aspect-[3/4] w-full" />}>
-                  <GeneradorQR modo="placa" url={`${DOMINIO}/`} nombre={marca.nombre} diseno={DISENOS_LANDING[color].clave} formaPuntos={FORMAS.find(f => f.key === forma)?.puntos} />
+                  <GeneradorQR modo="placa" url={`${DOMINIO}/`} nombre={hero.placa.nombre} textoAbajo={hero.placa.texto} redes={hero.placa.redes} diseno={DISENOS_LANDING[color].clave} />
                 </Suspense>
               )}
             </div>

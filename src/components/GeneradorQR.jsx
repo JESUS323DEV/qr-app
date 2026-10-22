@@ -119,7 +119,8 @@ const TODOS_ESTILOS = [...ESTILOS, ...LISOS, ...DEGRADADOS]
 /* Editor del cliente: empieza con la placa de la pestaña "Tu QR" de la landing (la de Instagram, con los puntos
    redondeados, el nombre arriba y el texto abajo), para que reconozca lo que vio */
 const DEGRADADO_INSTAGRAM = ['#833AB4', '#C13584', '#E1306C', '#F77737']
-const inicioLanding = nombre => ({
+// textoAbajo y redes (solo la placa de la landing): el texto de abajo y los iconos de redes (solo icono, sin texto) que lleva
+const inicioLanding = (nombre, textoAbajo, redes) => ({
   estilo: 'instagram',
   colorPuntos: DEGRADADO_INSTAGRAM[0],
   colorEsquinas: DEGRADADO_INSTAGRAM[0],
@@ -138,9 +139,9 @@ const inicioLanding = nombre => ({
   borde: 0.1,
   radioFondo: 0.05,
   campoArriba: nombre ?? '',
-  campoAbajo1: 'Escanea y déjanos tu reseña',
+  campoAbajo1: textoAbajo ?? 'Escanea y déjanos tu reseña',
   campoAbajo2: '',
-  lineas: [],
+  lineas: (redes ?? []).map(icono => ({ icono, texto: '' })),
   tipografia: 'directa',
   escala: 1.2,
 })
@@ -495,12 +496,12 @@ const capasDe = (o, lado) => {
    estadoInicial: un diseño guardado (el que envió el cliente) para empezar con él. intentos: los de IA del cliente.
    enviar: guarda el diseño del cliente (recibe todos sus ajustes)
    guardar (solo en el de /admin): guarda el diseño en las copias de QR (recibe { nombre, url, estado }); nombreCopiaInicial, el nombre con el que se ofrece */
-export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes: fuentesMarca, proponer, modo = 'admin', estadoInicial, intentos: intentosIniciales, enviar, diseno, formaPuntos, guardar, nombreCopiaInicial = '' }) {
+export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes: fuentesMarca, proponer, modo = 'admin', estadoInicial, intentos: intentosIniciales, enviar, diseno, formaPuntos, guardar, nombreCopiaInicial = '', textoAbajo, redes }) {
   const marca = deMarca(colores)
   const oscuroDeMarca = marca.qr
   const acentoDeMarca = colores?.accent ?? '#555555'
   // Sin diseño guardado, el editor del cliente (y su vista) empieza con la placa de la landing
-  const ini = estadoInicial ?? (modo === 'admin' ? {} : inicioLanding(nombre))
+  const ini = estadoInicial ?? (modo === 'admin' ? {} : inicioLanding(nombre, textoAbajo, redes))
   const [url, setUrl] = useState(urlInicial)
 
   // Colores y estilo
@@ -867,7 +868,7 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
   // Solo los que tienen texto (en la placa circular, solo el primero)
   // El eslogan bajo el nombre (en la placa rectangular, solo en el panel de Jesús); si no, va abajo como siempre
   const eslArriba = modo === 'admin' && posEslogan === 'arriba' && campoAbajo1.trim() !== '' && formaPlaca !== 'circular'
-  const redesVisibles = lineas.filter(l => l.texto.trim() || (modo === 'admin' && l.icono))
+  const redesVisibles = lineas.filter(l => l.texto.trim() || ((modo === 'admin' || modo === 'placa') && l.icono))
   const lineasVisibles = [
     ...(campoAbajo1.trim() && !eslArriba ? [{ icono: '', texto: campoAbajo1.trim() }] : []),
     // La segunda línea, secundaria: siempre un poco más pequeña y más suave que la primera

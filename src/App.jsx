@@ -7,6 +7,7 @@ import TematicaPage from './pages/TematicaPage'
 import CartaPage from './pages/CartaPage'
 import CatalogoPage from './pages/CatalogoPage'
 import PlanesPage from './pages/PlanesPage'
+import CrearQrPage from './pages/CrearQrPage'
 import PanelPage from './pages/PanelPage'
 import LegalPage from './pages/LegalPage'
 import { DOMINIO } from './lib/dominio'
@@ -27,6 +28,7 @@ const GestionPage = import.meta.env.DEV ? lazy(() => import('./pages/GestionPage
 const NO_INDEXAR = ['/demo', '/admin', '/mi-carta', '/mi-qr', '/panel', '/disenos', '/gestion', '/miniweb']
 const DESCRIPCIONES = {
   '/catalogo': 'Mira los diseños de Mostraq para negocios locales: miniwebs y cartas para restaurantes, belleza, salud y tiendas.',
+  '/crear-qr': 'Diseño de QR personalizado para tu negocio: tus colores, tu logo y tus redes, impreso en una placa de calidad.',
   '/planes': 'Los planes de Mostraq: la miniweb básica y la plataforma completa, con carta digital, SEO y placas con QR para tu local.',
   '/aviso-legal': 'Aviso legal de Mostraq.',
   '/privacidad': 'Política de privacidad de Mostraq.',
@@ -73,6 +75,8 @@ export default function App() {
         <Route path="/miniweb" element={<CatalogoPage soloMiniwebs />} />
         {/* Planes en detalle */}
         <Route path="/planes" element={<PlanesPage />} />
+        {/* Crea el tuyo: cómo ayuda Jesús con el QR (a donde lleva el botón de la sección Tu QR) */}
+        <Route path="/crear-qr" element={<CrearQrPage />} />
         {/* Textos legales */}
         <Route path="/aviso-legal" element={<LegalPage tipo="avisoLegal" />} />
         <Route path="/privacidad" element={<LegalPage tipo="privacidad" />} />

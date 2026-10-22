@@ -24,7 +24,7 @@ function clientes(carpeta, sufijo = '') {
     .map(slug => `/${slug}${sufijo}`)
 }
 // Las páginas fijas de la web (las mismas que se indexan en App.jsx) y las de los clientes
-const FIJAS = ['/', '/planes', '/catalogo', '/aviso-legal', '/privacidad']
+const FIJAS = ['/', '/planes', '/crear-qr', '/catalogo', '/aviso-legal', '/privacidad']
 const paginas = [...FIJAS, ...clientes('src/negocios'), ...clientes('src/cartas', '/carta')]
 
 writeFileSync(

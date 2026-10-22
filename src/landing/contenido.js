@@ -11,7 +11,10 @@ export const marca = {
 export const hero = {
   // Pestaña Tu QR del hero: la placa con el QR personalizable
   inicio: {
-    titulo: 'Los colores de tu negocio, hasta en el QR.',
+    titulo: 'Diseño de QR personalizado.',
+    subtitulo: 'Diseñamos tu QR a medida y a tu gusto.',
+    // El enlace de texto a /crear-qr
+    leerMas: 'Leer más',
     // Colores que se pueden probar en la placa: fondo de la placa, color de sus letras y color del QR
     colores: [
       // QR con el degradado de Instagram (sin el amarillo claro, que el móvil leería mal sobre blanco)
@@ -43,8 +46,11 @@ export const hero = {
     { texto: 'Precio', ancla: 'precio' },
     { texto: 'Dudas', ancla: 'preguntas' },
   ],
+  // Las placas de la sección Tu QR: lo que pone arriba, el texto de abajo y los iconos de redes (en este orden)
   placa: {
-    texto: 'Escanea y déjanos tu reseña',
+    nombre: 'Escanéame',
+    texto: 'Déjanos tu reseña y síguenos',
+    redes: ['google', 'instagram', 'tiktok', 'whatsapp'],
   },
 }
 
@@ -219,6 +225,7 @@ export const contactoForm = {
   motivos: {
     contacto: { texto: 'Consulta', intro: 'Cuéntame qué tienes y qué te gustaría conseguir. Te respondo por WhatsApp.', idea: '' },
     presupuesto: { texto: 'Presupuesto', intro: 'Cada negocio necesita cosas distintas. Cuéntame qué tienes y te paso un presupuesto sin compromiso.', idea: '' },
+    qr: { texto: 'QR personalizado', intro: 'Cuéntame cómo es tu negocio y qué te gustaría en tu QR. Te respondo por WhatsApp.', idea: 'Quiero un QR personalizado para mi negocio.' },
     google: { texto: 'Salir en Google', intro: 'Cuéntame tu negocio y te digo cómo hacer que te encuentren en Google y en Google Maps.', idea: 'Quiero salir en Google con mi negocio: mi página y mi ficha de Google Maps.' },
   },
 }
@@ -252,6 +259,24 @@ export const cartasMiniwebs = {
     miniweb: { etiqueta: 'Miniweb', titulo: 'Miniweb' },
     carta: { etiqueta: 'Carta digital', titulo: 'Carta y menú del día' },
   },
+}
+
+// Página /crear-qr, a donde lleva "Leer más" de la sección Tu QR de la landing: su titular, su subtítulo y cómo ayuda Jesús con el QR (en desplegables)
+export const crearQr = {
+  titulo: 'Diseño de QR personalizado.',
+  subtitulo: 'Diseño tus QR a medida y a tu gusto.',
+  ayuda: {
+    titulo: 'Cómo te ayudo con tu QR',
+    texto: 'Un QR que se ve bien se escanea más. Te lo diseño para que parezca de tu negocio y no un cuadrado cualquiera.',
+  },
+  lista: [
+    { titulo: 'Lo diseño contigo', texto: 'Tus colores, tu logo, tus redes y la forma que más te guste. Me cuentas cómo es tu negocio y te preparo el diseño.' },
+    { titulo: 'Lo imprimo con buen acabado', texto: 'Una placa de calidad para el mostrador o una pegatina para el escaparate, lista para poner.' },
+    { titulo: 'Detrás, tu miniweb', texto: 'El QR abre una página con tu reseña de Google, tu horario y tus redes, y la puedo cambiar sin tocar la placa.' },
+    { titulo: 'Lo compruebo antes de entregarlo', texto: 'Lo escaneo en varios móviles antes de imprimirlo, para que se lea a la primera.' },
+  ],
+  boton: 'Pedir mi QR',
+  volver: 'Volver al inicio',
 }
 
 // Página de planes en detalle (/planes): lo que incluye cada plan, lo que va bajo presupuesto y los extras
