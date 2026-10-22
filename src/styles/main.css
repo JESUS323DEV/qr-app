@@ -358,3 +358,8 @@ body {
 .sp-hover:hover { color: var(--demo-sobre-primario, #fff); }
 .sp-fondo { background: color-mix(in srgb, var(--demo-sobre-primario, #fff) 16%, transparent); }
 .sp-solido { background: var(--demo-sobre-primario, #fff); }
+
+/* La landing de escritorio (desde 1024 px): los enlaces del menú bajan a su sección con suavidad */
+@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+  html { scroll-behavior: smooth; }
+}

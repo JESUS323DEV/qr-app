@@ -6,7 +6,7 @@ import { SocialIcon } from '../components/SocialIcons'
 import { COLORES_REDES } from '../lib/coloresRedes'
 import { cartas, marcaDe, rutaCarta } from '../cartas'
 import { enlaceWhatsapp } from '../lib/whatsapp'
-import { marca, hero, pasos, comoFunciona, ventajas, seo, planes, precio, contactoForm, webCompleta, cartasMiniwebs, escaparate, menu } from '../landing/contenido'
+import { marca, hero, porque, pasos, comoFunciona, ventajas, seo, planes, planesDetalle, precio, preguntas, cierre, contactoForm, webCompleta, cartasMiniwebs, escaparate, menu } from '../landing/contenido'
 import useVueltaPestanas from '../lib/useVueltaPestanas'
 import { ESCALA_LANDING } from '../lib/escalaTexto'
 import { DOMINIO } from '../lib/dominio'
@@ -14,7 +14,7 @@ import { TEMAS, temaActual, ponerTema } from '../lib/temas'
 
 /* El selector de tema: un círculo pequeño abajo a la derecha, justo encima de las pestañas, con el color del tema elegido (mitad fondo, mitad acento).
    Al tocarlo se abre hacia la izquierda con todos los temas; al elegir uno se cierra (también al tocar fuera o con Escape). La elección se guarda en el navegador. */
-function SelectorTema() {
+function SelectorTema({ enLinea = false }) {
   const [tema, setTema] = useState(temaActual)
   const [abierto, setAbierto] = useState(false)
   // A los 4 s sin tocarlo, el círculo se queda casi transparente (se queda así hasta que se toca)
@@ -24,10 +24,10 @@ function SelectorTema() {
 
   useEffect(() => {
     setTenue(false)
-    if (abierto) return
+    if (abierto || enLinea) return
     const t = setTimeout(() => setTenue(true), 4000)
     return () => clearTimeout(t)
-  }, [abierto, tema, toques])
+  }, [abierto, tema, toques, enLinea])
 
   useEffect(() => {
     if (!abierto) return
@@ -53,13 +53,13 @@ function SelectorTema() {
   // El elegido siempre el último (a la derecha): los demás salen hacia la izquierda
   const ordenados = [...TEMAS.filter(t => t.clave !== tema), TEMAS.find(t => t.clave === tema)]
 
-  return (
+  const grupo = (
     <div
       ref={caja}
       role="group"
       aria-label="Colores de la página"
       onPointerDown={() => setToques(n => n + 1)}
-      className={`absolute bottom-[0.7rem] right-[1.25rem] z-10 flex items-center rounded-full p-[0.25rem] transition-[background-color,opacity] duration-500 ${tenue && !abierto ? 'opacity-25' : 'opacity-100'} ${abierto ? 'bg-crema shadow-[0_0.1rem_0.6rem_rgb(0_0_0/0.25)] ring-1 ring-linea' : ''}`}
+      className={`${enLinea ? 'absolute right-0 top-1/2 z-10 -translate-y-1/2' : 'absolute bottom-[0.7rem] right-[1.25rem] z-10'} flex items-center rounded-full p-[0.25rem] transition-[background-color,opacity] duration-500 ${tenue && !abierto ? 'opacity-25' : 'opacity-100'} ${abierto ? 'bg-crema shadow-[0_0.1rem_0.6rem_rgb(0_0_0/0.25)] ring-1 ring-linea' : ''}`}
     >
       {ordenados.map((t, i) => {
         const actual = t.clave === tema
@@ -85,6 +85,8 @@ function SelectorTema() {
       })}
     </div>
   )
+  // En la cabecera de escritorio ocupa un hueco fijo de 1,5 rem y los demás círculos salen hacia la izquierda sin mover el menú
+  return enLinea ? <div className="relative h-[1.5rem] w-[1.5rem] shrink-0">{grupo}</div> : grupo
 }
 
 /* Formulario de la pestaña Contacto: nombre, teléfono, la idea y aceptar la privacidad.
@@ -727,11 +729,399 @@ function HeroMiniweb() {
   )
 }
 
+/* ---------- Versión de escritorio ----------
+   Desde 1024 px de ancho la landing es una página completa con scroll y secciones (la de móvil sigue siendo la pantalla única de arriba). Las dos se pintan
+   siempre en el HTML y el CSS enseña la que toca (lg:hidden / hidden lg:block): así Google lee el texto de todas las secciones. Los textos son los de
+   landing/contenido.js. Los ids de las secciones no se repiten con los del móvil (panel-, tab-). */
+const SECCIONES = [
+  { id: 'ejemplos', texto: 'Ejemplos' },
+  { id: 'tu-qr', texto: 'Tu QR' },
+  { id: 'como-funciona', texto: 'Cómo funciona' },
+  { id: 'planes', texto: 'Planes' },
+  { id: 'preguntas', texto: 'Dudas' },
+]
+const BOTON_LLENO = 'inline-flex min-h-[3.1rem] items-center justify-center rounded-full bg-acento px-[1.6rem] text-[1rem] font-bold text-papel transition-colors hover:bg-acento-oscuro'
+const BOTON_VACIO = 'inline-flex min-h-[3.1rem] items-center justify-center rounded-full border border-tinta/30 px-[1.6rem] text-[1rem] font-bold transition-colors hover:border-acento hover:text-acento'
+
+// ¿Pantalla ancha (desde 1024 px)? Para no cargar en el móvil lo que solo usa el escritorio (la placa de Tu QR, las animaciones)
+function useEscritorio() {
+  const [si, setSi] = useState(() => typeof window !== 'undefined' && Boolean(window.matchMedia?.('(min-width: 1024px)').matches))
+  useEffect(() => {
+    const m = window.matchMedia('(min-width: 1024px)')
+    const cambiar = () => setSi(m.matches)
+    cambiar()
+    m.addEventListener('change', cambiar)
+    return () => m.removeEventListener('change', cambiar)
+  }, [])
+  return si
+}
+
+function Seccion({ id, fondo = false, children }) {
+  return (
+    <section id={id} className={`scroll-mt-[4.25rem] py-[5.5rem] ${fondo ? 'bg-crema' : ''}`}>
+      <div className="mx-auto w-full max-w-[72rem] px-[2rem]">{children}</div>
+    </section>
+  )
+}
+
+function TituloSeccion({ children, texto }) {
+  return (
+    <div className="max-w-[42rem]">
+      <h2 className="font-titulo text-[clamp(2rem,1.3rem+2vw,3.2rem)] font-black leading-[1.05] tracking-tight">{children}</h2>
+      {texto && <p className="mt-[1rem] text-[1.1rem] leading-[1.6] text-suave">{texto}</p>}
+    </div>
+  )
+}
+
+function CabeceraEscritorio() {
+  return (
+    <header className="sticky top-0 z-40 border-b border-linea bg-papel/90 backdrop-blur">
+      <div className="mx-auto flex h-[4.25rem] w-full max-w-[72rem] items-center gap-[2rem] px-[2rem]">
+        <a href="#inicio" className="font-titulo text-[1.4rem] font-black tracking-tight">
+          {marca.nombre}
+        </a>
+        <nav aria-label="Secciones" className="ml-auto flex items-center gap-[1.75rem]">
+          {SECCIONES.map(s => (
+            <a key={s.id} href={`#${s.id}`} className="text-[0.95rem] font-semibold text-suave transition-colors hover:text-tinta">
+              {s.texto}
+            </a>
+          ))}
+        </nav>
+        <SelectorTema enLinea />
+        <a href="#contacto" className="inline-flex min-h-[2.6rem] items-center rounded-full bg-acento px-[1.3rem] text-[0.95rem] font-bold text-papel transition-colors hover:bg-acento-oscuro">
+          {menu.boton}
+        </a>
+      </div>
+    </header>
+  )
+}
+
+// Una captura de móvil con su nombre debajo, que lleva al ejemplo
+function TarjetaEjemplo({ d }) {
+  return (
+    <li>
+      <Link to={d.ruta} className="group block">
+        <span className="block overflow-hidden rounded-[1.4rem] border border-white/15 bg-[#1d1d1b] p-[0.35rem] shadow-[0_1rem_2rem_-0.8rem_rgb(0_0_0/0.7)] transition-transform duration-300 group-hover:-translate-y-[0.3rem]">
+          {d.foto ? (
+            <img src={d.foto} alt={`Ejemplo: ${d.nombre}`} loading="lazy" className="block h-auto w-full rounded-[1.1rem]" />
+          ) : (
+            <span className="flex aspect-[390/844] w-full flex-col items-center justify-center rounded-[1.1rem] bg-papel px-[1rem] text-center">
+              <span className="font-titulo text-[1.2rem] font-black leading-[1.1]">{d.titulo}</span>
+            </span>
+          )}
+        </span>
+        <span className="mt-[0.9rem] flex items-baseline justify-between gap-[0.5rem]">
+          <span>
+            <span className="block font-semibold">{d.nombre}</span>
+            {d.etiqueta && <span className="block text-[0.85rem] text-suave">{d.etiqueta}</span>}
+          </span>
+          <span className="inline-flex shrink-0 items-center gap-[0.25rem] text-[0.85rem] font-semibold text-suave transition-colors group-hover:text-acento">
+            {hero.pista}
+            <ArrowUpRight className="h-[0.85rem] w-[0.85rem]" aria-hidden="true" />
+          </span>
+        </span>
+      </Link>
+    </li>
+  )
+}
+
+function LandingEscritorio() {
+  const escritorio = useEscritorio()
+  const { search } = useLocation()
+  // Llegando de un botón de presupuesto (/?contacto=presupuesto o google), baja directamente al formulario de contacto
+  const motivoUrl = new URLSearchParams(search).get('contacto')
+  const motivo = motivoUrl && contactoForm.motivos[motivoUrl] ? motivoUrl : 'contacto'
+  useEffect(() => {
+    if (escritorio && motivoUrl && contactoForm.motivos[motivoUrl]) document.getElementById('contacto')?.scrollIntoView()
+  }, [escritorio, motivoUrl])
+
+  // La placa de Tu QR: el diseño y la forma de los puntos elegidos
+  const [color, setColor] = useState(0)
+  const [forma, setForma] = useState('redondo')
+
+  return (
+    <div className="hidden bg-papel font-texto text-tinta lg:block">
+      <CabeceraEscritorio />
+
+      {/* Inicio */}
+      <section id="inicio" className="scroll-mt-[4.25rem]">
+        <div className="mx-auto grid w-full max-w-[72rem] grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] items-center gap-[3rem] px-[2rem] py-[4rem]">
+          <div>
+            <h1 className="font-titulo text-[clamp(3rem,1.8rem+3.2vw,5rem)] font-black leading-[0.98] tracking-tight">{hero.titulo}</h1>
+            <p className="mt-[1.5rem] text-[1.1rem] font-semibold">{hero.lema}</p>
+            <p className="mt-[0.6rem] max-w-[30rem] text-[1.25rem] leading-[1.5] text-suave">{hero.texto}</p>
+            <div className="mt-[2.25rem] flex flex-wrap gap-[0.8rem]">
+              <a href="#contacto" className={BOTON_LLENO}>
+                {menu.boton}
+              </a>
+              <a href="#ejemplos" className={BOTON_VACIO}>
+                {hero.enlace}
+              </a>
+            </div>
+          </div>
+          <div className="relative flex h-[36rem] flex-col">
+            <MockupMiniweb activo={escritorio} />
+          </div>
+        </div>
+      </section>
+
+      {/* Por qué */}
+      <Seccion id="por-que" fondo>
+        <div className="mx-auto max-w-[46rem] text-center">
+          <h2 className="font-titulo text-[clamp(2rem,1.3rem+2vw,3.2rem)] font-black leading-[1.05] tracking-tight">{porque.titulo}</h2>
+          <p className="mt-[1.25rem] text-[1.2rem] leading-[1.65] text-suave">{porque.texto}</p>
+        </div>
+      </Seccion>
+
+      {/* Ejemplos */}
+      <Seccion id="ejemplos">
+        <TituloSeccion>{cartasMiniwebs.tituloMiniwebs}</TituloSeccion>
+        <h3 className="mt-[2.5rem] font-titulo text-[1.3rem] font-black">{cartasMiniwebs.subpestanas[0].texto}</h3>
+        <ul className="mt-[1.25rem] grid grid-cols-3 gap-[2rem]">
+          {MINIWEBS.map(d => (
+            <TarjetaEjemplo key={d.ruta} d={d} />
+          ))}
+        </ul>
+        <VerTodas to="/miniweb">{escaparate.verMiniwebs}</VerTodas>
+        {WEBS_Y_CARTAS.length > 0 && (
+          <>
+            <h3 className="mt-[3.5rem] font-titulo text-[1.3rem] font-black">{cartasMiniwebs.subpestanas[1].texto}</h3>
+            <ul className="mt-[1.25rem] grid grid-cols-4 gap-[1.75rem]">
+              {WEBS_Y_CARTAS.map(d => (
+                <TarjetaEjemplo key={d.ruta} d={d} />
+              ))}
+            </ul>
+            <VerTodas to="/catalogo?tipo=carta">{escaparate.verCartasMiniwebs}</VerTodas>
+          </>
+        )}
+      </Seccion>
+
+      {/* Tu QR */}
+      <Seccion id="tu-qr" fondo>
+        <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-center gap-[4rem]">
+          <div>
+            <TituloSeccion>{hero.inicio.titulo}</TituloSeccion>
+            {/* Diseños de la placa: cada uno con su silueta en sus colores (el clásico, un QR) */}
+            <div className="mt-[2rem] flex flex-wrap gap-[0.5rem]">
+              {DISENOS_LANDING.map((d, i) => (
+                <button
+                  key={d.clave}
+                  type="button"
+                  title={d.nombre}
+                  aria-label={`Diseño ${d.nombre}`}
+                  aria-pressed={i === color}
+                  onClick={() => setColor(i)}
+                  className={`flex h-[2.6rem] w-[2.6rem] items-center justify-center rounded-[0.6rem] border-2 transition-transform duration-300 ${i === color ? 'scale-110 border-acento' : 'border-linea hover:scale-105'}`}
+                >
+                  {!d.silueta ? (
+                    <span className="flex h-[1.8rem] w-[1.8rem] items-center justify-center rounded-[0.3rem]" style={{ background: '#FFFFFF', color: d.qr }}>
+                      <QrCode className="h-[1.4rem] w-[1.4rem]" strokeWidth={2.5} aria-hidden="true" />
+                    </span>
+                  ) : (
+                    <span
+                      className="block h-[1.8rem] w-[1.8rem]"
+                      style={{
+                        background: d.degradado ? `linear-gradient(45deg, ${d.degradado.join(', ')})` : (d.muestra ?? d.qr),
+                        maskImage: mascaraSilueta(d.silueta),
+                        WebkitMaskImage: mascaraSilueta(d.silueta),
+                        maskSize: 'contain',
+                        WebkitMaskSize: 'contain',
+                        maskRepeat: 'no-repeat',
+                        WebkitMaskRepeat: 'no-repeat',
+                      }}
+                    />
+                  )}
+                </button>
+              ))}
+            </div>
+            {/* Forma de los puntos del QR */}
+            <div className="mt-[1.25rem] inline-flex gap-[0.3rem] rounded-full bg-papel p-[0.25rem]">
+              {FORMAS.map(f => (
+                <button
+                  key={f.key}
+                  type="button"
+                  aria-pressed={f.key === forma}
+                  onClick={() => setForma(f.key)}
+                  className={`rounded-full px-[1rem] py-[0.45rem] text-[0.9rem] font-semibold transition-colors ${f.key === forma ? 'bg-acento text-papel' : 'text-suave hover:text-tinta'}`}
+                >
+                  {f.texto}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="flex justify-center py-[1rem]">
+            <div className="w-[min(20rem,100%)] -rotate-[4deg] drop-shadow-[0_1.25rem_1.5rem_rgb(0_0_0/0.5)]">
+              {escritorio && (
+                <Suspense fallback={<div className="aspect-[3/4] w-full" />}>
+                  <GeneradorQR modo="placa" url={`${DOMINIO}/`} nombre={marca.nombre} diseno={DISENOS_LANDING[color].clave} formaPuntos={FORMAS.find(f => f.key === forma)?.puntos} />
+                </Suspense>
+              )}
+            </div>
+          </div>
+        </div>
+      </Seccion>
+
+      {/* Cómo funciona */}
+      <Seccion id="como-funciona">
+        <TituloSeccion>{pasos.titulo}</TituloSeccion>
+        <ol className="mt-[2.5rem] grid grid-cols-3 gap-[1.5rem]">
+          {pasos.lista.map((p, i) => (
+            <li key={p.titulo} className="rounded-[1.25rem] border border-linea bg-crema p-[1.75rem]">
+              <span className="font-titulo text-[2.8rem] font-black leading-none text-acento">{i + 1}</span>
+              <h3 className="mt-[0.9rem] font-titulo text-[1.35rem] font-black leading-[1.15]">{p.titulo}</h3>
+              <p className="mt-[0.6rem] leading-[1.6] text-suave">{p.texto}</p>
+            </li>
+          ))}
+        </ol>
+        <h3 className="mt-[4rem] font-titulo text-[1.8rem] font-black tracking-tight">{ventajas.titulo}</h3>
+        <ul className="mt-[1.5rem] grid grid-cols-2 gap-x-[3rem] border-t border-linea">
+          {ventajas.lista.map(v => (
+            <li key={v.titulo} className="border-b border-linea py-[1.25rem]">
+              <p className="font-titulo text-[1.2rem] font-black">{v.titulo}</p>
+              <p className="mt-[0.3rem] leading-[1.55] text-suave">{v.texto}</p>
+            </li>
+          ))}
+        </ul>
+      </Seccion>
+
+      {/* Planes */}
+      <Seccion id="planes" fondo>
+        <TituloSeccion texto={planesDetalle.texto}>{planesDetalle.titulo}</TituloSeccion>
+        <div className="mt-[2.5rem] grid grid-cols-2 gap-[1.5rem]">
+          {planesDetalle.lista.map(p => (
+            <article key={p.titulo} className="flex flex-col rounded-[1.25rem] border border-linea bg-papel p-[2rem]">
+              <div className="flex items-baseline justify-between gap-[1rem]">
+                <h3 className="font-titulo text-[1.7rem] font-black leading-[1.1]">{p.titulo}</h3>
+                <p className="shrink-0 font-titulo text-[1.3rem] font-black text-acento">{p.precio}</p>
+              </div>
+              <p className="mt-[0.75rem] leading-[1.6] text-suave">{p.texto}</p>
+              <ul className="mt-[1.25rem] grid gap-[0.6rem]">
+                {p.incluye.map(i => (
+                  <li key={i} className="flex gap-[0.6rem] leading-[1.5]">
+                    <span aria-hidden="true" className="mt-[0.55rem] h-[0.4rem] w-[0.4rem] shrink-0 rounded-full bg-acento" />
+                    {i}
+                  </li>
+                ))}
+              </ul>
+            </article>
+          ))}
+        </div>
+        <div className="mt-[2rem] flex flex-wrap gap-[0.8rem]">
+          <a href="#contacto" className={BOTON_LLENO}>
+            {planes.boton}
+          </a>
+          <Link to="/planes" className={BOTON_VACIO}>
+            {planes.verDetalle}
+          </Link>
+        </div>
+      </Seccion>
+
+      {/* Que te encuentren (SEO) */}
+      <Seccion id="seo">
+        <TituloSeccion texto={seo.texto}>{seo.titulo}</TituloSeccion>
+        <div className="mt-[2.5rem] grid grid-cols-3 gap-[1.5rem]">
+          <div className="rounded-[1.25rem] border border-acento/60 bg-crema p-[1.75rem]">
+            <p className="text-[0.85rem] font-bold text-acento">{seo.incluido.etiqueta}</p>
+            <h3 className="mt-[0.4rem] font-titulo text-[1.3rem] font-black leading-[1.15]">{seo.incluido.titulo}</h3>
+            <p className="mt-[0.6rem] leading-[1.6] text-suave">{seo.incluido.texto}</p>
+          </div>
+          {seo.lista.map(s => (
+            <div key={s.titulo} className="rounded-[1.25rem] border border-linea bg-crema p-[1.75rem]">
+              <h3 className="font-titulo text-[1.3rem] font-black leading-[1.15]">{s.titulo}</h3>
+              <p className="mt-[0.6rem] leading-[1.6] text-suave">{s.texto}</p>
+            </div>
+          ))}
+        </div>
+        <div className="mt-[2rem] flex flex-wrap gap-[0.8rem]">
+          <a href="#contacto" className={BOTON_VACIO}>
+            {seo.boton}
+          </a>
+          <Link to="/planes#seo" className={BOTON_VACIO}>
+            {seo.verMas}
+          </Link>
+        </div>
+      </Seccion>
+
+      {/* Preguntas */}
+      <Seccion id="preguntas" fondo>
+        <TituloSeccion>{preguntas.titulo}</TituloSeccion>
+        <div className="mt-[2rem] max-w-[48rem] border-t border-linea">
+          {preguntas.lista.map(p => (
+            <details key={p.pregunta} className="group border-b border-linea py-[1.1rem]">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-[1rem] font-titulo text-[1.2rem] font-black [&::-webkit-details-marker]:hidden">
+                {p.pregunta}
+                <span aria-hidden="true" className="text-[1.5rem] font-normal text-acento transition-transform duration-200 group-open:rotate-45">
+                  +
+                </span>
+              </summary>
+              <p className="mt-[0.75rem] max-w-[42rem] leading-[1.65] text-suave">{p.respuesta}</p>
+            </details>
+          ))}
+        </div>
+      </Seccion>
+
+      {/* Contacto */}
+      <Seccion id="contacto">
+        <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,28rem)] items-center gap-[4rem]">
+          <TituloSeccion texto={cierre.texto}>{cierre.titulo}</TituloSeccion>
+          <div className="rounded-[1.25rem] border border-linea bg-crema py-[1rem]">
+            <FormularioContacto key={motivo} motivo={motivo} />
+          </div>
+        </div>
+      </Seccion>
+
+      {/* Pie */}
+      <footer className="border-t border-linea">
+        <div className="mx-auto grid w-full max-w-[72rem] grid-cols-[minmax(0,1.4fr)_auto_auto] items-start gap-[4rem] px-[2rem] py-[3rem]">
+          <div>
+            <p className="font-titulo text-[1.4rem] font-black tracking-tight">{marca.nombre}</p>
+            <p className="mt-[0.75rem] max-w-[26rem] leading-[1.6] text-suave">{menu.texto}</p>
+            <p className="mt-[1.5rem] text-[0.85rem] text-suave">{menu.firma}</p>
+          </div>
+          <div>
+            <p className="text-[0.85rem] font-semibold text-suave">{menu.redesTexto}</p>
+            <div className="mt-[0.75rem] flex gap-[0.6rem]">
+              {menu.redes.map(r => (
+                <a
+                  key={r.platform}
+                  href={r.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label={r.platform}
+                  className="flex h-[2.6rem] w-[2.6rem] items-center justify-center rounded-full text-white transition-transform hover:scale-105"
+                  style={{ background: COLORES_REDES[r.platform] }}
+                >
+                  <SocialIcon platform={r.platform} className="h-[1.1rem] w-[1.1rem]" />
+                </a>
+              ))}
+            </div>
+          </div>
+          <ul className="grid gap-[0.6rem] text-[0.95rem]">
+            <li>
+              <a href={webCompleta.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-[0.35rem] font-semibold transition-colors hover:text-acento">
+                {webCompleta.texto}
+                <ArrowUpRight className="h-[1rem] w-[1rem]" aria-hidden="true" />
+              </a>
+            </li>
+            {menu.legales.map(l => (
+              <li key={l.texto}>
+                <a href={l.url} className="text-suave transition-colors hover:text-tinta">
+                  {l.texto}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </footer>
+    </div>
+  )
+}
+
 export default function LandingPage() {
   return (
-    // Sin scroll vertical: la landing es solo la miniweb de la primera pantalla. Las antiguas secciones de debajo se
-    // han quitado; sus textos siguen en landing/contenido.js para pasarlos a las pestañas (galería, planes...)
-    <div className="h-svh overflow-hidden bg-papel font-texto text-tinta">
+    // Móvil: sin scroll vertical, la landing es la miniweb de la primera pantalla. Escritorio (desde 1024 px): la página completa con secciones
+    <>
+    <div className="h-svh overflow-hidden bg-papel font-texto text-tinta lg:hidden">
       {/* Primera pantalla: el hero es una miniweb, exactamente el alto de la pantalla.
           Alto fijo (h-svh, no min-h): así una pestaña con mucho contenido se desliza por dentro
           en vez de estirar la pantalla y empujar las pestañas de abajo fuera de la vista */}
@@ -739,5 +1129,7 @@ export default function LandingPage() {
         <HeroMiniweb />
       </div>
     </div>
+    <LandingEscritorio />
+    </>
   )
 }
