@@ -10,6 +10,82 @@ import { marca, hero, pasos, comoFunciona, ventajas, seo, planes, precio, contac
 import useVueltaPestanas from '../lib/useVueltaPestanas'
 import { ESCALA_LANDING } from '../lib/escalaTexto'
 import { DOMINIO } from '../lib/dominio'
+import { TEMAS, temaActual, ponerTema } from '../lib/temas'
+
+/* El selector de tema: un círculo pequeño abajo a la derecha, justo encima de las pestañas, con el color del tema elegido (mitad fondo, mitad acento).
+   Al tocarlo se abre hacia la izquierda con todos los temas; al elegir uno se cierra (también al tocar fuera o con Escape). La elección se guarda en el navegador. */
+function SelectorTema() {
+  const [tema, setTema] = useState(temaActual)
+  const [abierto, setAbierto] = useState(false)
+  // A los 4 s sin tocarlo, el círculo se queda casi transparente (se queda así hasta que se toca)
+  const [tenue, setTenue] = useState(false)
+  const [toques, setToques] = useState(0)
+  const caja = useRef(null)
+
+  useEffect(() => {
+    setTenue(false)
+    if (abierto) return
+    const t = setTimeout(() => setTenue(true), 4000)
+    return () => clearTimeout(t)
+  }, [abierto, tema, toques])
+
+  useEffect(() => {
+    if (!abierto) return
+    const fuera = e => {
+      if (!caja.current?.contains(e.target)) setAbierto(false)
+    }
+    const tecla = e => {
+      if (e.key === 'Escape') setAbierto(false)
+    }
+    document.addEventListener('pointerdown', fuera)
+    document.addEventListener('keydown', tecla)
+    return () => {
+      document.removeEventListener('pointerdown', fuera)
+      document.removeEventListener('keydown', tecla)
+    }
+  }, [abierto])
+
+  const elegir = clave => {
+    ponerTema(clave)
+    setTema(clave)
+    setAbierto(false)
+  }
+  // El elegido siempre el último (a la derecha): los demás salen hacia la izquierda
+  const ordenados = [...TEMAS.filter(t => t.clave !== tema), TEMAS.find(t => t.clave === tema)]
+
+  return (
+    <div
+      ref={caja}
+      role="group"
+      aria-label="Colores de la página"
+      onPointerDown={() => setToques(n => n + 1)}
+      className={`absolute bottom-[0.7rem] right-[1.25rem] z-10 flex items-center rounded-full p-[0.25rem] transition-[background-color,opacity] duration-500 ${tenue && !abierto ? 'opacity-25' : 'opacity-100'} ${abierto ? 'bg-crema shadow-[0_0.1rem_0.6rem_rgb(0_0_0/0.25)] ring-1 ring-linea' : ''}`}
+    >
+      {ordenados.map((t, i) => {
+        const actual = t.clave === tema
+        const visible = abierto || actual
+        return (
+          <button
+            key={t.clave}
+            type="button"
+            title={t.nombre}
+            aria-label={actual ? `${t.nombre} (elegido)` : t.nombre}
+            aria-expanded={actual ? abierto : undefined}
+            tabIndex={visible ? 0 : -1}
+            onClick={() => (actual ? setAbierto(a => !a) : elegir(t.clave))}
+            className={`relative shrink-0 rounded-full transition-all duration-200 ${visible ? 'h-[1rem] w-[1rem] opacity-100' : 'pointer-events-none h-[1rem] w-0 opacity-0'} ${visible && i < ordenados.length - 1 ? 'mr-[0.45rem]' : ''} ${actual ? 'ring-1 ring-tinta ring-offset-1 ring-offset-crema' : visible ? 'ring-1 ring-linea hover:scale-110' : ''}`}
+          >
+            {/* A los 4 s todo el círculo baja al 25 % (anillo incluido) y el color de dentro, además, a un 40 % de eso */}
+            <span
+              className="absolute inset-0 rounded-full transition-opacity duration-500"
+              style={{ background: `linear-gradient(135deg, ${t.fondo} 50%, ${t.acento} 50%)`, opacity: actual && tenue && !abierto ? 0.4 : 1 }}
+            />
+          </button>
+        )
+      })}
+    </div>
+  )
+}
 
 /* Formulario de la pestaña Contacto: nombre, teléfono, la idea y aceptar la privacidad.
    Sin servidor: al enviar, abre WhatsApp con el mensaje ya ordenado (quién es, su teléfono, el motivo y su idea).
@@ -607,6 +683,7 @@ function HeroMiniweb() {
             <MockupMiniweb activo={pestana === 'ejemplos'} />
           </div>
         </Panel>
+        {pestana === 'ejemplos' && <SelectorTema />}
       </div>
 
       {/* Pestañas: dos filas, la de abajo centrada */}

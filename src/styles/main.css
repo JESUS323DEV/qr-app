@@ -21,14 +21,36 @@
 .tema-landing {
   --color-white: var(--color-crema);
   --color-zinc-50: var(--color-crema);
-  --color-zinc-100: #151513;
+  --color-zinc-100: color-mix(in srgb, var(--color-crema) 60%, var(--color-papel));
   --color-zinc-200: var(--color-linea);
-  --color-zinc-300: #3a3935;
+  --color-zinc-300: color-mix(in srgb, var(--color-linea) 80%, var(--color-suave));
   --color-zinc-400: var(--color-suave);
   --color-zinc-500: var(--color-suave);
   --color-zinc-600: var(--color-suave);
   --color-zinc-900: var(--color-acento);
   --color-amber-700: var(--color-acento);
+}
+
+/* Los demás temas de la landing (src/lib/temas.js): <html data-tema="clave"> cambia las variables de arriba. El azul es el de @theme */
+:root[data-tema="amarillo"] {
+  --color-papel: #0f0f0e;
+  --color-crema: #1b1b19;
+  --color-tinta: #f2f0ea;
+  --color-suave: #a3a097;
+  --color-linea: #2f2e2b;
+  --color-acento: #ffd23f;
+  --color-acento-oscuro: #f0c419;
+}
+
+/* Tema claro: fondo gris azulado suave, cajas blancas, texto oscuro y negro como acento (botones, pestaña activa y enlaces) */
+:root[data-tema="claro"] {
+  --color-papel: #E6EBF0;
+  --color-crema: #FFFFFF;
+  --color-tinta: #0D1015;
+  --color-suave: #5B6772;
+  --color-linea: #D8DFE5;
+  --color-acento: #0D1015;
+  --color-acento-oscuro: #2A323B;
 }
 
 /* /admin, con los colores y la letra de la web de JesúsDev (portfolio): fondo azul marino, cajas un punto más claras, bordes turquesa muy tenues y el

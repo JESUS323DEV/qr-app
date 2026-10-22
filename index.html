@@ -6,6 +6,17 @@
     <title>Mostraq · Miniweb y carta digital con QR para tu negocio</title>
     <meta name="description" content="Miniwebs y cartas digitales con QR para negocios locales de Barcelona: reseñas de Google, horario, WhatsApp, redes y carta con tu marca, a un escaneo." />
     <meta name="theme-color" content="#0D1015" />
+    <!-- El tema de color que eligió la persona (se guarda en su navegador), puesto antes de pintar para que no parpadee -->
+    <script>
+      try {
+        var t = localStorage.getItem('mostraq-tema')
+        var fondos = { amarillo: '#0f0f0e', claro: '#E6EBF0' }
+        if (fondos[t]) {
+          document.documentElement.dataset.tema = t
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', fondos[t])
+        }
+      } catch (e) {}
+    </script>
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
