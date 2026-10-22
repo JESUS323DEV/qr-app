@@ -1,6 +1,6 @@
 /* SEO al publicar: se lanza después de "vite build" (npm run build) y prepara dist/ para Google.
    - robots.txt: fuera de Google lo interno (/admin, /mi-carta, /gestion...) y las demos (son ejemplos inventados).
-   - sitemap.xml: la landing y las páginas de clientes reales (los archivos de src/negocios y src/cartas sin demo: true).
+   - sitemap.xml: la landing, /planes, /catalogo y los textos legales, y las páginas de clientes reales (los archivos de src/negocios y src/cartas sin demo: true).
    - La landing (/) con su dirección canónica, su tarjeta para compartir y sus datos de negocio para Google.
      El resto de páginas se sirven desde app.html (el mismo HTML, sin eso), para que ninguna diga ser la landing.
    El dominio es mostraq.es, siempre (no el de Netlify, que cambiaría el sitemap y las direcciones al publicar desde otra dirección).
@@ -23,7 +23,9 @@ function clientes(carpeta, sufijo = '') {
     .filter(Boolean)
     .map(slug => `/${slug}${sufijo}`)
 }
-const paginas = ['/', ...clientes('src/negocios'), ...clientes('src/cartas', '/carta')]
+// Las páginas fijas de la web (las mismas que se indexan en App.jsx) y las de los clientes
+const FIJAS = ['/', '/planes', '/catalogo', '/aviso-legal', '/privacidad']
+const paginas = [...FIJAS, ...clientes('src/negocios'), ...clientes('src/cartas', '/carta')]
 
 writeFileSync(
   `${DIST}/robots.txt`,
