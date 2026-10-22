@@ -1,15 +1,15 @@
 @import "tailwindcss";
 
-/* Landing: fondo oscuro, texto claro y un acento amarillo tipo pegatina.
+/* Landing: fondo azul marino oscuro, texto claro y el turquesa de la web de JesúsDev como acento.
    papel = fondo, crema = superficies, tinta = texto, suave = texto secundario */
 @theme {
-  --color-papel: #0f0f0e;
-  --color-crema: #1b1b19;
-  --color-tinta: #f2f0ea;
-  --color-suave: #a3a097;
-  --color-linea: #2f2e2b;
-  --color-acento: #ffd23f;
-  --color-acento-oscuro: #f0c419;
+  --color-papel: #0D1015;
+  --color-crema: #171B21;
+  --color-tinta: #E8EEF3;
+  --color-suave: #98A6B3;
+  --color-linea: #26303A;
+  --color-acento: #049DB2;
+  --color-acento-oscuro: #038496;
 
   --font-titulo: "Archivo", system-ui, sans-serif;
   --font-texto: "Inter", system-ui, sans-serif;
@@ -17,7 +17,7 @@
 
 /* Editor de QR del cliente (/mi-qr): con los colores de la landing. El generador está hecho con los grises claros de
    /admin; dentro de .tema-landing esos colores pasan a ser los de la landing (fondo oscuro, superficies, líneas, texto
-   suave y el amarillo para lo elegido y los botones principales, con su texto oscuro) */
+   suave y el turquesa para lo elegido y los botones principales, con su texto oscuro) */
 .tema-landing {
   --color-white: var(--color-crema);
   --color-zinc-50: var(--color-crema);

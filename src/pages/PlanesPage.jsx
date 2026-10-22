@@ -101,7 +101,7 @@ export default function PlanesPage() {
           <Titulo>{planesDetalle.seo.titulo}</Titulo>
           <p className="mt-[0.6rem] max-w-[36rem] text-[0.95rem] leading-[1.6] text-suave">{planesDetalle.seo.texto}</p>
 
-          {/* Lo incluido, con el borde amarillo para separarlo de lo demás */}
+          {/* Lo incluido, con el borde turquesa para separarlo de lo demás */}
           <div className="mt-[1.25rem] rounded-[1.1rem] bg-crema p-[1.25rem] ring-1 ring-acento/60">
             <p className="font-titulo text-[1.05rem] font-bold text-acento">{planesDetalle.seo.incluido.titulo}</p>
             {planesDetalle.seo.incluido.lista.map(i => (
