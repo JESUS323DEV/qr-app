@@ -31,6 +31,44 @@
   --color-amber-700: var(--color-acento);
 }
 
+/* /admin, con los colores y la letra de la web de JesúsDev (portfolio): fondo azul marino, cajas un punto más claras, bordes turquesa muy tenues y el
+   turquesa #049DB2 como acento, con un brillo suave. /admin está hecho con los grises claros y el blanco de Tailwind; dentro de .tema-admin esos colores pasan a
+   ser estos (igual que .tema-landing): el blanco, a ser el de las cajas; zinc-900 (botones principales y lo elegido), a ser el turquesa. */
+.tema-admin {
+  --font-sans: "Oxanium", system-ui, sans-serif;
+  --color-white: #171B21;
+  --color-zinc-50: #1C2229;
+  --color-zinc-100: #1C2229;
+  --color-zinc-200: #26303A;
+  --color-zinc-300: #34424F;
+  --color-zinc-400: #7B8998;
+  --color-zinc-500: #98A6B3;
+  --color-zinc-600: #AEBAC5;
+  --color-zinc-700: #C8D2DB;
+  --color-zinc-800: #DDE5EB;
+  --color-zinc-900: #049DB2;
+  --color-red-600: #F87171;
+  --color-emerald-50: #10272A;
+  --color-emerald-200: #1F6B6F;
+  --color-emerald-700: #34D399;
+  --color-amber-700: #FBBF24;
+  background: #0D1015 radial-gradient(ellipse at 50% 0%, rgb(0 69 76 / 0.32) 0%, transparent 65%) no-repeat;
+  color: #E6EDF3;
+}
+/* El brillo del turquesa: los botones principales y los campos enfocados */
+.tema-admin .bg-zinc-900 {
+  box-shadow: 0 0 1rem rgb(4 157 178 / 0.35);
+}
+.tema-admin input:focus,
+.tema-admin select:focus,
+.tema-admin textarea:focus {
+  outline: none;
+  box-shadow: 0 0 0 1px #049DB2, 0 0 0.8rem rgb(4 157 178 / 0.35);
+}
+.tema-admin ::selection {
+  background: rgb(4 157 178 / 0.45);
+}
+
 /* Tema de cada negocio: applyTheme cambia estas variables */
 :root {
   --demo-bg: #ffffff;

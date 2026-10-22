@@ -260,8 +260,8 @@ export default function MiniwebPage({ demo = false }) {
   // Mientras llegan los cambios no se pinta nada, para no enseñar un momento la versión del archivo
   if (cargando || destino.cargando) return null
 
-  // Una demo abierta en la raíz (enlaces antiguos) se lleva a /demo/slug
-  if (negocio?.demo && !demo) return <Navigate to={`/demo/${negocio.slug}`} replace />
+  // Una demo abierta en la raíz (enlaces antiguos) se lleva a /demo/slug; si se llega por un QR impreso (qr_destinos), se queda en su dirección
+  if (negocio?.demo && !demo && destino.slug === slugUrl) return <Navigate to={`/demo/${negocio.slug}`} replace />
 
   // En /demo solo hay demos: un cliente ahí no existe
   if (!negocio || (demo && !negocio.demo)) {

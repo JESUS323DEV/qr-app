@@ -4093,7 +4093,7 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
           </label>
           {pestana === 'asistente' && !generado ? (
             <Movil ancho={360} className="mx-auto w-full max-w-[20rem]">
-              <div className="flex h-full items-center justify-center bg-black px-[1.5rem] text-center text-[0.95rem] font-semibold text-white/60">Genera algo con el asistente y aparecerá aquí</div>
+              <div className="flex h-full items-center justify-center bg-black px-[1.5rem] text-center text-[0.95rem] font-semibold text-[rgb(255_255_255/0.6)]">Genera algo con el asistente y aparecerá aquí</div>
             </Movil>
           ) : (
             vista && <Movil key={vista} src={vista} titulo="Vista previa" ancho={360} className="mx-auto w-full max-w-[20rem]" />
@@ -4533,7 +4533,10 @@ function Lista({ filas, abrir, recargar, copia }) {
   const esMuestra = f => f.tipo === 'negocio' && f.cambios?.muestra === true
 
   return (
-    <div className="grid gap-[1.25rem]">
+    <div className="grid gap-[1.75rem]">
+      {/* Crear: el Editor de miniwebs y cartas y el Editor QR */}
+      <div className="grid gap-[0.75rem]">
+      <h2 className="px-[0.25rem] text-[0.85rem] font-semibold text-zinc-500">Crear</h2>
       {/* Panel principal: crear un perfil nuevo eligiendo temática, producto, diseño y marca */}
       <NuevoPerfil filas={filas} recargar={recargar} abrir={abrir} cargar={copia} />
 
@@ -4543,14 +4546,18 @@ function Lista({ filas, abrir, recargar, copia }) {
       <details className="group/qr rounded-[1rem] bg-white ring-1 ring-zinc-200">
         <summary className="flex cursor-pointer list-none items-center gap-[0.5rem] px-[1rem] py-[0.9rem] [&::-webkit-details-marker]:hidden">
           <QrCode className="h-[1.1rem] w-[1.1rem]" aria-hidden="true" />
-          <span className="text-[1.05rem] font-bold">QR</span>
+          <span className="text-[1.05rem] font-bold">Editor QR</span>
           <ChevronDown className="ml-auto h-[1.1rem] w-[1.1rem] text-zinc-500 transition-transform group-open/qr:rotate-180" aria-hidden="true" />
         </summary>
         <div className="border-t border-zinc-200 px-[1rem] py-[1rem]">
           <QRSuelto copias={copias} />
         </div>
       </details>
+      </div>
 
+      {/* QR en marcha: cambiar lo que enseña un QR ya impreso y el editor de QR de los clientes */}
+      <div className="grid gap-[0.75rem]">
+      <h2 className="px-[0.25rem] text-[0.85rem] font-semibold text-zinc-500">QR en marcha</h2>
       {/* Cambiar lo que enseña un QR ya impreso: se elige la página y la dirección del QR */}
       <details className="group/cambiar rounded-[1rem] bg-white ring-1 ring-zinc-200">
         <summary className="flex cursor-pointer list-none items-center gap-[0.5rem] px-[1rem] py-[0.9rem] [&::-webkit-details-marker]:hidden">
@@ -4574,9 +4581,11 @@ function Lista({ filas, abrir, recargar, copia }) {
           <EditorClientes copias={copias} />
         </div>
       </details>
+      </div>
 
-      {/* Todo lo que hay, por producto, en desplegables cerrados */}
+      {/* Páginas: todo lo que hay, por producto, en desplegables cerrados (las fichas, que ya no se venden, al final) */}
       <div className="grid gap-[0.6rem]">
+        <h2 className="px-[0.25rem] text-[0.85rem] font-semibold text-zinc-500">Páginas</h2>
         {/* Las copias, separadas en Miniwebs y Cartas: cada copia que se guarda cae sola en el suyo, según lo que sea */}
         <Grupo
           titulo="Copias para enseñar"
@@ -4586,13 +4595,13 @@ function Lista({ filas, abrir, recargar, copia }) {
             { titulo: 'Cartas', filas: copias.filter(c => c.tipo === 'carta').map(aFilaCopia) },
           ]}
         />
-        <Grupo titulo="Fichas" filas={negocios.filter(n => tipoDe(n) === 'ficha').map(aFila)} />
         {/* Las miniwebs de siempre y, con ellas, las que se exportan a muestras desde Nuevo perfil */}
         <Grupo titulo="Miniwebs" filas={negocios.filter(n => tipoDe(n) === 'miniweb').map(aFila)} />
         <Grupo
           titulo="Cartas"
           filas={cartas.map(c => ({ clave: `carta:${c.slug}`, nombre: marcaDe(c)?.nombre ?? c.slug, detalle: c.demo ? 'Demo' : 'Cliente', ruta: rutaCarta(c) }))}
         />
+        <Grupo titulo="Fichas" filas={negocios.filter(n => tipoDe(n) === 'ficha').map(aFila)} />
       </div>
     </div>
   )
@@ -4721,7 +4730,7 @@ export default function AdminPage() {
   const fila = filas?.find(f => f.tipo === tipo && f.slug === slug) ?? null
 
   return (
-    <div className="min-h-svh bg-zinc-100 font-sans text-zinc-900">
+    <div className="tema-admin min-h-svh font-sans">
       <div className={`mx-auto w-full max-w-[32rem] px-[1rem] pb-[2rem] pt-[1rem] ${editar === 'asistente' ? '' : 'lg:max-w-[64rem]'}`}>
         {!supabase ? (
           <p className="mt-[3rem] text-center text-zinc-500">El panel no está disponible ahora mismo.</p>
