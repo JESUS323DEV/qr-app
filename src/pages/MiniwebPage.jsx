@@ -5,6 +5,7 @@ import { marcaDePrueba } from '../lib/prueba'
 import { fichaAMiniweb } from '../lib/miniweb'
 import { ChevronRight } from 'lucide-react'
 import { aplicar, conEdicion, useEdicion } from '../lib/ediciones'
+import { useDestino } from '../lib/destinos'
 import { HEROS } from '../heros'
 import { applyTheme, resetTheme } from '../lib/applyTheme'
 import { SocialIcon } from '../components/SocialIcons'
@@ -204,7 +205,10 @@ function Cuerpo({ negocio, soloResena = false, compacta: forzada = false }) {
 }
 
 export default function MiniwebPage({ demo = false }) {
-  const { slug } = useParams()
+  const { slug: slugUrl } = useParams()
+  // Un QR impreso puede apuntar a otra copia (tabla qr_destinos, desde /admin): se enseña esa, con la misma dirección
+  const destino = useDestino('negocio', slugUrl)
+  const slug = destino.slug
   // En las demos, el diseño de arriba y las pestañas se pueden probar desde la dirección
   // (?diseno=mosaico&barra=pastillas): lo usa el escaparate de diseños (/disenos) y sirve para mandar el enlace
   const [params] = useSearchParams()
@@ -254,7 +258,7 @@ export default function MiniwebPage({ demo = false }) {
   }, [negocio])
 
   // Mientras llegan los cambios no se pinta nada, para no enseñar un momento la versión del archivo
-  if (cargando) return null
+  if (cargando || destino.cargando) return null
 
   // Una demo abierta en la raíz (enlaces antiguos) se lleva a /demo/slug
   if (negocio?.demo && !demo) return <Navigate to={`/demo/${negocio.slug}`} replace />

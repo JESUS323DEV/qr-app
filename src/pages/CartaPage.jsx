@@ -16,6 +16,7 @@ import Img from '../components/Img'
 import { supabase } from '../lib/supabase'
 import { menuActivo, textoHorario } from '../lib/horarioMenu'
 import { aplicar, conEdicion, useEdicion } from '../lib/ediciones'
+import { useDestino } from '../lib/destinos'
 import CartaInmersiva from '../components/carta/CartaInmersiva'
 import CartaRevista from '../components/carta/CartaRevista'
 import CartaPolaroid from '../components/carta/CartaPolaroid'
@@ -269,7 +270,10 @@ function CartaConTamanos(props) {
 
 // Al pasar de una carta a otra con las flechas, la página empieza de cero (pestañas, sección e idioma)
 export default function CartaPage(props) {
-  const { slug } = useParams()
+  const { slug: slugUrl } = useParams()
+  // Un QR impreso puede apuntar a otra carta (tabla qr_destinos, desde /admin): se enseña esa, con la misma dirección
+  const destino = useDestino('carta', slugUrl)
+  const slug = destino.slug
   const [params] = useSearchParams()
   const pruebaDiseno = params.get('diseno')
   const pruebaSub = params.get('sub')
@@ -297,7 +301,7 @@ export default function CartaPage(props) {
     return conCambios.demo ? marcaDePrueba(marca, params) : marca
   }, [conCambios, edicionMarca.fila, params])
   // Mientras llega lo de Supabase no se pinta nada, para no enseñar un momento el menú antiguo
-  if (cargando || edicionCarta.cargando || edicionMarca.cargando) return null
+  if (destino.cargando || cargando || edicionCarta.cargando || edicionMarca.cargando) return null
   let carta = conOfertas(conHorario(juntar(conCambios, fila), ahora), ahora)
   // En las demos, el estilo de carta se puede probar desde la dirección (?diseno=polaroid): lo usa /admin
   if (carta?.demo && ESTILOS_CARTA.has(pruebaDiseno)) carta = { ...carta, diseno: pruebaDiseno }
