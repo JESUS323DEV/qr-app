@@ -27,7 +27,7 @@ export const hero = {
   },
   // Pestaña Inicio del hero (los móviles con las demos)
   titulo: 'Tu negocio entero, a un escaneo.',
-  pista: 'Ver demo',
+  pista: 'Ver ejemplo',
   // Frase pequeña bajo el titular
   lema: 'Un punto digital dentro de tu local físico.',
   texto:

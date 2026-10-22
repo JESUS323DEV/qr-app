@@ -537,7 +537,7 @@ function HeroMiniweb() {
                   <li key={d.ruta} className="h-full shrink-0 snap-center py-[0.2rem]">
                     <Link
                       to={d.ruta}
-                      aria-label={`Abrir la demo de ${d.nombre}`}
+                      aria-label={`Abrir el ejemplo de ${d.nombre}`}
                       className={`relative block ${d.foto ? '' : 'aspect-[390/844]'} h-full rounded-[1.2rem] border border-white/15 bg-[#1d1d1b] p-[0.3rem] shadow-[0_1rem_2rem_-0.8rem_rgb(0_0_0/0.7)] transition-[opacity,transform] duration-500 ${
                         i === actualCarta ? 'opacity-100' : 'scale-[0.92] opacity-55'
                       }`}
