@@ -4162,14 +4162,15 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                 })}
             </select>
           </label>
-          {pestana === 'asistente' && !generado ? (
+          {/* Sin copia cargada y sin nada generado, el móvil va vacío: solo se llena al elegir una copia (o al generar con el asistente) */}
+          {!copiaCargada && !generado ? (
             <Movil ancho={360} className="mx-auto w-full max-w-[20rem]">
-              <div className="flex h-full items-center justify-center bg-black px-[1.5rem] text-center text-[0.95rem] font-semibold text-[rgb(255_255_255/0.6)]">Genera algo con el asistente y aparecerá aquí</div>
+              <div className="flex h-full items-center justify-center bg-black px-[1.5rem] text-center text-[0.95rem] font-semibold text-[rgb(255_255_255/0.6)]">{pestana === 'asistente' ? 'Genera algo con el asistente y aparecerá aquí' : 'Elige una copia y aparecerá aquí'}</div>
             </Movil>
           ) : (
             vista && <Movil key={vista} src={vista} titulo="Vista previa" ancho={360} className="mx-auto w-full max-w-[20rem]" />
           )}
-          <p className="mt-[0.5rem] text-center text-[0.8rem] text-zinc-500">Con el contenido de ejemplo de la temática</p>
+          {(copiaCargada || generado) && <p className="mt-[0.5rem] text-center text-[0.8rem] text-zinc-500">Con el contenido de ejemplo de la temática</p>}
           {/* Debajo del móvil: Añadir a copias (crea la copia) o, con una copia cargada, Guardar cambios y Guardar como nueva */}
           <div className="mx-auto mt-[0.9rem] grid w-full max-w-[20rem] gap-[0.5rem]">
             {error && <p className="text-[0.9rem] font-semibold text-red-600">{error}</p>}
