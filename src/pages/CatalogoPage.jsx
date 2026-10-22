@@ -1,26 +1,33 @@
 import { useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import Movil from '../components/Movil'
+import CarruselMoviles from '../components/CarruselMoviles'
 import { rutaNegocio } from '../negocios'
 import { cartas, marcaDe, rutaCarta } from '../cartas'
 import { TEMATICAS, porTematica, secuenciaDemos, tematicaDe, tipoDe } from '../lib/tematicas'
 import { catalogo, marca } from '../landing/contenido'
+import { captura, MINIWEBS_DEL_EDITOR } from '../lib/ejemplosMiniwebs'
 
 /* Catálogo completo (/catalogo): todas las demos, separadas por tipo (Fichas y Cartas; las Miniwebs, en /miniweb)
    y filtrables por temática. El tipo y la temática van en la dirección (?tipo=ficha&tematica=comida),
    así los enlaces "Ver todas" de la landing abren directamente lo que toca.
    En la landing solo salen las destacadas; aquí salen todas. */
 
+
 // Todas las demos de cada tipo, con lo que necesita cada móvil del catálogo
 const DEMOS = {
   ficha: secuenciaDemos.filter(n => tipoDe(n) === 'ficha').map(n => ({ clave: n.slug, nombre: n.nombre, sector: n.sector, tematica: tematicaDe(n), ruta: rutaNegocio(n) })),
-  miniweb: secuenciaDemos.filter(n => tipoDe(n) === 'miniweb').map(n => ({ clave: n.slug, nombre: n.nombre, sector: n.sector, tematica: tematicaDe(n), ruta: rutaNegocio(n) })),
+  miniweb: [
+    ...secuenciaDemos.filter(n => tipoDe(n) === 'miniweb').map(n => ({ clave: n.slug, nombre: n.nombre, sector: n.sector, tematica: tematicaDe(n), ruta: rutaNegocio(n), estatica: true, foto: captura(n.slug) })),
+    ...MINIWEBS_DEL_EDITOR,
+  ]
+    // Primero las que ya tienen captura (el orden entre ellas no cambia)
+    .sort((a, b) => Number(Boolean(b.foto)) - Number(Boolean(a.foto))),
   carta: porTematica(
     cartas
       .filter(c => c.demo)
       .map(c => {
         const m = marcaDe(c)
-        return { clave: `${c.slug}-carta`, nombre: m?.nombre, sector: m?.sector ?? 'Carta digital', tematica: m?.tematica ?? 'comida', ruta: rutaCarta(c) }
+        return { clave: `${c.slug}-carta`, nombre: m?.nombre, sector: m?.sector ?? 'Carta digital', tematica: m?.tematica ?? 'comida', ruta: rutaCarta(c), estatica: true, foto: captura(`${c.slug}-carta`) }
       }),
   ),
 }
@@ -45,7 +52,7 @@ export default function CatalogoPage({ soloMiniwebs = false }) {
   const [params, setParams] = useSearchParams()
   const tipos = soloMiniwebs ? [catalogo.miniwebs] : catalogo.tipos
   const pedido = params.get('tipo')
-  const tipo = soloMiniwebs ? 'miniweb' : tipos.some(t => t.key === pedido) ? pedido : 'ficha'
+  const tipo = soloMiniwebs ? 'miniweb' : tipos.some(t => t.key === pedido) ? pedido : tipos[0].key
   const tematica = params.get('tematica') ?? ''
 
   const delTipo = DEMOS[tipo]
@@ -99,25 +106,7 @@ export default function CatalogoPage({ soloMiniwebs = false }) {
           </div>
         )}
 
-        <ul className="mt-[2.25rem] grid grid-cols-[repeat(auto-fill,minmax(15rem,1fr))] gap-x-[2rem] gap-y-[3rem]">
-          {lista.map(d => (
-            <li key={d.clave} className="mx-auto w-full max-w-[17rem]">
-              <Movil src={d.ruta} titulo={d.nombre} />
-              <div className="mt-[1rem] flex items-baseline justify-between gap-[1rem]">
-                <div>
-                  <p className="font-semibold">{d.nombre}</p>
-                  {d.sector && <p className="text-[0.92rem] text-suave">{d.sector}</p>}
-                </div>
-                <Link
-                  to={d.ruta}
-                  className="shrink-0 text-[0.95rem] font-semibold underline decoration-tinta/30 underline-offset-[0.3em] hover:decoration-tinta"
-                >
-                  Abrir
-                </Link>
-              </div>
-            </li>
-          ))}
-        </ul>
+        <CarruselMoviles lista={lista} />
       </main>
     </div>
   )

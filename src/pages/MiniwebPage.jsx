@@ -6,6 +6,7 @@ import { fichaAMiniweb } from '../lib/miniweb'
 import { ChevronRight } from 'lucide-react'
 import { aplicar, conEdicion, useEdicion } from '../lib/ediciones'
 import { useDestino } from '../lib/destinos'
+import { SECUENCIA_EJEMPLOS } from '../lib/ejemplosMiniwebs'
 import { HEROS } from '../heros'
 import { applyTheme, resetTheme } from '../lib/applyTheme'
 import { SocialIcon } from '../components/SocialIcons'
@@ -283,6 +284,8 @@ export default function MiniwebPage({ demo = false }) {
           {/* Las flechas solo recorren demos del mismo tipo: las fichas entre fichas y las miniwebs entre miniwebs */}
           {/* Las copias para enseñar a un negocio no llevan flechas: no están en el catálogo */}
           {!negocio.copia && <DemoPager negocio={negocio} secuencia={secuenciaDemos.filter(n => tipoDe(n) === tipoDe(negocio))} />}
+          {/* Los ejemplos de la landing (copias del Editor, una lista fija): flechas entre ellos, en el orden de /miniweb */}
+          {negocio.copia && SECUENCIA_EJEMPLOS.some(e => e.slug === negocio.slug) && <DemoPager negocio={negocio} secuencia={SECUENCIA_EJEMPLOS} conTransicion={false} />}
           <DemoHomeButton slug={negocio.slug} />
         </>
       )}

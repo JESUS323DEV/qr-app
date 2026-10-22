@@ -4662,7 +4662,7 @@ function NuevoGrupo({ copias: todas, recargar }) {
     <details open={abierto} onToggle={e => setAbierto(e.currentTarget.open)} className="border-b border-zinc-200">
       <summary className="cursor-pointer px-[1rem] py-[0.75rem] text-[0.95rem] font-semibold">+ Nuevo grupo</summary>
       <div className="grid gap-[0.7rem] px-[1rem] pb-[1rem]">
-        <input value={nombre} onChange={e => setNombre(e.target.value)} className={CAMPO} placeholder="Nombre del grupo (por ejemplo, Claudia Holguin)" />
+        <input value={nombre} onChange={e => setNombre(e.target.value)} className={`${CAMPO} ${elegidas.length && !nombre.trim() ? 'border-red-500!' : ''}`} placeholder="Nombre del grupo" />
         <p className="text-[0.8rem] font-semibold text-zinc-500">{copias.length ? 'Elige las copias que entran (las que no tienen grupo)' : 'Todas las copias están ya en un grupo'}</p>
         <ul className="max-h-[18rem] overflow-y-auto rounded-[0.6rem] ring-1 ring-zinc-200">
           {copias.map(c => (
@@ -4681,7 +4681,7 @@ function NuevoGrupo({ copias: todas, recargar }) {
         </ul>
         {error && <p className="text-[0.85rem] font-semibold text-red-600">{error}</p>}
         <button type="button" onClick={crear} disabled={!nombre.trim() || !elegidas.length || guardando} className={BOTON}>
-          {guardando ? 'Creando...' : elegidas.length ? `Crear grupo con ${elegidas.length}` : 'Crear grupo'}
+          {guardando ? 'Creando...' : !nombre.trim() ? 'Falta el nombre del grupo' : !elegidas.length ? 'Elige alguna copia' : `Crear grupo con ${elegidas.length}`}
         </button>
       </div>
     </details>

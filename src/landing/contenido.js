@@ -330,7 +330,6 @@ export const catalogo = {
   titulo: 'Así quedaría tu negocio.',
   texto: 'Diseños cuidados y todo a un escaneo: reseñas, WhatsApp, carta y redes. Ábrelas en tu móvil y pruébalas como lo haría tu cliente; la tuya, con tu marca y tus fotos.',
   tipos: [
-    { key: 'ficha', texto: 'Miniwebs', descripcion: 'Una pantalla con lo esencial de tu negocio.' },
     { key: 'carta', texto: 'Cartas', descripcion: 'Tu carta y tu menú del día, con QR para las mesas.' },
   ],
   // Página escondida /miniweb: las miniwebs no salen en el catálogo público, solo aquí

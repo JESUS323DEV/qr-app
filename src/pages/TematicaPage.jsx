@@ -1,8 +1,12 @@
 import { rutaNegocio } from '../negocios'
 import { cartas, rutaCarta, marcaDe, CATEGORIA_CARTAS } from '../cartas'
 import { useEffect } from 'react'
+import CarruselMoviles from '../components/CarruselMoviles'
 import { Link, useParams } from 'react-router-dom'
-import Movil from '../components/Movil'
+
+// Capturas de las demos (src/assets/capturas/<slug>.webp; las cartas, <slug>-carta.webp). Aquí no se ven en vivo: la captura, o el móvil negro con su nombre
+const CAPTURAS = import.meta.glob('../assets/capturas/*.webp', { eager: true, import: 'default' })
+const captura = archivo => CAPTURAS[`../assets/capturas/${archivo}.webp`]
 import { getTematica, negociosDe } from '../lib/tematicas'
 import { marca } from '../landing/contenido'
 
@@ -14,9 +18,9 @@ export default function TematicaPage() {
   const demos = esCartas
     ? cartas.filter(c => c.demo).map(c => {
         const n = marcaDe(c)
-        return { slug: c.slug, nombre: n?.nombre, sector: 'Carta digital', ruta: rutaCarta(c) }
+        return { slug: c.slug, nombre: n?.nombre, sector: 'Carta digital', ruta: rutaCarta(c), foto: captura(`${c.slug}-carta`) }
       })
-    : tematica ? negociosDe(tematica.key).map(n => ({ ...n, ruta: rutaNegocio(n) })) : []
+    : tematica ? negociosDe(tematica.key).map(n => ({ ...n, ruta: rutaNegocio(n), foto: captura(n.slug) })) : []
 
   useEffect(() => {
     if (tematica) document.title = `${tematica.nombre} · ${marca.nombre}`
@@ -38,7 +42,7 @@ export default function TematicaPage() {
         </Link>
         {/* Al catálogo, con esta temática ya elegida (las cartas, a su tipo) */}
         <Link
-          to={esCartas ? '/catalogo?tipo=carta' : `/catalogo?tipo=ficha&tematica=${tematica.key}`}
+          to="/catalogo"
           className="text-[0.95rem] font-semibold underline decoration-tinta/30 underline-offset-[0.3em] hover:decoration-tinta"
         >
           Volver al catálogo
@@ -49,25 +53,7 @@ export default function TematicaPage() {
         <h1 className="font-titulo text-[clamp(2rem,1.5rem+2.4vw,3.25rem)] leading-[1.08]">{tematica.nombre}</h1>
         <p className="mt-[0.75rem] max-w-[34rem] text-[1.07rem] leading-[1.6] text-suave">{tematica.texto}</p>
 
-        <ul className="mt-[2.5rem] grid grid-cols-[repeat(auto-fill,minmax(15rem,1fr))] gap-x-[2rem] gap-y-[3rem]">
-          {demos.map(n => (
-            <li key={n.slug} className="mx-auto w-full max-w-[17rem]">
-              <Movil src={n.ruta} titulo={n.nombre} />
-              <div className="mt-[1rem] flex items-baseline justify-between gap-[1rem]">
-                <div>
-                  <p className="font-semibold">{n.nombre}</p>
-                  {n.sector && <p className="text-[0.92rem] text-suave">{n.sector}</p>}
-                </div>
-                <Link
-                  to={n.ruta}
-                  className="shrink-0 text-[0.95rem] font-semibold underline decoration-tinta/30 underline-offset-[0.3em] hover:decoration-tinta"
-                >
-                  Abrir
-                </Link>
-              </div>
-            </li>
-          ))}
-        </ul>
+        <CarruselMoviles lista={demos} />
       </main>
     </div>
   )
