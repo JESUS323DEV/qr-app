@@ -9,7 +9,7 @@ import { getNegocio, negocios, rutaNegocio } from '../negocios'
 import { ALERGENOS, cartas, fotoDe, getCarta, marcaDe, rutaCarta } from '../cartas'
 import { BOTON, CAMPO, Confirmar, Entrar, Etiqueta, usePaginaPrivada } from '../components/panel'
 import { loadFont } from '../lib/applyTheme'
-import { TIPOGRAFIAS, parejaDe } from '../asistente/tipografias'
+import { TIPOGRAFIAS, GRUPOS_EXTRA, TODAS_LAS_TIPOGRAFIAS, parejaDe } from '../asistente/tipografias'
 import { DISENOS_ASISTENTE, DISENOS_CARTA } from '../asistente/disenos'
 import { GRUPOS_PLANTILLAS, PLANTILLAS } from '../plantillas'
 import { PORTADAS_IA, catalogoMiniweb, validarDiseno } from '../asistente/miniweb'
@@ -918,7 +918,7 @@ function CampoFoto({ valor, cambiar, carpeta, sugerencia, orientacion, quitar })
 // Cada opción se ve con su propia letra.
 function ElegirTipografia({ actual, original, elegir }) {
   useEffect(() => {
-    for (const t of TIPOGRAFIAS) {
+    for (const t of TODAS_LAS_TIPOGRAFIAS) {
       loadFont(t.fonts.heading.google)
       loadFont(t.fonts.body.google)
     }
@@ -945,6 +945,24 @@ function ElegirTipografia({ actual, original, elegir }) {
           <span className="block text-[1.35rem] leading-tight" style={{ fontFamily: t.fonts?.heading?.family }}>{t.nombre}</span>
           <span className="mt-[0.15rem] block text-[0.85rem] opacity-75" style={{ fontFamily: t.fonts?.body?.family }}>{t.estilo}</span>
         </button>
+      ))}
+      {/* Más tipografías, por estilo */}
+      {GRUPOS_EXTRA.map(g => (
+        <div key={g.titulo} className="grid gap-[0.5rem]">
+          <p className="mt-[0.6rem] text-[0.8rem] font-semibold text-zinc-500">{g.titulo}</p>
+          {g.lista.map(t => (
+            <button
+              key={t.id}
+              type="button"
+              aria-pressed={elegida === t.id}
+              onClick={() => elegir(t.fonts)}
+              className={`rounded-[0.75rem] px-[0.9rem] py-[0.7rem] text-left ring-1 ${elegida === t.id ? 'bg-zinc-900 text-white ring-zinc-900' : 'ring-zinc-300'}`}
+            >
+              <span className="block text-[1.35rem] leading-tight" style={{ fontFamily: t.fonts.heading.family }}>{t.nombre}</span>
+              <span className="mt-[0.15rem] block text-[0.85rem] opacity-75" style={{ fontFamily: t.fonts.body.family }}>{t.estilo}</span>
+            </button>
+          ))}
+        </div>
       ))}
     </div>
   )
@@ -2663,7 +2681,7 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
     let slug = raiz
     for (let n = 2; ocupadas.has(slug); n++) slug = `${raiz}-${n}`
 
-    const tipografia = TIPOGRAFIAS.find(t => t.id === letra)
+    const tipografia = TODAS_LAS_TIPOGRAFIAS.find(t => t.id === letra)
     // Los textos de la portada que se han escrito: en la copia de Chalaquita, sobre su primera pestaña; en las demás, sobre la
     // primera pestaña de su miniweb (más abajo)
     const textosEscritos = {
@@ -3175,10 +3193,21 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
           <Etiqueta texto="Tipografía">
             <select value={letra} onChange={e => setLetra(e.target.value)} className={CAMPO}>
               <option value="">La de la plantilla</option>
-              {TIPOGRAFIAS.map(t => (
-                <option key={t.id} value={t.id}>
-                  {t.nombre}
-                </option>
+              <optgroup label="Predefinidas">
+                {TIPOGRAFIAS.map(t => (
+                  <option key={t.id} value={t.id}>
+                    {t.nombre}
+                  </option>
+                ))}
+              </optgroup>
+              {GRUPOS_EXTRA.map(g => (
+                <optgroup key={g.titulo} label={g.titulo}>
+                  {g.lista.map(t => (
+                    <option key={t.id} value={t.id}>
+                      {t.nombre}
+                    </option>
+                  ))}
+                </optgroup>
               ))}
             </select>
           </Etiqueta>
@@ -4177,24 +4206,46 @@ function ElegirPagina({ paginas, valor, cambiar, vacio }) {
 /* Generador de QR de la página principal. Arriba se elige la página: pone su dirección, su inicial y sus colores
    ("Su marca" y el asistente los tienen en cuenta). Sin elegir, el QR es suelto: la dirección se escribe a mano y el
    asistente trabaja con lo que se le cuente. */
-function QRSuelto({ copias }) {
+function QRSuelto({ copias, cargada, alGuardar }) {
   const [clave, setClave] = useState('')
+  // La copia de QR abierta (de "Copias de QR"): su diseño, su dirección y su página; al elegir otra página, se deja
+  const [abierta, setAbierta] = useState(null)
+  useEffect(() => {
+    if (!cargada) return
+    setAbierta(cargada)
+    setClave(cargada.pagina ?? '')
+  }, [cargada])
   const paginas = paginasConQR(copias)
   const pagina = paginas.find(p => p.clave === clave)
+
+  // Guarda el diseño: si es el de una copia abierta y se deja su nombre, la actualiza; si no, crea una copia nueva
+  const guardar = async ({ nombre: nombreCopia, url, estado }) => {
+    const fila = { nombre: nombreCopia, pagina: clave || null, url, diseno: estado }
+    const { data, error } =
+      abierta && abierta.nombre === nombreCopia
+        ? await supabase.from('qr_copias').update(fila).eq('id', abierta.id).select().single()
+        : await supabase.from('qr_copias').insert(fila).select().single()
+    if (error) throw new Error('No se ha podido guardar. ¿Has ejecutado el SQL 012_qr_copias.sql en Supabase?')
+    setAbierta(data)
+    alGuardar?.()
+  }
 
   return (
     <div className="grid gap-[1rem]">
       <label className="mx-auto grid w-full max-w-[32rem] gap-[0.3rem]">
         <span className="text-[0.8rem] font-semibold text-zinc-500">Página</span>
-        <ElegirPagina paginas={paginas} valor={clave} cambiar={setClave} vacio="Ninguna (QR suelto)" />
+        <ElegirPagina paginas={paginas} valor={clave} cambiar={c => { setClave(c); setAbierta(null) }} vacio="Ninguna (QR suelto)" />
       </label>
       {/* key: al cambiar de página, el generador empieza de cero con lo de esa página */}
       <GeneradorQR
-        key={clave || 'suelto'}
-        url={`${DOMINIO}${pagina?.ruta ?? '/'}`}
+        key={`${clave || 'suelto'}-${abierta?.id ?? ''}`}
+        url={abierta?.url ?? `${DOMINIO}${pagina?.ruta ?? '/'}`}
         nombre={pagina?.nombre ?? ''}
         colores={pagina?.colores}
         fuentes={pagina?.fuentes}
+        estadoInicial={abierta?.diseno}
+        guardar={guardar}
+        nombreCopiaInicial={abierta?.nombre ?? (pagina ? `QR de ${pagina.nombre}` : '')}
         proponer={(descripcion, siluetas) =>
           llamar('asistente', {
             paso: 'colores-qr',
@@ -4297,6 +4348,55 @@ function CambiarQR({ copias }) {
         </ul>
       )}
     </div>
+  )
+}
+
+/* Copias de QR (en Páginas): los diseños del Editor QR guardados con "Guardar en copias". Se abren en el Editor QR para retocarlos y se borran aquí. */
+function CopiasQR({ version, abrir }) {
+  const [lista, setLista] = useState(null)
+  const [error, setError] = useState('')
+  const cargar = useCallback(() => {
+    supabase
+      .from('qr_copias')
+      .select('id, nombre, pagina, url, diseno, actualizado')
+      .order('actualizado', { ascending: false })
+      .then(({ data, error }) => {
+        if (error) setError('No se pueden leer las copias de QR. ¿Has ejecutado el SQL 012_qr_copias.sql en Supabase?')
+        setLista(data ?? [])
+      })
+  }, [])
+  useEffect(cargar, [cargar, version])
+  const borrar = async f => {
+    await supabase.from('qr_copias').delete().eq('id', f.id)
+    cargar()
+  }
+  if (!lista?.length && !error) return null
+  return (
+    <details className="rounded-[1rem] bg-white ring-1 ring-zinc-200 [&[open]>summary]:border-b [&[open]>summary]:border-zinc-200">
+      <summary className="flex cursor-pointer items-baseline justify-between gap-[1rem] px-[1rem] py-[0.9rem]">
+        <span className="text-[1.05rem] font-bold">Copias de QR</span>
+        <span className="text-[0.9rem] text-zinc-500">{lista?.length ?? 0}</span>
+      </summary>
+      {error && <p className="px-[1rem] py-[0.7rem] text-[0.85rem] font-semibold text-red-600">{error}</p>}
+      <ul className="px-[1rem]">
+        {(lista ?? []).map(f => (
+          <li key={f.id} className="flex items-center justify-between gap-[0.75rem] border-b border-zinc-200 py-[0.7rem] last:border-b-0">
+            <span className="min-w-0">
+              <span className="block truncate font-semibold">{f.nombre}</span>
+              <span className="block truncate text-[0.8rem] text-zinc-500">{f.url.replace(/^https?:\/\//, '')}</span>
+            </span>
+            <span className="flex shrink-0 gap-[0.9rem] text-[0.85rem] font-semibold">
+              <button type="button" onClick={() => abrir(f)} className="underline underline-offset-[0.2em]">
+                Abrir
+              </button>
+              <button type="button" onClick={() => borrar(f)} className="text-red-600 underline underline-offset-[0.2em]">
+                Borrar
+              </button>
+            </span>
+          </li>
+        ))}
+      </ul>
+    </details>
   )
 }
 
@@ -4527,6 +4627,11 @@ function Lista({ filas, abrir, recargar, copia }) {
       )
     )
 
+  // Copias de QR: la que se abre en el Editor QR (y se despliega), y un contador para recargar la lista al guardar
+  const [qrAbierto, setQrAbierto] = useState(false)
+  const [qrCargado, setQrCargado] = useState(null)
+  const [versionQR, setVersionQR] = useState(0)
+
   const aFila = n => ({ clave: `negocio:${n.slug}`, nombre: n.nombre, detalle: n.demo ? 'Demo' : 'Cliente', ruta: rutaNegocio(n) })
   const aFilaCopia = f => ({ clave: `${f.tipo}:${f.slug}`, nombre: f.nombre, detalle: f.detalle, ruta: f.ruta })
   // Una copia exportada a muestras (botón de Nuevo perfil): sale en Miniwebs y no en Copias para enseñar
@@ -4543,14 +4648,14 @@ function Lista({ filas, abrir, recargar, copia }) {
       {/* El botón "Crear con el asistente" (el primer asistente) está oculto: el Editor ya lo hace todo. Su pantalla (CrearConAsistente) sigue en el código */}
 
       {/* Generador de QR, aparte: se elige la página o se hace uno suelto */}
-      <details className="group/qr rounded-[1rem] bg-white ring-1 ring-zinc-200">
+      <details id="editor-qr" open={qrAbierto} onToggle={e => setQrAbierto(e.currentTarget.open)} className="group/qr rounded-[1rem] bg-white ring-1 ring-zinc-200">
         <summary className="flex cursor-pointer list-none items-center gap-[0.5rem] px-[1rem] py-[0.9rem] [&::-webkit-details-marker]:hidden">
           <QrCode className="h-[1.1rem] w-[1.1rem]" aria-hidden="true" />
           <span className="text-[1.05rem] font-bold">Editor QR</span>
           <ChevronDown className="ml-auto h-[1.1rem] w-[1.1rem] text-zinc-500 transition-transform group-open/qr:rotate-180" aria-hidden="true" />
         </summary>
         <div className="border-t border-zinc-200 px-[1rem] py-[1rem]">
-          <QRSuelto copias={copias} />
+          <QRSuelto copias={copias} cargada={qrCargado} alGuardar={() => setVersionQR(v => v + 1)} />
         </div>
       </details>
       </div>
@@ -4597,6 +4702,14 @@ function Lista({ filas, abrir, recargar, copia }) {
         />
         {/* Las miniwebs de siempre y, con ellas, las que se exportan a muestras desde Nuevo perfil */}
         <Grupo titulo="Miniwebs" filas={negocios.filter(n => tipoDe(n) === 'miniweb').map(aFila)} />
+        <CopiasQR
+          version={versionQR}
+          abrir={f => {
+            setQrCargado(f)
+            setQrAbierto(true)
+            setTimeout(() => document.getElementById('editor-qr')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
+          }}
+        />
         <Grupo
           titulo="Cartas"
           filas={cartas.map(c => ({ clave: `carta:${c.slug}`, nombre: marcaDe(c)?.nombre ?? c.slug, detalle: c.demo ? 'Demo' : 'Cliente', ruta: rutaCarta(c) }))}

@@ -4,7 +4,7 @@ import qrcode from 'qrcode-generator'
 import { DISENOS, SILUETAS, mascaraSilueta } from '../lib/siluetas'
 import { ChevronDown, ChevronLeft, ChevronRight, ImageUp, Layers, Minus, Plus, QrCode, Sparkles } from 'lucide-react'
 import { TRAZADOS } from './SocialIcons'
-import { TIPOGRAFIAS } from '../asistente/tipografias'
+import { TIPOGRAFIAS, GRUPOS_EXTRA, TODAS_LAS_TIPOGRAFIAS } from '../asistente/tipografias'
 import { loadFont } from '../lib/applyTheme'
 
 /* Generador de QR de /admin: el QR de una página (ficha, miniweb o carta) en su placa, para descargarlo e imprimirlo.
@@ -409,8 +409,20 @@ const ICONOS_LINEA = [
   ['youtube', 'YouTube'],
   ['twitter', 'X'],
   ['linkedin', 'LinkedIn'],
+  ['google', 'Google (reseñas)'],
 ]
 const MAX_LINEAS = 4
+
+// Los iconos de las redes, pintados de su color original. Instagram, con su degradado; Google, con sus cuatro colores (trazados de 48 x 48);
+// los demás, de un solo color. TikTok y X son negros: sobre una placa oscura pasan al color del texto, para que se vean
+const COLORES_ICONO = { tiktok: '#000000', facebook: '#1877F2', whatsapp: '#25D366', youtube: '#FF0000', twitter: '#000000', linkedin: '#0A66C2' }
+const PARADAS_INSTAGRAM = [[0, '#FEDA75'], [0.3, '#FA7E1E'], [0.55, '#D62976'], [0.8, '#962FBF'], [1, '#4F5BD5']]
+const GOOGLE_COLORES = [
+  ['#EA4335', 'M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z'],
+  ['#4285F4', 'M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z'],
+  ['#FBBC05', 'M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z'],
+  ['#34A853', 'M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z'],
+]
 const TAMANO_CENTRO = { min: 0.15, max: 0.4 }
 
 // Desplazamiento de cada copia de la doble imagen, en proporción al lado
@@ -481,8 +493,9 @@ const capasDe = (o, lado) => {
 /* modo: 'admin' (el de /admin: dirección editable y descargas), 'cliente' (el editor con PIN de /mi-qr: sin
    dirección ni descargas, con los intentos de IA que le quedan y "Enviar mi diseño") o 'vista' (solo la placa).
    estadoInicial: un diseño guardado (el que envió el cliente) para empezar con él. intentos: los de IA del cliente.
-   enviar: guarda el diseño del cliente (recibe todos sus ajustes) */
-export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes: fuentesMarca, proponer, modo = 'admin', estadoInicial, intentos: intentosIniciales, enviar, diseno, formaPuntos }) {
+   enviar: guarda el diseño del cliente (recibe todos sus ajustes)
+   guardar (solo en el de /admin): guarda el diseño en las copias de QR (recibe { nombre, url, estado }); nombreCopiaInicial, el nombre con el que se ofrece */
+export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes: fuentesMarca, proponer, modo = 'admin', estadoInicial, intentos: intentosIniciales, enviar, diseno, formaPuntos, guardar, nombreCopiaInicial = '' }) {
   const marca = deMarca(colores)
   const oscuroDeMarca = marca.qr
   const acentoDeMarca = colores?.accent ?? '#555555'
@@ -544,10 +557,11 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
   /* 3 campos libres, para lo que se quiera (el nombre, un eslogan, el horario...): uno encima del QR y dos debajo.
      Los vacíos no salen. Los diseños guardados antes (con nombre y texto de arriba) se pasan a estos campos */
   const [campoArriba, setCampoArriba] = useState(ini.campoArriba ?? (ini.conNombre && ini.textoNombre ? ini.textoNombre : ini.textoMarco ?? 'Escanéame'))
+  const [posEslogan, setPosEslogan] = useState(ini.posEslogan ?? 'abajo')
   const [campoAbajo1, setCampoAbajo1] = useState(ini.campoAbajo1 ?? (ini.conNombre && ini.textoNombre && ini.textoMarco ? ini.textoMarco : ''))
   const [campoAbajo2, setCampoAbajo2] = useState(ini.campoAbajo2 ?? '')
   // Líneas de abajo: una red (u otra cosa) por línea, con su icono
-  const [lineas, setLineas] = useState(ini.lineas ?? [{ icono: 'instagram', texto: '' }])
+  const [lineas, setLineas] = useState(ini.lineas ?? [{ icono: '', texto: '' }])
   // Tipografía: '' es la de la marca (o la del sistema, sin marca); si no, una de la lista
   const [tipografia, setTipografia] = useState(ini.tipografia ?? '')
   const [escala, setEscala] = useState(ini.escala ?? 1)
@@ -607,7 +621,26 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
     estilo, colorPuntos, colorEsquinas, degPuntos, degEsquinas, fondo, colorMarco, degMarco, colorLetra,
     puntos, esquinas, puntoOjo, centro, formaCentro, textoCentro, colorCentro: colorCentroElegido, degCentro: degCentroElegido, logo, tamanoCentro, doble,
     conMarco, formaPlaca, radioPlaca, borde, radioFondo: radioFondoElegido, silueta, colorContorno,
-    campoArriba, campoAbajo1, campoAbajo2, lineas, tipografia, escala, tamanoNombre,
+    campoArriba, campoAbajo1, campoAbajo2, posEslogan, lineas, tipografia, escala, tamanoNombre,
+  }
+  // Guardar el diseño en las copias de QR (/admin)
+  const [nombreCopia, setNombreCopia] = useState(nombreCopiaInicial)
+  const [guardandoCopia, setGuardandoCopia] = useState(false)
+  const [avisoCopia, setAvisoCopia] = useState('')
+  const [errorCopia, setErrorCopia] = useState('')
+  const guardarCopia = async () => {
+    if (!nombreCopia.trim() || guardandoCopia) return
+    setGuardandoCopia(true)
+    setAvisoCopia('')
+    setErrorCopia('')
+    try {
+      await guardar({ nombre: nombreCopia.trim(), url, estado })
+      setAvisoCopia(`Guardado en las copias de QR como «${nombreCopia.trim()}».`)
+    } catch (e) {
+      setErrorCopia(e.message)
+    } finally {
+      setGuardandoCopia(false)
+    }
   }
   const enviarDiseno = async () => {
     setEnviando(true)
@@ -671,7 +704,7 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
   const textoPocoVisible = Boolean(colorLetra) && esClaro(colorLetra) === esClaro(colorMarco)
 
   // Tipografía de los textos de la placa: la de títulos para el nombre y el texto de arriba; la de texto, abajo
-  const fuentes = TIPOGRAFIAS.find(t => t.id === tipografia)?.fonts ?? fuentesMarca ?? null
+  const fuentes = TODAS_LAS_TIPOGRAFIAS.find(t => t.id === tipografia)?.fonts ?? fuentesMarca ?? null
   const familiaTitulo = fuentes?.heading?.family ?? SISTEMA
   const familiaTexto = fuentes?.body?.family ?? SISTEMA
   useEffect(() => {
@@ -804,7 +837,8 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
     const tamanos = { pequeno: 0.85, normal: 1, grande: 1.2 }
     if (p.tamano in tamanos) setEscala(tamanos[p.tamano])
     // Los 3 campos de texto: solo los que trae (los que deja vacíos se quedan como estaban)
-    const limpio = t => t.trim().replace(/\s*—\s*/g, ', ').slice(0, 32)
+    // Las propuestas de la IA se cortan a 32 caracteres, salvo en el panel de Jesús (sin límite; la placa encoge la letra para que quepa)
+    const limpio = t => t.trim().replace(/\s*—\s*/g, ', ').slice(0, modo === 'admin' ? undefined : 32)
     if (p.textos?.arriba?.trim()) setCampoArriba(limpio(p.textos.arriba))
     if (p.textos?.abajo1?.trim()) setCampoAbajo1(limpio(p.textos.abajo1))
     if (p.textos?.abajo2?.trim()) setCampoAbajo2(limpio(p.textos.abajo2))
@@ -831,11 +865,15 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
 
   // Lo que va debajo del QR: los dos campos de abajo y, solo en el panel de Jesús, las líneas de redes con icono.
   // Solo los que tienen texto (en la placa circular, solo el primero)
+  // El eslogan bajo el nombre (en la placa rectangular, solo en el panel de Jesús); si no, va abajo como siempre
+  const eslArriba = modo === 'admin' && posEslogan === 'arriba' && campoAbajo1.trim() !== '' && formaPlaca !== 'circular'
+  const redesVisibles = lineas.filter(l => l.texto.trim() || (modo === 'admin' && l.icono))
   const lineasVisibles = [
-    ...(campoAbajo1.trim() ? [{ icono: '', texto: campoAbajo1.trim() }] : []),
+    ...(campoAbajo1.trim() && !eslArriba ? [{ icono: '', texto: campoAbajo1.trim() }] : []),
     // La segunda línea, secundaria: siempre un poco más pequeña y más suave que la primera
     ...(campoAbajo2.trim() ? [{ icono: '', texto: campoAbajo2.trim(), secundario: true }] : []),
-    ...(modo === 'cliente' ? [] : lineas.filter(l => l.texto.trim())),
+    // Las redes salen juntas en una fila. En el panel de Jesús (admin), una red con icono y sin texto sale solo con el icono
+    ...(modo === 'cliente' ? [] : redesVisibles.length ? [{ fila: redesVisibles }] : []),
   ]
 
   /* Medidas de la placa para un QR de lado `lado`: dónde va el QR, cuánto mide la placa y dónde va cada texto.
@@ -874,7 +912,9 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
     const altoLinea = lado * MEDIDAS.linea * f
     // Cada línea de abajo con su alto: la secundaria, menos, para que quede pegada a la de encima
     const altos = lineasVisibles.map(l => (l.secundario ? altoLinea * 0.45 : altoLinea))
-    const yQR = b + altoNombre + altoArriba
+    // Un hueco más bajo que el de una línea, y el texto algo más pegado al nombre que al QR
+    const altoEsl = eslArriba ? lado * MEDIDAS.linea * f * 0.75 : 0
+    const yQR = b + altoNombre + altoEsl + altoArriba
     return {
       forma: 'rectangular',
       ancho: lado + b * 2,
@@ -885,6 +925,7 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
       letras,
       yNombre: altoNombre ? b + altoNombre / 2 : null,
       yArriba: altoArriba ? b + altoNombre + altoArriba / 2 : null,
+      yEslogan: altoEsl ? b + altoNombre + altoEsl * 0.42 : null,
       lins: lineasVisibles,
       yLinea: i => yQR + lado + altos.slice(0, i).reduce((a, h) => a + h, 0) + altos[i] / 2,
     }
@@ -907,6 +948,69 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
     const ancho = medir(l.texto, tamano, familiaTexto)
     const x = (g.ancho - (ancho + hueco + icono)) / 2
     return { xTexto: x, xIcono: x + ancho + hueco, icono }
+  }
+
+  // Una fila de redes: cada una con su icono (a la izquierda) y su texto, o solo el icono; todas centradas juntas en una línea.
+  // Si no caben en el ancho de la placa, el tamaño de todo se reduce lo justo. Devuelve dónde va cada pieza.
+  const filaRedes = (items, g) => {
+    const hayTexto = it => Boolean(it.texto.trim())
+    const medidas = k =>
+      items.map(it => {
+        const ic = it.icono ? g.letras.icono * k : 0
+        const hu = it.icono && hayTexto(it) ? g.letras.hueco * k : 0
+        const tam = g.letras.linea * k
+        const wt = hayTexto(it) ? medir(it.texto.trim(), tam, familiaTexto, 600) : 0
+        return { it, ic, hu, tam, wt, w: ic + hu + wt }
+      })
+    const separacion = k => g.letras.hueco * 2.4 * k
+    const total = k => medidas(k).reduce((a, m) => a + m.w, 0) + separacion(k) * (items.length - 1)
+    const k = Math.min(1, anchoUtil(g) / total(1))
+    let x = (g.ancho - total(k)) / 2
+    return medidas(k).map(m => {
+      const r = { icono: m.it.icono, texto: m.it.texto.trim(), ic: m.ic, tam: m.tam, xIcono: x, xTexto: x + m.ic + m.hu }
+      x += m.w + separacion(k)
+      return r
+    })
+  }
+
+  // Un icono de red a su color original: como SVG (vista previa y descarga) y sobre el lienzo (PNG). x, y: su esquina de arriba a la izquierda; lado: su tamaño
+  const colorIcono = icono => {
+    const c = COLORES_ICONO[icono]
+    return !c ? textoSobreMarco : c === '#000000' && !esClaro(colorMarco) ? textoSobreMarco : c
+  }
+  const iconoSvg = (icono, x, y, lado, pre) => {
+    if (icono === 'google') {
+      return `<g transform="translate(${x} ${y}) scale(${lado / 48})">${GOOGLE_COLORES.map(([c, d]) => `<path d="${d}" fill="${c}"/>`).join('')}</g>`
+    }
+    const traza = `<path transform="translate(${x} ${y}) scale(${lado / 24})" d="${TRAZADOS[icono]}"`
+    if (icono === 'instagram') {
+      const id = `${pre}-ig${Math.round(x)}`
+      const paradas = PARADAS_INSTAGRAM.map(([o, c]) => `<stop offset="${o}" stop-color="${c}"/>`).join('')
+      return `<defs><linearGradient id="${id}" x1="0" y1="1" x2="1" y2="0">${paradas}</linearGradient></defs>${traza} fill="url(#${id})"/>`
+    }
+    return `${traza} fill="${colorIcono(icono)}"/>`
+  }
+  const iconoLienzo = (ctx, icono, x, y, lado) => {
+    ctx.save()
+    ctx.translate(x, y)
+    if (icono === 'google') {
+      ctx.scale(lado / 48, lado / 48)
+      for (const [c, d] of GOOGLE_COLORES) {
+        ctx.fillStyle = c
+        ctx.fill(new Path2D(d))
+      }
+    } else {
+      ctx.scale(lado / 24, lado / 24)
+      if (icono === 'instagram') {
+        const g = ctx.createLinearGradient(0, 24, 24, 0)
+        for (const [o, c] of PARADAS_INSTAGRAM) g.addColorStop(o, c)
+        ctx.fillStyle = g
+      } else {
+        ctx.fillStyle = colorIcono(icono)
+      }
+      ctx.fill(new Path2D(TRAZADOS[icono]))
+    }
+    ctx.restore()
   }
 
   // Espera a que las letras elegidas estén cargadas (si no, se medirían y dibujarían con otra)
@@ -981,8 +1085,18 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
       const texto = (contenido, y, tamano, familia, peso) =>
         `<text x="${g.ancho / 2}" y="${y}" dy="0.35em" text-anchor="middle" font-family="${escaparXml(familia)}" font-weight="${peso}" font-size="${tamano}" fill="${textoSobreMarco}">${escaparXml(contenido)}</text>`
       if (g.yNombre != null) partes.push(texto(campoArriba, g.yNombre, tamanoQueCabe(campoArriba, g.letras.nombre, familiaTitulo, 800, anchoUtil(g)), familiaTitulo, 800))
+      if (g.yEslogan != null) partes.push(texto(campoAbajo1.trim(), g.yEslogan, tamanoQueCabe(campoAbajo1.trim(), g.letras.linea, familiaTexto, 600, anchoUtil(g)), familiaTexto, 600))
       g.lins.forEach((l, i) => {
         const y = g.yLinea(i)
+        if (l.fila) {
+          for (const r of filaRedes(l.fila, g)) {
+            if (r.icono && TRAZADOS[r.icono]) partes.push(iconoSvg(r.icono, r.xIcono, y - r.ic / 2, r.ic, pre))
+            if (r.texto) {
+              partes.push(`<text x="${r.xTexto}" y="${y}" dy="0.35em" font-family="${escaparXml(familiaTexto)}" font-weight="600" font-size="${r.tam}" fill="${textoSobreMarco}">${escaparXml(r.texto)}</text>`)
+            }
+          }
+          return
+        }
         const tam = tamanoLinea(l, g)
         const p = posicionLinea(l, g, tam)
         if (l.icono && TRAZADOS[l.icono]) {
@@ -1012,7 +1126,7 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
       clearTimeout(t)
     }
     // Se recompone con cualquier cosa que cambie el dibujo
-  }, [opcionesQR, fondo, colorMarco, degMarco, textoSobreMarco, conMarco, formaPlaca, radioPlaca, radioFondo, borde, silueta, colorPuntos, degPuntos, puntos, colorEsquinas, campoArriba, campoAbajo1, campoAbajo2, lineas, modo, familiaTitulo, familiaTexto, escala, tamanoNombre])
+  }, [opcionesQR, fondo, colorMarco, degMarco, textoSobreMarco, conMarco, formaPlaca, radioPlaca, radioFondo, borde, silueta, colorPuntos, degPuntos, puntos, colorEsquinas, campoArriba, campoAbajo1, campoAbajo2, posEslogan, lineas, modo, familiaTitulo, familiaTexto, escala, tamanoNombre])
 
   const archivo = `qr-${(nombre || 'negocio').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`
   const bajar = (blob, extension) => {
@@ -1094,10 +1208,24 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
           ctx.font = `800 ${tamanoQueCabe(campoArriba, g.letras.nombre, familiaTitulo, 800, anchoUtil(g))}px ${familiaTitulo}`
           ctx.fillText(campoArriba, g.ancho / 2, g.yNombre)
         }
+        if (g.yEslogan != null) {
+          ctx.font = `600 ${tamanoQueCabe(campoAbajo1.trim(), g.letras.linea, familiaTexto, 600, anchoUtil(g))}px ${familiaTexto}`
+          ctx.fillText(campoAbajo1.trim(), g.ancho / 2, g.yEslogan)
+        }
         // Líneas de abajo: texto e icono centrados juntos, el icono a la derecha del texto
         ctx.textAlign = 'left'
         g.lins.forEach((l, i) => {
           const y = g.yLinea(i)
+          if (l.fila) {
+            for (const r of filaRedes(l.fila, g)) {
+              if (r.icono && TRAZADOS[r.icono]) iconoLienzo(ctx, r.icono, r.xIcono, y - r.ic / 2, r.ic)
+              if (r.texto) {
+                ctx.font = `600 ${r.tam}px ${familiaTexto}`
+                ctx.fillText(r.texto, r.xTexto, y)
+              }
+            }
+            return
+          }
           const tam = tamanoLinea(l, g)
           const p = posicionLinea(l, g, tam)
           ctx.font = `600 ${tam}px ${familiaTexto}`
@@ -1414,7 +1542,9 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
      Personalizar con la placa siempre arriba; en el panel, además, las opciones que solo decide Jesús dentro de cada
      desplegable y, abajo, la dirección y las descargas (en el del cliente, "Enviar mi diseño") */
   return (
-    <div className="mx-auto grid w-full max-w-[32rem] grid-cols-[minmax(0,1fr)] gap-[1rem]">
+    // En el panel de Jesús (admin), en pantallas anchas (desde 1024 px): dos columnas, como el Editor: las opciones a la izquierda y, a la derecha,
+    // la placa fija al bajar (lg:col-start-2!, la placa, pasa por encima de la regla de las demás piezas, que van a la columna 1)
+    <div className={`mx-auto grid w-full max-w-[32rem] grid-cols-[minmax(0,1fr)] gap-[1rem] ${modo === 'admin' ? 'lg:max-w-[60rem] lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:gap-x-[2.5rem] lg:[&>*]:col-start-1' : ''}`}>
       {/* En el editor del cliente, la placa se queda fija arriba al bajar (más pequeña en el móvil, para que quede sitio
           para las opciones); así se ve cada cambio sin volver arriba */}
       {/* Editor del cliente: tres pestañas arriba (Tu QR, Personalizar y Asistente); la placa sale en las tres y solo
@@ -1441,7 +1571,7 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
         </div>
       )}
       {(
-        <div ref={placaGrande}>
+        <div ref={placaGrande} className={modo === 'admin' ? 'lg:sticky lg:top-[1rem] lg:col-start-2! lg:row-start-1 lg:row-span-6 lg:self-start' : undefined}>
           {/* En la pestaña Asistente, con propuestas: la placa hace de galería (flechas para pasar de una a otra, y al
               tocarla se abre en grande con "Enviar mi diseño") */}
           {pestana === 'asistente' && propuestas?.length && indicePropuesta != null ? (
@@ -1565,11 +1695,24 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
                   <span className={titulo}>Tipografía</span>
                   <select value={tipografia} onChange={e => setTipografia(e.target.value)} className={campo}>
                     <option value="">{fuentesMarca ? 'La de tu marca' : 'La de siempre'}</option>
-                    {TIPOGRAFIAS.map(t => (
-                      <option key={t.id} value={t.id}>
-                        {t.nombre}
-                      </option>
-                    ))}
+                    {/* Con admin, las predefinidas y debajo "Más tipografías" por estilo; el cliente, solo las predefinidas */}
+                    <optgroup label="Predefinidas">
+                      {TIPOGRAFIAS.map(t => (
+                        <option key={t.id} value={t.id}>
+                          {t.nombre}
+                        </option>
+                      ))}
+                    </optgroup>
+                    {modo === 'admin' &&
+                      GRUPOS_EXTRA.map(g => (
+                        <optgroup key={g.titulo} label={g.titulo}>
+                          {g.lista.map(t => (
+                            <option key={t.id} value={t.id}>
+                              {t.nombre}
+                            </option>
+                          ))}
+                        </optgroup>
+                      ))}
                   </select>
                 </label>
                 <label className="grid gap-[0.3rem]">
@@ -1601,13 +1744,35 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
                 </div>
                 <label className="grid gap-[0.3rem]">
                   <span className={titulo}>Eslogan</span>
-                  <input value={campoAbajo1} onChange={e => setCampoAbajo1(e.target.value)} maxLength={32} placeholder="Escanea y déjanos tu reseña" className={campo} />
-                  <span className="text-[0.75rem] text-zinc-500">Máx. 32 caracteres</span>
+                  <input value={campoAbajo1} onChange={e => setCampoAbajo1(e.target.value)} maxLength={modo === 'admin' ? undefined : 32} placeholder="Escanea y déjanos tu reseña" className={campo} />
+                  {modo !== 'admin' && <span className="text-[0.75rem] text-zinc-500">Máx. 32 caracteres</span>}
                 </label>
+                {/* Dónde va el eslogan: bajo el nombre (arriba) o abajo, como siempre (solo en la placa rectangular) */}
+                {modo === 'admin' && (
+                  <div className="flex items-center gap-[0.6rem]">
+                    <span className={titulo}>Posición del eslogan</span>
+                    <div className="flex gap-[0.3rem] rounded-full bg-zinc-100 p-[0.2rem]">
+                      {[
+                        ['arriba', 'Bajo el nombre'],
+                        ['abajo', 'Abajo'],
+                      ].map(([clave, texto]) => (
+                        <button
+                          key={clave}
+                          type="button"
+                          aria-pressed={posEslogan === clave}
+                          onClick={() => setPosEslogan(clave)}
+                          className={`rounded-full px-[0.8rem] py-[0.35rem] text-[0.82rem] font-semibold transition-colors ${posEslogan === clave ? 'bg-zinc-900 text-white' : 'text-zinc-500 hover:text-zinc-900'}`}
+                        >
+                          {texto}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <label className="grid gap-[0.3rem]">
                   <span className={titulo}>Otro texto (horario, dirección...)</span>
-                  <input value={campoAbajo2} onChange={e => setCampoAbajo2(e.target.value)} maxLength={32} placeholder="De lunes a sábado, de 10 a 20" className={campo} />
-                  <span className="text-[0.75rem] text-zinc-500">Máx. 32 caracteres</span>
+                  <input value={campoAbajo2} onChange={e => setCampoAbajo2(e.target.value)} maxLength={modo === 'admin' ? undefined : 32} placeholder="De lunes a sábado, de 10 a 20" className={campo} />
+                  {modo !== 'admin' && <span className="text-[0.75rem] text-zinc-500">Máx. 32 caracteres</span>}
                 </label>
                 {/* En el panel de Jesús: el tamaño de todos los textos y las redes con icono, debajo de todo */}
                 {!esCliente && (
@@ -1645,7 +1810,7 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
                           </div>
                         )
                       })}
-                      {lineas.length < MAX_LINEAS && (
+                      {(modo === 'admin' || lineas.length < MAX_LINEAS) && (
                         <button
                           type="button"
                           onClick={() => setLineas(ls => [...ls, { icono: '', texto: '' }])}
@@ -1654,6 +1819,7 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
                           Añadir campo
                         </button>
                       )}
+                      <p className="text-[0.75rem] text-zinc-500">Los campos salen juntos en una fila. Con icono y sin texto, sale solo el icono.</p>
                     </div>
                   </>
                 )}
@@ -2074,6 +2240,20 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
               SVG para imprenta
             </button>
           </div>
+          {/* Guardar este diseño en las copias de QR, para reabrirlo después */}
+          {guardar && (
+            <div className="mt-[0.75rem] grid gap-[0.5rem]">
+              <label className="grid gap-[0.3rem]">
+                <span className={titulo}>Nombre de la copia</span>
+                <input value={nombreCopia} onChange={e => setNombreCopia(e.target.value)} className={`${campo} text-[0.88rem]`} placeholder="QR de Restaurante Brasas" />
+              </label>
+              <button type="button" onClick={guardarCopia} disabled={guardandoCopia || !nombreCopia.trim()} className="min-h-[2.9rem] rounded-[0.75rem] bg-white font-semibold ring-1 ring-zinc-300 disabled:opacity-50">
+                {guardandoCopia ? 'Guardando...' : 'Guardar en copias'}
+              </button>
+              {avisoCopia && <p className="text-[0.85rem] font-semibold text-emerald-700">{avisoCopia}</p>}
+              {errorCopia && <p className="text-[0.85rem] font-semibold text-red-600">{errorCopia}</p>}
+            </div>
+          )}
           <p className="text-[0.8rem] leading-[1.45] text-zinc-500">
             Antes de imprimir en serio, pruébalo con dos o tres móviles distintos. Tamaño mínimo impreso: unos 3 cm de lado. En el SVG, si la imprenta no tiene la
             tipografía, pídeles que pasen los textos a trazados (o mándales también el PNG).
