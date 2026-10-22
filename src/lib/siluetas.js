@@ -127,16 +127,17 @@ export const mascaraSilueta = clave => {
   return `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1">${piezas}</svg>`)}")`
 }
 
-/* Diseños del editor del cliente: cada silueta del QR con sus colores puestos (como los estilos, más su silueta) */
+/* Diseños del editor del cliente: cada silueta del QR con sus colores puestos (como los estilos, más su silueta).
+   centroRed: el logo de red que lleva en el centro (solo en el editor público); los demás, sin nada en el centro */
 export const DISENOS = [
   // El de toda la vida: el QR cuadrado, sin silueta, negro sobre la placa blanca
   { clave: 'sil-base', nombre: 'Clásico', silueta: '', placa: '#FFFFFF', qr: '#141414' },
-  { clave: 'sil-corazon', nombre: 'Corazón', silueta: 'corazon', placa: '#FFFFFF', qr: '#833AB4', degradado: ['#833AB4', '#C13584', '#E1306C', '#F77737'] },
-  { clave: 'sil-pulgar', nombre: 'Me gusta', silueta: 'pulgar', placa: '#FFFFFF', qr: '#0A2E73', degradado: ['#0A2E73', '#0866FF', '#1E8CFF'] },
-  { clave: 'sil-bocadillo', nombre: 'Mensaje', silueta: 'bocadillo', placa: '#FFFFFF', qr: '#075E54', degradado: ['#075E54', '#128C7E', '#1DA851'] },
+  { clave: 'sil-corazon', nombre: 'Corazón', silueta: 'corazon', centroRed: 'instagram', placa: '#FFFFFF', qr: '#833AB4', degradado: ['#833AB4', '#C13584', '#E1306C', '#F77737'] },
+  { clave: 'sil-pulgar', nombre: 'Me gusta', silueta: 'pulgar', centroRed: 'facebook', placa: '#FFFFFF', qr: '#0A2E73', degradado: ['#0A2E73', '#0866FF', '#1E8CFF'] },
+  { clave: 'sil-bocadillo', nombre: 'Mensaje', silueta: 'bocadillo', centroRed: 'whatsapp', placa: '#FFFFFF', qr: '#075E54', degradado: ['#075E54', '#128C7E', '#1DA851'] },
   // contorno: el color del borde de la silueta, si no es el de las esquinas del QR
-  { clave: 'sil-estrella', nombre: 'Estrella', silueta: 'estrella', placa: '#FFFFFF', qr: '#1A57C8', degradado: ['#1A57C8', '#C5221F', '#B06000', '#188038'], contorno: '#B85A0E' },
-  { clave: 'sil-ubicacion', nombre: 'Ubicación', silueta: 'ubicacion', placa: '#FFFFFF', qr: '#8E1B1B', degradado: ['#8E1B1B', '#C5221F'], contorno: '#2B2B2B' },
+  { clave: 'sil-estrella', nombre: 'Estrella', silueta: 'estrella', centroRed: 'google', placa: '#FFFFFF', qr: '#1A57C8', degradado: ['#1A57C8', '#C5221F', '#B06000', '#188038'], contorno: '#B85A0E' },
+  { clave: 'sil-ubicacion', nombre: 'Ubicación', silueta: 'ubicacion', centroRed: 'google', placa: '#FFFFFF', qr: '#8E1B1B', degradado: ['#8E1B1B', '#C5221F'], contorno: '#2B2B2B' },
   // muestra: el color de su muestra, si el de sus puntos es tan oscuro que no se ve sobre el fondo del editor
   { clave: 'sil-taza', nombre: 'Taza de café', silueta: 'taza', placa: '#4A2E1F', qr: '#4A2E1F', muestra: '#A86B3C' },
   { clave: 'sil-flor', nombre: 'Flor', silueta: 'flor', placa: '#F2C9CF', qr: '#B5656B' },

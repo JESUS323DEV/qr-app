@@ -232,6 +232,9 @@ export const contactoForm = {
 
 // Pestaña Web completa del hero: el siguiente escalón para quien quiere más
 // Enlace del menú hamburguesa a las webs completas (platform)
+// El enlace del menú hamburguesa al editor de QR gratis (/generador-qr), debajo de las webs completas
+export const generadorQr = { texto: 'Generador QR', url: '/generador-qr' }
+
 export const webCompleta = {
   texto: 'Webs completas a medida',
   url: 'https://landig-demos.netlify.app/',

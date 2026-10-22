@@ -17,6 +17,8 @@ const AdminPage = lazy(() => import('./pages/AdminPage'))
 const DisenosPage = lazy(() => import('./pages/DisenosPage'))
 // Editor de QR del cliente (con PIN): aparte también, lleva el generador de QR
 const MiQrPage = lazy(() => import('./pages/MiQrPage'))
+// El editor de QR gratis y abierto (sin PIN): aparte también, lleva el generador de QR
+const GeneradorPublicoPage = lazy(() => import('./pages/GeneradorPublicoPage'))
 
 // Gestión interna: solo con el servidor de desarrollo. En el build de Netlify import.meta.env.DEV es false,
 // así que ni la página ni su código se publican
@@ -25,7 +27,7 @@ const GestionPage = import.meta.env.DEV ? lazy(() => import('./pages/GestionPage
 // El SEO de cada ruta, que se pone al cambiar de página (todas salen del mismo HTML): la dirección canónica en mostraq.es (sin parámetros, así
 // Google se queda con ella aunque la web se abra por la dirección de Netlify o con ?utm_... de Instagram), si se indexa o no y la descripción.
 // Los paneles, las demos y las copias para enseñar no se indexan.
-const NO_INDEXAR = ['/demo', '/admin', '/mi-carta', '/mi-qr', '/panel', '/disenos', '/gestion', '/miniweb']
+const NO_INDEXAR = ['/generador-qr', '/demo', '/admin', '/mi-carta', '/mi-qr', '/panel', '/disenos', '/gestion', '/miniweb']
 const DESCRIPCIONES = {
   '/catalogo': 'Mira los diseños de Mostraq para negocios locales: miniwebs y cartas para restaurantes, belleza, salud y tiendas.',
   '/crear-qr': 'Diseño de QR personalizado para tu negocio: tus colores, tu logo y tus redes, impreso en una placa de calidad.',
@@ -89,6 +91,8 @@ export default function App() {
         {/* Panel de Jesús: textos, fotos y colores de cualquier página, y copias de demos (Supabase) */}
         <Route path="/admin" element={<Suspense fallback={null}><AdminPage /></Suspense>} />
         {/* Editor de QR del cliente: el enlace y el PIN se los da Jesús (se crean en /admin) */}
+        {/* El editor de QR gratis: sin enlaces desde ningún sitio y sin indexar, de momento */}
+        <Route path="/generador-qr" element={<Suspense fallback={null}><GeneradorPublicoPage /></Suspense>} />
         <Route path="/mi-qr/:slug" element={<Suspense fallback={null}><MiQrPage /></Suspense>} />
         {GestionPage && (
           <Route path="/gestion" element={<Suspense fallback={null}><GestionPage /></Suspense>} />

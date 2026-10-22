@@ -6,7 +6,7 @@ import { SocialIcon } from '../components/SocialIcons'
 import { COLORES_REDES } from '../lib/coloresRedes'
 import { cartas, marcaDe, rutaCarta } from '../cartas'
 import { enlaceWhatsapp } from '../lib/whatsapp'
-import { marca, hero, porque, pasos, comoFunciona, ventajas, seo, planes, planesDetalle, precio, preguntas, cierre, contactoForm, webCompleta, cartasMiniwebs, escaparate, menu } from '../landing/contenido'
+import { marca, hero, porque, pasos, comoFunciona, ventajas, seo, planes, planesDetalle, precio, preguntas, cierre, contactoForm, webCompleta, cartasMiniwebs, escaparate, menu, generadorQr } from '../landing/contenido'
 import useVueltaPestanas from '../lib/useVueltaPestanas'
 import { ESCALA_LANDING } from '../lib/escalaTexto'
 import { DOMINIO } from '../lib/dominio'
@@ -203,6 +203,13 @@ function MenuHamburguesa({ alContacto }) {
                   {webCompleta.texto}
                   <ArrowUpRight className="h-[1rem] w-[1rem]" aria-hidden="true" />
                 </a>
+              </li>
+              {/* El editor de QR gratis, debajo de las webs completas */}
+              <li className="border-b border-linea">
+                <Link to={generadorQr.url} onClick={() => setAbierto(false)} className="flex items-center gap-[0.35rem] py-[0.8rem] text-[0.95rem] font-semibold transition-colors hover:text-acento">
+                  {generadorQr.texto}
+                  <ArrowUpRight className="h-[1rem] w-[1rem]" aria-hidden="true" />
+                </Link>
               </li>
               {menu.legales.map(l => (
                 <li key={l.texto} className="border-b border-linea">
