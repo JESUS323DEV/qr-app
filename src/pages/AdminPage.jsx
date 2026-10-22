@@ -2649,6 +2649,9 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
   // El texto extra (un horario o lo que se quiera): solo lo pintan Editorial, Cortes (Diagonal) y Fullbleed
   // Con esas tres portadas, el texto extra empieza con uno de ejemplo (se ve y se guarda aunque no lo toques)
   const textoExtra = textosMini.info ?? inicioBase?.info ?? TEXTO_EXTRA_EJEMPLO
+  // El texto del botón de la portada ("Ver menú", "Ver servicios"...): solo si la portada de partida lleva botón
+  const hayBotonPortada = Boolean(inicioBase?.boton && inicioBase?.botonA)
+  const textoBoton = textosMini.boton ?? inicioBase?.boton ?? ''
   const conTextoExtra = ['editorial', 'diagonal', 'fullbleed'].includes(hero)
   const MAX_TEXTO_EXTRA = 60
   const textosEditados = Object.keys(textosMini).length > 0
@@ -2658,6 +2661,7 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
         ...(textosMini.titular !== undefined ? { 'hero.pestanas.0.titular': [textoGrande.trim()].filter(Boolean) } : {}),
         ...(textosMini.descripcion !== undefined ? { 'hero.pestanas.0.descripcion': textoPequeno.trim() } : {}),
         ...(textosMini.info !== undefined ? { 'hero.pestanas.0.info': textoExtra.trim() } : {}),
+        ...(textosMini.boton !== undefined ? { 'hero.pestanas.0.boton': textoBoton.trim() } : {}),
       }
     : {}
   const colorDelTexto = colorTexto || marcaBase?.theme?.colors?.text || '#000000'
@@ -2756,6 +2760,7 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
       ...(textosMini.titular !== undefined ? { titular: [textoGrande.trim()].filter(Boolean) } : {}),
       ...(textosMini.descripcion !== undefined ? { descripcion: textoPequeno.trim() } : {}),
       ...(conTextoExtra ? { info: textoExtra.trim() } : {}),
+      ...(textosMini.boton !== undefined ? { boton: textoBoton.trim() } : {}),
     }
     const inicioCambio = {
       ...(producto === 'miniweb' && barra ? { 'hero.barra': barra } : {}),
@@ -3965,6 +3970,16 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                     {textoPequeno.length}/{maxDe(inicioBase?.descripcion ?? 'Descripción de la portada del negocio, en pocas palabras')}
                   </span>
                 </div>
+                {hayBotonPortada && (
+                  <div className="grid gap-[0.3rem]">
+                    <div>
+                      <p className="text-[0.8rem] font-semibold text-zinc-500">Texto del botón</p>
+                      <p className="text-[0.8rem] text-zinc-400">Lo que pone el botón de la portada (por ejemplo, Ver menú o Ver servicios).</p>
+                    </div>
+                    <input value={textoBoton} maxLength={24} onChange={e => setTextosMini(t => ({ ...t, boton: e.target.value }))} className={CAMPO} />
+                    <span className="justify-self-end text-[0.75rem] text-zinc-500">{textoBoton.length}/24</span>
+                  </div>
+                )}
                 {conTextoExtra && (
                   <div className="grid gap-[0.3rem]">
                     <div>

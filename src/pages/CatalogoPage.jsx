@@ -16,12 +16,8 @@ import { captura, MINIWEBS_DEL_EDITOR } from '../lib/ejemplosMiniwebs'
 // Todas las demos de cada tipo, con lo que necesita cada móvil del catálogo
 const DEMOS = {
   ficha: secuenciaDemos.filter(n => tipoDe(n) === 'ficha').map(n => ({ clave: n.slug, nombre: n.nombre, sector: n.sector, tematica: tematicaDe(n), ruta: rutaNegocio(n) })),
-  miniweb: [
-    ...secuenciaDemos.filter(n => tipoDe(n) === 'miniweb').map(n => ({ clave: n.slug, nombre: n.nombre, sector: n.sector, tematica: tematicaDe(n), ruta: rutaNegocio(n), estatica: true, foto: captura(n.slug) })),
-    ...MINIWEBS_DEL_EDITOR,
-  ]
-    // Primero las que ya tienen captura (el orden entre ellas no cambia)
-    .sort((a, b) => Number(Boolean(b.foto)) - Number(Boolean(a.foto))),
+  // Las miniwebs de ejemplo: solo la lista fija del Editor (primero las que ya tienen captura)
+  miniweb: [...MINIWEBS_DEL_EDITOR].sort((a, b) => Number(Boolean(b.foto)) - Number(Boolean(a.foto))),
   carta: porTematica(
     cartas
       .filter(c => c.demo)
