@@ -50,6 +50,7 @@ const datos = {
   '@type': 'ProfessionalService',
   name: 'Mostraq',
   url: `${dominio}/`,
+  logo: `${dominio}/icon-512.png`,
   description: descripcion,
   areaServed: { '@type': 'City', name: 'Barcelona' },
   address: { '@type': 'PostalAddress', addressLocality: 'Barcelona', addressCountry: 'ES' },
