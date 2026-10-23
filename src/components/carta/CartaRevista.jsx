@@ -37,7 +37,7 @@ function MenuDia({ menu }) {
 
       {/* Foto del menú: llena el hueco que queda (se encoge en móviles bajos) */}
       {menu.foto && (
-        <div className="relative mt-[0.7rem] min-h-[4.5rem] flex-1 overflow-hidden rounded-[0.6rem] [@media(min-height:46rem)]:mt-[0.9rem]">
+        <div className="relative mt-[0.7rem] min-h-[8rem] flex-1 overflow-hidden rounded-[0.6rem] [@media(min-height:46rem)]:mt-[0.9rem] [@media(min-height:46rem)]:min-h-[11rem]">
           <Img src={menu.foto} alt="" className="absolute inset-0 h-full w-full object-cover" />
         </div>
       )}

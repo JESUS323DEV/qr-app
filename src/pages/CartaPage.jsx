@@ -306,7 +306,17 @@ export default function CartaPage(props) {
   }, [conCambios, edicionMarca.fila, params])
   // Mientras llega lo de Supabase no se pinta nada, para no enseñar un momento el menú antiguo
   if (destino.cargando || cargando || edicionCarta.cargando || edicionMarca.cargando) return null
-  let carta = conOfertas(conHorario(juntar(conCambios, fila), ahora), ahora)
+  // ?ia=N: los cambios de imágenes (y textos) hechos en el Editor, que deja en localStorage, solo en la vista previa de una demo. Se ponen ANTES de
+  // sacar las ofertas y el menú del día (que copian sus fotos y textos de la carta): si no, la vista previa enseñaba las fotos de antes
+  let conVista = juntar(conCambios, fila)
+  if (conVista?.demo && params.get('ia')) {
+    try {
+      conVista = aplicar(conVista, JSON.parse(localStorage.getItem('mostraq-vista-ia') ?? 'null'))
+    } catch {
+      // Sin ellos, la carta se ve como está guardada
+    }
+  }
+  let carta = conOfertas(conHorario(conVista, ahora), ahora)
   // En las demos, el estilo de carta se puede probar desde la dirección (?diseno=polaroid): lo usa /admin
   if (carta?.demo && ESTILOS_CARTA.has(pruebaDiseno)) carta = { ...carta, diseno: pruebaDiseno }
   // ?tprecio=xs|xl: el tamaño del precio del menú (carta.tamanoPrecio), para la vista previa del Editor
@@ -320,14 +330,6 @@ export default function CartaPage(props) {
   if (carta?.demo && /^[0-9a-f]{6}$/i.test(pruebaCFiltro ?? '')) carta = { ...carta, colorFiltro: `#${pruebaCFiltro}` }
   // ?sub=columna: el subdiseño del estilo (por ahora, Inmersiva con las pestañas en columna); sin él, la base, en fila
   if (carta?.demo && ['fila', 'columna'].includes(pruebaSub)) carta = { ...carta, subdiseno: pruebaSub }
-  // ?ia=N: los cambios de imágenes (y textos) hechos en el Editor, que deja en localStorage, solo en la vista previa de una demo
-  if (carta?.demo && params.get('ia')) {
-    try {
-      carta = aplicar(carta, JSON.parse(localStorage.getItem('mostraq-vista-ia') ?? 'null'))
-    } catch {
-      // Sin ellos, la carta se ve como está guardada
-    }
-  }
   if (incrustada && carta) carta = { ...carta, negocio: null }
   // La clave cambia si el menú del día aparece o desaparece (horario, interruptor): la carta empieza de cero
   // en lo que toca, y no se queda en blanco en la pestaña del menú que ya no existe

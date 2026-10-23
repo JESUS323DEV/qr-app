@@ -2204,8 +2204,8 @@ function ImagenesPorPestana({ original, cambios, cambiar }) {
         zonas.set(clave, { clave, titulo, campos: [...(zonas.get(clave)?.campos ?? []), c] })
       } else otras.push(c)
     }
-    // En Menú y ofertas no se cambia la portada de la carta (zona '0'): solo las fotos del menú, las ofertas y las secciones
-    if (deCarta) return [...zonas.values()].filter(z => z.clave !== '0').sort((x, y) => x.clave.localeCompare(y.clave, 'es', { numeric: true }))
+    // En Menú y ofertas solo se cambian las fotos del menú del día y de las ofertas: ni la portada de la carta (zona '0') ni las secciones de la carta de platos (zonas '3-...')
+    if (deCarta) return [...zonas.values()].filter(z => z.clave !== '0' && !z.clave.startsWith('3-')).sort((x, y) => x.clave.localeCompare(y.clave, 'es', { numeric: true }))
     return [
       ...[...porPestana.entries()].sort((a, b) => a[0] - b[0]).map(([i, campos]) => ({ clave: `p${i}`, titulo: pestanas[i]?.texto ?? `Pestaña ${i + 1}`, campos })),
       ...(otras.length ? [{ clave: 'otras', titulo: 'Otras imágenes', campos: otras }] : []),
@@ -2225,6 +2225,15 @@ function ImagenesPorPestana({ original, cambios, cambiar }) {
   }
   const quitarFoto = i => guardarLista(listaInicio.filter((_, k) => k !== i))
   const anadirFoto = () => guardarLista([...listaInicio, { ...listaInicio[0] }])
+  // Las fotos de las ofertas de una carta (ofertas.fotos, direcciones sueltas): de dos en dos (la galería las enseña por parejas), hasta 6
+  const MAX_FOTOS_OFERTAS = 6
+  const fotosOfertas = Array.isArray(datos.secciones) && datos.ofertas ? (Array.isArray(datos.ofertas.fotos) ? datos.ofertas.fotos : datos.ofertas.foto ? [datos.ofertas.foto] : []) : null
+  const guardarFotosOfertas = nuevas => {
+    for (const ruta of Object.keys(cambios)) {
+      if (ruta.startsWith('ofertas.fotos.')) cambiar(ruta, leerRuta(original, ruta))
+    }
+    cambiar('ofertas.fotos', nuevas)
+  }
   return (
     <div className="grid gap-[1.1rem]">
       {grupos.map(g => (
@@ -2247,11 +2256,40 @@ function ImagenesPorPestana({ original, cambios, cambiar }) {
                 sugerencia={datos.sector ?? ''}
                 quitar={(() => {
                   const m = c.ruta.match(/^hero\.pestanas\.0\.fotos\.(\d+)\.src$/)
+                  const o = c.ruta.match(/^ofertas\.fotos\.(\d+)$/)
+                  // Las fotos de las ofertas se añaden y se quitan de dos en dos (botones de abajo), sin X suelta
+                  if (o) return undefined
                   return puedeEditarLista && m && listaInicio.length > rango[0] ? () => quitarFoto(Number(m[1])) : undefined
                 })()}
               />
             </div>
           ))}
+          {/* Fotos de las ofertas, de dos en dos (hasta 6): las nuevas empiezan repitiendo las primeras, para cambiarlas con Buscar o Subir.
+              Si hay un número impar, el primer botón añade solo una para completar la pareja */}
+          {g.clave === '2' && fotosOfertas && fotosOfertas.length > 0 && (
+            <div className="flex flex-wrap gap-[0.5rem]">
+              {fotosOfertas.length < MAX_FOTOS_OFERTAS && (
+                <button
+                  type="button"
+                  onClick={() => guardarFotosOfertas([...fotosOfertas, ...(fotosOfertas.length % 2 ? [fotosOfertas[0]] : [fotosOfertas[0], fotosOfertas[1] ?? fotosOfertas[0]])])}
+                  className="inline-flex items-center gap-[0.4rem] rounded-[0.6rem] px-[0.9rem] py-[0.55rem] text-[0.92rem] font-semibold ring-1 ring-zinc-300 hover:ring-zinc-500"
+                >
+                  <Plus className="h-[1rem] w-[1rem]" aria-hidden="true" />
+                  {fotosOfertas.length % 2 ? 'Completar la pareja' : 'Añadir dos fotos'}
+                </button>
+              )}
+              {fotosOfertas.length > 2 && (
+                <button
+                  type="button"
+                  onClick={() => guardarFotosOfertas(fotosOfertas.slice(0, fotosOfertas.length % 2 ? fotosOfertas.length - 1 : fotosOfertas.length - 2))}
+                  className="inline-flex items-center gap-[0.4rem] rounded-[0.6rem] px-[0.9rem] py-[0.55rem] text-[0.92rem] font-semibold ring-1 ring-zinc-300 hover:ring-zinc-500"
+                >
+                  <X className="h-[1rem] w-[1rem]" aria-hidden="true" />
+                  {fotosOfertas.length % 2 ? 'Quitar la última' : 'Quitar las dos últimas'}
+                </button>
+              )}
+            </div>
+          )}
           {/* Añadir una foto más a Inicio, hasta el máximo del diseño: empieza repitiendo la primera, para cambiarla con Buscar o Subir */}
           {g.clave === 'p0' && puedeEditarLista && listaInicio.length < rango[1] && (
             <button type="button" onClick={anadirFoto} className="inline-flex items-center gap-[0.4rem] justify-self-start rounded-[0.6rem] px-[0.9rem] py-[0.55rem] text-[0.92rem] font-semibold ring-1 ring-zinc-300">

@@ -109,7 +109,7 @@ function MenuDia({ menu }) {
   if (menu.ofertas) return <Ofertas menu={menu} estilo="galeria" />
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-[0.5rem] [@media(min-height:46rem)]:gap-[0.6rem]">
-      <div className="relative min-h-[5rem] flex-1 overflow-hidden rounded-[0.9rem] bg-demo-surface">
+      <div className="relative min-h-[8rem] flex-1 overflow-hidden rounded-[0.9rem] bg-demo-surface [@media(min-height:46rem)]:min-h-[11rem]">
         {menu.foto && <Img src={menu.foto} alt="" className="absolute inset-0 h-full w-full object-cover" />}
         <div className={`absolute inset-0 ${DEGRADADO}`} />
         <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-[0.75rem] p-[0.75rem] [@media(min-height:46rem)]:p-[0.9rem]">

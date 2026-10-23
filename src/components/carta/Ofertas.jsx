@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { X } from 'lucide-react'
 import Img from '../Img'
 
@@ -43,6 +43,120 @@ function FotoAbierta({ src, cerrar }) {
   )
 }
 
+/* Una sola foto grande que va pasando entre las que hay (hasta 4) con un fundido, cada pocos segundos. Se pueden tocar: se abre la que se ve.
+   Con una sola foto, o si la persona pide menos movimiento, se queda quieta */
+function FotoRotativa({ fotos, abrir, className = '' }) {
+  const [actual, setActual] = useState(0)
+  useEffect(() => {
+    if (fotos.length < 2 || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
+    const id = setInterval(() => setActual(n => (n + 1) % fotos.length), 4000)
+    return () => clearInterval(id)
+  }, [fotos.length])
+  return (
+    <button type="button" onClick={() => abrir(fotos[actual] ?? fotos[0])} className={`relative overflow-hidden ${className}`}>
+      {fotos.map((src, k) => (
+        <Img key={`${k}-${src}`} src={src} alt="" className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ${k === actual ? 'opacity-100' : 'opacity-0'}`} />
+      ))}
+      {fotos.length > 1 && (
+        <span className="absolute inset-x-0 bottom-[0.5rem] flex justify-center gap-[0.3rem]" aria-hidden="true">
+          {fotos.map((_, k) => (
+            <span key={k} className={`h-[0.35rem] rounded-full bg-white transition-all duration-500 ${k === actual ? 'w-[1rem] opacity-100' : 'w-[0.35rem] opacity-60'}`} />
+          ))}
+        </span>
+      )}
+    </button>
+  )
+}
+
+/* Galería: las fotos de las ofertas (hasta 6) de dos en dos. Cada pareja se queda quieta unos segundos y luego se desliza hacia un lado y entra la
+   siguiente; al acabar, vuelve a la primera. También se pasan arrastrando con el dedo. Debajo, unos puntos marcan en qué pareja va.
+   Con un número impar de fotos, la última pareja se completa con la primera, para que siempre se vean dos. Con una sola foto, se ve sola y quieta.
+   Al tocar una foto, se abre grande. Si la persona pide menos movimiento, no pasa sola (el dedo sí funciona) */
+const SEGUNDOS_PAREJA = 5
+function GaleriaPorParejas({ fotos, abrir, className = '' }) {
+  const n = fotos.length
+  // Las parejas; con impar (3 o 5), la última se completa con la primera foto
+  const parejas = []
+  if (n === 1) parejas.push([fotos[0]])
+  else for (let i = 0; i < n; i += 2) parejas.push([fotos[i], fotos[i + 1] ?? fotos[0]])
+  const total = parejas.length
+  // Se añade una copia de la primera pareja al final: al llegar a ella se vuelve a la primera sin saltos
+  const pistas = total > 1 ? [...parejas, parejas[0]] : parejas
+  const [indice, setIndice] = useState(0)
+  const [conTransicion, setConTransicion] = useState(true)
+  const arrastre = useRef({ x: null, movido: false })
+  const pausa = useRef(false)
+
+  useEffect(() => {
+    if (total < 2 || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
+    const id = setInterval(() => {
+      if (!pausa.current) setIndice(i => Math.min(i + 1, total))
+    }, SEGUNDOS_PAREJA * 1000)
+    return () => clearInterval(id)
+  }, [total])
+
+  // En la copia del final: cuando acaba de deslizar, se salta sin animación a la primera
+  useEffect(() => {
+    if (total < 2 || indice !== total) return
+    const id = setTimeout(() => {
+      setConTransicion(false)
+      setIndice(0)
+    }, 750)
+    return () => clearTimeout(id)
+  }, [indice, total])
+  useEffect(() => {
+    if (conTransicion) return
+    const id = requestAnimationFrame(() => setConTransicion(true))
+    return () => cancelAnimationFrame(id)
+  }, [conTransicion])
+
+  const empezar = e => {
+    arrastre.current = { x: e.clientX, movido: false }
+    pausa.current = true
+  }
+  const acabar = e => {
+    const { x } = arrastre.current
+    pausa.current = false
+    if (x === null || total < 2) return
+    const dx = e.clientX - x
+    if (Math.abs(dx) > 40) {
+      arrastre.current.movido = true
+      setIndice(i => (dx < 0 ? Math.min(i + 1, total) : Math.max(i - 1, 0)))
+    }
+    arrastre.current.x = null
+  }
+  const tocar = foto => {
+    if (arrastre.current.movido) {
+      arrastre.current.movido = false
+      return
+    }
+    abrir(foto)
+  }
+
+  return (
+    <div className={`relative overflow-hidden rounded-[0.6rem] ${className}`} onPointerDown={empezar} onPointerUp={acabar} onPointerCancel={acabar} style={{ touchAction: 'pan-y' }}>
+      <div className={`flex h-full ${conTransicion ? 'transition-transform duration-[700ms] ease-in-out' : ''}`} style={{ transform: `translateX(-${indice * 100}%)` }}>
+        {pistas.map((pareja, p) => (
+          <div key={p} className={`grid h-full w-full shrink-0 gap-[0.3rem] ${pareja.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+            {pareja.map((src, k) => (
+              <button key={`${k}-${src}`} type="button" onClick={() => tocar(src)} className="relative min-h-0 overflow-hidden rounded-[0.6rem]">
+                <Img src={src} alt="" className="absolute inset-0 h-full w-full object-cover" />
+              </button>
+            ))}
+          </div>
+        ))}
+      </div>
+      {total > 1 && (
+        <span className="pointer-events-none absolute inset-x-0 bottom-[0.5rem] flex justify-center gap-[0.3rem]" aria-hidden="true">
+          {parejas.map((_, k) => (
+            <span key={k} className={`h-[0.35rem] rounded-full bg-white shadow-[0_0_0.2rem_rgb(0_0_0/0.5)] transition-all duration-500 ${k === indice % total ? 'w-[1rem] opacity-100' : 'w-[0.35rem] opacity-60'}`} />
+          ))}
+        </span>
+      )}
+    </div>
+  )
+}
+
 // El precio de una oferta y, si lo hay, el de antes tachado. Su color ("Texto del precio" del Editor; sin él, el de acento) y su tamaño (XS, MD o XL)
 // son los mismos ajustes que los del precio del menú del día
 const COLOR_PRECIO = 'text-[color:var(--demo-precio-texto,var(--demo-accent))]'
@@ -73,7 +187,8 @@ export default function Ofertas({ menu, sobreFoto = false, estilo = 'base', pape
   const texto = sobreFoto ? 'text-white' : 'text-demo-text'
   const suave = sobreFoto ? 'text-white/70' : 'text-demo-muted'
   const raya = sobreFoto ? 'border-white/20' : 'border-demo-text/15'
-  const fotos = (menu.fotos ?? []).slice(0, 3)
+  // Hasta 4 fotos (el Editor deja añadir hasta ese máximo); al tocar una, se abre grande
+  const fotos = (menu.fotos ?? []).slice(0, 4)
   const [primera, ...resto] = menu.ofertas
 
   // sobrePrimario: el título va directamente sobre el color Principal (Polaroid con papelitos), así que cambia a blanco u oscuro según lo claro que sea
@@ -91,10 +206,10 @@ export default function Ofertas({ menu, sobreFoto = false, estilo = 'base', pape
     cuerpo = (
       <>
         {fotos.length > 0 && (
-          <div className="mb-[0.8rem] grid min-h-[5.5rem] flex-1 gap-[0.7rem] px-[0.3rem] pt-[0.3rem]" style={{ gridTemplateColumns: `repeat(${fotos.length}, minmax(0, 1fr))` }}>
+          <div className={`mb-[0.8rem] grid flex-1 gap-[0.7rem] px-[0.3rem] pt-[0.3rem] ${fotos.length > 3 ? 'min-h-[15rem] [@media(min-height:46rem)]:min-h-[19rem]' : 'min-h-[9rem] [@media(min-height:46rem)]:min-h-[12rem]'}`} style={{ gridTemplateColumns: `repeat(${fotos.length > 3 ? 2 : fotos.length}, minmax(0, 1fr))`, gridAutoRows: 'minmax(0, 1fr)' }}>
             {fotos.map((src, i) => (
               <button
-                key={src}
+                key={`${i}-${src}`}
                 type="button"
                 onClick={() => setAbierta(src)}
                 className={`flex min-h-0 flex-col bg-white p-[0.3rem] pb-[1.1rem] transition-transform duration-200 hover:rotate-0 hover:scale-[1.04] ${SOMBRA} ${GIROS[i % GIROS.length]}`}
@@ -123,14 +238,10 @@ export default function Ofertas({ menu, sobreFoto = false, estilo = 'base', pape
     )
   } else if (estilo === 'revista') {
     // Una foto grande, la primera oferta destacada y el resto en lista editorial
-    const foto = fotos[0] ?? menu.foto
+    const lista = fotos.length ? fotos : menu.foto ? [menu.foto] : []
     cuerpo = (
       <>
-        {foto && (
-          <div className="relative mb-[0.7rem] min-h-[4.5rem] flex-1 overflow-hidden rounded-[0.6rem]">
-            <Img src={foto} alt="" className="absolute inset-0 h-full w-full object-cover" />
-          </div>
-        )}
+        {lista.length > 0 && <FotoRotativa fotos={lista} abrir={setAbierta} className="mb-[0.7rem] min-h-[9rem] flex-1 rounded-[0.6rem] [@media(min-height:46rem)]:min-h-[12rem]" />}
         <div className="shrink-0">
           {titulo('italic text-[2rem] [@media(min-height:46rem)]:text-[2.4rem]')}
           {primera && (
@@ -164,15 +275,7 @@ export default function Ofertas({ menu, sobreFoto = false, estilo = 'base', pape
     // Un mosaico de fotos a sangre (la primera grande y dos pequeñas) y las ofertas en filas grandes
     cuerpo = (
       <>
-        {fotos.length > 0 && (
-          <div className={`mb-[0.8rem] grid min-h-[6rem] flex-1 gap-[0.3rem] ${fotos.length >= 3 ? 'grid-cols-2 grid-rows-2' : fotos.length === 2 ? 'grid-cols-2' : 'grid-cols-1'}`}>
-            {fotos.map((src, i) => (
-              <button key={src} type="button" onClick={() => setAbierta(src)} className={`relative min-h-0 overflow-hidden rounded-[0.6rem] ${fotos.length >= 3 && i === 0 ? 'row-span-2' : ''}`}>
-                <Img src={src} alt="" className="absolute inset-0 h-full w-full object-cover" />
-              </button>
-            ))}
-          </div>
-        )}
+        {(menu.fotos ?? []).length > 0 && <GaleriaPorParejas fotos={(menu.fotos ?? []).slice(0, 6)} abrir={setAbierta} className="mb-[0.8rem] min-h-[10rem] flex-1 [@media(min-height:46rem)]:min-h-[13rem]" />}
         <div className="shrink-0">
           {titulo('font-extrabold tracking-[-0.02em] text-[1.9rem] [@media(min-height:46rem)]:text-[2.3rem]')}
           <ul className="mt-[0.5rem]">
