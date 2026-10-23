@@ -1,7 +1,7 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import CampoColor from '../components/CampoColor'
 import { Link, useSearchParams } from 'react-router-dom'
-import { Armchair, ArrowLeft, BadgePercent, List, ArrowUp, ArrowUpRight, Beer, BookImage, Camera, ChevronDown, ChevronsDownUp, CircleUser, Coffee, Copy, Croissant, Fish, Frame, GalleryHorizontal, IdCard, ImagePlus, LayoutGrid, Maximize, Menu, Minus, Newspaper, PanelTop, Pizza, Plus, QrCode, RotateCcw, Scissors, Search, Slice, Smartphone, Sparkles, Store, Trash2, UtensilsCrossed, X } from 'lucide-react'
+import { Armchair, ArrowLeft, ChevronLeft, ChevronRight, BadgePercent, List, ArrowUp, ArrowUpRight, Beer, BookImage, Camera, ChevronDown, ChevronsDownUp, CircleUser, Coffee, Copy, Croissant, Fish, Frame, GalleryHorizontal, IdCard, ImagePlus, LayoutGrid, Maximize, Menu, Minus, Newspaper, PanelTop, Pizza, Plus, QrCode, RotateCcw, Scissors, Search, Slice, Smartphone, Sparkles, Store, Trash2, UtensilsCrossed, X } from 'lucide-react'
 import GeneradorQR from '../components/GeneradorQR'
 import { supabase } from '../lib/supabase'
 import { aplicar, conEdicion } from '../lib/ediciones'
@@ -4343,12 +4343,12 @@ function QRSuelto({ copias, cargada, alGuardar }) {
   const paginas = paginasConQR(copias)
   const pagina = paginas.find(p => p.clave === clave)
 
-  // Guarda el diseño: si es el de una copia abierta y se deja su nombre, la actualiza; si no, crea una copia nueva
-  const guardar = async ({ nombre: nombreCopia, url, estado }) => {
+  // Guarda el diseño: con una copia abierta, "Guardar cambios" la actualiza (aunque se cambie el nombre) y "Guardar como nueva" crea otra; sin copia abierta, crea una nueva
+  const guardar = async ({ nombre: nombreCopia, url, estado, comoNueva }) => {
     // El grupo de una copia abierta se conserva (se guarda dentro del diseño, como diseno._grupo)
     const fila = { nombre: nombreCopia, pagina: clave || null, url, diseno: { ...estado, ...(abierta?.diseno?._grupo ? { _grupo: abierta.diseno._grupo } : {}) } }
     const { data, error } =
-      abierta && abierta.nombre === nombreCopia
+      abierta && !comoNueva
         ? await supabase.from('qr_copias').update(fila).eq('id', abierta.id).select().single()
         : await supabase.from('qr_copias').insert(fila).select().single()
     if (error) throw new Error('No se ha podido guardar. ¿Has ejecutado el SQL 012_qr_copias.sql en Supabase?')
@@ -4371,6 +4371,7 @@ function QRSuelto({ copias, cargada, alGuardar }) {
         fuentes={pagina?.fuentes}
         estadoInicial={abierta?.diseno}
         guardar={guardar}
+        copiaAbierta={Boolean(abierta)}
         nombreCopiaInicial={abierta?.nombre ?? (pagina ? `QR de ${pagina.nombre}` : '')}
         proponer={(descripcion, siluetas) =>
           llamar('asistente', {
@@ -4478,6 +4479,125 @@ function CambiarQR({ copias }) {
 }
 
 /* Copias de QR (en Páginas): los diseños del Editor QR guardados con "Guardar en copias". Se abren en el Editor QR para retocarlos y se borran aquí. */
+/* Vistazo de un grupo de copias de QR: un recuadro encima del panel con la placa de cada copia en grande (la misma que se descarga), flechas
+   (y teclas) para pasar de una a otra y miniaturas abajo para saltar. Se cierra con la X, tocando fuera o con Escape.
+   filas: las copias del grupo (nombre, url, diseno) */
+function VistazoQR({ titulo, filas, cerrar }) {
+  const [actual, setActual] = useState(0)
+  const n = filas.length
+  const ir = d => setActual(i => (i + d + n) % n)
+  useEffect(() => {
+    const teclas = e => {
+      if (e.key === 'Escape') cerrar()
+      else if (e.key === 'ArrowRight') ir(1)
+      else if (e.key === 'ArrowLeft') ir(-1)
+    }
+    window.addEventListener('keydown', teclas)
+    return () => window.removeEventListener('keydown', teclas)
+  }, [n]) // eslint-disable-line react-hooks/exhaustive-deps
+  const f = filas[actual]
+  if (!f) return null
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-[0.75rem]" onClick={cerrar}>
+      <div role="dialog" aria-modal="true" aria-label={`Vistazo de ${titulo}`} onClick={e => e.stopPropagation()} className="relative grid max-h-[94svh] w-full max-w-[34rem] gap-[0.7rem] overflow-y-auto rounded-[1.1rem] bg-white p-[1rem] shadow-[0_1.5rem_3rem_-1rem_rgb(0_0_0/0.6)]">
+        <div className="flex items-center justify-between gap-[0.75rem]">
+          <p className="min-w-0 truncate text-[0.85rem] font-semibold text-zinc-500">{titulo} · {actual + 1} de {n}</p>
+          <button type="button" onClick={cerrar} aria-label="Cerrar el vistazo" className="shrink-0 rounded-full p-[0.35rem] text-zinc-500 hover:text-zinc-900">
+            <X className="h-[1.2rem] w-[1.2rem]" aria-hidden="true" />
+          </button>
+        </div>
+        <div className="flex items-center gap-[0.4rem]">
+          {n > 1 && (
+            <button type="button" onClick={() => ir(-1)} aria-label="Placa anterior" className="shrink-0 rounded-full bg-zinc-100 p-[0.45rem] text-zinc-700 hover:bg-zinc-200">
+              <ChevronLeft className="h-[1.3rem] w-[1.3rem]" aria-hidden="true" />
+            </button>
+          )}
+          <div className="mx-auto w-full max-w-[19rem]">
+            <GeneradorQR key={f.id} modo="copia" url={f.url} nombre={f.nombre} estadoInicial={f.diseno} />
+          </div>
+          {n > 1 && (
+            <button type="button" onClick={() => ir(1)} aria-label="Placa siguiente" className="shrink-0 rounded-full bg-zinc-100 p-[0.45rem] text-zinc-700 hover:bg-zinc-200">
+              <ChevronRight className="h-[1.3rem] w-[1.3rem]" aria-hidden="true" />
+            </button>
+          )}
+        </div>
+        <p className="text-center text-[1rem] font-bold">{f.nombre}</p>
+        <p className="truncate text-center text-[0.8rem] text-zinc-500">{f.url.replace(/^https?:\/\//, '')}</p>
+        {n > 1 && (
+          <div className="flex justify-center gap-[0.5rem] overflow-x-auto pb-[0.2rem]">
+            {filas.map((g, k) => (
+              <button
+                key={g.id}
+                type="button"
+                onClick={() => setActual(k)}
+                aria-label={`Ver ${g.nombre}`}
+                aria-pressed={k === actual}
+                className={`w-[3.6rem] shrink-0 rounded-[0.4rem] p-[0.15rem] transition-opacity ${k === actual ? 'ring-2 ring-zinc-900' : 'opacity-60 hover:opacity-100'}`}
+              >
+                <span className="pointer-events-none block">
+                  <GeneradorQR modo="copia" url={g.url} nombre={g.nombre} estadoInicial={g.diseno} />
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+/* Recuadro para escribir un nombre (renombrar un grupo): el mismo aspecto que el de Confirmar, con un campo de texto.
+   pregunta: { titulo, valor (el de partida), boton, accion(nombre) }; accion se llama con el nombre ya sin espacios sobrantes */
+function PedirNombre({ pregunta, alCerrar }) {
+  const [valor, setValor] = useState('')
+  useEffect(() => {
+    if (pregunta) setValor(pregunta.valor ?? '')
+  }, [pregunta])
+  useEffect(() => {
+    if (!pregunta) return
+    const conEscape = e => e.key === 'Escape' && alCerrar()
+    window.addEventListener('keydown', conEscape)
+    return () => window.removeEventListener('keydown', conEscape)
+  }, [pregunta, alCerrar])
+  if (!pregunta) return null
+  const limpio = valor.trim()
+  const guardar = () => {
+    if (!limpio) return
+    alCerrar()
+    pregunta.accion(limpio)
+  }
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center" onClick={alCerrar}>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="pedir-nombre-titulo"
+        onClick={e => e.stopPropagation()}
+        className="w-full max-w-[26rem] rounded-t-[1.25rem] bg-white px-[1.25rem] pb-[1.25rem] pt-[1.1rem] shadow-[0_-0.5rem_2rem_rgb(0_0_0/0.2)] sm:rounded-[1.25rem]"
+      >
+        <h2 id="pedir-nombre-titulo" className="text-[1.15rem] font-bold">{pregunta.titulo}</h2>
+        <input
+          autoFocus
+          value={valor}
+          onChange={e => setValor(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && guardar()}
+          maxLength={40}
+          aria-label="Nombre del grupo"
+          className={`${CAMPO} mt-[0.7rem]`}
+        />
+        <div className="mt-[1.1rem] grid grid-cols-2 gap-[0.6rem]">
+          <button type="button" onClick={alCerrar} className="rounded-[0.6rem] py-[0.75rem] text-[1rem] font-semibold ring-1 ring-zinc-300">
+            Cancelar
+          </button>
+          <button type="button" onClick={guardar} disabled={!limpio} className="rounded-[0.6rem] bg-zinc-900 py-[0.75rem] text-[1rem] font-semibold text-white disabled:opacity-40">
+            {pregunta.boton ?? 'Guardar'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function CopiasQR({ version, abrir }) {
   const [lista, setLista] = useState(null)
   const [error, setError] = useState('')
@@ -4485,6 +4605,10 @@ function CopiasQR({ version, abrir }) {
   // Aviso propio (no el del navegador) al disolver un grupo; los hooks, antes del return de más abajo
   const [pregunta, setPregunta] = useState(null)
   const cerrarPregunta = useCallback(() => setPregunta(null), [])
+  const [pedirNombre, setPedirNombre] = useState(null)
+  const cerrarPedirNombre = useCallback(() => setPedirNombre(null), [])
+  // El Vistazo de un grupo: { titulo, filas } o null
+  const [vistazo, setVistazo] = useState(null)
   const cargar = useCallback(() => {
     supabase
       .from('qr_copias')
@@ -4524,6 +4648,23 @@ function CopiasQR({ version, abrir }) {
   ).sort(([a], [b]) => a.localeCompare(b, 'es'))
   const sueltas = (lista ?? []).filter(f => !f.diseno?._grupo)
 
+  // Renombrar un grupo: todas sus copias pasan a llamarse con el nombre nuevo
+  const renombrar = nombre =>
+    setPedirNombre({
+      titulo: `Renombrar «${nombre}»`,
+      valor: nombre,
+      boton: 'Guardar',
+      accion: async nuevo => {
+        if (nuevo === nombre) return
+        if (elementos.some(e => e.grupo === nuevo)) {
+          setPregunta({ titulo: 'Ese nombre ya existe', texto: 'Ya hay un grupo con ese nombre. Elige otro.', boton: 'Vale', accion: () => {} })
+          return
+        }
+        const resultados = await Promise.all(elementos.filter(e => e.grupo === nombre).map(e => e.poner(nuevo)))
+        if (resultados.some(r => r.error)) setPregunta({ titulo: 'No se ha podido', texto: 'No se han podido renombrar todas las copias del grupo.', boton: 'Vale', accion: () => {} })
+        cargar()
+      },
+    })
   const disolver = nombre =>
     setPregunta({
       titulo: `¿Disolver el grupo «${nombre}»?`,
@@ -4568,6 +4709,8 @@ function CopiasQR({ version, abrir }) {
         <span className="text-[0.9rem] text-zinc-500">{lista?.length ?? 0}</span>
       </summary>
       <Confirmar pregunta={pregunta} alCerrar={cerrarPregunta} />
+      <PedirNombre pregunta={pedirNombre} alCerrar={cerrarPedirNombre} />
+      {vistazo && <VistazoQR titulo={vistazo.titulo} filas={vistazo.filas} cerrar={() => setVistazo(null)} />}
       {error && <p className="px-[1rem] py-[0.7rem] text-[0.85rem] font-semibold text-red-600">{error}</p>}
       <NuevoGrupo elementos={elementos} recargar={cargar} />
       <MoverCopias marcadas={marcadas} elementos={elementos} recargar={cargar} limpiar={() => setMarcadas([])} />
@@ -4576,6 +4719,29 @@ function CopiasQR({ version, abrir }) {
           <summary className="flex cursor-pointer items-baseline justify-between gap-[1rem] bg-zinc-50 px-[1rem] py-[0.6rem] text-[0.9rem] font-bold">
             {nombre}
             <span className="flex items-baseline gap-[0.9rem]">
+              {/* Vistazo: un recuadro con las placas del grupo, para pasar de una a otra */}
+              <button
+                type="button"
+                onClick={e => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  setVistazo({ titulo: nombre, filas })
+                }}
+                className="text-[0.78rem] font-semibold underline underline-offset-[0.2em]"
+              >
+                Vistazo
+              </button>
+              <button
+                type="button"
+                onClick={e => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  renombrar(nombre)
+                }}
+                className="text-[0.78rem] font-semibold underline underline-offset-[0.2em]"
+              >
+                Renombrar
+              </button>
               <button
                 type="button"
                 onClick={e => {
@@ -4933,6 +5099,29 @@ function Lista({ filas, abrir, recargar, copia }) {
   // Disolver un grupo: se borra el grupo y sus copias se quedan (sin grupo)
   const [preguntaGrupo, setPreguntaGrupo] = useState(null)
   const cerrarPreguntaGrupo = useCallback(() => setPreguntaGrupo(null), [])
+  const [pedirNombre, setPedirNombre] = useState(null)
+  const cerrarPedirNombre = useCallback(() => setPedirNombre(null), [])
+  // Renombrar un grupo: todas sus copias pasan a llamarse con el nombre nuevo
+  const renombrarGrupo = nombre =>
+    setPedirNombre({
+      titulo: `Renombrar «${nombre}»`,
+      valor: nombre,
+      boton: 'Guardar',
+      accion: async nuevo => {
+        if (nuevo === nombre) return
+        if (copias.some(c => c.cambios?._grupo === nuevo)) {
+          setPreguntaGrupo({ titulo: 'Ese nombre ya existe', texto: 'Ya hay un grupo con ese nombre. Elige otro.', boton: 'Vale', accion: () => {} })
+          return
+        }
+        const resultados = await Promise.all(
+          copias
+            .filter(c => c.cambios?._grupo === nombre)
+            .map(c => supabase.from('ediciones').upsert({ tipo: c.tipo, slug: c.slug, base: c.base ?? null, cambios: { ...c.cambios, _grupo: nuevo } })),
+        )
+        if (resultados.some(r => r.error)) setPreguntaGrupo({ titulo: 'No se ha podido', texto: 'No se han podido renombrar todas las copias del grupo.', boton: 'Vale', accion: () => {} })
+        recargar()
+      },
+    })
   const disolverGrupo = nombre =>
     setPreguntaGrupo({
       titulo: `¿Disolver el grupo «${nombre}»?`,
@@ -4977,6 +5166,17 @@ function Lista({ filas, abrir, recargar, copia }) {
                     </Link>
                   ) : null
                 })()}
+                <button
+                  type="button"
+                  onClick={e => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    renombrarGrupo(c.titulo)
+                  }}
+                  className="text-[0.78rem] font-semibold underline underline-offset-[0.2em]"
+                >
+                  Renombrar
+                </button>
                 <button
                   type="button"
                   onClick={e => {
@@ -5060,6 +5260,7 @@ function Lista({ filas, abrir, recargar, copia }) {
   return (
     <div className="grid gap-[1.75rem]">
       <Confirmar pregunta={preguntaGrupo} alCerrar={cerrarPreguntaGrupo} />
+      <PedirNombre pregunta={pedirNombre} alCerrar={cerrarPedirNombre} />
       {/* Crear: el Editor de miniwebs y cartas y el Editor QR */}
       <div className="grid gap-[0.75rem]">
       <h2 className="px-[0.25rem] text-[0.85rem] font-semibold text-zinc-500">Crear</h2>

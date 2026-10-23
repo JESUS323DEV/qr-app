@@ -509,8 +509,9 @@ const capasDe = (o, lado) => {
    enviar: guarda el diseño del cliente (recibe todos sus ajustes)
    publico (con modo 'cliente'): el editor gratis y abierto, sin PIN ni sesión: la pestaña Asistente va bloqueada, la dirección que abre se escribe y se descarga (PNG y SVG)
    en lugar de enviar el diseño.
-   guardar (solo en el de /admin): guarda el diseño en las copias de QR (recibe { nombre, url, estado }); nombreCopiaInicial, el nombre con el que se ofrece */
-export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes: fuentesMarca, proponer, modo = 'admin', estadoInicial, intentos: intentosIniciales, enviar, diseno, formaPuntos, guardar, nombreCopiaInicial = '', textoAbajo, redes, publico = false }) {
+   guardar (solo en el de /admin): guarda el diseño en las copias de QR (recibe { nombre, url, estado, comoNueva }); nombreCopiaInicial, el nombre con el que se ofrece;
+   copiaAbierta: true si el diseño es el de una copia ya guardada (entonces hay "Guardar cambios" y "Guardar como nueva") */
+export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes: fuentesMarca, proponer, modo = 'admin', estadoInicial, intentos: intentosIniciales, enviar, diseno, formaPuntos, guardar, copiaAbierta = false, nombreCopiaInicial = '', textoAbajo, redes, publico = false }) {
   const marca = deMarca(colores)
   const oscuroDeMarca = marca.qr
   const acentoDeMarca = colores?.accent ?? '#555555'
@@ -654,14 +655,17 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
   const [guardandoCopia, setGuardandoCopia] = useState(false)
   const [avisoCopia, setAvisoCopia] = useState('')
   const [errorCopia, setErrorCopia] = useState('')
-  const guardarCopia = async () => {
+  // comoNueva: crea una copia nueva aunque haya una abierta (si el nombre es el mismo que el de la abierta, se le añade "(copia)" para distinguirla)
+  const guardarCopia = async (comoNueva = false) => {
     if (!nombreCopia.trim() || guardandoCopia) return
     setGuardandoCopia(true)
     setAvisoCopia('')
     setErrorCopia('')
     try {
-      await guardar({ nombre: nombreCopia.trim(), url, estado })
-      setAvisoCopia(`Guardado en las copias de QR como «${nombreCopia.trim()}».`)
+      const base = nombreCopia.trim()
+      const nombreFinal = comoNueva && copiaAbierta && base === nombreCopiaInicial ? `${base} (copia)` : base
+      await guardar({ nombre: nombreFinal, url, estado, comoNueva })
+      setAvisoCopia(comoNueva || !copiaAbierta ? `Guardado en las copias de QR como «${nombreFinal}».` : `Cambios guardados en «${nombreFinal}».`)
     } catch (e) {
       setErrorCopia(e.message)
     } finally {
@@ -850,14 +854,18 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
     setDegCentroElegido(null)
     setMuestraCentro(null)
     setConMarco(true)
-    // El centro: su forma y sus iniciales (salvo que el cliente haya puesto su logo, que se respeta)
+    // El centro: su forma y sus iniciales, solo la forma o nada (salvo que el cliente haya puesto su logo, que se respeta)
     if (p.centro && centro !== 'logo') {
       if (FORMAS_CENTRO.some(([c]) => c === p.centro.forma)) setFormaCentro(p.centro.forma)
       const letras = String(p.centro.texto ?? '').trim().toUpperCase().slice(0, 3)
-      if (letras) {
+      if (p.centro.modo === 'nada') setCentro('nada')
+      else if (p.centro.modo === 'forma') setCentro('forma')
+      else if (letras) {
         setTextoCentro(letras)
         setCentro('inicial')
       }
+      const tamanosCentro = { pequeno: 0.22, normal: 0.3, grande: 0.38 }
+      if (p.centro.tamano in tamanosCentro) setTamanoCentro(tamanosCentro[p.centro.tamano])
     }
     // La silueta (la misma, salvo que se le hayan pedido otras) y el color de su borde
     if (typeof p.silueta === 'string' && (p.silueta === '' || SILUETAS[p.silueta])) setSilueta(p.silueta)
@@ -881,6 +889,23 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
     if (p.textos?.arriba?.trim()) setCampoArriba(limpio(p.textos.arriba))
     if (p.textos?.abajo1?.trim()) setCampoAbajo1(limpio(p.textos.abajo1))
     if (p.textos?.abajo2?.trim()) setCampoAbajo2(limpio(p.textos.abajo2))
+    // Tamaño y color del título, tamaño y sitio del eslogan, tamaño del otro texto (xs, md o xl; xl es el de siempre)
+    const tamTitulo = { xs: 1, md: 1.18, xl: 1.37 }
+    const tamTexto = { xs: 0.7, md: 0.85, xl: 1 }
+    if (p.titulo) {
+      if (p.titulo.tamano in tamTitulo) setTamanoNombre(tamTitulo[p.titulo.tamano])
+      setColorNombre(esHex(p.titulo.color) ? p.titulo.color : null)
+    }
+    if (p.eslogan) {
+      if (p.eslogan.tamano in tamTexto) setTamanoEslogan(tamTexto[p.eslogan.tamano])
+      if (['arriba', 'abajo'].includes(p.eslogan.posicion)) setPosEslogan(p.eslogan.posicion)
+    }
+    if (p.otroTexto?.tamano in tamTexto) setTamanoExtra(tamTexto[p.otroTexto.tamano])
+    // Iconos de redes (solo los que el cliente ha nombrado): solo donde se enseñan (el panel de Jesús y el editor público)
+    if (Array.isArray(p.iconos) && p.iconos.length && (modo === 'admin' || publico)) {
+      const validos = ICONOS_LINEA.map(([clave]) => clave).filter(Boolean)
+      setLineas([...new Set(p.iconos)].filter(i => validos.includes(i)).slice(0, MAX_LINEAS).map(icono => ({ icono, texto: '' })))
+    }
   }
 
   // Logo subido: se guarda como imagen dentro de la página (no se sube a ningún sitio)
@@ -906,8 +931,8 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
   // Lo que va debajo del QR: los dos campos de abajo y, solo en el panel de Jesús, las líneas de redes con icono.
   // Solo los que tienen texto (en la placa circular, solo el primero)
   // El eslogan bajo el nombre (en la placa rectangular, solo en el panel de Jesús); si no, va abajo como siempre
-  const eslArriba = (modo === 'admin' || publico) && posEslogan === 'arriba' && campoAbajo1.trim() !== '' && formaPlaca !== 'circular'
-  const redesVisibles = lineas.filter(l => l.texto.trim() || ((modo === 'admin' || modo === 'placa' || publico) && l.icono))
+  const eslArriba = (modo === 'admin' || modo === 'copia' || publico) && posEslogan === 'arriba' && campoAbajo1.trim() !== '' && formaPlaca !== 'circular'
+  const redesVisibles = lineas.filter(l => l.texto.trim() || ((modo === 'admin' || modo === 'placa' || modo === 'copia' || publico) && l.icono))
   const lineasVisibles = [
     ...(campoAbajo1.trim() && !eslArriba ? [{ icono: '', texto: campoAbajo1.trim(), factor: tamanoEslogan }] : []),
     // La segunda línea, secundaria: siempre un poco más pequeña y más suave que la primera
@@ -1434,7 +1459,8 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
   )
   if (modo === 'vista') return <div className="mx-auto grid w-full max-w-[32rem] grid-cols-[minmax(0,1fr)]">{previa}</div>
   // Solo la placa, sin el recuadro de la vista previa (la de la landing)
-  if (modo === 'placa') return <div className="w-full" dangerouslySetInnerHTML={{ __html: vista }} />
+  // 'copia': la placa de una copia guardada del panel de Jesús (el Vistazo de Copias de QR), tal como se descarga
+  if (modo === 'placa' || modo === 'copia') return <div className="w-full" dangerouslySetInnerHTML={{ __html: vista }} />
 
   // Editor del cliente: la barra de los diseños (en Tu QR y en el Asistente; en este, antes de pedir, se marcan varios)
   const eligiendoVarios = pestana === 'asistente' && !propuestas
@@ -2526,9 +2552,20 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
                 <span className={titulo}>Nombre de la copia</span>
                 <input value={nombreCopia} onChange={e => setNombreCopia(e.target.value)} className={`${campo} text-[0.88rem]`} placeholder="QR de Restaurante Brasas" />
               </label>
-              <button type="button" onClick={guardarCopia} disabled={guardandoCopia || !nombreCopia.trim()} className="min-h-[2.9rem] rounded-[0.75rem] bg-white font-semibold ring-1 ring-zinc-300 disabled:opacity-50">
-                {guardandoCopia ? 'Guardando...' : 'Guardar en copias'}
-              </button>
+              {copiaAbierta ? (
+                <div className="grid grid-cols-2 gap-[0.5rem]">
+                  <button type="button" onClick={() => guardarCopia(false)} disabled={guardandoCopia || !nombreCopia.trim()} className="min-h-[2.9rem] rounded-[0.75rem] bg-zinc-900 font-semibold text-white disabled:opacity-50">
+                    {guardandoCopia ? 'Guardando...' : 'Guardar cambios'}
+                  </button>
+                  <button type="button" onClick={() => guardarCopia(true)} disabled={guardandoCopia || !nombreCopia.trim()} className="min-h-[2.9rem] rounded-[0.75rem] bg-white font-semibold ring-1 ring-zinc-300 disabled:opacity-50">
+                    Guardar como nueva
+                  </button>
+                </div>
+              ) : (
+                <button type="button" onClick={() => guardarCopia(false)} disabled={guardandoCopia || !nombreCopia.trim()} className="min-h-[2.9rem] rounded-[0.75rem] bg-white font-semibold ring-1 ring-zinc-300 disabled:opacity-50">
+                  {guardandoCopia ? 'Guardando...' : 'Guardar en copias'}
+                </button>
+              )}
               {avisoCopia && <p className="text-[0.85rem] font-semibold text-emerald-700">{avisoCopia}</p>}
               {errorCopia && <p className="text-[0.85rem] font-semibold text-red-600">{errorCopia}</p>}
             </div>

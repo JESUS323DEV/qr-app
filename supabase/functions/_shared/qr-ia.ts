@@ -66,8 +66,11 @@ export const ESQUEMA = {
             properties: {
               forma: { type: 'string', enum: ['circulo', 'cuadrado', 'corazon', 'recto', 'hoja', 'hexagono', 'octogono', 'rombo', 'escudo', 'gota', 'estrella', 'sello'] },
               texto: { type: 'string' },
+              // Qué lleva: nada, solo su forma (sin letras) o la forma con las letras de texto
+              modo: { type: 'string', enum: ['nada', 'forma', 'texto'] },
+              tamano: { type: 'string', enum: ['pequeno', 'normal', 'grande'] },
             },
-            required: ['forma', 'texto'],
+            required: ['forma', 'texto', 'modo', 'tamano'],
             additionalProperties: false,
           },
           // La silueta del QR ('' es el clásico, sin silueta) y el color de su borde
@@ -75,6 +78,29 @@ export const ESQUEMA = {
           contorno: { type: 'string' },
           tipografia: { type: 'string' },
           tamano: { type: 'string', enum: ['pequeno', 'normal', 'grande'] },
+          // El título (el texto de arriba): su tamaño (xs, md o xl) y su color ('' es el mismo de los demás textos)
+          titulo: {
+            type: 'object',
+            properties: { tamano: { type: 'string', enum: ['xs', 'md', 'xl'] }, color: { type: 'string' } },
+            required: ['tamano', 'color'],
+            additionalProperties: false,
+          },
+          // El eslogan (abajo1): su tamaño y si va bajo el título ('arriba') o abajo, junto al QR
+          eslogan: {
+            type: 'object',
+            properties: { tamano: { type: 'string', enum: ['xs', 'md', 'xl'] }, posicion: { type: 'string', enum: ['arriba', 'abajo'] } },
+            required: ['tamano', 'posicion'],
+            additionalProperties: false,
+          },
+          // El otro texto (abajo2): su tamaño
+          otroTexto: {
+            type: 'object',
+            properties: { tamano: { type: 'string', enum: ['xs', 'md', 'xl'] } },
+            required: ['tamano'],
+            additionalProperties: false,
+          },
+          // Iconos de redes de la placa (solo el icono, en fila bajo los textos): vacía si el cliente no ha nombrado ninguna red
+          iconos: { type: 'array', items: { type: 'string', enum: ['google', 'instagram', 'tiktok', 'facebook', 'whatsapp', 'youtube', 'twitter', 'linkedin'] } },
           // Los 3 campos de texto de la placa: uno encima del QR y dos debajo
           textos: {
             type: 'object',
@@ -83,7 +109,7 @@ export const ESQUEMA = {
             additionalProperties: false,
           },
         },
-        required: ['nombre', 'motivo', 'puntos', 'esquinas', 'fondo', 'marco', 'textoMarco', 'formaPuntos', 'formaEsquinas', 'puntoEsquinas', 'degradado', 'doble', 'placa', 'centro', 'silueta', 'contorno', 'tipografia', 'tamano', 'textos'],
+        required: ['nombre', 'motivo', 'puntos', 'esquinas', 'fondo', 'marco', 'textoMarco', 'formaPuntos', 'formaEsquinas', 'puntoEsquinas', 'degradado', 'doble', 'placa', 'centro', 'silueta', 'contorno', 'tipografia', 'tamano', 'textos', 'titulo', 'eslogan', 'otroTexto', 'iconos'],
         additionalProperties: false,
       },
     },
@@ -109,6 +135,7 @@ Formas (que vayan con el estilo):
 - formaEsquinas (el marco de los tres ojos de las esquinas) y puntoEsquinas (su punto de dentro): las mismas formas, más dot (círculo) y, en formaEsquinas, extra-rounded (redondeado) y square (cuadrado). Elegante: classy-rounded y dot; moderno o alegre: dots o extra-rounded; sobrio: square.
 - placa (siempre rectangular; la forma no la eliges tú): esquinas rectas, suaves o redondas; borde fino, normal o ancho alrededor del QR.
 - centro: lo que va en medio del QR. texto: las iniciales del nombre que pones arriba en la placa (la primera letra de cada palabra, en mayúsculas, como mucho 3: "Hornitos" → "H", "Corte Oeste" → "CO"). forma: la que mejor vaya con la propuesta: circulo, cuadrado, corazon, recto (cuadrado de esquinas rectas), hoja, hexagono, octogono, rombo, escudo, gota, estrella o sello.
+  modo: 'texto' (la forma con las iniciales, lo normal), 'forma' (solo la forma, sin letras; si el nombre es largo o las iniciales no dicen nada) o 'nada' (sin nada en medio; lo más seguro para que se lea, si el cliente pide un QR muy limpio). tamano: pequeno, normal o grande; con QR de mucho contenido o si pide máxima lectura, pequeno; normal casi siempre. Si el diseño marcado ya lleva un logo de red en el centro, deja modo 'nada'.
 
 Silueta (la forma que rodea al QR, rellena de puntos de adorno con el color de los puntos y con su borde):
 - silueta: te paso los diseños que ha marcado el cliente, en orden (de 0 a 3). La propuesta 1 va con el primero, la 2 con el segundo y la 3 con el tercero, TAL CUAL. Las que no tengan diseño marcado, con una silueta que elijas tú de la lista, distinta de las demás propuestas y que pegue con el negocio.
@@ -118,6 +145,10 @@ Silueta (la forma que rodea al QR, rellena de puntos de adorno con el color de l
 Letra y textos:
 - tipografia: el id de una de la lista que te paso, la que mejor vaya con el estilo; vacío para dejar la de la marca.
 - tamano: pequeno, normal o grande (el de los textos de la placa).
+- titulo (el texto de arriba): tamano xs, md o xl. xl para nombres cortos (hasta unos 12 letras), md para los medianos y xs para los largos (más de 20 letras); si dudas, md. color: '' (el mismo de los demás textos) o un #RRGGBB si el cliente pide el título de otro color o si queda mucho mejor; con mucho contraste sobre el marco.
+- eslogan (abajo1): tamano xs, md o xl (xl es el normal; xs o md si es largo). posicion: 'abajo' (junto al QR, lo normal) o 'arriba' (justo bajo el título); 'arriba' solo si el cliente quiere el eslogan pegado al nombre.
+- otroTexto (abajo2): tamano xs, md o xl; normalmente xs o md, que es un texto secundario.
+- iconos: los iconos de redes que lleva la placa, SOLO los que el cliente ha nombrado en lo que cuenta (Google o reseñas, Instagram, TikTok, Facebook, WhatsApp, YouTube, X o Twitter, LinkedIn), en el mismo orden en que los nombra y como mucho 4. NUNCA pongas iconos que no haya pedido ni los inventes: si no ha nombrado ninguna red, lista vacía. Los iconos no llevan texto.
 - textos: los 3 textos de la placa, en español correcto, con tildes y sin guiones largos, como mucho 30 caracteres cada uno:
   - arriba: lo que va encima del QR. Normalmente el nombre del negocio, tal cual; o lo que pida el cliente.
   - abajo1: debajo del QR, una llamada corta a escanear que vaya con lo que pide ("Escanea y déjanos tu reseña", "Mira nuestra carta", "Pide tu cita"...).
