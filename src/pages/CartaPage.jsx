@@ -1,3 +1,4 @@
+import { estiloPrecio } from '../components/carta/precio'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { FAMILIAS } from '../familias'
@@ -149,7 +150,7 @@ function Seccion({ seccion }) {
           <li key={p.nombre} className="border-b border-demo-text/10 py-[0.85rem]">
             <div className="flex items-baseline justify-between gap-[1rem]">
               <p className="font-semibold">{p.nombre}</p>
-              <p className="shrink-0 font-semibold text-demo-primary">{p.precio}</p>
+              <p className="shrink-0 font-semibold text-demo-primary" style={estiloPrecio('var(--demo-primary)')}>{p.precio}</p>
             </div>
             {p.descripcion && <p className="mt-[0.15rem] text-[0.88rem] leading-[1.45] text-demo-muted">{p.descripcion}</p>}
             <Alergenos lista={p.alergenos} />

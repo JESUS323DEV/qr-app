@@ -1,3 +1,4 @@
+import { estiloPrecio } from './precio'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { X } from 'lucide-react'
 import { ALERGENOS } from '../../cartas'
@@ -37,7 +38,7 @@ function Pieza({ plato, grande, abrir, className = '' }) {
         >
           {plato.nombre}
         </p>
-        <p className={`mt-[0.15rem] font-bold text-demo-accent ${grande ? 'text-[1rem] [@media(min-height:46rem)]:text-[1.1rem]' : 'text-[0.85rem] [@media(min-height:46rem)]:text-[0.92rem]'}`}>{plato.precio}</p>
+        <p className={`mt-[0.15rem] font-bold text-demo-accent ${grande ? 'text-[1rem] [@media(min-height:46rem)]:text-[1.1rem]' : 'text-[0.85rem] [@media(min-height:46rem)]:text-[0.92rem]'}`} style={estiloPrecio('var(--demo-accent)')}>{plato.precio}</p>
       </div>
     </button>
   )
@@ -76,7 +77,7 @@ function Visor({ platos, inicio, cerrar }) {
             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-black/30" />
             <div className="absolute inset-x-0 bottom-0 mx-auto max-w-[30rem] px-[1.25rem] pb-[2.5rem]">
               <h2 className="font-demo-heading text-[2.2rem] font-bold leading-[1.02] text-white">{p.nombre}</h2>
-              <p className="mt-[0.3rem] text-[1.3rem] font-bold text-demo-accent">{p.precio}</p>
+              <p className="mt-[0.3rem] text-[1.3rem] font-bold text-demo-accent" style={estiloPrecio('var(--demo-accent)')}>{p.precio}</p>
               {p.descripcion && <p className="mt-[0.5rem] text-[1rem] leading-[1.45] text-white/85">{p.descripcion}</p>}
               {p.alergenos?.length > 0 && (
                 <p className="mt-[0.4rem] text-[0.88rem] text-white/65">Alérgenos: {p.alergenos.map(a => ALERGENOS[a]?.nombre.toLowerCase()).join(', ')}</p>

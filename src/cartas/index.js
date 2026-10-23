@@ -31,8 +31,8 @@ export const rutaCarta = carta => (carta.demo ? `/demo/${carta.slug}/carta` : `/
 // Categoría del catálogo para las cartas (dónde y cómo se enseña está por decidir)
 export const CATEGORIA_CARTAS = {
   key: 'cartas',
-  nombre: 'Cartas digitales',
-  texto: 'Carta y menú del día con QR en la mesa, con la marca del restaurante.',
+  nombre: 'Menú y ofertas',
+  texto: 'Menú del día y ofertas con QR en la mesa o el mostrador, con la marca del negocio.',
 }
 
 // Los 14 alérgenos de declaración obligatoria, con una abreviatura corta para la carta

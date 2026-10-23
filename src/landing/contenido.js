@@ -245,22 +245,22 @@ export const webCompleta = {
 // Sin captura, el móvil enseña un texto que lleva a la demo.
 export const escaparate = {
   verFichas: 'Ver todas las miniwebs',
-  verCartasMiniwebs: 'Ver todas las cartas',
+  verCartasMiniwebs: 'Ver todos los menús y ofertas',
   verMiniwebs: 'Ver todas las miniwebs',
 }
 
 export const cartasMiniwebs = {
   pestana: 'Ejemplos',
-  titulo: 'Tu carta, en la palma de la mano.',
+  titulo: 'Tu menú, en la palma de la mano.',
   tituloMiniwebs: 'Tu negocio, en la palma de la mano.',
   subpestanas: [
     { key: 'miniwebs', texto: 'Miniwebs' },
-    { key: 'cartas', texto: 'Cartas' },
+    { key: 'cartas', texto: 'Menú y ofertas' },
   ],
   // Lo que pone debajo de cada móvil y dentro, si no hay captura
   tipos: {
     miniweb: { etiqueta: 'Miniweb', titulo: 'Miniweb' },
-    carta: { etiqueta: 'Carta digital', titulo: 'Carta y menú del día' },
+    carta: { etiqueta: 'Menú y ofertas', titulo: 'Menú del día y ofertas' },
   },
 }
 
@@ -358,7 +358,7 @@ export const catalogo = {
   titulo: 'Así quedaría tu negocio.',
   texto: 'Diseños cuidados y todo a un escaneo: reseñas, WhatsApp, carta y redes. Ábrelas en tu móvil y pruébalas como lo haría tu cliente; la tuya, con tu marca y tus fotos.',
   tipos: [
-    { key: 'carta', texto: 'Cartas', descripcion: 'Tu carta y tu menú del día, con QR para las mesas.' },
+    { key: 'carta', texto: 'Menú y ofertas', descripcion: 'Tu menú del día y tus ofertas, con QR para las mesas.' },
   ],
   // Página escondida /miniweb: las miniwebs no salen en el catálogo público, solo aquí
   miniwebs: { key: 'miniweb', texto: 'Miniwebs', descripcion: 'Como una web en el móvil: varias páginas, menú y reservas.' },

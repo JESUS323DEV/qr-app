@@ -18,7 +18,7 @@ export default function TematicaPage() {
   const demos = esCartas
     ? cartas.filter(c => c.demo).map(c => {
         const n = marcaDe(c)
-        return { slug: c.slug, nombre: n?.nombre, sector: 'Carta digital', ruta: rutaCarta(c), foto: captura(`${c.slug}-carta`) }
+        return { slug: c.slug, nombre: n?.nombre, sector: 'Menú y ofertas', ruta: rutaCarta(c), foto: captura(`${c.slug}-carta`) }
       })
     : tematica ? negociosDe(tematica.key).map(n => ({ ...n, ruta: rutaNegocio(n), foto: captura(n.slug) })) : []
 

@@ -1,3 +1,4 @@
+import { estiloPrecio } from './precio'
 import { useState } from 'react'
 import { ALERGENOS } from '../../cartas'
 import Img from '../Img'
@@ -49,7 +50,7 @@ function Seccion({ seccion }) {
           <li key={p.nombre} className="border-b border-white/15 py-[0.85rem]">
             <div className="flex items-baseline justify-between gap-[1rem]">
               <p className="font-semibold">{p.nombre}</p>
-              <p className="shrink-0 font-semibold">{p.precio}</p>
+              <p className="shrink-0 font-semibold" style={estiloPrecio('inherit')}>{p.precio}</p>
             </div>
             {p.descripcion && <p className="mt-[0.15rem] text-[0.88rem] leading-[1.45] text-white/70">{p.descripcion}</p>}
             {p.alergenos?.length > 0 && (

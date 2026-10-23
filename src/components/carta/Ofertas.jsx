@@ -43,11 +43,14 @@ function FotoAbierta({ src, cerrar }) {
   )
 }
 
-// El precio de una oferta y, si lo hay, el de antes tachado
+// El precio de una oferta y, si lo hay, el de antes tachado. Su color ("Texto del precio" del Editor; sin él, el de acento) y su tamaño (XS, MD o XL)
+// son los mismos ajustes que los del precio del menú del día
+const COLOR_PRECIO = 'text-[color:var(--demo-precio-texto,var(--demo-accent))]'
+const TAMANO_PRECIO = { zoom: 'var(--demo-precio-escala, 1)' }
 function Precio({ o, suave, clase = '' }) {
   return (
-    <div className="shrink-0 text-right">
-      <p className={`font-demo-heading leading-none text-demo-accent ${clase || 'text-[1.4rem] [@media(min-height:46rem)]:text-[1.6rem]'}`}>{o.precio}</p>
+    <div className="shrink-0 text-right" style={TAMANO_PRECIO}>
+      <p className={`font-demo-heading leading-none ${COLOR_PRECIO} ${clase || 'text-[1.4rem] [@media(min-height:46rem)]:text-[1.6rem]'}`}>{o.precio}</p>
       {o.antes && <p className={`mt-[0.2rem] text-[0.85rem] line-through ${suave}`}>{o.antes}</p>}
     </div>
   )
@@ -145,7 +148,7 @@ export default function Ofertas({ menu, sobreFoto = false, estilo = 'base', pape
               <li key={o.nombre} className={`border-b ${raya} py-[0.5rem] [@media(min-height:46rem)]:py-[0.65rem]`}>
                 <div className="flex items-baseline justify-between gap-[1rem]">
                   <p className="text-[0.98rem] font-medium leading-tight">{o.nombre}</p>
-                  <p className="shrink-0 font-demo-heading text-[1.05rem] italic text-demo-accent">
+                  <p className={`shrink-0 font-demo-heading text-[1.05rem] italic ${COLOR_PRECIO}`} style={TAMANO_PRECIO}>
                     {o.antes && <span className={`mr-[0.4rem] text-[0.82rem] line-through ${suave}`}>{o.antes}</span>}
                     {o.precio}
                   </p>

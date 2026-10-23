@@ -6,7 +6,7 @@ import { TIPOGRAFIAS } from './tipografias'
 
 // Los dos tipos de carta: lo que cambia es el contenido de ejemplo (el estilo vale para los dos)
 export const TIPOS_CARTA = [
-  { clave: 'carta', texto: 'Carta', descripcion: 'Menú del día y platos por secciones, con precios y alérgenos.' },
+  { clave: 'carta', texto: 'Menú del día', descripcion: 'Menú del día y platos por secciones, con precios y alérgenos.' },
   { clave: 'promociones', texto: 'Promociones', descripcion: 'Ofertas con su precio anterior tachado y servicios por secciones.' },
 ]
 

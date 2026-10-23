@@ -1,3 +1,4 @@
+import { estiloPrecio } from './precio'
 import { useEffect, useState } from 'react'
 import { ArrowUpRight, X } from 'lucide-react'
 import { ALERGENOS } from '../../cartas'
@@ -73,7 +74,7 @@ function Seccion({ seccion }) {
         <div className="mt-[0.6rem] shrink-0 [@media(min-height:46rem)]:mt-[0.8rem]">
           <div className="flex items-baseline justify-between gap-[1rem]">
             <h3 className="font-demo-heading text-[1.4rem] italic leading-tight [@media(min-height:46rem)]:text-[1.6rem] [@media(min-height:56rem)]:text-[1.8rem]">{destacado.nombre}</h3>
-            <p className="shrink-0 font-demo-heading text-[1.2rem] text-demo-primary [@media(min-height:46rem)]:text-[1.35rem]">{destacado.precio}</p>
+            <p className="shrink-0 font-demo-heading text-[1.2rem] text-demo-primary [@media(min-height:46rem)]:text-[1.35rem]" style={estiloPrecio('var(--demo-primary)')}>{destacado.precio}</p>
           </div>
           {(destacado.descripcion || destacado.alergenos?.length > 0) && (
             <p className="mt-[0.1rem] text-[0.85rem] leading-[1.35] text-demo-muted [@media(min-height:46rem)]:text-[0.92rem]">
@@ -91,7 +92,7 @@ function Seccion({ seccion }) {
             <li key={p.nombre} className={`${RAYA} py-[0.38rem] [@media(min-height:46rem)]:py-[0.5rem] [@media(min-height:56rem)]:py-[0.6rem]`}>
               <div className="flex items-baseline justify-between gap-[1rem]">
                 <p className="text-[0.95rem] font-medium leading-tight [@media(min-height:46rem)]:text-[1rem] [@media(min-height:56rem)]:text-[1.06rem]">{p.nombre}</p>
-                <p className="shrink-0 font-demo-heading text-[1rem] text-demo-primary [@media(min-height:46rem)]:text-[1.08rem]">{p.precio}</p>
+                <p className="shrink-0 font-demo-heading text-[1rem] text-demo-primary [@media(min-height:46rem)]:text-[1.08rem]" style={estiloPrecio('var(--demo-primary)')}>{p.precio}</p>
               </div>
               {(p.descripcion || p.alergenos?.length > 0) && (
                 <p className="mt-[0.05rem] truncate text-[0.8rem] text-demo-muted [@media(min-height:46rem)]:text-[0.86rem]">

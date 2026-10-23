@@ -593,7 +593,7 @@ function CrearConAsistente({ filas, volver, recargar, abrir }) {
           className={`${CAMPO} resize-y`}
         />
         <button type="submit" disabled={!peticion.trim() || Boolean(paso)} className={BOTON}>
-          {paso ?? (perfil === 'miniweb' ? 'Crear miniweb' : perfil === 'carta' ? 'Crear carta' : 'Crear ficha')}
+          {paso ?? (perfil === 'miniweb' ? 'Crear miniweb' : perfil === 'carta' ? 'Crear menú y ofertas' : 'Crear ficha')}
         </button>
       </form>
       {motivo && <p className="text-[0.9rem] leading-[1.45] text-zinc-600">{motivo}</p>}
@@ -1007,7 +1007,7 @@ function Diseno({ tipo, slug, vista, original, cambiar, abrir }) {
   const pestanas = [
     { clave: 'ficha', texto: 'Ficha', vale: tipo === 'negocio' || Boolean(suFicha) },
     { clave: 'miniweb', texto: 'Miniweb', vale: tipo === 'negocio' || Boolean(suFicha) },
-    { clave: 'carta', texto: 'Carta', vale: tipo === 'carta' || Boolean(suCarta) },
+    { clave: 'carta', texto: 'Menú y ofertas', vale: tipo === 'carta' || Boolean(suCarta) },
   ]
 
   return (
@@ -1149,7 +1149,7 @@ function Diseno({ tipo, slug, vista, original, cambiar, abrir }) {
 
         {producto === 'carta' && (
           <>
-            <Etiqueta texto="Estilo de carta">
+            <Etiqueta texto="Estilo">
               <select value={vista.diseno} onChange={e => cambiar('diseno', e.target.value)} className={CAMPO}>
                 {Object.values(FAMILIAS)
                   .filter(f => f.carta)
@@ -1304,11 +1304,11 @@ function InfoCopia({ vista, tipo, fila, historial, ruta, onEditar, onExportar, g
   const base = esCarta ? marcaDe(getCarta(fila?.base) ?? {})?.nombre : getNegocio(fila?.base)?.nombre
   const barra = hero.barra ?? HEROS[hero.diseno]?.barra
   const filas = [
-    ['Tipo', esCarta ? 'Carta' : esMiniweb ? 'Miniweb' : 'Ficha'],
+    ['Tipo', esCarta ? 'Menú y ofertas' : esMiniweb ? 'Miniweb' : 'Ficha'],
     ['Sector', marca?.sector],
     ['Parte de', base],
     [
-      esCarta ? 'Estilo de carta' : 'Diseño',
+      esCarta ? 'Estilo' : 'Diseño',
       esCarta ? vista.diseno : esMiniweb ? [portada?.clave ? HEROS[portada.clave]?.nombre : null, sub?.nombre].filter(Boolean).join(' · ') : HEROS[hero.diseno]?.nombre,
     ],
     ...(esCarta ? [] : [['Estilo del menú', barra ? BARRAS[barra]?.nombre : 'La rayita']]),
@@ -1575,7 +1575,7 @@ function Editor({ tipo, slug, fila, filas, volver, recargar, abrir, irANuevoPerf
       <div>
         <p className="text-[0.8rem] text-zinc-500">
           {esCopia
-            ? `${tipo === 'carta' ? 'Carta, copia de' : 'Copia de'} ${(tipo === 'carta' ? marcaDe(getCarta(fila.base) ?? {}) : getNegocio(fila.base))?.nombre ?? fila.base}`
+            ? `${tipo === 'carta' ? 'Menú y ofertas, copia de' : 'Copia de'} ${(tipo === 'carta' ? marcaDe(getCarta(fila.base) ?? {}) : getNegocio(fila.base))?.nombre ?? fila.base}`
             : tipo === 'carta'
               ? 'Carta de'
               : 'Ficha de'}
@@ -2853,6 +2853,7 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
       }
       const { resultado } = await llamar('asistente', { paso: 'diseno-miniweb', peticion: cuento.trim() || 'Sin más indicaciones: decide tú el estilo.', nombre: nombre.trim(), catalogo: catalogoMiniweb(), ...(referencia ? { referencia: { imagen: referencia.imagen, tipo: referencia.tipo, colores: referencia.colores } } : {}), ...(captura ? { captura: { imagen: captura.imagen, tipo: captura.tipo } } : {}) })
       const d = validarDiseno(resultado)
+      if (producto !== 'miniweb') setCopiaCargada(null)
       setProducto('miniweb')
       if (d.tema) setTema(d.tema)
       if (d.portada) setHero(d.portada)
@@ -2968,6 +2969,18 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
     setHuellaBase(huella)
   }, [huella, versionBase]) // eslint-disable-line react-hooks/exhaustive-deps
   const sinGuardar = huellaBase !== null && huella !== huellaBase
+  /* Cada producto (miniweb, carta, ficha) guarda lo suyo: la copia cargada es de un solo producto. Al cambiar de producto se suelta, y
+     Guardar cambios no puede escribir una carta encima de una miniweb (ni al revés); lo que se guarda después es una copia nueva */
+  const cambiarProducto = clave => {
+    if (clave === producto) return
+    if (copiaCargada) {
+      if (sinGuardar && !window.confirm('Tienes cambios sin guardar en esta copia. Si cambias de producto, dejas de editarla y no se guardan en ella. ¿Quieres cambiar de todos modos?')) return
+      setCopiaCargada(null)
+    }
+    setProducto(clave)
+    // Banner y Ficha no valen de portada de una miniweb: si estaba uno elegido, pasa a Editorial
+    if (clave === 'miniweb' && SIN_PORTADA_MINIWEB.includes(hero)) setHero('editorial')
+  }
   const empezarDeNuevo = () => {
     marcarBase.current = true
     setVersionBase(v => v + 1)
@@ -3324,7 +3337,7 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
           <div className="grid grid-cols-3 gap-[0.3rem] rounded-[0.75rem] bg-zinc-200 p-[0.25rem]">
             {[
               ['miniweb', 'Miniweb'],
-              ['carta', 'Carta'],
+              ['carta', 'Menú y ofertas'],
               ['ficha', 'Ficha'],
             ].map(([clave, texto]) => (
               <button
@@ -3332,10 +3345,7 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                 type="button"
                 aria-pressed={producto === clave}
                 disabled={clave === 'ficha' || Boolean(disenando) || Boolean(creando)}
-                onClick={() => {
-                  setProducto(clave)
-                  if (clave === 'miniweb' && SIN_PORTADA_MINIWEB.includes(hero)) setHero('editorial')
-                }}
+                onClick={() => cambiarProducto(clave)}
                 className={`rounded-[0.55rem] py-[0.5rem] text-[0.95rem] font-semibold disabled:opacity-40 ${producto === clave ? 'bg-white shadow-[0_0.05rem_0.2rem_rgb(0_0_0/0.15)]' : 'text-zinc-600'}`}
               >
                 {texto}
@@ -3354,7 +3364,7 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                   onClick={() => setTipoCarta(t.clave)}
                   className={`rounded-[0.55rem] py-[0.45rem] text-[0.9rem] font-semibold disabled:opacity-40 ${tipoCarta === t.clave ? 'bg-white shadow-[0_0.05rem_0.2rem_rgb(0_0_0/0.15)]' : 'text-zinc-600'}`}
                 >
-                  {t.clave === 'carta' ? 'Carta' : 'Ofertas'}
+                  {t.clave === 'carta' ? 'Menú del día' : 'Ofertas'}
                 </button>
               ))}
             </div>
@@ -3396,18 +3406,14 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
             <div className="grid grid-cols-3 gap-[0.3rem] rounded-[0.75rem] bg-zinc-200 p-[0.25rem]">
               {[
                 ['miniweb', 'Miniweb'],
-                ['carta', 'Carta'],
+                ['carta', 'Menú y ofertas'],
                 ['ficha', 'Ficha'],
               ].map(([clave, texto]) => (
                 <button
                   key={clave}
                   type="button"
                   aria-pressed={producto === clave}
-                  onClick={() => {
-                    setProducto(clave)
-                    // Banner y Ficha no valen de portada de una miniweb: si estaba uno elegido, pasa a Editorial
-                    if (clave === 'miniweb' && SIN_PORTADA_MINIWEB.includes(hero)) setHero('editorial')
-                  }}
+                  onClick={() => cambiarProducto(clave)}
                   className={`rounded-[0.55rem] py-[0.5rem] text-[0.95rem] font-semibold disabled:opacity-40 ${producto === clave ? 'bg-white shadow-[0_0.05rem_0.2rem_rgb(0_0_0/0.15)]' : 'text-zinc-600'}`}
                 >
                   {texto}
@@ -3426,7 +3432,7 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
           {/* Una fila de iconos: 5 a la vista y un + que abre el resto, con el nombre de la elegida debajo */}
           {esCarta ? (
             <div className="grid gap-[0.45rem]">
-              <span className={titulo}>Tipo de carta</span>
+              <span className={titulo}>Tipo</span>
               <div className="flex flex-wrap items-center gap-[0.4rem]">
                 {TIPOS_CARTA.map(t => {
                   const Icono = ICONOS_TIPO_CARTA[t.clave] ?? Store
@@ -3435,7 +3441,7 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                       key={t.clave}
                       type="button"
                       title={t.texto}
-                      aria-label={`Tipo de carta ${t.texto}`}
+                      aria-label={`Tipo ${t.texto}`}
                       aria-pressed={tipoCarta === t.clave}
                       onClick={() => setTipoCarta(t.clave)}
                       className={`flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 bg-white transition-transform duration-300 ${tipoCarta === t.clave ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
@@ -3700,7 +3706,7 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
             </div>
           ) : (
             <div className="grid gap-[0.45rem]">
-              <span className={titulo}>Estilo de carta</span>
+              <span className={titulo}>Estilo</span>
               <div className="flex flex-wrap items-center gap-[0.4rem]">
                 {estilos.map(f => {
                   const Icono = ICONOS_ESTILO_CARTA[f.carta] ?? Frame
@@ -3709,7 +3715,7 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                       key={f.carta}
                       type="button"
                       title={f.nombre}
-                      aria-label={`Estilo de carta ${f.nombre}`}
+                      aria-label={`Estilo ${f.nombre}`}
                       aria-pressed={estilo === f.carta}
                       onClick={() => setEstilo(f.carta)}
                       className={`flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 bg-white transition-transform duration-300 ${estilo === f.carta ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
@@ -4220,7 +4226,7 @@ const paginasConQR = copias =>
         datos: aplicar(f.tipo === 'carta' ? getCarta(f.base) : getNegocio(f.base), f.cambios ?? {}),
       })),
     ...negocios.map(n => ({ clave: `negocio:${n.slug}`, slug: n.slug, grupo: 'Fichas y miniwebs', nombre: n.nombre, ruta: rutaNegocio(n), tipo: 'negocio', datos: n })),
-    ...cartas.map(c => ({ clave: `carta:${c.slug}`, slug: c.slug, grupo: 'Cartas', nombre: marcaDe(c)?.nombre ?? c.slug, ruta: rutaCarta(c), tipo: 'carta', datos: c })),
+    ...cartas.map(c => ({ clave: `carta:${c.slug}`, slug: c.slug, grupo: 'Menú y ofertas', nombre: marcaDe(c)?.nombre ?? c.slug, ruta: rutaCarta(c), tipo: 'carta', datos: c })),
   ].map(p => {
     const marca = p.tipo === 'carta' ? marcaDe(p.datos) : p.datos
     return { ...p, marca, colores: marca?.theme?.colors, fuentes: marca?.theme?.fonts, sesion: p.tipo === 'carta' ? `${p.slug}-carta` : p.slug }
@@ -4231,7 +4237,7 @@ function ElegirPagina({ paginas, valor, cambiar, vacio }) {
   return (
     <select value={valor} onChange={e => cambiar(e.target.value)} className={CAMPO}>
       <option value="">{vacio}</option>
-      {['Copias', 'Fichas y miniwebs', 'Cartas'].map(g => (
+      {['Copias', 'Fichas y miniwebs', 'Menú y ofertas'].map(g => (
         <optgroup key={g} label={g}>
           {paginas
             .filter(p => p.grupo === g)
@@ -4982,7 +4988,7 @@ function Lista({ filas, abrir, recargar, copia }) {
           ),
           secciones: [
             { titulo: 'Miniwebs', filas: copias.filter(c => c.tipo !== 'carta' && !c.cambios?._grupo).map(aFilaCopia) },
-            { titulo: 'Cartas', filas: copias.filter(c => c.tipo === 'carta' && !c.cambios?._grupo).map(aFilaCopia) },
+            { titulo: 'Menú y ofertas', filas: copias.filter(c => c.tipo === 'carta' && !c.cambios?._grupo).map(aFilaCopia) },
           ],
         })}
         {/* Las miniwebs de siempre y, con ellas, las que se exportan a muestras desde Nuevo perfil */}
@@ -4996,7 +5002,7 @@ function Lista({ filas, abrir, recargar, copia }) {
           }}
         />
         {Grupo({
-          titulo: 'Cartas',
+          titulo: 'Menú y ofertas',
           filas: cartas.map(c => ({ clave: `carta:${c.slug}`, nombre: marcaDe(c)?.nombre ?? c.slug, detalle: c.demo ? 'Demo' : 'Cliente', ruta: rutaCarta(c) })),
         })}
         {Grupo({ titulo: 'Fichas', filas: negocios.filter(n => tipoDe(n) === 'ficha').map(aFila) })}

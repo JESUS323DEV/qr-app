@@ -1,3 +1,4 @@
+import { estiloPrecio } from './precio'
 import { useEffect, useState } from 'react'
 import { X } from 'lucide-react'
 import { ALERGENOS } from '../../cartas'
@@ -37,7 +38,7 @@ function Polaroid({ plato, giro = '', abrir }) {
       )}
       <div className="flex shrink-0 items-baseline justify-between gap-[0.4rem] px-[0.15rem] pb-[0.3rem] pt-[0.15rem] [@media(min-height:46rem)]:pb-[0.45rem] [@media(min-height:46rem)]:pt-[0.25rem]">
         <span className="min-w-0 truncate font-demo-heading text-[1.15rem] font-bold leading-tight [@media(min-height:46rem)]:text-[1.35rem] [@media(min-height:56rem)]:text-[1.5rem]">{plato.nombre}</span>
-        <span className="shrink-0 font-demo-heading text-[1.1rem] font-bold leading-none text-demo-accent [@media(min-height:46rem)]:text-[1.3rem] [@media(min-height:56rem)]:text-[1.45rem]">{plato.precio}</span>
+        <span className="shrink-0 font-demo-heading text-[1.1rem] font-bold leading-none text-demo-accent [@media(min-height:46rem)]:text-[1.3rem] [@media(min-height:56rem)]:text-[1.45rem]" style={estiloPrecio('var(--demo-accent)')}>{plato.precio}</span>
       </div>
     </button>
   )
@@ -75,7 +76,7 @@ function PolaroidAbierta({ plato, cerrar }) {
         <div className="px-[0.3rem] pb-[0.6rem] pt-[0.5rem]">
           <div className="flex items-baseline justify-between gap-[0.75rem]">
             <p className="font-demo-heading text-[1.9rem] font-bold leading-none">{plato.nombre}</p>
-            <p className="shrink-0 text-right font-demo-heading text-[1.7rem] font-bold leading-none text-demo-accent">
+            <p className="shrink-0 text-right font-demo-heading text-[1.7rem] font-bold leading-none text-demo-accent" style={estiloPrecio('var(--demo-accent)')}>
               {plato.precio}
               {plato.antes && <span className="mt-[0.2rem] block font-demo-body text-[0.9rem] font-normal text-demo-muted line-through">{plato.antes}</span>}
             </p>

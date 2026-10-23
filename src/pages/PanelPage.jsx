@@ -140,7 +140,7 @@ function EditorMenu({ fila, alGuardar }) {
       : setPregunta(
       hayMenu
         ? { titulo: '¿Publicar este menú del día?', texto: 'Tus clientes lo verán al momento en tu carta.', boton: 'Publicar', accion: publicar }
-        : { titulo: '¿Publicar sin menú del día?', texto: 'Tu carta dejará de enseñarlo hasta que lo vuelvas a activar.', boton: 'Publicar', accion: publicar },
+        : { titulo: '¿Publicar sin menú del día?', texto: 'Tu página dejará de enseñarlo hasta que lo vuelvas a activar.', boton: 'Publicar', accion: publicar },
     )
 
   const publicar = async () => {
@@ -174,7 +174,7 @@ function EditorMenu({ fila, alGuardar }) {
         </div>
         {carta && (
           <a href={rutaCarta(carta)} target="_blank" rel="noreferrer" className="flex shrink-0 items-center gap-[0.2rem] text-[0.9rem] font-semibold underline underline-offset-[0.2em]">
-            Ver mi carta
+            Ver mi menú
             <ArrowUpRight className="h-[0.9rem] w-[0.9rem]" aria-hidden="true" />
           </a>
         )}
@@ -418,7 +418,7 @@ function EditorMenu({ fila, alGuardar }) {
 
       {/* Publicar: fijo abajo para tenerlo siempre a mano en el móvil */}
       <div className="sticky bottom-0 -mx-[1rem] border-t border-zinc-200 bg-zinc-100/95 px-[1rem] pb-[1rem] pt-[0.75rem] backdrop-blur-sm">
-        {estado === 'publicado' && <p className="mb-[0.5rem] text-center text-[0.9rem] font-semibold text-emerald-700">Publicado. Tu carta ya enseña este menú.</p>}
+        {estado === 'publicado' && <p className="mb-[0.5rem] text-center text-[0.9rem] font-semibold text-emerald-700">Publicado. Ya se ve este menú.</p>}
         {estado === 'error' && <p className="mb-[0.5rem] text-center text-[0.9rem] font-semibold text-red-600">No se ha podido publicar. Prueba otra vez.</p>}
         {estado === 'sinDias' && <p className="mb-[0.5rem] text-center text-[0.9rem] font-semibold text-red-600">Marca al menos un día en el horario del menú.</p>}
         <button type="button" onClick={pedirPublicar} disabled={estado === 'guardando'} className={`${BOTON} w-full`}>
@@ -486,7 +486,7 @@ function EditorOfertas({ fila }) {
         </div>
         {carta && (
           <a href={rutaCarta(carta)} target="_blank" rel="noreferrer" className="flex shrink-0 items-center gap-[0.2rem] text-[0.9rem] font-semibold underline underline-offset-[0.2em]">
-            Ver mi carta
+            Ver mis ofertas
             <ArrowUpRight className="h-[0.9rem] w-[0.9rem]" aria-hidden="true" />
           </a>
         )}
@@ -557,7 +557,7 @@ function EditorOfertas({ fila }) {
 
       {/* Publicar: fijo abajo para tenerlo siempre a mano en el móvil */}
       <div className="sticky bottom-0 -mx-[1rem] border-t border-zinc-200 bg-zinc-100/95 px-[1rem] pb-[1rem] pt-[0.75rem] backdrop-blur-sm">
-        {estado === 'publicado' && <p className="mb-[0.5rem] text-center text-[0.9rem] font-semibold text-emerald-700">Publicado. Tu carta ya enseña estas ofertas.</p>}
+        {estado === 'publicado' && <p className="mb-[0.5rem] text-center text-[0.9rem] font-semibold text-emerald-700">Publicado. Ya se ven estas ofertas.</p>}
         {estado === 'error' && <p className="mb-[0.5rem] text-center text-[0.9rem] font-semibold text-red-600">No se ha podido publicar. Prueba otra vez.</p>}
         <button
           type="button"
@@ -626,7 +626,7 @@ export default function PanelPage() {
             ) : !fila ? (
               // Varias cartas: elegir cuál editar
               <div className="grid gap-[0.6rem]">
-                <h1 className="text-[1.5rem] font-bold">Tus cartas</h1>
+                <h1 className="text-[1.5rem] font-bold">Tus menús y ofertas</h1>
                 {cartasDueno.map(c => (
                   <button key={c.slug} type="button" onClick={() => setElegida(c.slug)} className="rounded-[0.8rem] bg-white px-[1rem] py-[0.9rem] text-left font-semibold ring-1 ring-zinc-200">
                     {(c.carta && marcaDe(c.carta)?.nombre) || c.slug}
@@ -637,7 +637,7 @@ export default function PanelPage() {
               <>
                 {cartasDueno.length > 1 && (
                   <button type="button" onClick={() => setElegida(null)} className="mb-[0.75rem] text-[0.9rem] font-semibold underline underline-offset-[0.2em]">
-                    Volver a tus cartas
+                    Volver a tus menús y ofertas
                   </button>
                 )}
                 {conOfertas(fila) ? <EditorOfertas key={fila.slug} fila={fila} /> : <EditorMenu key={fila.slug} fila={fila} />}

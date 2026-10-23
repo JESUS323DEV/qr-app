@@ -23,7 +23,7 @@ const DEMOS = {
       .filter(c => c.demo)
       .map(c => {
         const m = marcaDe(c)
-        return { clave: `${c.slug}-carta`, nombre: m?.nombre, sector: m?.sector ?? 'Carta digital', tematica: m?.tematica ?? 'comida', ruta: rutaCarta(c), estatica: true, foto: captura(`${c.slug}-carta`) }
+        return { clave: `${c.slug}-carta`, nombre: m?.nombre, sector: m?.sector ?? 'Menú y ofertas', tematica: m?.tematica ?? 'comida', ruta: rutaCarta(c), estatica: true, foto: captura(`${c.slug}-carta`) }
       }),
   ),
 }
