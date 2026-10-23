@@ -5101,6 +5101,8 @@ function Lista({ filas, abrir, recargar, copia }) {
   const cerrarPreguntaGrupo = useCallback(() => setPreguntaGrupo(null), [])
   const [pedirNombre, setPedirNombre] = useState(null)
   const cerrarPedirNombre = useCallback(() => setPedirNombre(null), [])
+  // La pestaña abierta de Demos base: miniwebs, menu o fichas
+  const [pestanaBase, setPestanaBase] = useState('miniwebs')
   // Renombrar un grupo: todas sus copias pasan a llamarse con el nombre nuevo
   const renombrarGrupo = nombre =>
     setPedirNombre({
@@ -5310,7 +5312,7 @@ function Lista({ filas, abrir, recargar, copia }) {
       </details>
       </div>
 
-      {/* Páginas: todo lo que hay, por producto, en desplegables cerrados (las fichas, que ya no se venden, al final) */}
+      {/* Páginas: arriba lo que se trabaja (copias para enseñar y copias de QR); abajo, las demos base en un bloque plegado con pestañas */}
       <div className="grid gap-[0.6rem]">
         <h2 className="px-[0.25rem] text-[0.85rem] font-semibold text-zinc-500">Páginas</h2>
         {/* Las copias, separadas en Miniwebs y Cartas: cada copia que se guarda cae sola en el suyo, según lo que sea */}
@@ -5329,8 +5331,7 @@ function Lista({ filas, abrir, recargar, copia }) {
             { titulo: 'Menú y ofertas', filas: copias.filter(c => c.tipo === 'carta' && !c.cambios?._grupo).map(aFilaCopia) },
           ],
         })}
-        {/* Las miniwebs de siempre y, con ellas, las que se exportan a muestras desde Nuevo perfil */}
-        {Grupo({ titulo: 'Miniwebs', filas: negocios.filter(n => tipoDe(n) === 'miniweb').map(aFila) })}
+        {/* Copias de QR, justo debajo de las copias para enseñar */}
         <CopiasQR
           version={versionQR}
           abrir={f => {
@@ -5339,11 +5340,40 @@ function Lista({ filas, abrir, recargar, copia }) {
             setTimeout(() => document.getElementById('editor-qr')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
           }}
         />
-        {Grupo({
-          titulo: 'Menú y ofertas',
-          filas: cartas.map(c => ({ clave: `carta:${c.slug}`, nombre: marcaDe(c)?.nombre ?? c.slug, detalle: c.demo ? 'Demo' : 'Cliente', ruta: rutaCarta(c) })),
-        })}
-        {Grupo({ titulo: 'Fichas', filas: negocios.filter(n => tipoDe(n) === 'ficha').map(aFila) })}
+        {/* Demos base: lo que no se toca a diario (las miniwebs de siempre y las que se exportan a muestras, las cartas de ejemplo y las fichas),
+            en un solo bloque siempre plegado, con una pestaña por tipo */}
+        {(() => {
+          const demosBase = [
+            ['miniwebs', 'Miniwebs', negocios.filter(n => tipoDe(n) === 'miniweb').map(aFila)],
+            ['menu', 'Menú y ofertas', cartas.map(c => ({ clave: `carta:${c.slug}`, nombre: marcaDe(c)?.nombre ?? c.slug, detalle: c.demo ? 'Demo' : 'Cliente', ruta: rutaCarta(c) }))],
+            ['fichas', 'Fichas', negocios.filter(n => tipoDe(n) === 'ficha').map(aFila)],
+          ]
+          const total = demosBase.reduce((a, [, , filas]) => a + filas.length, 0)
+          const [, , filasBase] = demosBase.find(([clave]) => clave === pestanaBase) ?? demosBase[0]
+          return (
+            <details className="rounded-[1rem] bg-white ring-1 ring-zinc-200 [&[open]>summary]:border-b [&[open]>summary]:border-zinc-200">
+              <summary className="flex cursor-pointer items-baseline justify-between gap-[1rem] px-[1rem] py-[0.9rem]">
+                <span className="text-[1.05rem] font-bold">Demos base</span>
+                <span className="text-[0.9rem] text-zinc-500">{total}</span>
+              </summary>
+              <div className="flex gap-[0.4rem] overflow-x-auto px-[1rem] pt-[0.8rem]" role="tablist" aria-label="Tipo de demo base">
+                {demosBase.map(([clave, texto, filas]) => (
+                  <button
+                    key={clave}
+                    type="button"
+                    role="tab"
+                    aria-selected={pestanaBase === clave}
+                    onClick={() => setPestanaBase(clave)}
+                    className={`shrink-0 rounded-full px-[0.85rem] py-[0.35rem] text-[0.85rem] font-semibold transition-colors ${pestanaBase === clave ? 'bg-zinc-900 text-white' : 'bg-zinc-100 text-zinc-600 hover:text-zinc-900'}`}
+                  >
+                    {texto} · {filas.length}
+                  </button>
+                ))}
+              </div>
+              <ul className="px-[1rem]">{filasBase.map(fila => Fila(fila))}</ul>
+            </details>
+          )
+        })()}
       </div>
     </div>
   )
