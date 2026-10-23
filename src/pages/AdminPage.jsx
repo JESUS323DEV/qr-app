@@ -3020,12 +3020,25 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
   const sinGuardar = huellaBase !== null && huella !== huellaBase
   /* Cada producto (miniweb, carta, ficha) guarda lo suyo: la copia cargada es de un solo producto. Al cambiar de producto se suelta, y
      Guardar cambios no puede escribir una carta encima de una miniweb (ni al revés); lo que se guarda después es una copia nueva */
+  // Aviso propio (no el del navegador) antes de perder cambios sin guardar
+  const [preguntaSalir, setPreguntaSalir] = useState(null)
+  const cerrarPreguntaSalir = useCallback(() => setPreguntaSalir(null), [])
   const cambiarProducto = clave => {
     if (clave === producto) return
-    if (copiaCargada) {
-      if (sinGuardar && !window.confirm('Tienes cambios sin guardar en esta copia. Si cambias de producto, dejas de editarla y no se guardan en ella. ¿Quieres cambiar de todos modos?')) return
-      setCopiaCargada(null)
+    if (copiaCargada && sinGuardar) {
+      setPreguntaSalir({
+        titulo: '¿Cambiar de producto?',
+        texto: 'Tienes cambios sin guardar en esta copia. Si cambias de producto, dejas de editarla y no se guardan en ella.',
+        boton: 'Cambiar',
+        peligro: true,
+        accion: () => pasarAProducto(clave),
+      })
+      return
     }
+    pasarAProducto(clave)
+  }
+  const pasarAProducto = clave => {
+    if (copiaCargada) setCopiaCargada(null)
     setProducto(clave)
     // Banner y Ficha no valen de portada de una miniweb: si estaba uno elegido, pasa a Editorial
     if (clave === 'miniweb' && SIN_PORTADA_MINIWEB.includes(hero)) setHero('editorial')
@@ -4204,10 +4217,14 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
               value={copiaCargada ? `${copiaCargada.tipo}:${copiaCargada.slug}` : ''}
               onChange={e => {
                 if (!e.target.value) return setCopiaCargada(null)
-                // Con cambios sin guardar, cargar otra copia los perdería: se pregunta antes (si se cancela, el desplegable se queda como estaba)
-                if (sinGuardar && !window.confirm('Tienes cambios sin guardar. Si cambias de copia, se pierden. ¿Quieres cambiar de todos modos?')) return
                 const [t, sl] = e.target.value.split(':')
-                cargarCopia((filas ?? []).find(f => f.tipo === t && f.slug === sl))
+                const abrirCopia = () => cargarCopia((filas ?? []).find(f => f.tipo === t && f.slug === sl))
+                // Con cambios sin guardar, cargar otra copia los perdería: se pregunta antes (si se cancela, el desplegable se queda como estaba)
+                if (sinGuardar) {
+                  setPreguntaSalir({ titulo: '¿Cambiar de copia?', texto: 'Tienes cambios sin guardar. Si cambias de copia, se pierden.', boton: 'Cambiar', peligro: true, accion: abrirCopia })
+                  return
+                }
+                abrirCopia()
               }}
               className={CAMPO}
             >
@@ -4263,6 +4280,7 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
           {aviso && <p className="mt-[0.7rem] text-center text-[0.8rem] font-semibold text-emerald-700">{aviso}</p>}
         </div>
       </div>
+      <Confirmar pregunta={preguntaSalir} alCerrar={cerrarPreguntaSalir} />
     </details>
   )
 }
@@ -4464,6 +4482,9 @@ function CopiasQR({ version, abrir }) {
   const [lista, setLista] = useState(null)
   const [error, setError] = useState('')
   const [marcadas, setMarcadas] = useState([])
+  // Aviso propio (no el del navegador) al disolver un grupo; los hooks, antes del return de más abajo
+  const [pregunta, setPregunta] = useState(null)
+  const cerrarPregunta = useCallback(() => setPregunta(null), [])
   const cargar = useCallback(() => {
     supabase
       .from('qr_copias')
@@ -4503,12 +4524,18 @@ function CopiasQR({ version, abrir }) {
   ).sort(([a], [b]) => a.localeCompare(b, 'es'))
   const sueltas = (lista ?? []).filter(f => !f.diseno?._grupo)
 
-  const disolver = async nombre => {
-    if (!window.confirm(`¿Disolver el grupo «${nombre}»? Sus copias no se borran: se quedan sin grupo.`)) return
-    const resultados = await Promise.all(elementos.filter(e => e.grupo === nombre).map(e => e.poner(null)))
-    if (resultados.some(r => r.error)) window.alert('No se han podido sacar todas las copias del grupo.')
-    cargar()
-  }
+  const disolver = nombre =>
+    setPregunta({
+      titulo: `¿Disolver el grupo «${nombre}»?`,
+      texto: 'Sus copias no se borran: se quedan sin grupo.',
+      boton: 'Disolver',
+      peligro: true,
+      accion: async () => {
+        const resultados = await Promise.all(elementos.filter(e => e.grupo === nombre).map(e => e.poner(null)))
+        if (resultados.some(r => r.error)) setPregunta({ titulo: 'No se ha podido', texto: 'No se han podido sacar todas las copias del grupo.', boton: 'Vale', accion: () => {} })
+        cargar()
+      },
+    })
 
   const fila = f => (
     <li key={f.id} className="flex items-center gap-[0.75rem] border-b border-zinc-200 py-[0.7rem] last:border-b-0">
@@ -4540,6 +4567,7 @@ function CopiasQR({ version, abrir }) {
         <span className="text-[1.05rem] font-bold">Copias de QR</span>
         <span className="text-[0.9rem] text-zinc-500">{lista?.length ?? 0}</span>
       </summary>
+      <Confirmar pregunta={pregunta} alCerrar={cerrarPregunta} />
       {error && <p className="px-[1rem] py-[0.7rem] text-[0.85rem] font-semibold text-red-600">{error}</p>}
       <NuevoGrupo elementos={elementos} recargar={cargar} />
       <MoverCopias marcadas={marcadas} elementos={elementos} recargar={cargar} limpiar={() => setMarcadas([])} />
@@ -4903,20 +4931,28 @@ function Lista({ filas, abrir, recargar, copia }) {
 
   // Grupo desplegable: cerrado, con su número; al tocarlo se abre la lista. Con secciones (titulo + filas), la lista se separa en partes con su título
   // Disolver un grupo: se borra el grupo y sus copias se quedan (sin grupo)
-  const disolverGrupo = async nombre => {
-    if (!window.confirm(`¿Disolver el grupo «${nombre}»? Sus copias no se borran: se quedan sin grupo.`)) return
-    const resultados = await Promise.all(
-      copias
-        .filter(c => c.cambios?._grupo === nombre)
-        .map(c => {
-          const cambios = { ...c.cambios }
-          delete cambios._grupo
-          return supabase.from('ediciones').upsert({ tipo: c.tipo, slug: c.slug, base: c.base ?? null, cambios })
-        }),
-    )
-    if (resultados.some(r => r.error)) window.alert('No se han podido sacar todas las copias del grupo.')
-    recargar()
-  }
+  const [preguntaGrupo, setPreguntaGrupo] = useState(null)
+  const cerrarPreguntaGrupo = useCallback(() => setPreguntaGrupo(null), [])
+  const disolverGrupo = nombre =>
+    setPreguntaGrupo({
+      titulo: `¿Disolver el grupo «${nombre}»?`,
+      texto: 'Sus copias no se borran: se quedan sin grupo.',
+      boton: 'Disolver',
+      peligro: true,
+      accion: async () => {
+        const resultados = await Promise.all(
+          copias
+            .filter(c => c.cambios?._grupo === nombre)
+            .map(c => {
+              const cambios = { ...c.cambios }
+              delete cambios._grupo
+              return supabase.from('ediciones').upsert({ tipo: c.tipo, slug: c.slug, base: c.base ?? null, cambios })
+            }),
+        )
+        if (resultados.some(r => r.error)) setPreguntaGrupo({ titulo: 'No se ha podido', texto: 'No se han podido sacar todas las copias del grupo.', boton: 'Vale', accion: () => {} })
+        recargar()
+      },
+    })
 
   const Grupo = ({ titulo, filas: lista, secciones, carpetas, cabecera }) =>
     lista.length > 0 && secciones ? (
@@ -5023,6 +5059,7 @@ function Lista({ filas, abrir, recargar, copia }) {
 
   return (
     <div className="grid gap-[1.75rem]">
+      <Confirmar pregunta={preguntaGrupo} alCerrar={cerrarPreguntaGrupo} />
       {/* Crear: el Editor de miniwebs y cartas y el Editor QR */}
       <div className="grid gap-[0.75rem]">
       <h2 className="px-[0.25rem] text-[0.85rem] font-semibold text-zinc-500">Crear</h2>

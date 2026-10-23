@@ -432,6 +432,8 @@ function EditorMenu({ fila, alGuardar }) {
 }
 
 const OFERTA_VACIA = { nombre: '', descripcion: '', precio: '', antes: '', desde: '', hasta: '' }
+// Como mucho, las ofertas que se rellenan de una foto (la función leer-pizarra nunca devuelve más)
+const MAX_OFERTAS_FOTO = 8
 const hoy = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' })
 
 /* Editor de ofertas (perfil de belleza o de tienda): cada oferta con su nombre, precio, precio de antes (sale
@@ -446,6 +448,44 @@ function EditorOfertas({ fila }) {
   const [estado, setEstado] = useState('')
   const [pregunta, setPregunta] = useState(null)
   const cerrarPregunta = useCallback(() => setPregunta(null), [])
+
+  // Foto de un cartel o lista de ofertas: se reduce en el móvil, la lee la función leer-pizarra (Claude, modo ofertas) y se rellena la lista (no publica)
+  const entradaFoto = useRef(null)
+  const [leyendo, setLeyendo] = useState(false)
+  const [foto, setFoto] = useState(null)
+  const leerFoto = async e => {
+    const archivo = e.target.files?.[0]
+    e.target.value = ''
+    if (!archivo) return
+    setLeyendo(true)
+    setFoto(null)
+    setEstado('')
+    try {
+      const imagen = await reducirFoto(archivo)
+      const { data, error } = await supabase.functions.invoke('leer-pizarra', { body: { slug: fila.slug, imagen, tipo: 'image/jpeg', modo: 'ofertas' } })
+      if (error) {
+        let mensaje = 'No se ha podido leer la foto. Prueba otra vez.'
+        try {
+          mensaje = (await error.context?.json())?.error ?? mensaje
+        } catch {
+          // Sin mensaje propio: se queda el genérico
+        }
+        setFoto({ error: mensaje })
+        return
+      }
+      const leido = data.lectura
+      if (!leido?.ofertas?.length) {
+        setFoto({ error: leido?.dudas?.[0] ?? 'No he encontrado ofertas en la foto. Prueba con otra más clara.' })
+        return
+      }
+      setOfertas(o => ({ ...o, lista: leido.ofertas.slice(0, MAX_OFERTAS_FOTO).map(x => ({ ...OFERTA_VACIA, ...x })) }))
+      setFoto({ ok: true, abierto: true, dudas: leido.dudas ?? [] })
+    } catch {
+      setFoto({ error: 'No se ha podido leer la foto. Prueba otra vez.' })
+    } finally {
+      setLeyendo(false)
+    }
+  }
 
   const cambiarLista = lista => {
     setOfertas(o => ({ ...o, lista }))
@@ -493,6 +533,52 @@ function EditorOfertas({ fila }) {
       <p className="text-[0.9rem] leading-[1.45] text-zinc-600">
         Las ofertas salen arriba en tu carta. Si les pones fecha de fin, desaparecen solas ese día por la noche.
       </p>
+
+      {/* Rellenar con una foto de un cartel o lista de ofertas: la IA lee las ofertas y las pone en la lista (no publica) */}
+      <div className="grid gap-[0.6rem]">
+        <input ref={entradaFoto} type="file" accept="image/*" capture="environment" onChange={leerFoto} className="hidden" />
+        <button
+          type="button"
+          disabled={leyendo}
+          onClick={() => entradaFoto.current?.click()}
+          className="flex items-center justify-center gap-[0.5rem] rounded-[0.8rem] bg-white px-[1rem] py-[0.9rem] font-semibold ring-1 ring-zinc-300 disabled:opacity-60"
+        >
+          <Camera className="h-[1.15rem] w-[1.15rem]" aria-hidden="true" />
+          {leyendo ? 'Leyendo tus ofertas...' : 'Rellenar con una foto'}
+        </button>
+        {!leyendo && !foto && (
+          <p className="text-center text-[0.8rem] text-zinc-500">Haz una foto a tu cartel de ofertas, de frente y sin reflejos. Se rellena la lista (cambia la que tienes ahora) y la revisas antes de publicar.</p>
+        )}
+        {foto?.error && <p className="rounded-[0.6rem] bg-red-50 px-[0.9rem] py-[0.6rem] text-[0.88rem] font-semibold text-red-700">{foto.error}</p>}
+        {foto?.ok && (
+          <div className="rounded-[0.6rem] bg-emerald-50 px-[0.9rem] py-[0.6rem] text-[0.88rem] text-emerald-800">
+            <div className="flex items-start justify-between gap-[0.75rem]">
+              <p className="font-semibold">
+                Ofertas rellenadas. Revísalas y pulsa Publicar.
+                {!foto.abierto && foto.dudas?.length > 0 && (
+                  <span className="font-normal text-amber-800"> {foto.dudas.length} {foto.dudas.length === 1 ? 'cosa' : 'cosas'} para revisar.</span>
+                )}
+              </p>
+              <button
+                type="button"
+                aria-expanded={foto.abierto}
+                onClick={() => setFoto(f => ({ ...f, abierto: !f.abierto }))}
+                className="shrink-0 font-semibold underline underline-offset-[0.2em]"
+              >
+                {foto.abierto ? 'Leer menos' : 'Leer más'}
+              </button>
+            </div>
+            {foto.abierto && foto.dudas?.length > 0 && (
+              <>
+                <p className="mt-[0.4rem] font-semibold text-amber-800">Mira bien esto, no se leía claro:</p>
+                <ul className="mt-[0.2rem] list-disc pl-[1.1rem] text-amber-900">
+                  {foto.dudas.map(d => <li key={d}>{d}</li>)}
+                </ul>
+              </>
+            )}
+          </div>
+        )}
+      </div>
 
       {ofertas.lista.map((o, i) => {
         const caducada = o.hasta && o.hasta < hoy()

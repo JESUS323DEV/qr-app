@@ -1,4 +1,5 @@
 // Lee la foto de la pizarra (o del cartel) del menú del día con Claude y devuelve el menú ordenado para el panel.
+// Con modo: 'ofertas', lee en cambio un cartel o lista de ofertas y devuelve la lista de ofertas (nombre, precio, precio anterior, fecha de fin).
 // - Solo para dueños que han entrado en el panel, y solo sobre su propia carta.
 // - Máximo LIMITE_DIARIO lecturas al día por dueño, para que el gasto de la API nunca se dispare.
 // - La clave de la API está en los secretos de Supabase (ANTHROPIC_API_KEY): nunca llega a la web.
@@ -55,6 +56,44 @@ const INSTRUCCIONES = `Lees la foto de la pizarra o el cartel del menú del día
 - dudas: si alguna palabra o precio no se lee con seguridad, escribe tu mejor lectura en su sitio y añade aquí una línea corta diciendo cuál es, para que el dueño lo revise. Si todo se lee bien, lista vacía.
 - Si la foto no es un menú, devuelve grupos vacío y explica en dudas qué se ve.`
 
+// Modo ofertas: la forma de la lista de ofertas del panel ({ nombre, descripcion, precio, antes, hasta }), más las dudas
+const ESQUEMA_OFERTAS = {
+  type: 'object',
+  properties: {
+    ofertas: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          nombre: { type: 'string' },
+          descripcion: { type: 'string' },
+          precio: { type: 'string' },
+          antes: { type: 'string' },
+          hasta: { type: 'string' },
+        },
+        required: ['nombre', 'descripcion', 'precio', 'antes', 'hasta'],
+        additionalProperties: false,
+      },
+    },
+    dudas: { type: 'array', items: { type: 'string' } },
+  },
+  required: ['ofertas', 'dudas'],
+  additionalProperties: false,
+}
+
+const instruccionesOfertas = (hoy: string) => `Lees la foto de un cartel, una pizarra o una lista de ofertas o promociones de un negocio de España (peluquería, uñas, estética, tienda...) y devuelves la lista de ofertas ordenada. Hoy es ${hoy}.
+
+- ofertas: una por cada oferta o promoción distinta, en el orden del cartel. Nunca más de 8.
+- nombre: lo que se ofrece, corto y con mayúscula inicial ("Manicura semipermanente", "Primera visita", "Trae a una amiga").
+- descripcion: una frase corta si el cartel la trae (qué incluye, condiciones); si no, cadena vacía.
+- precio: el precio de la oferta con este formato: "19 €" o "19,90 €". Si la oferta es un descuento en porcentaje, escríbelo como "-20 %". Si no hay precio, cadena vacía.
+- antes: el precio anterior, el que sale tachado o "antes", con el mismo formato. Si no aparece, cadena vacía.
+- hasta: el último día en que vale la oferta, si el cartel lo dice, con formato AAAA-MM-DD (por ejemplo "2026-06-30"). Si el cartel no dice el año, usa el más cercano que no esté ya pasado respecto a hoy. Si no hay fecha, cadena vacía.
+- Escribe cada texto como está, con tildes y ortografía correctas. No traduzcas.
+- No inventes ofertas, precios ni fechas que no estén en la foto. No metas el nombre del negocio, el teléfono ni la dirección como oferta.
+- dudas: si algo no se lee con seguridad (una palabra, un precio, una fecha), escribe tu mejor lectura en su sitio y añade aquí una línea corta diciendo cuál es, para que el dueño lo revise. Si todo se lee bien, lista vacía.
+- Si la foto no es una lista de ofertas, devuelve ofertas vacío y explica en dudas qué se ve.`
+
 Deno.serve(async req => {
   // Pregunta previa del navegador (CORS): se autorizan las cabeceras que pida, porque la librería de Supabase
   // añade algunas propias según la versión; si falta una, el navegador no llega a enviar la foto
@@ -73,9 +112,9 @@ Deno.serve(async req => {
   const { data: { user } } = await comoDueno.auth.getUser()
   if (!user) return responder({ error: 'Tienes que entrar en tu panel.' }, 401)
 
-  let slug: string, imagen: string, tipo: string
+  let slug: string, imagen: string, tipo: string, modo: string | undefined
   try {
-    ;({ slug, imagen, tipo } = await req.json())
+    ;({ slug, imagen, tipo, modo } = await req.json())
   } catch {
     return responder({ error: 'Petición no válida.' }, 400)
   }
@@ -101,6 +140,9 @@ Deno.serve(async req => {
 
   // Lectura con Claude, con la respuesta ajustada al esquema del menú
   const claude = new Anthropic({ apiKey: Deno.env.get('ANTHROPIC_API_KEY') })
+  const deOfertas = modo === 'ofertas'
+  // Hoy en España, como "2026-10-23", para que Claude sepa de qué año son las fechas sin año
+  const hoyEspana = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' })
   let respuesta
   try {
     respuesta = await claude.beta.messages.create({
@@ -110,14 +152,14 @@ Deno.serve(async req => {
       betas: ['server-side-fallback-2026-07-01'],
       fallbacks: 'default',
       // Leer y ordenar una foto es una tarea sencilla: esfuerzo bajo, más rápido y más barato
-      output_config: { effort: 'low', format: { type: 'json_schema', schema: ESQUEMA } },
-      system: INSTRUCCIONES,
+      output_config: { effort: 'low', format: { type: 'json_schema', schema: deOfertas ? ESQUEMA_OFERTAS : ESQUEMA } },
+      system: deOfertas ? instruccionesOfertas(hoyEspana) : INSTRUCCIONES,
       messages: [
         {
           role: 'user',
           content: [
             { type: 'image', source: { type: 'base64', media_type: mediaType, data: imagen } },
-            { type: 'text', text: 'Lee este menú del día.' },
+            { type: 'text', text: deOfertas ? 'Lee estas ofertas.' : 'Lee este menú del día.' },
           ],
         },
       ],
@@ -132,13 +174,14 @@ Deno.serve(async req => {
   }
 
   const texto = respuesta.content.find(b => b.type === 'text')
-  let menu
+  let leido
   try {
-    menu = JSON.parse(texto && 'text' in texto ? texto.text : '')
+    leido = JSON.parse(texto && 'text' in texto ? texto.text : '')
   } catch {
     return responder({ error: 'No se ha podido leer la foto. Prueba con otra más clara.' }, 422)
   }
 
   await servidor.from('lecturas_ia').insert({ usuario: user.id, slug })
-  return responder({ menu })
+  // Menú del día: { menu }. Ofertas: { lectura: { ofertas, dudas } }
+  return responder(deOfertas ? { lectura: leido } : { menu: leido })
 })

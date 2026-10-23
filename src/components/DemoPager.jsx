@@ -11,7 +11,8 @@ import useAutoHide from '../lib/useAutoHide'
    No se muestra dentro de un iframe (los móviles del catálogo).
    Por defecto recorre las miniwebs de demo; con `secuencia` y `rutaDe` recorre otra lista (las cartas),
    y sin `conTransicion` no hay pantalla de cambio de temática. */
-export default function DemoPager({ negocio, secuencia = secuenciaDemos, rutaDe = n => `/demo/${n.slug}`, conTransicion = true }) {
+// enEscritorio: las flechas también en pantallas grandes (el Vistazo de un grupo, para enseñarlo desde una tablet o un ordenador)
+export default function DemoPager({ negocio, secuencia = secuenciaDemos, rutaDe = n => `/demo/${n.slug}`, conTransicion = true, enEscritorio = false }) {
   const navigate = useNavigate()
   const [transicion, setTransicion] = useState(null)
   const visible = useAutoHide(negocio.slug)
@@ -44,7 +45,7 @@ export default function DemoPager({ negocio, secuencia = secuenciaDemos, rutaDe 
   }
 
   const flecha =
-    'lg:hidden fixed top-1/2 z-40 flex h-[2.25rem] w-[2.25rem] -translate-y-1/2 items-center justify-center rounded-full bg-black/35 text-white backdrop-blur-sm transition-opacity duration-500'
+    `${enEscritorio ? '' : 'lg:hidden '}fixed top-1/2 z-40 flex h-[2.25rem] w-[2.25rem] -translate-y-1/2 items-center justify-center rounded-full bg-black/35 text-white backdrop-blur-sm transition-opacity duration-500`
   const estado = activa =>
     !visible ? 'pointer-events-none opacity-0' : activa ? 'opacity-75' : 'pointer-events-none opacity-25'
 

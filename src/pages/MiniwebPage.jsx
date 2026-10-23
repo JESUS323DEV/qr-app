@@ -289,7 +289,7 @@ export default function MiniwebPage({ demo = false }) {
           {!negocio.copia && <DemoPager negocio={negocio} secuencia={secuenciaDemos.filter(n => tipoDe(n) === tipoDe(negocio))} />}
           {/* Los ejemplos de la landing (copias del Editor, una lista fija): flechas entre ellos, en el orden de /miniweb */}
           {negocio.copia && !secuenciaGrupo && SECUENCIA_EJEMPLOS.some(e => e.slug === negocio.slug) && <DemoPager negocio={negocio} secuencia={SECUENCIA_EJEMPLOS} conTransicion={false} />}
-          {negocio.copia && secuenciaGrupo && <DemoPager negocio={{ slug: `negocio:${negocio.slug}` }} secuencia={secuenciaGrupo} rutaDe={n => n.ruta} conTransicion={false} />}
+          {negocio.copia && secuenciaGrupo && <DemoPager negocio={{ slug: `negocio:${negocio.slug}` }} secuencia={secuenciaGrupo} rutaDe={n => n.ruta} conTransicion={false} enEscritorio />}
           <DemoHomeButton slug={negocio.slug} />
         </>
       )}

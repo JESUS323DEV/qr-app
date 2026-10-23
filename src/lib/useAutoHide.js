@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 
 /* Controles que se desvanecen solos para no estorbar a la demo.
    - Se ven al abrir la demo y se esconden `ms` después, estés donde estés.
-   - Reaparecen al tocar la pantalla o al hacer scroll hacia arriba.
+   - Reaparecen al tocar la pantalla, al mover el ratón o al hacer scroll hacia arriba.
    `resetKey` hace que vuelvan a verse al cambiar de demo. */
 export default function useAutoHide(resetKey, ms = 1500) {
   const [visible, setVisible] = useState(true)
@@ -31,11 +31,13 @@ export default function useAutoHide(resetKey, ms = 1500) {
     lastY.current = window.scrollY
     show()
     window.addEventListener('touchstart', show, { passive: true })
+    window.addEventListener('mousemove', show, { passive: true })
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => {
       clearTimeout(timer.current)
       timer.current = null
       window.removeEventListener('touchstart', show)
+      window.removeEventListener('mousemove', show)
       window.removeEventListener('scroll', onScroll)
     }
   }, [resetKey, ms])
