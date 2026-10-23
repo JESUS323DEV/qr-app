@@ -1,4 +1,4 @@
-import { estiloPrecio } from './precio'
+import { estiloPrecio, ZOOM_NOMBRE } from './precio'
 import { useEffect, useState } from 'react'
 import { X } from 'lucide-react'
 import { ALERGENOS } from '../../cartas'
@@ -202,7 +202,7 @@ export default function CartaPolaroid({ carta, negocio }) {
         <header className="flex shrink-0 items-start justify-between gap-[1rem]">
           <div className="min-w-0">
             {lado === 'izquierda' && <EnlaceNegocio carta={carta} negocio={negocio} className="mb-[0.5rem] inline-flex items-center gap-[0.25rem] sp sp-fondo rounded-full px-[0.7rem] py-[0.3rem] text-[0.72rem] font-semibold" />}
-            <h1 className="font-demo-heading text-[2.6rem] font-bold leading-[0.85] [@media(min-height:46rem)]:text-[3rem] [@media(min-height:56rem)]:text-[3.4rem]">{negocio.nombre}</h1>
+            <h1 className="font-demo-heading text-[2.6rem] font-bold leading-[0.85] [@media(min-height:46rem)]:text-[3rem] [@media(min-height:56rem)]:text-[3.4rem]" style={ZOOM_NOMBRE}>{negocio.nombre}</h1>
             {negocio.lema && <p className="mt-[0.25rem] text-[0.85rem] sp-80 [@media(min-height:46rem)]:text-[0.92rem]">{negocio.lema}</p>}
           </div>
           {/* A la derecha: el idioma y, debajo, el enlace a la miniweb del negocio (si la carta es de un negocio con ficha) */}

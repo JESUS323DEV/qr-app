@@ -1,4 +1,4 @@
-import { estiloPrecio } from './precio'
+import { estiloPrecio, ZOOM_NOMBRE } from './precio'
 import { useState } from 'react'
 import { ALERGENOS } from '../../cartas'
 import Img from '../Img'
@@ -99,7 +99,7 @@ export default function CartaInmersiva({ carta, negocio, foto }) {
         <div className="flex items-start justify-between gap-[0.75rem] px-[1.25rem] pb-[0.5rem] pt-[1rem]">
           <div className="min-w-0">
             {lado === 'izquierda' && <EnlaceNegocio carta={carta} negocio={negocio} className="mb-[0.5rem] inline-flex items-center gap-[0.25rem] rounded-full bg-black/45 px-[0.7rem] py-[0.3rem] text-[0.75rem] font-semibold text-white backdrop-blur-sm" />}
-            <p className="font-demo-heading text-[2.4rem] leading-[0.95] [text-shadow:0_0.1rem_1rem_rgb(0_0_0/0.35)]">{negocio.nombre}</p>
+            <p className="font-demo-heading text-[2.4rem] leading-[0.95] [text-shadow:0_0.1rem_1rem_rgb(0_0_0/0.35)]" style={ZOOM_NOMBRE}>{negocio.nombre}</p>
             {negocio.lema && <p className="mt-[0.35rem] text-[0.85rem] text-white/85">{negocio.lema}</p>}
 
             {/* Subdiseño en columna: Menú del día y Carta, en columna debajo del nombre */}

@@ -1,4 +1,4 @@
-import { estiloPrecio } from '../components/carta/precio'
+import { estiloPrecio, ZOOM_NOMBRE } from '../components/carta/precio'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { FAMILIAS } from '../familias'
@@ -256,6 +256,7 @@ function useAhora() {
 
 // El tamaño del precio del menú (carta.tamanoPrecio: xs, md o xl): el factor se pone en una variable del documento (--demo-precio-escala) que usan los estilos
 const FACTORES_PRECIO = { xs: 0.8, md: 1, xl: 1.25 }
+const FACTORES_NOMBRE = { xxs: 0.65, xs: 0.8, md: 1, xl: 1.25 }
 // Los diseños del detalle del precio (carta.detallePrecio; sin él, la raya): su dibujo está en main.css con data-precio en <html>
 export const DETALLES_PRECIO = ['raya', 'ondulada', 'pincelada', 'doble', 'ovalo', 'repasado', 'arco', 'sello', 'estrella', 'pastilla', 'etiqueta', 'cinta', 'burbuja', 'rombo', 'escudo', 'ninguno']
 function CartaConTamanos(props) {
@@ -264,6 +265,12 @@ function CartaConTamanos(props) {
     document.documentElement.style.setProperty('--demo-precio-escala', String(factor))
     return () => document.documentElement.style.removeProperty('--demo-precio-escala')
   }, [factor])
+  // El tamaño del nombre del negocio en la cabecera (carta.tamanoNombre: xxs, xs, md o xl)
+  const factorNombre = FACTORES_NOMBRE[props.carta?.tamanoNombre] ?? 1
+  useEffect(() => {
+    document.documentElement.style.setProperty('--demo-nombre-escala', String(factorNombre))
+    return () => document.documentElement.style.removeProperty('--demo-nombre-escala')
+  }, [factorNombre])
   const detalle = DETALLES_PRECIO.includes(props.carta?.detallePrecio) ? props.carta.detallePrecio : 'raya'
   useEffect(() => {
     document.documentElement.dataset.precio = detalle
@@ -282,6 +289,8 @@ export default function CartaPage(props) {
   const pruebaDiseno = params.get('diseno')
   const pruebaSub = params.get('sub')
   const pruebaTPrecio = params.get('tprecio')
+  // ?tnombre=xxs|xs|md|xl: el tamaño del nombre del negocio (carta.tamanoNombre), para la vista previa del Editor
+  const pruebaTNombre = params.get('tnombre')
   const pruebaDPrecio = params.get('dprecio')
   const pruebaEnlace = params.get('enlace')
   const pruebaFiltro = params.get('filtro')
@@ -321,6 +330,7 @@ export default function CartaPage(props) {
   if (carta?.demo && ESTILOS_CARTA.has(pruebaDiseno)) carta = { ...carta, diseno: pruebaDiseno }
   // ?tprecio=xs|xl: el tamaño del precio del menú (carta.tamanoPrecio), para la vista previa del Editor
   if (carta?.demo && ['xs', 'md', 'xl'].includes(pruebaTPrecio)) carta = { ...carta, tamanoPrecio: pruebaTPrecio }
+  if (carta?.demo && ['xxs', 'xs', 'md', 'xl'].includes(pruebaTNombre)) carta = { ...carta, tamanoNombre: pruebaTNombre }
   // ?dprecio=ondulada|...: el diseño del detalle del precio (carta.detallePrecio), para la vista previa del Editor
   if (carta?.demo && DETALLES_PRECIO.includes(pruebaDPrecio)) carta = { ...carta, detallePrecio: pruebaDPrecio }
   // ?enlace=ninguno|derecha|izquierda: dónde va el enlace a la miniweb (carta.enlaceNegocio), para la vista previa del Editor
@@ -449,7 +459,7 @@ function Carta({ carta, negocio, demo = false, incrustada = false }) {
 
           <div className="absolute inset-x-0 bottom-0 px-[1.25rem] pb-[1rem] text-white">
             <p className="text-[0.85rem] text-white/80">Carta</p>
-            <p className="mt-[0.15rem] font-demo-heading text-[2.2rem] leading-none">{negocio.nombre}</p>
+            <p className="mt-[0.15rem] font-demo-heading text-[2.2rem] leading-none" style={ZOOM_NOMBRE}>{negocio.nombre}</p>
             {negocio.lema && <p className="mt-[0.3rem] text-[0.85rem] text-white/80">{negocio.lema}</p>}
           </div>
         </div>

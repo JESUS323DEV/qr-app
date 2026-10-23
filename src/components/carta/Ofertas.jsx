@@ -157,6 +157,37 @@ function GaleriaPorParejas({ fotos, abrir, className = '' }) {
   )
 }
 
+/* Polaroid: una sola foto grande, como la de Revista, pero dentro de un marco de polaroid (borde blanco, más ancho abajo, sombra) y un poco
+   torcida. Va pasando sola entre las fotos (hasta 4) con un fundido, cada pocos segundos; los puntos del borde blanco marcan cuál va. Al tocarla, se
+   abre grande la que se ve. Con una sola foto, o si la persona pide menos movimiento, se queda quieta */
+function PolaroidGrande({ fotos, abrir, className = '' }) {
+  const [actual, setActual] = useState(0)
+  const n = fotos.length
+  useEffect(() => {
+    if (n < 2 || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
+    const id = setInterval(() => setActual(v => (v + 1) % n), 4500)
+    return () => clearInterval(id)
+  }, [n])
+  return (
+    <div className={`flex ${className}`}>
+      <button
+        type="button"
+        onClick={() => abrir(fotos[actual] ?? fotos[0])}
+        className={`flex w-full -rotate-[1.5deg] flex-col bg-white p-[0.45rem] pb-[0.3rem] transition-transform duration-200 hover:rotate-0 ${SOMBRA}`}
+      >
+        <span className="relative block min-h-0 w-full flex-1 overflow-hidden bg-black/10">
+          {fotos.map((src, k) => (
+            <Img key={`${k}-${src}`} src={src} alt="" className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ${k === actual ? 'opacity-100' : 'opacity-0'}`} />
+          ))}
+        </span>
+        <span className="flex h-[1.5rem] shrink-0 items-center justify-center gap-[0.3rem]" aria-hidden="true">
+          {n > 1 && fotos.map((_, k) => <span key={k} className={`h-[0.3rem] rounded-full bg-zinc-800 transition-all duration-500 ${k === actual ? 'w-[0.9rem] opacity-70' : 'w-[0.3rem] opacity-25'}`} />)}
+        </span>
+      </button>
+    </div>
+  )
+}
+
 // El precio de una oferta y, si lo hay, el de antes tachado. Su color ("Texto del precio" del Editor; sin él, el de acento) y su tamaño (XS, MD o XL)
 // son los mismos ajustes que los del precio del menú del día
 const COLOR_PRECIO = 'text-[color:var(--demo-precio-texto,var(--demo-accent))]'
@@ -203,24 +234,10 @@ export default function Ofertas({ menu, sobreFoto = false, estilo = 'base', pape
 
   if (estilo === 'polaroid') {
     // Fila de polaroids con los trabajos y, debajo, cada oferta en un papelito un poco torcido
+    // Una foto grande en marco de polaroid, torcida, que va cambiando sola
     cuerpo = (
       <>
-        {fotos.length > 0 && (
-          <div className={`mb-[0.8rem] grid flex-1 gap-[0.7rem] px-[0.3rem] pt-[0.3rem] ${fotos.length > 3 ? 'min-h-[15rem] [@media(min-height:46rem)]:min-h-[19rem]' : 'min-h-[9rem] [@media(min-height:46rem)]:min-h-[12rem]'}`} style={{ gridTemplateColumns: `repeat(${fotos.length > 3 ? 2 : fotos.length}, minmax(0, 1fr))`, gridAutoRows: 'minmax(0, 1fr)' }}>
-            {fotos.map((src, i) => (
-              <button
-                key={`${i}-${src}`}
-                type="button"
-                onClick={() => setAbierta(src)}
-                className={`flex min-h-0 flex-col bg-white p-[0.3rem] pb-[1.1rem] transition-transform duration-200 hover:rotate-0 hover:scale-[1.04] ${SOMBRA} ${GIROS[i % GIROS.length]}`}
-              >
-                <span className="relative block min-h-0 w-full flex-1 overflow-hidden bg-black/5">
-                  <Img src={src} alt="" className="absolute inset-0 h-full w-full object-cover" />
-                </span>
-              </button>
-            ))}
-          </div>
-        )}
+        {fotos.length > 0 && <PolaroidGrande fotos={fotos} abrir={setAbierta} className="mb-[0.9rem] min-h-[10rem] flex-1 px-[0.4rem] pt-[0.4rem] [@media(min-height:46rem)]:min-h-[13rem]" />}
         <div className="shrink-0">
           {titulo('', papelitos)}
           <ul className={papelitos ? 'mt-[0.6rem] grid gap-[0.5rem] [@media(min-height:46rem)]:gap-[0.7rem]' : 'mt-[0.6rem] [@media(min-height:46rem)]:mt-[0.9rem]'}>

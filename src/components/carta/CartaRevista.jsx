@@ -1,4 +1,4 @@
-import { estiloPrecio } from './precio'
+import { estiloPrecio, ZOOM_NOMBRE } from './precio'
 import { useEffect, useState } from 'react'
 import { ArrowUpRight, X } from 'lucide-react'
 import { ALERGENOS } from '../../cartas'
@@ -187,7 +187,7 @@ export default function CartaRevista({ carta, negocio }) {
           )}
         </div>
         <header className="mt-[0.4rem] shrink-0 border-b-2 border-demo-text pb-[0.45rem] [@media(min-height:46rem)]:mt-[0.6rem] [@media(min-height:46rem)]:pb-[0.6rem]">
-          <h1 className="font-demo-heading text-[2.6rem] leading-[0.9] tracking-[-0.02em] [@media(min-height:46rem)]:text-[3.1rem] [@media(min-height:56rem)]:text-[3.6rem]">{negocio.nombre}</h1>
+          <h1 className="font-demo-heading text-[2.6rem] leading-[0.9] tracking-[-0.02em] [@media(min-height:46rem)]:text-[3.1rem] [@media(min-height:56rem)]:text-[3.6rem]" style={ZOOM_NOMBRE}>{negocio.nombre}</h1>
         </header>
 
         {/* Menú del día y Carta; en la carta, sus secciones */}

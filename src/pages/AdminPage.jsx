@@ -2700,6 +2700,7 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
     producto === 'miniweb' && conTextoExtra && `ti=${encodeURIComponent(textoExtra)}`,
     producto === 'miniweb' && Object.keys(coloresMini).length > 0 && `col=${Object.entries(coloresMini).map(([clave, valor]) => `${clave}-${valor.slice(1)}`).join(',')}`,
     !esCarta && tamanoNombre !== 'md' && `tamano=${tamanoNombre}`,
+    esCarta && tamanoNombre !== 'md' && `tnombre=${tamanoNombre}`,
     !esCarta && hero === 'diagonal' && corte !== 'diagonal' && `corte=${corte}`,
     !esCarta && hero === 'editorial' && formato !== 'clasica' && `formato=${formato}`,
     !esCarta && hero === 'fullbleed' && disposicion !== 'clasica' && `disposicion=${disposicion}`,
@@ -2798,6 +2799,7 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
         ...(colorPrecio ? { 'marca.theme.colors.precio': colorPrecio } : {}),
         ...(colorPrecioTexto ? { 'marca.theme.colors.precioTexto': colorPrecioTexto } : {}),
         ...(tamanoPrecio !== 'md' ? { tamanoPrecio } : {}),
+        ...(tamanoNombre !== 'md' ? { tamanoNombre } : {}),
         // Una copia no enlaza a la miniweb de la demo de la que sale: sin enlace salvo que se elija
         enlaceNegocio,
         ...(estilo === 'inmersiva' && filtroCarta !== 100 ? { filtroFoto: filtroCarta } : {}),
@@ -3239,8 +3241,8 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
               </Etiqueta>
             )}
             {!esCarta && logoAbierto && <CampoLogo valor={logo} cambiar={setLogo} />}
-            {/* El tamaño del nombre arriba (XS, MD, el de cada diseño, o XL): cápsulas pequeñas bajo el campo */}
-            {!esCarta && (
+            {/* El tamaño del nombre arriba (XXS, XS, MD o XL): cápsulas pequeñas bajo el campo; en las miniwebs y en las cartas */}
+            {(
               <div className="grid justify-items-start gap-[0.25rem]">
                 <div className="flex gap-[0.4rem]">
                   {['xxs', 'xs', 'md', 'xl'].map(t => (
