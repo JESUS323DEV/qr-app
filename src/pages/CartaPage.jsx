@@ -15,6 +15,7 @@ import { rutaNegocio } from '../negocios'
 import { applyTheme, resetTheme } from '../lib/applyTheme'
 import Img from '../components/Img'
 import { supabase } from '../lib/supabase'
+import { useSecuenciaGrupo } from '../lib/vistazoGrupo'
 import { menuActivo, textoHorario } from '../lib/horarioMenu'
 import { aplicar, conEdicion, useEdicion } from '../lib/ediciones'
 import { useDestino } from '../lib/destinos'
@@ -210,10 +211,12 @@ const juntar = (carta, fila) => {
   return {
     ...carta,
     // Del archivo se quedan las cosas fijas del menú (su texto de pestaña, su foto); lo editable viene de Supabase
-    menuDia: fila.hay_menu === false ? null : fila.menu_dia ? { ...carta.menuDia, ...fila.menu_dia } : carta.menuDia,
+    // Con perfil 'ofertas' (el que elige el dueño en su panel) no hay menú del día, y con 'menu' no hay ofertas, aunque el archivo las traiga
+    menuDia: fila.perfil === 'ofertas' || fila.hay_menu === false ? null : fila.menu_dia ? { ...carta.menuDia, ...fila.menu_dia } : carta.menuDia,
     secciones: fila.secciones ?? carta.secciones,
     // Ofertas (perfil de belleza o de tienda): las del dueño, si las ha publicado; si no, las del archivo
-    ofertas: fila.ofertas ? { ...carta.ofertas, ...fila.ofertas } : carta.ofertas,
+    // De lo que publica el dueño solo vale la lista; las fotos, el título y el texto de la pestaña son del Editor (aunque la fila antigua los traiga congelados)
+    ofertas: fila.perfil === 'menu' ? null : Array.isArray(fila.ofertas?.lista) ? { ...carta.ofertas, lista: fila.ofertas.lista } : carta.ofertas,
   }
 }
 
@@ -333,6 +336,8 @@ export default function CartaPage(props) {
 
 function Carta({ carta, negocio, demo = false, incrustada = false }) {
   const lado = ladoEnlace(carta, 'derecha')
+  // ?grupo=nombre (Vistazo en /admin): las flechas recorren las copias de ese grupo
+  const secuenciaGrupo = useSecuenciaGrupo()
   // Dos niveles: Menú del día o Carta; dentro de Carta, las secciones
   const [modo, setModo] = useState(carta?.menuDia ? 'menu' : 'carta')
   const [seccionActiva, setSeccionActiva] = useState(carta?.secciones?.[0]?.nombre)
@@ -359,6 +364,7 @@ function Carta({ carta, negocio, demo = false, incrustada = false }) {
     <>
       {/* Las copias para enseñar a un negocio no llevan flechas: no están en el catálogo */}
       {!carta.copia && <DemoPager negocio={carta} secuencia={cartas.filter(c => c.demo)} rutaDe={rutaCarta} conTransicion={false} />}
+      {carta.copia && secuenciaGrupo && <DemoPager negocio={{ slug: `carta:${carta.slug}` }} secuencia={secuenciaGrupo} rutaDe={n => n.ruta} conTransicion={false} />}
       <DemoHomeButton slug={carta.slug} />
     </>
   )

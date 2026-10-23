@@ -244,7 +244,7 @@ export default function CartaGaleria({ carta, negocio }) {
         )}
 
         {modo === 'menu' && carta.menuDia ? (
-          <div className="mt-[0.7rem] flex min-h-0 flex-1 flex-col [@media(min-height:46rem)]:mt-[0.9rem]">
+          <div className="mt-[0.7rem] flex min-h-0 flex-1 flex-col overflow-y-auto [scrollbar-width:none] [@media(min-height:46rem)]:mt-[0.9rem]">
             <MenuDia menu={carta.menuDia} />
           </div>
         ) : (

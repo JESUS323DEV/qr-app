@@ -1,5 +1,5 @@
 import { derivadosDeFondoYTexto } from './mezclarColores'
-import { TIPOGRAFIAS } from '../asistente/tipografias'
+import { TODAS_LAS_TIPOGRAFIAS } from '../asistente/tipografias'
 import { CLAVES_COLORES_MINIWEB } from './coloresMiniweb'
 import { CLAVES_CORTES } from './cortes'
 import { CLAVES_FORMATOS } from './formatos'
@@ -48,7 +48,8 @@ export function marcaDePrueba(marca, params) {
   const acento = hex(params.get('acento'))
   const texto = hex(params.get('texto'))
   const fondo = hex(params.get('fondo'))
-  const letra = TIPOGRAFIAS.find(t => t.id === params.get('letra'))
+  // Las predefinidas y las de más (mas-bebas...): el Editor ofrece las dos listas
+  const letra = TODAS_LAS_TIPOGRAFIAS.find(t => t.id === params.get('letra'))
   // Fondo de la barra de redes de las miniwebs (hero.colorRedes)
   const redes = hex(params.get('redes'))
   // Fondo de cabecera (Polaroid, Banner y el menú de las miniwebs)
@@ -102,10 +103,12 @@ export function marcaDePrueba(marca, params) {
     ...(['abajo', 'redes'].includes(params.get('compartiren')) ? { compartirEn: params.get('compartiren') } : {}),
     ...(['boton', 'reserva', 'cita', 'formulario'].includes(params.get('contactoen')) ? { contactoEn: params.get('contactoen') } : {}),
   }
-  if (!nombre && !principal && !acento && !texto && !fondo && !letra && !redes && !cabecera && !logo && !resena && !inicio && !tamanoNombre && !corte && !formato && !disposicion && !composicion && !distribucion && !pase && !montaje && !carta && !horario && !horarioVar && filtro === null && !Object.keys(textos).length && !Object.keys(coloresElegidos).length && !Object.keys(lugares).length) return marca
+  const lema = params.has('lema') ? (params.get('lema') ?? '').slice(0, 40) : null
+  if (lema === null && !nombre && !principal && !acento && !texto && !fondo && !letra && !redes && !cabecera && !logo && !resena && !inicio && !tamanoNombre && !corte && !formato && !disposicion && !composicion && !distribucion && !pase && !montaje && !carta && !horario && !horarioVar && filtro === null && !Object.keys(textos).length && !Object.keys(coloresElegidos).length && !Object.keys(lugares).length) return marca
   return {
     ...marca,
     ...(nombre ? { nombre } : {}),
+    ...(lema !== null ? { lema } : {}),
     ...(logo ? { logo } : {}),
     ...(resena ? { cuerpo: { ...marca.cuerpo, fondo: resena, card: `color-mix(in srgb, ${resena} 90%, black)` } } : {}),
     ...((redes || inicio || tamanoNombre || corte || formato || disposicion || composicion || distribucion || pase || montaje || carta || horario || horarioVar || filtro !== null || Object.keys(textos).length || Object.keys(coloresElegidos).length || Object.keys(lugares).length) && marca.hero ? { hero: { ...marca.hero, ...(Object.keys(coloresElegidos).length ? { colores: { ...marca.hero.colores, ...coloresElegidos } } : {}), ...(redes ? { colorRedes: redes } : {}), ...(inicio ? { fondoInicio: inicio } : {}), ...(tamanoNombre ? { tamanoNombre } : {}), ...(corte ? { corte } : {}), ...(formato ? { formato } : {}), ...(disposicion ? { disposicion } : {}), ...(composicion ? { composicion } : {}), ...(distribucion ? { distribucion } : {}), ...(pase ? { pase } : {}), ...(montaje ? { montaje } : {}), ...(carta ? { carta } : {}), ...(horario ? { horario } : {}), ...(horarioVar ? { horarioVariante: horarioVar } : {}), ...(filtro !== null ? { filtro } : {}), ...(Object.keys(textos).length && marca.hero.pestanas ? { pestanas: marca.hero.pestanas.map((p, i) => (i === 0 ? { ...p, ...textos } : p)) } : {}), ...lugares } } : {}),

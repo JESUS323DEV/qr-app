@@ -2193,7 +2193,10 @@ function ImagenesPorPestana({ original, cambios, cambiar }) {
       if (primero === 'secciones') return [`3-${indice}`, datos.secciones[Number(indice)]?.nombre ?? `Sección ${Number(indice) + 1}`]
       return ['9', 'Otras imágenes']
     }
+    // Con lista de fotos en las ofertas (ofertas.fotos), los estilos usan la lista y la "Foto" suelta no se ve: no se enseña
+    const hayListaOfertas = Array.isArray(datos.ofertas?.fotos) && datos.ofertas.fotos.length > 0
     for (const c of fotos) {
+      if (hayListaOfertas && c.ruta === 'ofertas.foto') continue
       const m = c.ruta.match(/^hero\.pestanas\.(\d+)\./)
       if (m) porPestana.set(Number(m[1]), [...(porPestana.get(Number(m[1])) ?? []), c])
       else if (deCarta) {
@@ -2201,7 +2204,8 @@ function ImagenesPorPestana({ original, cambios, cambiar }) {
         zonas.set(clave, { clave, titulo, campos: [...(zonas.get(clave)?.campos ?? []), c] })
       } else otras.push(c)
     }
-    if (deCarta) return [...zonas.values()].sort((x, y) => x.clave.localeCompare(y.clave, 'es', { numeric: true }))
+    // En Menú y ofertas no se cambia la portada de la carta (zona '0'): solo las fotos del menú, las ofertas y las secciones
+    if (deCarta) return [...zonas.values()].filter(z => z.clave !== '0').sort((x, y) => x.clave.localeCompare(y.clave, 'es', { numeric: true }))
     return [
       ...[...porPestana.entries()].sort((a, b) => a[0] - b[0]).map(([i, campos]) => ({ clave: `p${i}`, titulo: pestanas[i]?.texto ?? `Pestaña ${i + 1}`, campos })),
       ...(otras.length ? [{ clave: 'otras', titulo: 'Otras imágenes', campos: otras }] : []),
@@ -2502,6 +2506,8 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
   const [barra, setBarra] = useState('')
   const [estilo, setEstilo] = useState('revista')
   const [nombre, setNombre] = useState('')
+  // La frase bajo el nombre de una carta (el lema de la marca): null, la de la plantilla; si se escribe (también vacía, para quitarla), la elegida
+  const [lema, setLema] = useState(null)
   // Cómo sale el nombre arriba (fichas y miniwebs): escrito ('texto', lo de siempre) o con su logo ('logo')
   // Si el campo para subir el logo está abierto (el logo se sube junto al nombre; con uno subido, se usa)
   const [logoAbierto, setLogoAbierto] = useState(false)
@@ -2646,6 +2652,7 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
   const marca = [
     // Con el nombre vacío, la vista previa enseña "Prueba" (y no el de la demo, Chalaquita, Almendra...)
     `nombre=${encodeURIComponent(nombreVista || 'Prueba')}`,
+    esCarta && lema !== null && `lema=${encodeURIComponent(lema)}`,
     principal && `principal=${principal.slice(1)}`,
     acento && `acento=${acento.slice(1)}`,
     colorTexto && `texto=${colorTexto.slice(1)}`,
@@ -2743,6 +2750,7 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
       const inicio = inicioCopiaCarta(cartaBase)
       cambios = fusionar(inicio, {
         'marca.nombre': nombreCrear,
+        ...(lema !== null ? { 'marca.lema': lema.trim() } : {}),
         diseno: estilo,
         ...(estilo === 'inmersiva' && subCarta === 'columna' ? { subdiseno: 'columna' } : {}),
         ...(principal ? { 'marca.theme.colors.primary': principal } : {}),
@@ -2929,6 +2937,7 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
     barra,
     estilo,
     nombre,
+    lema,
     logo,
     principal,
     acento,
@@ -2980,6 +2989,8 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
     setProducto(clave)
     // Banner y Ficha no valen de portada de una miniweb: si estaba uno elegido, pasa a Editorial
     if (clave === 'miniweb' && SIN_PORTADA_MINIWEB.includes(hero)) setHero('editorial')
+    // Cambiar de producto no es un cambio sin guardar: lo de partida pasa a ser el del producto nuevo (si no, salía el aviso al elegir una copia sin haber tocado nada)
+    empezarDeNuevo()
   }
   const empezarDeNuevo = () => {
     marcarBase.current = true
@@ -3019,6 +3030,7 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
     setBarra(i.barra ?? '')
     setEstilo(i.estilo ?? 'revista')
     setNombre(i.nombre ?? '')
+    setLema(i.lema ?? null)
     setLogo(i.logo ?? '')
     setPrincipal(i.principal ?? '')
     setAcento(i.acento ?? '')
@@ -3182,6 +3194,12 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                 )}
               </div>
             </Etiqueta>
+            {/* Solo en las cartas: la frase que sale bajo el nombre (viene de la plantilla, p. ej. "Estudio de uñas"); vacía, no sale ninguna */}
+            {esCarta && (
+              <Etiqueta texto="Frase bajo el nombre">
+                <input value={lema ?? marcaDe(cartaBase)?.lema ?? ''} onChange={e => setLema(e.target.value)} maxLength={40} className={CAMPO} placeholder="Peluquería de barrio" />
+              </Etiqueta>
+            )}
             {!esCarta && logoAbierto && <CampoLogo valor={logo} cambiar={setLogo} />}
             {/* El tamaño del nombre arriba (XS, MD, el de cada diseño, o XL): cápsulas pequeñas bajo el campo */}
             {!esCarta && (
@@ -4786,7 +4804,36 @@ function Lista({ filas, abrir, recargar, copia }) {
         : { ...f, nombre: f.cambios?.nombre ?? f.slug, detalle: `Copia de ${getNegocio(f.base)?.nombre ?? f.base}`, ruta: f.cambios?._cliente ? `/${f.slug}` : `/demo/${f.slug}` },
     )
 
-  const Fila = ({ clave, nombre, detalle, ruta, marcable }) => (
+  /* La ficha de una copia en una fila (en vez de "Copia de ..."): una rueda partida con sus dos colores (principal y acento), el producto, su
+     diseño (la portada de una miniweb o el estilo de una carta) y su temática. Las copias antiguas, sin ficha, siguen con su texto de siempre */
+  const infoCopia = f => {
+    const i = f.cambios?._nuevoPerfil
+    if (!i) return null
+    const esCarta = f.tipo === 'carta'
+    const datos = esCarta ? getCarta(f.base) : getNegocio(f.base)
+    const colores = (esCarta ? marcaDe(datos ?? {}) : datos)?.theme?.colors
+    const a = i.principal || colores?.primary
+    const b = i.acento || colores?.accent
+    const producto = esCarta ? (i.tipoCarta === 'promociones' ? 'Ofertas' : 'Menú del día') : 'Miniweb'
+    const diseno = esCarta ? Object.values(FAMILIAS).find(x => x.carta === i.estilo)?.nombre : HEROS[i.hero]?.nombre
+    const tematica = PLANTILLAS.find(p => p.clave === i.tema)?.nombre
+    // La carta que pinta el menú de una miniweb: una de las hechas, una exportada o, sin elegir, el menú propio de la miniweb
+    const cartaDelMenu = !esCarta
+      ? i.cartaMini
+        ? `Carta: ${(getCarta(i.cartaMini) ? marcaDe(getCarta(i.cartaMini))?.nombre : null) ?? (filas ?? []).find(x => x.tipo === 'carta' && x.slug === i.cartaMini)?.cambios?.['marca.nombre'] ?? i.cartaMini}`
+        : 'Menú propio'
+      : null
+    // La última vez que se guardó
+    const modificada = f.actualizado ? new Date(f.actualizado).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: '2-digit' }) : null
+    return (
+      <span className="flex flex-wrap items-center gap-x-[0.5rem]">
+        {a && b && <span aria-hidden="true" className="inline-block h-[0.95rem] w-[0.95rem] shrink-0 rounded-full ring-1 ring-black/25" style={{ background: `conic-gradient(${a} 0 50%, ${b} 0 100%)` }} />}
+        {[producto, diseno, tematica, cartaDelMenu, modificada && `Modificada ${modificada}`].filter(Boolean).join(' · ')}
+      </span>
+    )
+  }
+
+  const Fila = ({ clave, nombre, detalle, info, ruta, marcable }) => (
     <li key={clave} className="flex items-center gap-[0.75rem] border-b border-zinc-200 last:border-b-0">
       {marcable && (
         <input
@@ -4800,8 +4847,12 @@ function Lista({ filas, abrir, recargar, copia }) {
       <button type="button" onClick={() => abrir(clave)} className="min-w-0 flex-1 py-[0.8rem] text-left">
         <span className="block truncate font-semibold">{nombre}</span>
         <span className="block text-[0.82rem] text-zinc-500">
-          {detalle}
-          {editadas.has(clave) ? ' · con cambios' : ''}
+          {info ?? (
+            <>
+              {detalle}
+              {editadas.has(clave) ? ' · con cambios' : ''}
+            </>
+          )}
         </span>
       </button>
       <Link to={ruta} target="_blank" aria-label={`Ver ${nombre}`} className="shrink-0 p-[0.4rem] text-zinc-500 hover:text-zinc-900">
@@ -4841,6 +4892,15 @@ function Lista({ filas, abrir, recargar, copia }) {
             <summary className="flex cursor-pointer items-baseline justify-between gap-[1rem] bg-zinc-50 px-[1rem] py-[0.6rem] text-[0.9rem] font-bold">
               {c.titulo}
               <span className="flex items-baseline gap-[0.9rem]">
+                {/* Vistazo: abre la primera demo del grupo y las flechas pasan por las demás (las que no son de un cliente) */}
+                {(() => {
+                  const demos = c.filas.filter(f => f.ruta.startsWith('/demo/')).sort((a, b) => a.clave.split(':')[1].localeCompare(b.clave.split(':')[1]))
+                  return demos.length > 1 ? (
+                    <Link to={`${demos[0].ruta}?grupo=${encodeURIComponent(c.titulo)}`} target="_blank" onClick={e => e.stopPropagation()} className="text-[0.78rem] font-semibold underline underline-offset-[0.2em]">
+                      Vistazo
+                    </Link>
+                  ) : null
+                })()}
                 <button
                   type="button"
                   onClick={e => {
@@ -4894,7 +4954,7 @@ function Lista({ filas, abrir, recargar, copia }) {
   const [versionQR, setVersionQR] = useState(0)
 
   const aFila = n => ({ clave: `negocio:${n.slug}`, nombre: n.nombre, detalle: n.demo ? 'Demo' : 'Cliente', ruta: rutaNegocio(n) })
-  const aFilaCopia = f => ({ clave: `${f.tipo}:${f.slug}`, nombre: f.nombre, detalle: f.detalle, ruta: f.ruta, marcable: true })
+  const aFilaCopia = f => ({ clave: `${f.tipo}:${f.slug}`, nombre: f.nombre, detalle: f.detalle, info: infoCopia(f), ruta: f.ruta, marcable: true })
   // Las copias como elementos de grupo (nuevo grupo y mover): poner(grupo) guarda cambios._grupo en la copia (null, la saca del grupo)
   const elementosCopias = copias.map(c => ({
     clave: `${c.tipo}:${c.slug}`,
@@ -5116,7 +5176,7 @@ export default function AdminPage() {
   const recargar = useCallback(() => {
     return supabase
       .from('ediciones')
-      .select('tipo, slug, base, cambios, historial')
+      .select('tipo, slug, base, cambios, historial, actualizado')
       .order('actualizado', { ascending: false })
       .then(({ data }) => setFilas(data ?? []))
   }, [])

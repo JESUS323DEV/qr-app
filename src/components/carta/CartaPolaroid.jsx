@@ -257,7 +257,7 @@ export default function CartaPolaroid({ carta, negocio }) {
         )}
 
         {/* Contenido: llena el resto de la pantalla */}
-        <div className="mt-[0.9rem] flex min-h-0 flex-1 flex-col [@media(min-height:46rem)]:mt-[1.2rem]">
+        <div className="mt-[0.9rem] flex min-h-0 flex-1 flex-col overflow-y-auto [scrollbar-width:none] [@media(min-height:46rem)]:mt-[1.2rem]">
           {modo === 'menu' && carta.menuDia ? (
             <MenuDia menu={carta.menuDia} />
           ) : (

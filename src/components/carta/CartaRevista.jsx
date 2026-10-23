@@ -225,7 +225,7 @@ export default function CartaRevista({ carta, negocio }) {
         )}
 
         {/* Contenido: llena el resto de la pantalla; la foto se ajusta para que todo quepa */}
-        <div className="mt-[0.7rem] flex min-h-0 flex-1 flex-col [@media(min-height:46rem)]:mt-[0.9rem]">
+        <div className="mt-[0.7rem] flex min-h-0 flex-1 flex-col overflow-y-auto [scrollbar-width:none] [@media(min-height:46rem)]:mt-[0.9rem]">
           {modo === 'menu' && carta.menuDia ? <MenuDia menu={carta.menuDia} /> : abierta && <Seccion key={abierta.nombre} seccion={abierta} />}
         </div>
 
