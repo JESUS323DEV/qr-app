@@ -2528,6 +2528,24 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
   const [tema, setTema] = useState(PLANTILLAS[0].clave)
   // La pestaña abierta: el asistente o el diseño (la vista previa se ve siempre)
   const [pestana, setPestana] = useState('personalizar')
+  // El tamaño del móvil de la vista previa (lo visible dentro del navegador de un móvil, aproximado); se recuerda en este navegador
+  const [tamanoMovil, setTamanoMovil] = useState(() => {
+    try {
+      const guardado = localStorage.getItem('mostraq-tamano-movil')
+      return TAMANOS_MOVIL.some(t => t.clave === guardado) ? guardado : 'normal'
+    } catch {
+      return 'normal'
+    }
+  })
+  const medidaMovil = TAMANOS_MOVIL.find(t => t.clave === tamanoMovil) ?? TAMANOS_MOVIL[1]
+  const elegirTamanoMovil = clave => {
+    setTamanoMovil(clave)
+    try {
+      localStorage.setItem('mostraq-tamano-movil', clave)
+    } catch {
+      // Sin almacenamiento, vale solo hasta recargar
+    }
+  }
   // Qué temáticas se ven en la fila de iconos: 5, o todas con el +
   // Si la lista de temáticas del grupo elegido (Restauración, Belleza...) está abierta
   const [subTemas, setSubTemas] = useState(true)
@@ -4267,13 +4285,28 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                 })}
             </select>
           </label>
+          {/* El tamaño del móvil: para ver la miniweb en un móvil bajo, normal o largo sin tener el real delante (siempre aproximado) */}
+          <div role="group" aria-label="Tamaño del móvil" className="mx-auto mb-[0.6rem] flex w-full max-w-[20rem] flex-wrap justify-center gap-[0.35rem]">
+            {TAMANOS_MOVIL.map(t => (
+              <button
+                key={t.clave}
+                type="button"
+                title={t.ayuda}
+                aria-pressed={tamanoMovil === t.clave}
+                onClick={() => elegirTamanoMovil(t.clave)}
+                className={`rounded-full px-[0.7rem] py-[0.25rem] text-[0.78rem] font-semibold ring-1 transition-colors ${tamanoMovil === t.clave ? 'bg-zinc-900 text-white ring-zinc-900' : 'text-zinc-600 ring-zinc-300 hover:ring-zinc-500'}`}
+              >
+                {t.nombre}
+              </button>
+            ))}
+          </div>
           {/* Sin copia cargada y sin nada generado, el móvil va vacío: solo se llena al elegir una copia (o al generar con el asistente) */}
           {!copiaCargada && !generado ? (
-            <Movil ancho={360} className="mx-auto w-full max-w-[20rem]">
+            <Movil ancho={medidaMovil.ancho} alto={medidaMovil.alto} className="mx-auto w-full max-w-[20rem]">
               <div className="flex h-full items-center justify-center bg-black px-[1.5rem] text-center text-[0.95rem] font-semibold text-[rgb(255_255_255/0.6)]">{pestana === 'asistente' ? 'Genera algo con el asistente y aparecerá aquí' : 'Elige una copia y aparecerá aquí'}</div>
             </Movil>
           ) : (
-            vista && <Movil key={vista} src={vista} titulo="Vista previa" ancho={360} className="mx-auto w-full max-w-[20rem]" />
+            vista && <Movil key={vista} src={vista} titulo="Vista previa" ancho={medidaMovil.ancho} alto={medidaMovil.alto} className="mx-auto w-full max-w-[20rem]" />
           )}
           {(copiaCargada || generado) && <p className="mt-[0.5rem] text-center text-[0.8rem] text-zinc-500">Con el contenido de ejemplo de la temática</p>}
           {/* Debajo del móvil: Añadir a copias (crea la copia) o, con una copia cargada, Guardar cambios y Guardar como nueva */}
@@ -4333,6 +4366,14 @@ const paginasConQR = copias =>
   })
 
 // Desplegable para elegir una de esas páginas, por grupos
+// Tamaños del móvil de la vista previa de Nuevo perfil: lo que ve de la página (alto = lo visible dentro del navegador, no la pantalla entera)
+const TAMANOS_MOVIL = [
+  { clave: 'bajo', nombre: 'XS', ancho: 360, alto: 640, ayuda: 'XS: móvil bajo, 360 × 640' },
+  { clave: 'normal', nombre: 'S', ancho: 360, alto: 680, ayuda: 'S: móvil normal con la barra del navegador (como un S23), 360 × 680' },
+  { clave: 'completo', nombre: 'M', ancho: 360, alto: 780, ayuda: 'M: móvil normal a pantalla completa, 360 × 780' },
+  { clave: 'alto', nombre: 'L', ancho: 440, alto: 956, ayuda: 'L: móvil largo y grande (como un iPhone Pro Max), 440 × 956' },
+]
+
 function ElegirPagina({ paginas, valor, cambiar, vacio, grupos = [] }) {
   return (
     <select value={valor} onChange={e => cambiar(e.target.value)} className={CAMPO}>

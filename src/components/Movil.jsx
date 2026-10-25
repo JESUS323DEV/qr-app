@@ -5,7 +5,8 @@ const ANCHO_REAL = 390
 
 // Marco de móvil. Con `src` enseña esa página dentro, como en un teléfono de verdad.
 // ancho: el ancho del móvil que se imita (en /admin, 360: el móvil bajo)
-export default function Movil({ src, titulo, children, className = '', ancho = ANCHO_REAL }) {
+// alto: el alto de la página dentro del móvil (lo visible, con el navegador); sin él, el marco tiene la proporción de siempre (9/17)
+export default function Movil({ src, titulo, children, className = '', ancho = ANCHO_REAL, alto }) {
   const pantalla = useRef(null)
   const [medida, setMedida] = useState(null)
 
@@ -17,13 +18,13 @@ export default function Movil({ src, titulo, children, className = '', ancho = A
     })
     obs.observe(pantalla.current)
     return () => obs.disconnect()
-  }, [src, ancho])
+  }, [src, ancho, alto])
 
   return (
     <div
-      className={`relative aspect-[9/17] rounded-[2.4rem] border border-white/15 bg-[#1d1d1b] p-[0.45rem] shadow-[0_1.5rem_3rem_-1rem_rgb(0_0_0/0.6)] ${className}`}
+      className={`relative ${alto ? '' : 'aspect-[9/17]'} rounded-[2.4rem] border border-white/15 bg-[#1d1d1b] p-[0.45rem] shadow-[0_1.5rem_3rem_-1rem_rgb(0_0_0/0.6)] ${className}`}
     >
-      <div ref={pantalla} className="relative h-full w-full overflow-hidden rounded-[2rem] bg-papel text-tinta">
+      <div ref={pantalla} style={alto ? { aspectRatio: `${ancho} / ${alto}` } : undefined} className={`relative w-full overflow-hidden rounded-[2rem] bg-papel text-tinta ${alto ? '' : 'h-full'}`}>
         {src ? (
           medida && (
             <iframe

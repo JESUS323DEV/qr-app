@@ -37,8 +37,9 @@ export default function HeroMosaico({ hero, nombre, lema, sinBarra = false, inic
   const textoMiniweb = Boolean(sinBarra && (inicio?.titular?.length || inicio?.descripcion))
   // La composición (hero.composicion): dónde va el texto respecto a las fotos y cómo se enmarcan
   const composicion = composicionDe(hero.composicion)
+  // En pantallas bajas (menos de unos 750 px de alto) el titular se encoge un poco, para que todo el texto de Inicio quepa sin montarse sobre la barra de redes
   const titularMini = clase => (
-    <h1 style={rolTitular} className={`${clase} font-demo-heading text-[clamp(2rem,1.6rem+2vw,2.5rem)] font-semibold leading-[1.02]`}>
+    <h1 style={rolTitular} className={`${clase} font-demo-heading text-[length:min(clamp(2rem,1.6rem+2vw,2.5rem),calc(1.5rem_+_max(0px,100svh_-_640px)_*_0.08))] font-semibold leading-[1.02]`}>
       {inicio?.titular?.map((l, i) => (
         <span key={i} className="block">{l}</span>
       ))}
@@ -67,7 +68,7 @@ export default function HeroMosaico({ hero, nombre, lema, sinBarra = false, inic
   return (
     // Cualquier toque en el hero para la vuelta de presentación
     <div className="flex flex-1 flex-col" onPointerDown={parar}>
-      <div className="px-[1.25rem] pt-[1rem]">
+      <div className="px-[1.25rem] pt-[min(1rem,calc(0.7rem_+_max(0px,100svh_-_640px)_*_0.0775))]">
         <div className="flex items-baseline justify-between gap-[1rem]">
           <p className={`font-demo-heading font-semibold text-demo-primary ${sinBarra ? 'text-[1.6rem] leading-none' : 'text-[1.05rem]'}`}><NombreMarca nombre={nombre} tamano={sinBarra ? 'normal' : 'pequeno'} /></p>
           {lema && <p style={rolSub} className="text-[0.78rem] text-demo-muted">{lema}</p>}
@@ -95,8 +96,8 @@ export default function HeroMosaico({ hero, nombre, lema, sinBarra = false, inic
         )}
       </div>
 
-      {/* El escaparate ocupa el alto que sobra, para que todo quepa en una pantalla */}
-      <div className={`relative mx-[1.25rem] mt-[0.9rem] min-h-[8rem] flex-1 ${sinBarra ? composicion.marco : ''}`}>
+      {/* El escaparate ocupa el alto que sobra, para que todo quepa en una pantalla (con el texto de Inicio de una miniweb, puede bajar un poco más para dejarle sitio) */}
+      <div className={`relative mx-[1.25rem] mt-[min(0.9rem,calc(0.6rem_+_max(0px,100svh_-_640px)_*_0.0775))] ${textoMiniweb ? 'min-h-[6.5rem]' : 'min-h-[8rem]'} flex-1 ${sinBarra ? composicion.marco : ''}`}>
        <div className={`absolute ${sinBarra ? composicion.margen : 'inset-0'}`}>
         {pestanas.map((p, i) => (
           <div

@@ -12,6 +12,28 @@ export const ESCALA_TEXTO = {
   horarioLineas: 'text-[length:min(1.15rem,calc(0.9rem_+_max(0px,100svh_-_640px)_*_0.0127))]',
 }
 
+// La card de reseña de Google de las miniwebs (la de tamaño normal; la compacta se queda como está): crece con el alto de la pantalla, de un 15 % menos de lo
+// de siempre a 640 px de alto hasta un 14 % más a 956 px, sin saltos. Cada uno son las clases de ese elemento en lugar de las de siempre.
+export const ESCALA_RESENA = {
+  logo: 'h-[min(2.85rem,calc(2.125rem_+_max(0px,100svh_-_640px)_*_0.0367))] w-[min(2.85rem,calc(2.125rem_+_max(0px,100svh_-_640px)_*_0.0367))]',
+  estrella: 'h-[min(1.82rem,calc(1.36rem_+_max(0px,100svh_-_640px)_*_0.0235))] w-[min(1.82rem,calc(1.36rem_+_max(0px,100svh_-_640px)_*_0.0235))]',
+  texto: 'text-[length:min(1.48rem,calc(1.105rem_+_max(0px,100svh_-_640px)_*_0.0191))]',
+  aire: 'gap-[min(0.51rem,calc(0.38rem_+_max(0px,100svh_-_640px)_*_0.0066))]',
+  relleno: 'py-[min(1.14rem,calc(0.85rem_+_max(0px,100svh_-_640px)_*_0.0147))]',
+  // El mismo relleno, para el estilo en línea de la card con tarjeta destacada
+  rellenoEstilo: 'min(1.14rem, calc(0.85rem + max(0px, 100svh - 640px) * 0.0147))',
+}
+
+// La misma card de reseña, en su versión compacta (la que usan las miniwebs de página completa): de un 15 % menos a 640 px de alto a un 14 % más a 956 px
+export const ESCALA_RESENA_COMPACTA = {
+  logo: 'h-[min(2.17rem,calc(1.62rem_+_max(0px,100svh_-_640px)_*_0.0279))] w-[min(2.17rem,calc(1.62rem_+_max(0px,100svh_-_640px)_*_0.0279))]',
+  estrella: 'h-[min(1.425rem,calc(1.06rem_+_max(0px,100svh_-_640px)_*_0.01836))] w-[min(1.425rem,calc(1.06rem_+_max(0px,100svh_-_640px)_*_0.01836))]',
+  texto: 'text-[length:min(1.254rem,calc(0.935rem_+_max(0px,100svh_-_640px)_*_0.01616))]',
+  aire: 'gap-[min(0.342rem,calc(0.255rem_+_max(0px,100svh_-_640px)_*_0.0044))]',
+  relleno: 'py-[min(0.8rem,calc(0.595rem_+_max(0px,100svh_-_640px)_*_0.01028))]',
+  rellenoEstilo: 'min(0.8rem, calc(0.595rem + max(0px, 100svh - 640px) * 0.01028))',
+}
+
 // La landing en pantallas largas (Tu QR y Planes): lo mismo que arriba, para que lo que hay en cada pestaña crezca y no quede sitio vacío
 export const ESCALA_LANDING = {
   placa: 'w-[min(78%,calc(min(52%,13rem)_+_max(0px,100svh_-_640px)_*_0.38))]',

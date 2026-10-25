@@ -18,11 +18,12 @@ import GaleriaVideos from '../components/GaleriaVideos'
 import { COLORES_REDES } from '../lib/coloresRedes'
 import { secuenciaDemos, tipoDe } from '../lib/tematicas'
 import { LogoNegocio, TamanoNombre } from '../components/NombreMarca'
+import { ESCALA_RESENA, ESCALA_RESENA_COMPACTA } from '../lib/escalaTexto'
 import { ColoresMiniweb } from '../components/ColoresPortada'
 
 function LogoGoogle({ compacta }) {
   return (
-    <svg viewBox="0 0 48 48" className={`shrink-0 ${compacta ? 'h-[1.9rem] w-[1.9rem]' : 'h-[2.5rem] w-[2.5rem]'}`} aria-hidden="true">
+    <svg viewBox="0 0 48 48" className={`shrink-0 ${compacta ? ESCALA_RESENA_COMPACTA.logo : ESCALA_RESENA.logo}`} aria-hidden="true">
       <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
       <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
       <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
@@ -35,7 +36,7 @@ function Estrellas({ compacta }) {
   return (
     <span className="flex gap-[0.1rem] text-[#FBBC04]" aria-hidden="true">
       {Array.from({ length: 5 }, (_, i) => (
-        <svg key={i} viewBox="0 0 24 24" className={`fill-current ${compacta ? 'h-[1.25rem] w-[1.25rem]' : 'h-[1.6rem] w-[1.6rem]'}`}>
+        <svg key={i} viewBox="0 0 24 24" className={`fill-current ${compacta ? ESCALA_RESENA_COMPACTA.estrella : ESCALA_RESENA.estrella}`}>
           <path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z" />
         </svg>
       ))}
@@ -68,7 +69,7 @@ function TarjetaDestacada({ tarjeta, compacta }) {
 // soloResena: solo la card de arriba (reseña), sin el carrusel de redes; lo usan los diseños que ponen las redes en otro sitio
 function Cuerpo({ negocio, soloResena = false, compacta: forzada = false }) {
   // Card de Google más pequeña para los diseños que necesitan más alto (resena.compacta en el archivo del negocio,
-  // o el diseño que la pide: forzada)
+  // o el diseño que la pide: forzada, como todas las miniwebs de página completa). Las dos escalan con el alto de la pantalla (escalaTexto.js)
   const compacta = forzada || Boolean(negocio.resena?.compacta)
   // El fondo de la zona de la reseña: el elegido en hero.colores (y las tarjetas, un tono más oscuro) o el del archivo
   const fondoResena = negocio.hero?.colores?.fondoResena
@@ -115,14 +116,14 @@ function Cuerpo({ negocio, soloResena = false, compacta: forzada = false }) {
             background: '#FFFFFF',
             borderColor: 'rgb(0 0 0 / 0.1)',
             color: '#1F1F1F',
-            paddingTop: compacta ? '0.7rem' : '1rem',
-            paddingBottom: compacta ? '0.7rem' : '1rem',
+            paddingTop: compacta ? ESCALA_RESENA_COMPACTA.rellenoEstilo : ESCALA_RESENA.rellenoEstilo,
+            paddingBottom: compacta ? ESCALA_RESENA_COMPACTA.rellenoEstilo : ESCALA_RESENA.rellenoEstilo,
           }}
           tarjetas={[
             <Resena
               key="resena"
               {...(negocio.resena.url ? { href: negocio.resena.url, target: '_blank', rel: 'noreferrer' } : {})}
-              className={`flex flex-col items-center justify-center font-semibold ${compacta ? 'gap-[0.3rem] text-[1.1rem]' : 'gap-[0.45rem] text-[1.3rem]'}`}
+              className={`flex flex-col items-center justify-center font-semibold ${compacta ? `${ESCALA_RESENA_COMPACTA.aire} ${ESCALA_RESENA_COMPACTA.texto}` : `${ESCALA_RESENA.aire} ${ESCALA_RESENA.texto}`}`}
             >
               <LogoGoogle compacta={compacta} />
               <Estrellas compacta={compacta} />
@@ -136,7 +137,7 @@ function Cuerpo({ negocio, soloResena = false, compacta: forzada = false }) {
         <Resena
           {...(negocio.resena.url ? { href: negocio.resena.url, target: '_blank', rel: 'noreferrer' } : {})}
           className={`flex w-full flex-col items-center justify-center rounded-[1.5rem] border border-black/10 bg-white px-[1rem] font-semibold text-[#1F1F1F] shadow-[0_0.25rem_0.9rem_-0.3rem_rgb(0_0_0/0.18)] transition-shadow hover:shadow-[0_0.4rem_1.2rem_-0.3rem_rgb(0_0_0/0.25)] ${
-            compacta ? 'gap-[0.3rem] py-[0.7rem] text-[1.1rem]' : 'gap-[0.45rem] py-[1rem] text-[1.3rem]'
+            compacta ? `${ESCALA_RESENA_COMPACTA.aire} ${ESCALA_RESENA_COMPACTA.relleno} ${ESCALA_RESENA_COMPACTA.texto}` : `${ESCALA_RESENA.aire} ${ESCALA_RESENA.relleno} ${ESCALA_RESENA.texto}`
           }`}
         >
           <LogoGoogle compacta={compacta} />
