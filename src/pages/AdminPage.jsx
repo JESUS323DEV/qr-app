@@ -1,5 +1,6 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import CampoColor from '../components/CampoColor'
+import { tipoComun } from '../fichas/escenas'
 import { Link, useSearchParams } from 'react-router-dom'
 import { Armchair, ArrowLeft, ChevronLeft, ChevronRight, BadgePercent, List, ArrowUp, ArrowUpRight, Beer, BookImage, Camera, ChevronDown, ChevronsDownUp, CircleUser, Coffee, Copy, Croissant, Fish, Frame, GalleryHorizontal, IdCard, ImagePlus, LayoutGrid, Maximize, Menu, Minus, Newspaper, PanelTop, Pizza, Plus, QrCode, RotateCcw, Scissors, Search, Slice, Smartphone, Sparkles, Store, Trash2, UtensilsCrossed, X } from 'lucide-react'
 import GeneradorQR from '../components/GeneradorQR'
@@ -2178,8 +2179,16 @@ function EditorEnBruto({ original, cambios, cambiar }) {
 function ImagenesPorPestana({ original, cambios, cambiar }) {
   const datos = useMemo(() => aplicar(original, cambios), [original, cambios])
   const grupos = useMemo(() => {
-    const fotos = camposDe(datos).filter(c => c.clase === 'foto')
     const pestanas = datos.hero?.pestanas ?? []
+    // Las páginas de contacto (con el botón de WhatsApp) y de precios llevan una foto en franja aunque la pestaña aún no tenga el dato foto: se enseña su fila igualmente, para poder cambiarla
+    const contactoEn = datos.hero?.contactoEn
+    const sinFoto = pestanas.flatMap((p, i) => {
+      if (!p || typeof p !== 'object' || 'foto' in p) return []
+      const comun = tipoComun(p.tipo)
+      const llevaFoto = p.tipo === 'reservar' ? contactoEn === 'boton' : comun === 'contacto' ? contactoEn === undefined || contactoEn === 'boton' : comun === 'precios'
+      return llevaFoto ? [{ ruta: `hero.pestanas.${i}.foto`, clase: 'foto', grupo: 'Hero y pestañas', etiqueta: `Pestaña ${nombreElemento(pestanas, i)} · Foto` }] : []
+    })
+    const fotos = [...camposDe(datos).filter(c => c.clase === 'foto'), ...sinFoto]
     const porPestana = new Map()
     const otras = []
     // Una carta (con secciones): sus fotos por zonas, la portada, el menú del día, las ofertas y cada sección con sus platos

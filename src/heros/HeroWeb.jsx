@@ -528,7 +528,7 @@ function PaginaReservarComoBoton({ pestana, negocio, respaldo }) {
     <PaginaContacto
       respaldo={respaldo}
       pestana={{
-        foto: respaldo,
+        foto: pestana.foto ?? respaldo,
         titulo: pestana.titulo,
         texto_encargo: pestana.texto_reserva,
         boton: pestana.boton,
@@ -893,9 +893,10 @@ function BarraRedes({ hero, redes, redesTexto, nombre, className = '' }) {
 export default function HeroWeb({ hero, nombre, lema, cuerpo, redes, redesTexto }) {
   const pestanas = hero.pestanas ?? []
   const portada = HEROS[hero.portada]?.piezas ? hero.portada : null
-  const respaldo = fotoDeRespaldo(pestanas)
   // Fotos para la portada del Inicio de una miniweb propia: todas las que lleva repartidas por sus páginas
   const fotosPortada = [...new Set(pestanas.flatMap(p => [p.foto, ...fotosDe(p).map(f => f.src)]).filter(Boolean))].map(src => ({ src }))
+  // La foto de las páginas sin foto propia: la primera de una pestaña de fotos o, si no hay, la primera de las que lleva la miniweb (la de Inicio)
+  const respaldo = fotoDeRespaldo(pestanas) ?? fotosPortada[0]?.src ?? null
   const [activa, setActiva] = useState(0)
   // Vuelta de presentación desactivada en las miniwebs, de momento (el último parámetro): para volver a activarla, quitarlo
   const { parar } = useVueltaPestanas(pestanas, setActiva, null, true)
