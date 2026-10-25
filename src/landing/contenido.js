@@ -379,6 +379,7 @@ export const menu = {
   legales: [
     { texto: 'Política de privacidad', url: '/privacidad' },
     { texto: 'Aviso legal', url: '/aviso-legal' },
+    { texto: 'Política de cookies', url: '/cookies' },
   ],
   boton: 'Pedir presupuesto',
   firma: 'Mostraq · Hecho por JesúsDev',
@@ -429,6 +430,38 @@ export const legales = {
       },
     ],
   },
+  cookies: {
+    titulo: 'Política de cookies',
+    apartados: [
+      {
+        titulo: '1. Qué son las cookies',
+        parrafos: [
+          'Las cookies son pequeños archivos que una web guarda en tu navegador. Sirven, por ejemplo, para recordar una preferencia o para saber cuánta gente visita la página.',
+        ],
+      },
+      {
+        titulo: '2. Qué cookies usa este sitio',
+        parrafos: [
+          'Técnicas (no necesitan consentimiento): guardan en tu navegador, sin enviarlas a nadie, la elección que hagas sobre las cookies y si ya has visto la presentación de las pestañas.',
+          'De medición (solo si las aceptas): Google Analytics, de Google Ireland Limited. Cuenta las visitas y las páginas vistas de las páginas de Mostraq, de forma agregada, para saber qué se mira más. Las cookies que instala empiezan por _ga y duran hasta dos años.',
+          'Las páginas de los negocios clientes (sus miniwebs y cartas) y las páginas de ejemplo no miden visitas con Analytics.',
+        ],
+      },
+      {
+        titulo: '3. Cómo aceptarlas, rechazarlas o cambiar la elección',
+        parrafos: [
+          'La primera vez que entras en una página de Mostraq sale un aviso con los botones Aceptar y Rechazar. Si no contestas, Analytics no se carga. Puedes cambiar tu elección en cualquier momento con el botón de esta página.',
+          'También puedes borrar las cookies desde los ajustes de tu navegador.',
+        ],
+      },
+      {
+        titulo: '4. Más información',
+        parrafos: [
+          'Los datos que recoge Google Analytics los trata Google según su política de privacidad. El tratamiento de tus datos personales por parte del titular se explica en la política de privacidad ({dominio}/privacidad).',
+        ],
+      },
+    ],
+  },
   privacidad: {
     titulo: 'Política de privacidad',
     apartados: [
@@ -474,8 +507,8 @@ export const legales = {
       {
         titulo: '8. Cookies',
         parrafos: [
-          'Este sitio web no utiliza cookies propias con fines de seguimiento o publicidad. Solo guarda en el navegador una preferencia técnica (si ya se ha visto la presentación de las pestañas).',
-          'Los mapas de Google que aparecen en algunas páginas pueden instalar cookies de Google al mostrarse, según su propia política.',
+          'Este sitio web solo usa cookies de medición (Google Analytics) si el usuario las acepta en el aviso de cookies. Además guarda en el navegador preferencias técnicas, como si ya se ha visto la presentación de las pestañas o la elección sobre las cookies.',
+          'Los mapas de Google que aparecen en algunas páginas pueden instalar cookies de Google al mostrarse, según su propia política. Más detalle en la política de cookies ({dominio}/cookies).',
         ],
       },
     ],

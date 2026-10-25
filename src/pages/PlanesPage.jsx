@@ -24,7 +24,7 @@ export default function PlanesPage() {
 
   return (
     <div className="min-h-svh bg-papel font-texto text-tinta">
-      <header className="mx-auto flex w-full max-w-[52rem] items-center justify-between px-4 py-[1.1rem] sm:px-6">
+      <header className="mx-auto flex w-full max-w-[52rem] items-center lg:max-w-[72rem] justify-between px-4 py-[1.1rem] sm:px-6">
         <Link to="/" className="font-titulo text-[1.35rem] font-black tracking-tight">
           {marca.nombre}
         </Link>
@@ -33,20 +33,23 @@ export default function PlanesPage() {
         </Link>
       </header>
 
-      <main className="mx-auto w-full max-w-[52rem] px-4 pb-[4rem] pt-[1rem] sm:px-6">
+      <main className="mx-auto w-full max-w-[52rem] lg:max-w-[72rem] px-4 pb-[4rem] pt-[1rem] sm:px-6">
         <h1 className="font-titulo text-[clamp(2rem,1.5rem+2.4vw,3.25rem)] font-black leading-[1.05] tracking-tight">{planesDetalle.titulo}</h1>
         <p className="mt-[0.6rem] max-w-[34rem] text-[1rem] leading-[1.6] text-suave">{planesDetalle.texto}</p>
 
-        {/* Los tres planes */}
-        <div className="mt-[2rem] grid gap-[1rem] md:grid-cols-3">
+        {/* Los planes: en escritorio dos tarjetas anchas, como en la landing */}
+        <div className="mt-[2rem] grid gap-[1rem] md:grid-cols-2 md:gap-[1.5rem]">
           {planesDetalle.lista.map(p => (
-            <section key={p.titulo} className="flex flex-col rounded-[1.1rem] bg-crema p-[1.25rem]">
-              <h2 className="font-titulo text-[1.45rem] font-black leading-none">{p.titulo}</h2>
-              <p className="mt-[0.5rem] font-titulo text-[1.15rem] font-bold text-acento">{p.precio}</p>
-              <p className="mt-[0.6rem] text-[0.92rem] leading-[1.5] text-suave">{p.texto}</p>
-              <ul className="mt-[1rem] border-t border-linea">
+            <section key={p.titulo} className="flex flex-col rounded-[1.1rem] bg-crema p-[1.25rem] md:rounded-[1.25rem] md:border md:border-linea md:bg-papel md:p-[2rem]">
+              <div className="md:flex md:items-baseline md:justify-between md:gap-[1rem]">
+                <h2 className="font-titulo text-[1.45rem] font-black leading-none md:text-[1.7rem] md:leading-[1.1]">{p.titulo}</h2>
+                <p className="mt-[0.5rem] font-titulo text-[1.15rem] font-bold text-acento md:mt-0 md:shrink-0 md:text-[1.3rem] md:font-black">{p.precio}</p>
+              </div>
+              <p className="mt-[0.6rem] text-[0.92rem] leading-[1.5] text-suave md:mt-[0.75rem] md:text-[1rem] md:leading-[1.6]">{p.texto}</p>
+              <ul className="mt-[1rem] border-t border-linea md:mt-[1.25rem] md:grid md:gap-[0.6rem] md:border-t-0">
                 {p.incluye.map(i => (
-                  <li key={i} className="border-b border-linea py-[0.6rem] text-[0.92rem] leading-[1.45] last:border-b-0">
+                  <li key={i} className="border-b border-linea py-[0.6rem] text-[0.92rem] leading-[1.45] last:border-b-0 md:flex md:gap-[0.6rem] md:border-b-0 md:py-0 md:text-[1rem] md:leading-[1.5]">
+                    <span aria-hidden="true" className="hidden md:mt-[0.55rem] md:block md:h-[0.4rem] md:w-[0.4rem] md:shrink-0 md:rounded-full md:bg-acento" />
                     {i}
                   </li>
                 ))}

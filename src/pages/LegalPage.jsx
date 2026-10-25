@@ -1,12 +1,16 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { legales, marca } from '../landing/contenido'
 import { DOMINIO } from '../lib/dominio'
+import { alCambiarConsentimiento, guardarConsentimiento, leerConsentimiento } from '../lib/cookies'
 
 /* Textos legales (/aviso-legal y /privacidad), con el estilo de la landing, como /planes.
    tipo: 'avisoLegal' o 'privacidad' (los textos, en landing/contenido.js) */
 export default function LegalPage({ tipo }) {
   const pagina = legales[tipo]
+  // Solo en la política de cookies: la elección de cada visitante, para cambiarla
+  const [eleccion, setEleccion] = useState(leerConsentimiento)
+  useEffect(() => alCambiarConsentimiento(() => setEleccion(leerConsentimiento())), [])
 
   useEffect(() => {
     document.title = `${pagina.titulo} · ${marca.nombre}`
@@ -41,6 +45,21 @@ export default function LegalPage({ tipo }) {
             </section>
           ))}
         </div>
+        {tipo === 'cookies' && (
+          <div className="mt-[2rem] grid gap-[0.75rem] rounded-[1rem] bg-crema p-[1rem] ring-1 ring-linea">
+            <p className="text-[0.98rem] font-semibold">
+              {eleccion === 'si' ? 'Ahora mismo has aceptado las cookies de medición.' : eleccion === 'no' ? 'Ahora mismo has rechazado las cookies de medición.' : 'Aún no has elegido.'}
+            </p>
+            <div className="grid grid-cols-2 gap-[0.5rem]">
+              <button type="button" onClick={() => guardarConsentimiento('no')} aria-pressed={eleccion === 'no'} className="min-h-[2.7rem] rounded-[0.75rem] font-semibold ring-1 ring-linea aria-pressed:ring-2 aria-pressed:ring-acento">
+                Rechazar
+              </button>
+              <button type="button" onClick={() => guardarConsentimiento('si')} aria-pressed={eleccion === 'si'} className="min-h-[2.7rem] rounded-[0.75rem] bg-acento font-semibold text-papel">
+                Aceptar
+              </button>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   )

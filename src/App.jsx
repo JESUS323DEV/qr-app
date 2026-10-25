@@ -10,6 +10,7 @@ import PlanesPage from './pages/PlanesPage'
 import CrearQrPage from './pages/CrearQrPage'
 import PanelPage from './pages/PanelPage'
 import LegalPage from './pages/LegalPage'
+import AvisoCookies from './components/AvisoCookies'
 import { DOMINIO } from './lib/dominio'
 
 // El panel de Jesús y el escaparate de diseños se cargan aparte: los visitantes de las páginas no descargan su código
@@ -34,6 +35,7 @@ const DESCRIPCIONES = {
   '/planes': 'Los planes de Mostraq: la miniweb básica y la plataforma completa, con carta digital, SEO y placas con QR para tu local.',
   '/aviso-legal': 'Aviso legal de Mostraq.',
   '/privacidad': 'Política de privacidad de Mostraq.',
+  '/cookies': 'Política de cookies de Mostraq.',
 }
 let descripcionPorDefecto = null
 function ponerMeta(selector, crear, atributo, valor) {
@@ -68,6 +70,8 @@ export default function App() {
   return (
     <BrowserRouter>
       <SeoPorRuta />
+      {/* Aviso de cookies y Google Analytics (solo se carga si se acepta), en las páginas de Mostraq */}
+      <AvisoCookies />
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/tematicas/:key" element={<TematicaPage />} />
@@ -82,6 +86,7 @@ export default function App() {
         {/* Textos legales */}
         <Route path="/aviso-legal" element={<LegalPage tipo="avisoLegal" />} />
         <Route path="/privacidad" element={<LegalPage tipo="privacidad" />} />
+        <Route path="/cookies" element={<LegalPage tipo="cookies" />} />
         {/* Panel del dueño: cambiar su menú del día (Supabase) */}
         <Route path="/mi-carta" element={<PanelPage />} />
         {/* Dirección antigua del panel del dueño: lleva a la nueva */}
