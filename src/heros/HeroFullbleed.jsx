@@ -130,8 +130,8 @@ function EscenaHorario({ pestana, respaldo }) {
       <Img src={pestana.foto ?? respaldo} alt="" className="absolute inset-0 h-full w-full object-cover" />
       <Velo />
       <Abajo>
-        <p className="font-demo-heading text-[2rem] italic leading-none">{pestana.titulo}</p>
-        <dl className="mt-[0.5rem] grid gap-[0.15rem] text-[0.9rem]">
+        <p className={`font-demo-heading italic leading-none ${ESCALA_TEXTO.horarioTitulo}`}>{pestana.titulo}</p>
+        <dl className={`mt-[0.5rem] grid gap-[0.15rem] ${ESCALA_TEXTO.horarioLineas}`}>
           {(pestana.lineas ?? []).map(l => (
             <div key={l.dias} className="flex flex-wrap gap-x-[0.5rem]">
               <dt className="whitespace-nowrap font-semibold">{l.dias}</dt>

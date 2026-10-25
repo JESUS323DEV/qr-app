@@ -7,6 +7,9 @@ export const ESCALA_TEXTO = {
   boton: 'min-h-[min(3rem,calc(2.5rem_+_max(0px,100svh_-_640px)_*_0.0203))] px-[min(1.35rem,calc(1.1rem_+_max(0px,100svh_-_640px)_*_0.0101))] text-[length:min(1.12rem,calc(0.92rem_+_max(0px,100svh_-_640px)_*_0.0091))]',
   compartir: 'text-[length:min(0.95rem,calc(0.75rem_+_max(0px,100svh_-_640px)_*_0.0076))]! px-[min(1rem,calc(0.75rem_+_max(0px,100svh_-_640px)_*_0.0101))]! py-[min(0.5rem,calc(0.3rem_+_max(0px,100svh_-_640px)_*_0.0076))]!',
   extra: 'max-w-[26rem] text-[length:min(1.02rem,calc(0.85rem_+_max(0px,100svh_-_640px)_*_0.0076))]',
+  // La pantalla de Horario de Fullbleed: el título y las líneas de días y horas
+  horarioTitulo: 'text-[length:min(2.7rem,calc(2rem_+_max(0px,100svh_-_640px)_*_0.0354))]',
+  horarioLineas: 'text-[length:min(1.15rem,calc(0.9rem_+_max(0px,100svh_-_640px)_*_0.0127))]',
 }
 
 // La landing en pantallas largas (Tu QR y Planes): lo mismo que arriba, para que lo que hay en cada pestaña crezca y no quede sitio vacío

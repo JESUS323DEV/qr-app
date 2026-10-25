@@ -2553,6 +2553,8 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
   const [barra, setBarra] = useState('')
   const [estilo, setEstilo] = useState('revista')
   const [nombre, setNombre] = useState('')
+  // Un nombre solo para ti ("Claudia 1", "Claudia 2"...): sale en las listas y no en la miniweb. Se guarda en la instantánea de la copia
+  const [etiqueta, setEtiqueta] = useState('')
   // La frase bajo el nombre de una carta (el lema de la marca): null, la de la plantilla; si se escribe (también vacía, para quitarla), la elegida
   const [lema, setLema] = useState(null)
   // Cómo sale el nombre arriba (fichas y miniwebs): escrito ('texto', lo de siempre) o con su logo ('logo')
@@ -2986,6 +2988,7 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
     barra,
     estilo,
     nombre,
+    etiqueta,
     lema,
     logo,
     principal,
@@ -3092,6 +3095,7 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
     setBarra(i.barra ?? '')
     setEstilo(i.estilo ?? 'revista')
     setNombre(i.nombre ?? '')
+    setEtiqueta(i.etiqueta ?? '')
     setLema(i.lema ?? null)
     setLogo(i.logo ?? '')
     setPrincipal(i.principal ?? '')
@@ -3221,8 +3225,11 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
       // Los textos escritos de la portada mandan sobre los del asistente (como en la vista previa), y lo cambiado a mano en los datos en bruto va el último
       if (Object.keys(textosPrevia).length) cambios = fusionar(cambios, textosPrevia)
       if (Object.keys(cambiosExtra).length) cambios = fusionar(cambios, cambiosExtra)
-      // La instantánea de Nuevo perfil, para poder reabrir la copia y retocarla
-      cambios = { ...cambios, _nuevoPerfil: instantanea() }
+      // La instantánea de Nuevo perfil, para poder reabrir la copia y retocarla. Si se parte de una copia abierta y se deja su nombre interno,
+      // la nueva toma el siguiente número ("Claudia 1" pasa a "Claudia 2")
+      const etiquetaAbierta = copiaCargada ? (filas ?? []).find(x => x.tipo === copiaCargada.tipo && x.slug === copiaCargada.slug)?.cambios?._nuevoPerfil?.etiqueta?.trim() : null
+      const etiquetaNueva = etiquetaAbierta && etiquetaAbierta === etiqueta.trim() ? siguienteEtiqueta(etiquetaAbierta, (filas ?? []).map(nombreInterno).filter(Boolean)) : etiqueta.trim()
+      cambios = { ...cambios, _nuevoPerfil: { ...instantanea(), etiqueta: etiquetaNueva } }
       const { error } = await supabase.from('ediciones').insert({ tipo: tipoFila, slug, base, cambios, ...(historial.length ? { historial } : {}) })
       if (error) throw new Error('No se ha podido crear.')
       if (esCarta) await crearCartaConDueno(slug, aplicar(cartaBase, cambios).menuDia)
@@ -3259,6 +3266,10 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                   </button>
                 )}
               </div>
+            </Etiqueta>
+            {/* El nombre interno: solo se ve en tus listas (copias, selector), nunca en la miniweb */}
+            <Etiqueta texto="Nombre interno (solo lo ves tú)">
+              <input value={etiqueta} onChange={e => setEtiqueta(e.target.value)} maxLength={40} className={CAMPO} placeholder="Demo 1" />
             </Etiqueta>
             {/* Solo en las cartas: la frase que sale bajo el nombre (viene de la plantilla, p. ej. "Estudio de uñas"); vacía, no sale ninguna */}
             {esCarta && (
@@ -4246,7 +4257,7 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                 .filter(f => f.base && (f.tipo === 'carta' ? producto === 'carta' : producto !== 'carta' && (f.cambios?._nuevoPerfil?.producto ?? tipoDe(conEdicion('negocio', f.slug, f) ?? {})) === producto))
                 .map(f => {
                   const antigua = !f.cambios?._nuevoPerfil
-                  const nombreFila = f.cambios?._nuevoPerfil?.nombre || f.cambios?.nombre || f.cambios?.['marca.nombre'] || f.slug
+                  const nombreFila = f.cambios?._nuevoPerfil?.etiqueta?.trim() || f.cambios?._nuevoPerfil?.nombre || f.cambios?.nombre || f.cambios?.['marca.nombre'] || f.slug
                   return (
                     <option key={`${f.tipo}:${f.slug}`} value={`${f.tipo}:${f.slug}`} disabled={antigua}>
                       {nombreFila}
@@ -5033,6 +5044,20 @@ function MoverCopias({ marcadas, elementos, recargar, limpiar }) {
   )
 }
 
+// El número siguiente de un nombre interno que acaba en número ("Claudia 1" pasa a "Claudia 2"), saltando los que ya existen; sin número, igual
+const siguienteEtiqueta = (etiqueta, usadas) => {
+  const m = etiqueta.match(/^(.*?)(\d+)\s*$/)
+  if (!m) return etiqueta
+  const ocupadas = new Set(usadas)
+  let n = Number(m[2])
+  do n++
+  while (ocupadas.has(`${m[1]}${n}`))
+  return `${m[1]}${n}`
+}
+
+// El nombre interno de una copia (el que solo ves tú), si lo tiene
+const nombreInterno = f => f.cambios?._nuevoPerfil?.etiqueta?.trim() || null
+
 function Lista({ filas, abrir, recargar, copia }) {
   const editadas = new Set((filas ?? []).map(f => `${f.tipo}:${f.slug}`))
   // Las copias marcadas con su casilla (para moverlas a un grupo)
@@ -5044,11 +5069,11 @@ function Lista({ filas, abrir, recargar, copia }) {
       f.tipo === 'carta'
         ? {
             ...f,
-            nombre: f.cambios?.['marca.nombre'] ?? f.cambios?.marca?.nombre ?? f.slug,
+            nombre: nombreInterno(f) ?? f.cambios?.['marca.nombre'] ?? f.cambios?.marca?.nombre ?? f.slug,
             detalle: `Carta, copia de ${marcaDe(getCarta(f.base) ?? {})?.nombre ?? f.base}`,
             ruta: `/demo/${f.slug}/carta`,
           }
-        : { ...f, nombre: f.cambios?.nombre ?? f.slug, detalle: `Copia de ${getNegocio(f.base)?.nombre ?? f.base}`, ruta: f.cambios?._cliente ? `/${f.slug}` : `/demo/${f.slug}` },
+        : { ...f, nombre: nombreInterno(f) ?? f.cambios?.nombre ?? f.slug, detalle: `Copia de ${getNegocio(f.base)?.nombre ?? f.base}`, ruta: f.cambios?._cliente ? `/${f.slug}` : `/demo/${f.slug}` },
     )
 
   /* La ficha de una copia en una fila (en vez de "Copia de ..."): una rueda partida con sus dos colores (principal y acento), el producto, su
@@ -5070,12 +5095,14 @@ function Lista({ filas, abrir, recargar, copia }) {
         ? `Carta: ${(getCarta(i.cartaMini) ? marcaDe(getCarta(i.cartaMini))?.nombre : null) ?? (filas ?? []).find(x => x.tipo === 'carta' && x.slug === i.cartaMini)?.cambios?.['marca.nombre'] ?? i.cartaMini}`
         : 'Menú propio'
       : null
+    // Con nombre interno, el del negocio pasa aquí abajo como un dato más
+    const nombreNegocio = i.etiqueta?.trim() ? (esCarta ? f.cambios?.['marca.nombre'] ?? f.cambios?.marca?.nombre : f.cambios?.nombre) : null
     // La última vez que se guardó
     const modificada = f.actualizado ? new Date(f.actualizado).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: '2-digit' }) : null
     return (
       <span className="flex flex-wrap items-center gap-x-[0.5rem]">
         {a && b && <span aria-hidden="true" className="inline-block h-[0.95rem] w-[0.95rem] shrink-0 rounded-full ring-1 ring-black/25" style={{ background: `conic-gradient(${a} 0 50%, ${b} 0 100%)` }} />}
-        {[producto, diseno, tematica, cartaDelMenu, modificada && `Modificada ${modificada}`].filter(Boolean).join(' · ')}
+        {[producto, diseno, tematica, nombreNegocio && `Nombre: ${nombreNegocio}`, cartaDelMenu, modificada && `Modificada ${modificada}`].filter(Boolean).join(' · ')}
       </span>
     )
   }
