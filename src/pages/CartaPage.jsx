@@ -349,7 +349,7 @@ export default function CartaPage(props) {
 function Carta({ carta, negocio, demo = false, incrustada = false }) {
   const lado = ladoEnlace(carta, 'derecha')
   // ?grupo=nombre (Vistazo en /admin): las flechas recorren las copias de ese grupo
-  const secuenciaGrupo = useSecuenciaGrupo()
+  const secuenciaGrupo = useSecuenciaGrupo(destino.grupo)
   // Dos niveles: Menú del día o Carta; dentro de Carta, las secciones
   const [modo, setModo] = useState(carta?.menuDia ? 'menu' : 'carta')
   const [seccionActiva, setSeccionActiva] = useState(carta?.secciones?.[0]?.nombre)

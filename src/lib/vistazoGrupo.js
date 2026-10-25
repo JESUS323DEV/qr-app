@@ -8,9 +8,10 @@ import { supabase } from './supabase'
    grupo o no hay al menos dos copias */
 const rutaCopia = (tipo, slug) => (tipo === 'carta' ? `/demo/${slug}/carta` : `/demo/${slug}`)
 
-export function useSecuenciaGrupo() {
+export function useSecuenciaGrupo(grupoDelQr = null) {
   const [params] = useSearchParams()
-  const grupo = params.get('grupo')
+  // El grupo de la dirección (?grupo=) o, si se entra por un QR impreso que apunta a un grupo, el de ese QR
+  const grupo = params.get('grupo') || grupoDelQr
   const [leido, setLeido] = useState({ grupo: null, lista: [] })
 
   useEffect(() => {

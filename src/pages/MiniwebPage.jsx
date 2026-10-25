@@ -217,7 +217,7 @@ export default function MiniwebPage({ demo = false }) {
   const pruebaDiseno = params.get('diseno')
   const pruebaBarra = params.get('barra')
   // ?grupo=nombre (Vistazo en /admin): las flechas recorren las copias de ese grupo
-  const secuenciaGrupo = useSecuenciaGrupo()
+  const secuenciaGrupo = useSecuenciaGrupo(destino.grupo)
   // El archivo del negocio con los cambios de /admin encima (o una copia de una demo, que solo vive en Supabase)
   const { cargando, fila } = useEdicion('negocio', slug)
   // ?miniweb=1: la ficha vista como miniweb (su diseño de arriba pasa a ser la portada y cada pestaña, una página)

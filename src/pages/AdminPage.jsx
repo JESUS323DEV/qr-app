@@ -4333,10 +4333,20 @@ const paginasConQR = copias =>
   })
 
 // Desplegable para elegir una de esas páginas, por grupos
-function ElegirPagina({ paginas, valor, cambiar, vacio }) {
+function ElegirPagina({ paginas, valor, cambiar, vacio, grupos = [] }) {
   return (
     <select value={valor} onChange={e => cambiar(e.target.value)} className={CAMPO}>
       <option value="">{vacio}</option>
+      {/* Grupos de copias (Cambiar un QR impreso): el QR abre la primera copia del grupo con las flechas del Vistazo */}
+      {grupos.length > 0 && (
+        <optgroup label="Grupos (con flechas)">
+          {grupos.map(g => (
+            <option key={g} value={`grupo:${g}`}>
+              {g}
+            </option>
+          ))}
+        </optgroup>
+      )}
       {['Copias', 'Fichas y miniwebs', 'Menú y ofertas'].map(g => (
         <optgroup key={g} label={g}>
           {paginas
@@ -4427,7 +4437,7 @@ function CambiarQR({ copias }) {
   const cargar = useCallback(() => {
     supabase
       .from('qr_destinos')
-      .select('tipo, slug, destino')
+      .select('*')
       .order('actualizado', { ascending: false })
       .then(({ data, error }) => {
         if (error) setError('No se pueden leer los QR. ¿Has ejecutado el SQL 011_qr_destinos.sql en Supabase?')
@@ -4436,9 +4446,12 @@ function CambiarQR({ copias }) {
   }, [])
   useEffect(cargar, [cargar])
 
+  // Los grupos de copias (los del Vistazo), sin las que ya son de un cliente
+  const grupos = [...new Set(copias.filter(f => !f.cambios?._cliente).map(f => f.cambios?._grupo).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'))
   const [tipo, destino] = clave.split(':')
+  const esGrupo = tipo === 'grupo'
   const slugQr = aSlug(qr)
-  const pagina = paginas.find(p => p.clave === clave)
+  const pagina = esGrupo ? (grupos.includes(clave.slice(6)) ? { nombre: `el grupo «${clave.slice(6)}»` } : null) : paginas.find(p => p.clave === clave)
   const direccion = (t, s) => `${DOMINIO}/${s}${t === 'carta' ? '/carta' : ''}`
 
   const publicar = async () => {
@@ -4450,13 +4463,15 @@ function CambiarQR({ copias }) {
       return
     }
     setGuardando(true)
-    const { error } = await supabase.from('qr_destinos').upsert({ tipo, slug: slugQr, destino })
+    // Un grupo apunta a su primera miniweb (la dirección del QR es la de una miniweb: /slug) y deja el destino vacío
+    const fila = esGrupo ? { tipo: 'negocio', slug: slugQr, destino: null, grupo: clave.slice(6) } : { tipo, slug: slugQr, destino, grupo: null }
+    const { error } = await supabase.from('qr_destinos').upsert(fila)
     setGuardando(false)
     if (error) {
-      setError('No se ha podido publicar en el QR.')
+      setError(esGrupo ? 'No se ha podido publicar en el QR. ¿Has ejecutado el SQL 014_qr_grupos.sql en Supabase?' : 'No se ha podido publicar en el QR.')
       return
     }
-    setAviso(`Listo: ${direccion(tipo, slugQr)} ahora enseña «${pagina.nombre}».`)
+    setAviso(`Listo: ${direccion(fila.tipo, slugQr)} ahora enseña ${esGrupo ? pagina.nombre : `«${pagina.nombre}»`}.`)
     cargar()
   }
   const quitar = async f => {
@@ -4469,7 +4484,7 @@ function CambiarQR({ copias }) {
       <p className="text-[0.88rem] leading-[1.45] text-zinc-600">Elige la página que ya has montado y la dirección del QR impreso: el QR pasa a enseñar esa página, sin tocar la placa.</p>
       <label className="grid gap-[0.3rem]">
         <span className="text-[0.8rem] font-semibold text-zinc-500">Qué página enseña</span>
-        <ElegirPagina paginas={paginas} valor={clave} cambiar={setClave} vacio="Elige una página" />
+        <ElegirPagina paginas={paginas} valor={clave} cambiar={setClave} vacio="Elige una página" grupos={grupos} />
       </label>
       <Etiqueta texto="Dirección del QR impreso (lo que va después de mostraq.es/)">
         <input value={qr} onChange={e => setQr(e.target.value)} list="qr-impresos" className={CAMPO} placeholder="prueba-1" autoCapitalize="none" autoCorrect="off" />
@@ -4489,7 +4504,7 @@ function CambiarQR({ copias }) {
           {lista.map(f => (
             <li key={`${f.tipo}:${f.slug}`} className="flex items-center justify-between gap-[0.75rem] rounded-[0.75rem] bg-white p-[0.7rem] text-[0.85rem] ring-1 ring-zinc-200">
               <span className="min-w-0 break-all">
-                <span className="font-semibold">{direccion(f.tipo, f.slug).replace(`${DOMINIO}/`, '/')}</span> enseña {f.destino}
+                <span className="font-semibold">{direccion(f.tipo, f.slug).replace(`${DOMINIO}/`, '/')}</span> enseña {f.grupo ? `el grupo «${f.grupo}»` : f.destino}
               </span>
               <button type="button" onClick={() => quitar(f)} className="shrink-0 text-red-600 underline underline-offset-[0.2em]">
                 Quitar
