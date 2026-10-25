@@ -1,7 +1,7 @@
 {
   "name": "Mostraq",
   "short_name": "Mostraq",
-  "description": "Miniwebs y cartas digitales con QR para negocios locales",
+  "description": "Miniwebs con QR para negocios locales: menú del día u ofertas siempre al día, con tu marca",
   "lang": "es",
   "start_url": "/",
   "display": "browser",
