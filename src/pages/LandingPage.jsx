@@ -771,24 +771,28 @@ function TituloSeccion({ children, texto }) {
   )
 }
 
-function CabeceraEscritorio() {
+// La barra de arriba de escritorio (desde 1024 px). En la landing los enlaces bajan a su sección; en las demás páginas (Planes, Catálogo, Crea tu QR y los textos
+// legales) llevan a la landing, a esa sección. En móvil no se ve (cada página tiene su cabecera sencilla)
+export function CabeceraEscritorio({ enLanding = false }) {
+  const aSeccion = id => (enLanding ? { href: `#${id}` } : { to: `/#${id}` })
+  const Enlace = enLanding ? 'a' : Link
   return (
-    <header className="sticky top-0 z-40 border-b border-linea bg-papel/90 backdrop-blur">
+    <header className="sticky top-0 z-40 hidden border-b border-linea bg-papel/90 backdrop-blur lg:block">
       <div className="mx-auto flex h-[4.25rem] w-full max-w-[72rem] items-center gap-[2rem] px-[2rem]">
-        <a href="#inicio" className="font-titulo text-[1.4rem] font-black tracking-tight">
+        <Enlace {...(enLanding ? { href: '#inicio' } : { to: '/' })} className="font-titulo text-[1.4rem] font-black tracking-tight">
           {marca.nombre}
-        </a>
+        </Enlace>
         <nav aria-label="Secciones" className="ml-auto flex items-center gap-[1.75rem]">
           {SECCIONES.map(s => (
-            <a key={s.id} href={`#${s.id}`} className="text-[0.95rem] font-semibold text-suave transition-colors hover:text-tinta">
+            <Enlace key={s.id} {...aSeccion(s.id)} className="text-[0.95rem] font-semibold text-suave transition-colors hover:text-tinta">
               {s.texto}
-            </a>
+            </Enlace>
           ))}
         </nav>
         <SelectorTema enLinea />
-        <a href="#contacto" className="inline-flex min-h-[2.6rem] items-center rounded-full bg-acento px-[1.3rem] text-[0.95rem] font-bold text-papel transition-colors hover:bg-acento-oscuro">
+        <Enlace {...(enLanding ? { href: '#contacto' } : { to: '/?contacto=presupuesto' })} className="inline-flex min-h-[2.6rem] items-center rounded-full bg-acento px-[1.3rem] text-[0.95rem] font-bold text-papel transition-colors hover:bg-acento-oscuro">
           {menu.boton}
-        </a>
+        </Enlace>
       </div>
     </header>
   )
@@ -825,7 +829,11 @@ function TarjetaEjemplo({ d }) {
 
 function LandingEscritorio() {
   const escritorio = useEscritorio()
-  const { search } = useLocation()
+  const { search, hash } = useLocation()
+  // Llegando de otra página con un enlace a una sección (/#planes...), baja a esa sección
+  useEffect(() => {
+    if (escritorio && hash) requestAnimationFrame(() => document.getElementById(hash.slice(1))?.scrollIntoView())
+  }, [escritorio, hash])
   // Llegando de un botón de presupuesto (/?contacto=presupuesto o google), baja directamente al formulario de contacto
   const motivoUrl = new URLSearchParams(search).get('contacto')
   const motivo = motivoUrl && contactoForm.motivos[motivoUrl] ? motivoUrl : 'contacto'
@@ -838,7 +846,7 @@ function LandingEscritorio() {
 
   return (
     <div className="hidden bg-papel font-texto text-tinta lg:block">
-      <CabeceraEscritorio />
+      <CabeceraEscritorio enLanding />
 
       {/* Inicio */}
       <section id="inicio" className="scroll-mt-[4.25rem]">
@@ -849,7 +857,7 @@ function LandingEscritorio() {
             <p className="mt-[0.6rem] max-w-[30rem] text-[1.25rem] leading-[1.5] text-suave">{hero.texto}</p>
             <div className="mt-[2.25rem] flex flex-wrap gap-[0.8rem]">
               <a href="#contacto" className={BOTON_LLENO}>
-                {menu.boton}
+                {menu.botonPresupuesto}
               </a>
               <a href="#ejemplos" className={BOTON_VACIO}>
                 {hero.enlace}
@@ -931,7 +939,10 @@ function LandingEscritorio() {
                 </button>
               ))}
             </div>
-            <VerTodas to="/crear-qr">{hero.inicio.leerMas}</VerTodas>
+            <div className="flex flex-wrap gap-x-[1.5rem]">
+              <VerTodas to="/crear-qr">{hero.inicio.leerMas}</VerTodas>
+              <VerTodas to={generadorQr.url}>{generadorQr.textoGratis}</VerTodas>
+            </div>
           </div>
           <div className="flex justify-center py-[1rem]">
             <div className="w-[min(20rem,100%)] -rotate-[4deg] drop-shadow-[0_1.25rem_1.5rem_rgb(0_0_0/0.5)]">

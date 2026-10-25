@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import QRCodeStyling from 'qr-code-styling'
 import qrcode from 'qrcode-generator'
 import { DISENOS, SILUETAS, mascaraSilueta } from '../lib/siluetas'
@@ -588,6 +588,8 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
   const [tipografia, setTipografia] = useState(ini.tipografia ?? '')
   const [escala, setEscala] = useState(ini.escala ?? 1)
   // Tamaño del nombre (el texto de arriba), aparte de los demás: 1 pequeño (el de siempre), medio o grande
+  // Prefijo único de esta placa para los ids de sus degradados: con dos placas en la página (como en la landing, una oculta) no se pueden repetir
+  const idPlaca = useId().replace(/[^a-zA-Z0-9]/g, '')
   const [tamanoNombre, setTamanoNombre] = useState(ini.tamanoNombre ?? 1)
   // Tamaño del eslogan y del otro texto (editor público): 1 es XL (el de siempre), y MD y XS más pequeños
   const [tamanoEslogan, setTamanoEslogan] = useState(ini.tamanoEslogan ?? 1)
@@ -1051,7 +1053,8 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
     if (icono === 'instagram') {
       const id = `${pre}-ig${Math.round(x)}`
       const paradas = PARADAS_INSTAGRAM.map(([o, c]) => `<stop offset="${o}" stop-color="${c}"/>`).join('')
-      return `<defs><linearGradient id="${id}" x1="0" y1="1" x2="1" y2="0">${paradas}</linearGradient></defs>${traza} fill="url(#${id})"/>`
+      // Con coordenadas propias, las del icono (24 x 24; el degradado usa el espacio del trazado, con su translate y su scale): si hay dos placas en la página y una está oculta, un degradado en proporciones no se pinta y el icono desaparece
+      return `<defs><linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="0" y1="24" x2="24" y2="0">${paradas}</linearGradient></defs>${traza} fill="url(#${id})"/>`
     }
     return `${traza} fill="${colorIcono(icono)}"/>`
   }
@@ -1180,7 +1183,7 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
   useEffect(() => {
     let vigente = true
     const t = setTimeout(() => {
-      componerSvg(600, 'vista').then(svg => {
+      componerSvg(600, `vista${idPlaca}`).then(svg => {
         // Sin su ancho y alto en píxeles (solo con su proporción, el viewBox): así se ajusta al hueco y nunca empuja
         // la página hacia el lado en un móvil estrecho
         if (vigente) setVista(svg.replace(/^<svg([^>]*?) width="[^"]*" height="[^"]*"/, '<svg$1 style="display:block;width:100%;height:auto;max-width:100%"'))

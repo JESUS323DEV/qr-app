@@ -5,15 +5,15 @@ import { Link } from 'react-router-dom'
    lista: [{ clave, nombre, sector, ruta, foto }]. Lo usan /miniweb, /catalogo y las páginas por temática.
    El marco toma la forma de su captura (sin recortarla); sin captura, el móvil negro con la misma proporción.
    --ancho: el ancho de cada móvil, para que su alto (la de una captura, 9/16, más el marco) sea el de la pantalla menos la cabecera; como mucho el 80 % del ancho
-   (en el móvil, uno a la vista con el siguiente asomando) y, en pantallas anchas, salen varios. */
+   (en el móvil, uno a la vista con el siguiente asomando). Desde 1024 px de ancho deja de ser un carrusel y pasa a una rejilla de 3 columnas (4 desde 1280 px), como los ejemplos de la landing. */
 export default function CarruselMoviles({ lista }) {
   return (
     <ul
-      className="-mx-4 mt-[2rem] flex snap-x snap-mandatory gap-[1.25rem] overflow-x-auto px-[max(1rem,calc(50%-var(--ancho)/2))] pb-[1.5rem] sm:-mx-6 lg:px-[1.5rem] [scrollbar-width:none]"
+      className="-mx-4 mt-[2rem] flex snap-x snap-mandatory gap-[1.25rem] overflow-x-auto px-[max(1rem,calc(50%-var(--ancho)/2))] pb-[1.5rem] sm:-mx-6 lg:mx-0 lg:grid lg:grid-cols-3 lg:gap-[2rem] lg:overflow-visible lg:px-0 xl:grid-cols-4 [scrollbar-width:none]"
       style={{ '--ancho': 'min(80vw, calc((100svh - 12rem) * 0.54))' }}
     >
       {lista.map(d => (
-        <li key={d.clave ?? d.slug} className="w-[var(--ancho)] shrink-0 snap-center">
+        <li key={d.clave ?? d.slug} className="w-[var(--ancho)] shrink-0 snap-center lg:w-auto">
           <Link
             to={d.ruta}
             aria-label={`Abrir ${d.nombre}`}

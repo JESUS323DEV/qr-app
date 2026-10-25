@@ -1,3 +1,4 @@
+import { CabeceraEscritorio } from './LandingPage'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { legales, marca } from '../landing/contenido'
@@ -22,7 +23,8 @@ export default function LegalPage({ tipo }) {
 
   return (
     <div className="min-h-svh bg-papel font-texto text-tinta">
-      <header className="mx-auto flex w-full max-w-[44rem] items-center justify-between px-4 py-[1.1rem] sm:px-6">
+      <CabeceraEscritorio />
+      <header className="mx-auto flex w-full lg:hidden max-w-[44rem] items-center justify-between px-4 py-[1.1rem] sm:px-6">
         <Link to="/" className="font-titulo text-[1.35rem] font-black tracking-tight">
           {marca.nombre}
         </Link>

@@ -1,3 +1,4 @@
+import { CabeceraEscritorio } from './LandingPage'
 import { useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { marca, pasos, planesDetalle, ventajas } from '../landing/contenido'
@@ -24,7 +25,8 @@ export default function PlanesPage() {
 
   return (
     <div className="min-h-svh bg-papel font-texto text-tinta">
-      <header className="mx-auto flex w-full max-w-[52rem] items-center lg:max-w-[72rem] justify-between px-4 py-[1.1rem] sm:px-6">
+      <CabeceraEscritorio />
+      <header className="mx-auto flex w-full lg:hidden max-w-[52rem] items-center lg:max-w-[72rem] justify-between px-4 py-[1.1rem] sm:px-6">
         <Link to="/" className="font-titulo text-[1.35rem] font-black tracking-tight">
           {marca.nombre}
         </Link>
@@ -71,8 +73,8 @@ export default function PlanesPage() {
           </ul>
         </section>
 
-        {/* Cómo funciona (los pasos de la landing) y las ventajas */}
-        <section id="como-funciona" className="mt-[2.5rem] scroll-mt-[1rem]">
+        {/* Cómo funciona (los pasos de la landing) y las ventajas. En escritorio, sin los pasos ni las ventajas: ya están en la landing */}
+        <section id="como-funciona" className="mt-[2.5rem] scroll-mt-[1rem] lg:hidden">
           <Titulo>{pasos.titulo}</Titulo>
           <ol className="mt-[0.8rem] border-t border-linea">
             {pasos.lista.map((paso, i) => (
@@ -87,7 +89,7 @@ export default function PlanesPage() {
           </ol>
         </section>
 
-        <section id="ventajas" className="mt-[2.5rem] scroll-mt-[1rem]">
+        <section id="ventajas" className="mt-[2.5rem] scroll-mt-[1rem] lg:hidden">
           <Titulo>{ventajas.titulo}</Titulo>
           <ul className="mt-[0.8rem] border-t border-linea">
             {ventajas.lista.map(v => (

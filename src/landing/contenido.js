@@ -76,7 +76,7 @@ export const ventajas = {
   titulo: 'Lo que ganas',
   lista: [
     { titulo: 'Más reseñas en Google', texto: 'Tus clientes te valoran desde la mesa, en dos toques.' },
-    { titulo: 'Clientes que vuelven y te recomiendan', texto: 'Te siguen en redes y comparten tu página por WhatsApp en un toque.' },
+    { titulo: 'Clientes que vuelven y te recomiendan', texto: 'Llegan a tus redes en un toque, te siguen y comparten tu página por WhatsApp.' },
     { titulo: 'Reservas ordenadas', texto: 'Te llegan por WhatsApp con día, hora y personas, sin mensajes sueltos.' },
     { titulo: 'Con tu marca', texto: 'Tus colores y tus fotos, no una plantilla igual para todos.' },
   ],
@@ -182,22 +182,30 @@ export const preguntas = {
   titulo: 'Preguntas',
   lista: [
     {
-      pregunta: '¿No es lo mismo que un Linktree gratis?',
+      pregunta: '¿Qué recibo exactamente?',
       respuesta:
-        'Linktree es una lista de enlaces que montas tú. Aquí tienes una página con la imagen de tu negocio, una placa física con buen acabado y alguien que lo monta y lo cambia por ti.',
+        'Una placa con QR para tu mostrador y tu miniweb con tu marca: reseña de Google, horario, ubicación, redes, WhatsApp y tu menú del día u ofertas. Con la miniweb básica van 2 placas, y si quieres, 2 pegatinas para el escaparate o la puerta.',
     },
     {
-      pregunta: '¿Necesito tener página web?',
+      pregunta: '¿Me ayuda a conseguir reseñas en Google?',
+      respuesta: 'Sí, es lo principal. El cliente que ya está en tu local apunta con el móvil y llega directo a tu ficha para dejar la reseña, sin buscarte. Cuantas más reseñas, más te encuentran.',
+    },
+    {
+      pregunta: '¿Cómo cambio mi menú o mis ofertas?',
       respuesta:
-        'No. Muchos negocios solo tienen Instagram y les basta. Si algún día quieres una web completa, también la hago.',
+        'Con la miniweb básica, me escribes y lo cambio. Con la plataforma completa lo cambias tú desde tu panel, incluso haciendo una foto de tu menú u ofertas. En los dos casos, la placa no se toca. Tu menú del día se muestra solo en su horario.',
     },
     {
       pregunta: '¿Mis clientes tienen que descargar algo?',
       respuesta: 'No. Apuntan con la cámara del móvil y se abre la página.',
     },
     {
-      pregunta: '¿Y si cambio el horario o la carta?',
-      respuesta: 'Con la miniweb básica, me escribes y lo cambio. Con la plataforma completa lo cambias tú desde tu panel. En los dos casos, la placa no se toca.',
+      pregunta: '¿Necesito tener página web?',
+      respuesta: 'No. Muchos negocios solo tienen Instagram y les basta. Si algún día quieres una web completa, también la hago.',
+    },
+    {
+      pregunta: '¿Cuánto cuesta?',
+      respuesta: 'La miniweb básica, desde 120 €. La plataforma completa se presupuesta según tu negocio. Te paso el presupuesto exacto, sin compromiso.',
     },
   ],
 }
@@ -233,7 +241,7 @@ export const contactoForm = {
 // Pestaña Web completa del hero: el siguiente escalón para quien quiere más
 // Enlace del menú hamburguesa a las webs completas (platform)
 // El enlace del menú hamburguesa al editor de QR gratis (/generador-qr), debajo de las webs completas
-export const generadorQr = { texto: 'Generador QR', url: '/generador-qr' }
+export const generadorQr = { texto: 'Generador QR', url: '/generador-qr', textoGratis: 'Generador de QR gratis' }
 
 export const webCompleta = {
   texto: 'Webs completas a medida',
@@ -291,7 +299,7 @@ export const planesDetalle = {
     {
       titulo: 'Miniweb básica',
       precio: 'Desde 120 €',
-      texto: 'Una pantalla con lo esencial de tu negocio, con un diseño cuidado que se adapta a tus colores y a tu marca.',
+      texto: 'Una pantalla con lo importante de tu negocio, con un diseño cuidado que se adapta a tus colores y a tu marca.',
       incluye: [
         'Tu miniweb con tu marca: tus colores, tus fotos y tus textos',
         'Reseña de Google, horario, ubicación y redes, y los botones que necesites',
@@ -381,7 +389,9 @@ export const menu = {
     { texto: 'Aviso legal', url: '/aviso-legal' },
     { texto: 'Política de cookies', url: '/cookies' },
   ],
-  boton: 'Pedir presupuesto',
+  boton: 'Contacto',
+  // El botón principal del inicio de escritorio
+  botonPresupuesto: 'Pide tu presupuesto',
   firma: 'Mostraq · Hecho por JesúsDev',
 }
 

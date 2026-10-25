@@ -1,3 +1,4 @@
+import { CabeceraEscritorio } from './LandingPage'
 import { useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import CarruselMoviles from '../components/CarruselMoviles'
@@ -68,7 +69,8 @@ export default function CatalogoPage({ soloMiniwebs = false }) {
 
   return (
     <div className="min-h-svh bg-papel font-texto text-tinta">
-      <header className="mx-auto flex w-full max-w-[68rem] items-center justify-between px-4 py-[1.1rem] sm:px-6">
+      <CabeceraEscritorio />
+      <header className="mx-auto flex w-full lg:hidden max-w-[68rem] items-center justify-between px-4 py-[1.1rem] sm:px-6">
         <Link to="/" className="font-titulo text-[1.35rem] font-black tracking-tight">
           {marca.nombre}
         </Link>
