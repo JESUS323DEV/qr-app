@@ -174,6 +174,12 @@ const etiquetaDe = (clave, enPestana) => (enPestana && clave === 'texto' ? 'Nomb
 /* Ordena los campos para el editor: un bloque por cosa (datos, arriba, colores, cada pestaña, cada sección de la
    carta...), y dentro de cada bloque los campos sueltos, las tarjetas (cada foto, cada plato... con todos sus datos
    juntos) y lo técnico aparte. orden: dónde va el bloque (más arriba lo que más se toca) */
+// Para las pestañas de ajustes por grupo: los bloques en bruto de las pestañas de la miniweb de esos tipos (Inicio, Menú, Horario, Reservar...)
+const bloquesDePestana = tipos => (b, datos) => b.clave.startsWith('pestana-') && tipos.includes(datos.hero?.pestanas?.[Number(b.clave.slice(8))]?.tipo)
+
+// Cómo se escribe cada red en los campos de enlace
+const NOMBRES_REDES = { instagram: 'Instagram', tiktok: 'TikTok', facebook: 'Facebook', whatsapp: 'WhatsApp', youtube: 'YouTube', twitter: 'X (Twitter)', linkedin: 'LinkedIn', google: 'Google', telegram: 'Telegram' }
+
 function organizar(datos, campos) {
   const bloques = new Map()
   const bloque = (clave, titulo, orden) => {
@@ -228,7 +234,12 @@ function organizar(datos, campos) {
       continue
     }
 
-    const etiqueta = resto.length ? resto.filter(p => !esIndice(p)).map((p, k, todos) => (k === todos.length - 1 ? etiquetaDe(p, enPestana && todos.length === 1) : nombreDato(p))).join(' · ') : c.etiqueta
+    let etiqueta = resto.length ? resto.filter(p => !esIndice(p)).map((p, k, todos) => (k === todos.length - 1 ? etiquetaDe(p, enPestana && todos.length === 1) : nombreDato(p))).join(' · ') : c.etiqueta
+    // El enlace de una red lleva el nombre de la red (Instagram, TikTok...), no solo "Enlace"
+    if (partes[0] === 'redes' && esIndice(partes[1]) && partes.at(-1) === 'href') {
+      const red = datos.redes?.[Number(partes[1])]?.platform
+      if (red) etiqueta = `Enlace de ${NOMBRES_REDES[red] ?? red}`
+    }
     ;(tecnico ? b.tecnicos : b.sueltos).push({ ...c, etiqueta })
   }
 
@@ -1836,32 +1847,81 @@ const ICONOS_TEMA = {
    un círculo con el color que se pinta ahora (con borde de rayitas si es el automático, el que se pone solo según el diseño); al
    tocarlo se abre el cuadro de colores y, elegido uno, aparece su código y un enlace para volver a automático.
    valores: lo elegido; autos: el color automático de cada rol; cambiar(clave, color) y cambiar(clave, undefined) para volver a él */
-function PanelColoresMiniweb({ valores, cambiar, autos = {}, sinTitulo = false }) {
+// detalle: en pantalla ancha (desde 1024 px), cada grupo de colores en un desplegable y, dentro, cada color en columna con su nombre, su ayuda, el círculo y el
+// código, como en Personalizado (en móvil, solo los círculos). claves: si se da, solo esos colores
+function PanelColoresMiniweb({ valores, cambiar, autos = {}, sinTitulo = false, claves, detalle = false }) {
+  const grupos = (claves ? COLORES_MINIWEB.map(g => ({ ...g, campos: g.campos.filter(c => claves.includes(c.clave)) })) : COLORES_MINIWEB).filter(g => g.campos.length > 0)
   return (
-    <div className="grid gap-[1rem] lg:grid-cols-2 lg:items-start lg:gap-x-[1.75rem]">
-      {!sinTitulo && <span className="text-[0.8rem] font-semibold text-zinc-500 lg:col-span-2">Colores</span>}
-      {COLORES_MINIWEB.map(g => (
-        <div key={g.grupo} className={`grid gap-[0.5rem] ${g.ancho ? "lg:col-span-2" : ""}`}>
-          <p className="text-[0.85rem] font-bold">{g.grupo}</p>
-          <div className="flex flex-wrap items-start gap-x-[1.2rem] gap-y-[0.8rem]">
-            {g.campos.map(c => {
-              const valor = valores[c.clave]
-              return (
-                <div key={c.clave} className="grid justify-items-center gap-[0.25rem]" title={c.ayuda}>
-                  <p className="text-[0.8rem] font-semibold text-zinc-500">{c.corto}</p>
-                  <CampoColor valor={valor ?? autos[c.clave] ?? '#FFFFFF'} auto={!valor} soloCirculo cambiar={v => cambiar(c.clave, v)} />
-                  {valor && (
-                    <button type="button" title="Volver a automático" aria-label={`Volver a automático: ${c.nombre}`} onClick={() => cambiar(c.clave, undefined)} className="rounded-full p-[0.2rem] text-zinc-400 hover:text-zinc-900">
-                      <RotateCcw className="h-[0.95rem] w-[0.95rem]" strokeWidth={2.2} aria-hidden="true" />
-                    </button>
-                  )}
-                </div>
-              )
-            })}
-          </div>
+    <>
+      {detalle && (
+        <div className="hidden gap-[0.75rem] lg:grid">
+          {grupos.map(g => (
+            <Plegable
+              key={g.grupo}
+              titulo={g.grupo}
+              elegido={
+                <span className="flex justify-end gap-[0.25rem]">
+                  {g.campos.map(c => (
+                    <span key={c.clave} className="h-[1.1rem] w-[1.1rem] rounded-full ring-1 ring-zinc-300" style={{ background: valores[c.clave] ?? autos[c.clave] ?? '#FFFFFF' }} />
+                  ))}
+                </span>
+              }
+            >
+              <div className="grid gap-[0.9rem]">
+                {g.campos.map(c => {
+                  const valor = valores[c.clave]
+                  return (
+                    <div key={c.clave} className="grid gap-[0.3rem]">
+                      <div>
+                        <p className="text-[0.8rem] font-semibold text-zinc-500">
+                          {c.nombre}
+                          {!valor && <span className="font-normal text-zinc-400"> · automático</span>}
+                        </p>
+                        <p className="text-[0.8rem] text-zinc-400">{c.ayuda}</p>
+                      </div>
+                      <div className="flex items-center gap-[0.5rem]">
+                        <div className="min-w-0 flex-1">
+                          <CampoColor valor={valor ?? autos[c.clave] ?? '#FFFFFF'} cambiar={v => cambiar(c.clave, v)} />
+                        </div>
+                        {valor && (
+                          <button type="button" title="Volver a automático" aria-label={`Volver a automático: ${c.nombre}`} onClick={() => cambiar(c.clave, undefined)} className="shrink-0 rounded-full p-[0.4rem] text-zinc-500 hover:text-zinc-900">
+                            <RotateCcw className="h-[0.95rem] w-[0.95rem]" strokeWidth={2.2} aria-hidden="true" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </Plegable>
+          ))}
         </div>
-      ))}
-    </div>
+      )}
+      <div className={`grid gap-[1rem] ${detalle ? 'lg:hidden' : 'lg:grid-cols-2 lg:items-start lg:gap-x-[1.75rem]'}`}>
+        {!sinTitulo && <span className="text-[0.8rem] font-semibold text-zinc-500 lg:col-span-2">Colores</span>}
+        {grupos.map(g => (
+          <div key={g.grupo} className={`grid gap-[0.5rem] ${g.ancho ? 'lg:col-span-2' : ''}`}>
+            <p className="text-[0.85rem] font-bold">{g.grupo}</p>
+            <div className="flex flex-wrap items-start gap-x-[1.2rem] gap-y-[0.8rem]">
+              {g.campos.map(c => {
+                const valor = valores[c.clave]
+                return (
+                  <div key={c.clave} className="grid justify-items-center gap-[0.25rem]" title={c.ayuda}>
+                    <p className="text-[0.8rem] font-semibold text-zinc-500">{c.corto}</p>
+                    <CampoColor valor={valor ?? autos[c.clave] ?? '#FFFFFF'} auto={!valor} soloCirculo cambiar={v => cambiar(c.clave, v)} />
+                    {valor && (
+                      <button type="button" title="Volver a automático" aria-label={`Volver a automático: ${c.nombre}`} onClick={() => cambiar(c.clave, undefined)} className="rounded-full p-[0.2rem] text-zinc-500 hover:text-zinc-900">
+                        <RotateCcw className="h-[0.95rem] w-[0.95rem]" strokeWidth={2.2} aria-hidden="true" />
+                      </button>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
   )
 }
 
@@ -2117,7 +2177,9 @@ const ICONOS_DISENO = {
 /* Todos los datos editables de la página, en bruto: los mismos desplegables del editor de un perfil (Pestaña Inicio, Reseña de Google, Redes,
    Carrusel...), para tocar cualquier cosa de la miniweb o la ficha que se está montando. original: los datos sin estos cambios; cambios: los de
    aquí (ruta → valor); cambiar(ruta, valor). El editor de un perfil sigue como está: esto es una copia de su forma de enseñarlos */
-function EditorEnBruto({ original, cambios, cambiar }) {
+// soloBloques: si se da, solo esos bloques (por su título, abiertos) y sin Ajustes personalizados: las pestañas de ajustes por grupo enseñan los suyos
+function EditorEnBruto({ original, cambios, cambiar, soloBloques, soloAjustes = false }) {
+  const porFuncion = typeof soloBloques === 'function'
   const datos = useMemo(() => aplicar(original, cambios), [original, cambios])
   const campos = useMemo(() => camposDe(datos), [datos])
   const bloques = useMemo(() => organizar(datos, campos), [datos, campos])
@@ -2148,6 +2210,27 @@ function EditorEnBruto({ original, cambios, cambiar }) {
   }
   campo.volverTarjeta = t => t.campos.forEach(c => cambiar(c.ruta, leerRuta(original, c.ruta)))
   campo.tarjetaCambiada = t => t.campos.some(c => c.ruta in cambios)
+  // soloAjustes: todo lo que no tiene su pestaña (menos Redes y Reseña de Google, que ya están en las suyas), cerrado y sin desplegable propio
+  if (soloAjustes) {
+    return (
+      <div className="grid gap-[0.75rem]">
+        {bloques.filter(b => !['Redes', 'Reseña de Google'].includes(b.titulo)).map(b => (
+          <Bloque key={b.clave} bloque={b} abierto={false} campo={campo} />
+        ))}
+      </div>
+    )
+  }
+  if (soloBloques) {
+    const elegidos = bloques.filter(b => (porFuncion ? soloBloques(b, datos) : soloBloques.includes(b.titulo)))
+    if (!elegidos.length) return null
+    return (
+      <div className="grid gap-[0.75rem]">
+        {elegidos.map(b => (
+          <Bloque key={b.clave} bloque={b} abierto={!porFuncion} campo={campo} />
+        ))}
+      </div>
+    )
+  }
   return (
     <div className="grid gap-[0.75rem]">
       {/* Redes y Reseña de Google, tal cual */}
@@ -2176,7 +2259,9 @@ function EditorEnBruto({ original, cambios, cambiar }) {
 
 /* Las imágenes de la página, solo ellas, por pestaña (Inicio, Menú, Horario...): para cada una, su miniatura con el buscador de fotos y el
    botón de subir la tuya. Salen de los mismos datos que los desplegables en bruto (original y cambios, con cambiar(ruta, valor)) */
-function ImagenesPorPestana({ original, cambios, cambiar }) {
+// tipos: si se da, solo las imágenes de las pestañas de esos tipos (las pestañas de ajustes por grupo enseñan las de su página)
+// soloOtras: solo las imágenes que no son de ninguna pestaña (un logo suelto...)
+function ImagenesPorPestana({ original, cambios, cambiar, tipos, soloOtras = false }) {
   const datos = useMemo(() => aplicar(original, cambios), [original, cambios])
   const grupos = useMemo(() => {
     const pestanas = datos.hero?.pestanas ?? []
@@ -2215,12 +2300,14 @@ function ImagenesPorPestana({ original, cambios, cambiar }) {
     }
     // En Menú y ofertas solo se cambian las fotos del menú del día y de las ofertas: ni la portada de la carta (zona '0') ni las secciones de la carta de platos (zonas '3-...')
     if (deCarta) return [...zonas.values()].filter(z => z.clave !== '0' && !z.clave.startsWith('3-')).sort((x, y) => x.clave.localeCompare(y.clave, 'es', { numeric: true }))
-    return [
+    const todos = [
       ...[...porPestana.entries()].sort((a, b) => a[0] - b[0]).map(([i, campos]) => ({ clave: `p${i}`, titulo: pestanas[i]?.texto ?? `Pestaña ${i + 1}`, campos })),
       ...(otras.length ? [{ clave: 'otras', titulo: 'Otras imágenes', campos: otras }] : []),
     ]
-  }, [datos])
-  if (!grupos.length) return <p className="text-[0.8rem] text-zinc-500">Esta página no tiene imágenes que cambiar.</p>
+    if (soloOtras) return todos.filter(g => g.clave === 'otras')
+    return tipos ? todos.filter(g => g.clave.startsWith('p') && tipos.includes(pestanas[Number(g.clave.slice(1))]?.tipo)) : todos
+  }, [datos, tipos?.join(','), soloOtras]) // eslint-disable-line react-hooks/exhaustive-deps
+  if (!grupos.length) return tipos || soloOtras ? null : <p className="text-[0.8rem] text-zinc-500">Esta página no tiene imágenes que cambiar.</p>
   // Las fotos de Inicio (hero.pestanas.0.fotos) pueden ser más o menos según el diseño: se quitan con la X y se añaden con Añadir foto.
   // Se guarda la lista entera (con lo ya cambiado) y se quitan los cambios sueltos de cada foto, que ya no valdrían
   const listaInicio = datos.hero?.pestanas?.[0]?.fotos
@@ -2537,6 +2624,8 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
       return 'normal'
     }
   })
+  // Pestañas de ajustes por grupo (en prueba, encima de los desplegables de siempre): cada una junta todo lo de un grupo
+  const [pestanaAjustes, setPestanaAjustes] = useState(null)
   const medidaMovil = TAMANOS_MOVIL.find(t => t.clave === tamanoMovil) ?? TAMANOS_MOVIL[1]
   const elegirTamanoMovil = clave => {
     setTamanoMovil(clave)
@@ -3406,143 +3495,9 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
           </Plegable>
   )
 
-  return (
-    // peer: abierto, se oculta el botón de "Crear con el asistente" que va justo debajo (en Lista)
-    <details open={abierto} onToggle={e => setAbierto(e.currentTarget.open)} className="group/perfil peer rounded-[1rem] bg-white ring-1 ring-zinc-200">
-      {/* Cerrado: "Nuevo perfil" con una flecha para abrir. Abierto: solo un icono pequeño de plegar, para que la
-          vista previa empiece casi arriba */}
-      <summary
-        aria-label="Editor"
-        className="flex cursor-pointer list-none items-center px-[1rem] py-[0.9rem] group-open/perfil:justify-center group-open/perfil:pb-0 group-open/perfil:pt-[0.4rem] [&::-webkit-details-marker]:hidden"
-      >
-        <span className="text-[1.05rem] font-bold group-open/perfil:hidden">Editor</span>
-        <ChevronDown className="ml-auto h-[1.1rem] w-[1.1rem] text-zinc-500 group-open/perfil:hidden" aria-hidden="true" />
-        <ChevronsDownUp className="hidden h-[1.1rem] w-[1.1rem] text-zinc-400 group-open/perfil:block" aria-hidden="true" />
-      </summary>
-      {/* En una columna: vista previa, asistente, diseño y crear */}
-      <div className="mx-auto grid w-full max-w-[32rem] gap-[1rem] px-[1rem] py-[1rem] lg:max-w-[60rem] lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:items-start lg:gap-x-[2.5rem]">
-        {/* En el móvil, en una columna: pestañas, vista previa y lo de cada pestaña. En pantalla grande, las pestañas y su contenido a la
-            izquierda y, a la derecha, la vista previa (fija al bajar) (display: contents lo reparte en el móvil) */}
-        <div className="contents lg:col-start-1 lg:row-start-1 lg:grid lg:gap-[1rem]">
-        {/* Dos pestañas arriba: Personalizar y Asistente. La vista previa se ve siempre, y debajo, lo de cada una */}
-        <div role="tablist" aria-label="Editor" className="order-1 grid grid-cols-2 gap-[0.3rem] rounded-[0.75rem] bg-zinc-200 p-[0.25rem] lg:order-none">
-          {[
-            ['personalizar', 'Personalizar'],
-            ['asistente', 'Asistente'],
-          ].map(([clave, texto]) => (
-            <button
-              key={clave}
-              type="button"
-              role="tab"
-              aria-selected={pestana === clave}
-              onClick={() => setPestana(clave)}
-              className={`rounded-[0.55rem] py-[0.5rem] text-[0.95rem] font-semibold ${pestana === clave ? 'bg-white shadow-[0_0.05rem_0.2rem_rgb(0_0_0/0.15)]' : 'text-zinc-600'}`}
-            >
-              {texto}
-            </button>
-          ))}
-        </div>
-
-        {/* El asistente: un cuadro donde pedirle lo que sea y un solo botón que lo monta todo (diseño, nombre, textos y fotos) */}
-        {pestana === 'asistente' && (
-        <div className="order-3 grid gap-[0.6rem] lg:order-none">
-          {/* Qué diseña el asistente: una miniweb o una carta (la ficha ya no se vende) */}
-          <div className="grid grid-cols-3 gap-[0.3rem] rounded-[0.75rem] bg-zinc-200 p-[0.25rem]">
-            {[
-              ['miniweb', 'Miniweb'],
-              ['carta', 'Menú y ofertas'],
-              ['ficha', 'Ficha'],
-            ].map(([clave, texto]) => (
-              <button
-                key={clave}
-                type="button"
-                aria-pressed={producto === clave}
-                disabled={clave === 'ficha' || Boolean(disenando) || Boolean(creando)}
-                onClick={() => cambiarProducto(clave)}
-                className={`rounded-[0.55rem] py-[0.5rem] text-[0.95rem] font-semibold disabled:opacity-40 ${producto === clave ? 'bg-white shadow-[0_0.05rem_0.2rem_rgb(0_0_0/0.15)]' : 'text-zinc-600'}`}
-              >
-                {texto}
-              </button>
-            ))}
-          </div>
-          {/* Con Carta elegida, qué tipo: cada uno con sus reglas en el asistente (es el mismo tipo del selector del Editor) */}
-          {producto === 'carta' && (
-            <div className="grid grid-cols-2 gap-[0.3rem] rounded-[0.75rem] bg-zinc-200 p-[0.25rem]">
-              {TIPOS_CARTA.map(t => (
-                <button
-                  key={t.clave}
-                  type="button"
-                  aria-pressed={tipoCarta === t.clave}
-                  disabled={Boolean(disenando) || Boolean(creando)}
-                  onClick={() => setTipoCarta(t.clave)}
-                  className={`rounded-[0.55rem] py-[0.45rem] text-[0.9rem] font-semibold disabled:opacity-40 ${tipoCarta === t.clave ? 'bg-white shadow-[0_0.05rem_0.2rem_rgb(0_0_0/0.15)]' : 'text-zinc-600'}`}
-                >
-                  {t.clave === 'carta' ? 'Menú del día' : 'Ofertas'}
-                </button>
-              ))}
-            </div>
-          )}
-          {/* Lo único seguro: el nombre. Si se escribe, el asistente lo usa tal cual; si no, lo saca de la captura o se lo inventa */}
-          <Etiqueta texto="Nombre del negocio">
-            <input value={nombre} onChange={e => setNombre(e.target.value)} disabled={Boolean(disenando) || Boolean(creando)} className={CAMPO} placeholder="Peluquería Ranita" />
-          </Etiqueta>
-          <textarea
-            value={cuento}
-            onChange={e => setCuento(e.target.value)}
-            disabled={Boolean(disenando) || Boolean(creando)}
-            rows={3}
-            aria-label="Pídele al asistente lo que quieras"
-            placeholder="Opcional: lo que quieras añadir (estilo, colores, datos). Con el nombre y una captura de su Instagram ya basta."
-            className={`${CAMPO} resize-y`}
-          />
-          {/* Dos imágenes opcionales para el asistente, que solo las mira (no se colocan en la miniweb): el logo de referencia (colores y carácter
-              de la marca) y una captura con información (solo se lee su texto: nombre, teléfonos, dirección, horario...) */}
-          <div className="flex flex-wrap items-center gap-x-[1.2rem] gap-y-[0.6rem]">
-            <CampoImagenAsistente titulo="Añadir logo de referencia" valor={referencia} cambiar={setReferencia} conColores bloqueado={Boolean(disenando) || Boolean(creando)} avisar={setError} />
-            <CampoImagenAsistente titulo="Añadir captura con información" valor={captura} cambiar={setCaptura} bloqueado={Boolean(disenando) || Boolean(creando)} avisar={setError} />
-          </div>
-          <button type="button" onClick={montar} disabled={!(nombre.trim() || cuento.trim() || referencia || captura) || Boolean(disenando) || Boolean(creando)} className={BOTON}>
-            {disenando ?? 'Montar el diseño con el asistente'}
-          </button>
-          {resumenDiseno && <p className="text-[0.85rem] font-semibold text-zinc-800">{resumenDiseno}</p>}
-        </div>
-        )}
-
-        <div className="order-3 grid gap-[1rem] lg:order-none">
-          {/* Personalizar: el producto y, debajo, desplegables independientes (de momento solo el primero, Diseño y estilos) */}
-          {pestana === 'personalizar' && (
-          <div className="grid gap-[1rem]">
-          {/* 1. Temática: pone el contenido de ejemplo */}
-          {/* 1. Producto */}
-          <div className="grid gap-[0.4rem]">
-            <span className={titulo}>Producto</span>
-            <div className="grid grid-cols-3 gap-[0.3rem] rounded-[0.75rem] bg-zinc-200 p-[0.25rem]">
-              {[
-                ['miniweb', 'Miniweb'],
-                ['carta', 'Menú y ofertas'],
-                ['ficha', 'Ficha'],
-              ].map(([clave, texto]) => (
-                <button
-                  key={clave}
-                  type="button"
-                  aria-pressed={producto === clave}
-                  onClick={() => cambiarProducto(clave)}
-                  className={`rounded-[0.55rem] py-[0.5rem] text-[0.95rem] font-semibold disabled:opacity-40 ${producto === clave ? 'bg-white shadow-[0_0.05rem_0.2rem_rgb(0_0_0/0.15)]' : 'text-zinc-600'}`}
-                >
-                  {texto}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Primer desplegable, abierto: Diseño y estilos (temática, portada y estilo del menú de navegación) */}
-          <details open className="group/diseno rounded-[0.75rem] ring-1 ring-zinc-200">
-            <summary className="flex cursor-pointer list-none items-center gap-[0.75rem] px-[0.85rem] py-[0.8rem] [&::-webkit-details-marker]:hidden">
-              <span className="text-[1rem] font-bold">Diseño y estilos</span>
-              <ChevronDown className="ml-auto h-[1rem] w-[1rem] shrink-0 text-zinc-500 transition-transform group-open/diseno:rotate-180" aria-hidden="true" />
-            </summary>
-            <div className="grid gap-[1rem] px-[0.85rem] pb-[0.85rem] pt-[0.2rem]">
-          {/* Una fila de iconos: 5 a la vista y un + que abre el resto, con el nombre de la elegida debajo */}
+  // Tipo (menú y ofertas) o temática del negocio: se usa en Diseño y estilos y en la pestaña Negocio
+  const bloqueTematica = (
+    <>
           {esCarta ? (
             <div className="grid gap-[0.45rem]">
               <span className={titulo}>Tipo</span>
@@ -3622,8 +3577,12 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
             )}
           </div>
           )}
+    </>
+  )
 
-
+  // Lo que se enseña en dos sitios (los desplegables de siempre y las pestañas de ajustes por grupo)
+  const bloquePortada = (
+    <>
           {/* 3. Diseño, según el producto */}
           {!esCarta ? (
             // Una fila de iconos: 5 a la vista y un + que abre el resto, con el nombre del elegido debajo
@@ -3913,110 +3872,9 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
               )}
             </div>
           )}
-          {producto === 'miniweb' && <FilaEstiloMenu valor={barra} cambiar={setBarra} />}
-          {producto === 'miniweb' && <FilaHorario valor={horarioMini} cambiar={setHorarioMini} variante={horarioVar} cambiarVariante={setHorarioVar} />}
-            </div>
-          </details>
-          {/* Segundo desplegable: Colores */}
-          {producto === 'miniweb' && (
-          <details className="group/colores rounded-[0.75rem] ring-1 ring-zinc-200">
-            <summary className="flex cursor-pointer list-none items-center gap-[0.75rem] px-[0.85rem] py-[0.8rem] [&::-webkit-details-marker]:hidden">
-              <span className="text-[1rem] font-bold">Colores generales</span>
-              <ChevronDown className="ml-auto h-[1rem] w-[1rem] shrink-0 text-zinc-500 transition-transform group-open/colores:rotate-180" aria-hidden="true" />
-            </summary>
-            <div className="px-[0.85rem] pb-[0.85rem] pt-[0.2rem]">
-            <PanelColoresMiniweb
-              sinTitulo
-              valores={coloresMini}
-              cambiar={cambiarColorMini}
-              autos={coloresAutomaticos({ colors: { ...marcaBase?.theme?.colors, bg: colorFondo, primary: colorPrincipal, accent: colorAcento, text: colorDelTexto, header: colorCabecera } }, { barra, portada: hero }, coloresMini)}
-            />
-            <div className="mt-[1rem]">{paletaMarca}</div>
-            </div>
-          </details>
-          )}
-          {/* Tercer desplegable: Estructura, dónde va cada pieza (redes, menú de navegación y compartir) */}
-          {producto === 'miniweb' && (
-          <details className="group/estructura rounded-[0.75rem] ring-1 ring-zinc-200">
-            <summary className="flex cursor-pointer list-none items-center gap-[0.75rem] px-[0.85rem] py-[0.8rem] [&::-webkit-details-marker]:hidden">
-              <span className="text-[1rem] font-bold">Estructura</span>
-              <ChevronDown className="ml-auto h-[1rem] w-[1rem] shrink-0 text-zinc-500 transition-transform group-open/estructura:rotate-180" aria-hidden="true" />
-            </summary>
-            <div className="px-[0.85rem] pb-[0.85rem] pt-[0.2rem]">
-              <EstructuraMiniweb sinTitulo contactoPorDefecto={plantilla.miniweb ? 'reserva' : 'boton'} valores={estructura} cambiar={(clave, valor) => setEstructura(e => ({ ...e, [clave]: valor }))} />
-            </div>
-          </details>
-          )}
-          {producto === 'ficha' && (
-            <Plegable titulo={producto === 'miniweb' ? 'Estilo del menú de navegación' : 'Estilo de pestañas'} elegido={barra ? BARRAS[barra]?.nombre : producto === 'miniweb' ? 'La rayita' : 'El suyo'}>
-              <div className="flex flex-wrap gap-[0.4rem]">
-                {[['', { nombre: producto === 'miniweb' ? 'La rayita (la de siempre)' : 'El suyo' }], ...Object.entries(BARRAS)].map(([clave, b]) => (
-                  <button key={clave || 'suyo'} type="button" aria-pressed={barra === clave} onClick={() => setBarra(clave)} className={opcion(barra === clave)}>
-                    {b.nombre}
-                  </button>
-                ))}
-              </div>
-            </Plegable>
-          )}
-
-          {/* 4. Marca: el nombre del negocio, el icono del logo y el tamaño. En ficha y carta, aquí suelto; en miniweb, dentro de Textos */}
-          {producto !== 'miniweb' && bloqueNombre}
-          {/* La paleta base de la marca: suelta en ficha y carta; en miniweb va dentro de Colores generales, como Personalizado */}
-          {producto === 'ficha' && paletaMarca}
-          {/* Carta: sus colores en un desplegable Colores generales, con un círculo por color, como en las miniwebs */}
-          {esCarta && (
-            <details className="group/colores rounded-[0.75rem] ring-1 ring-zinc-200">
-              <summary className="flex cursor-pointer list-none items-center gap-[0.75rem] px-[0.85rem] py-[0.8rem] [&::-webkit-details-marker]:hidden">
-                <span className="text-[1rem] font-bold">Colores generales</span>
-                <ChevronDown className="ml-auto h-[1rem] w-[1rem] shrink-0 text-zinc-500 transition-transform group-open/colores:rotate-180" aria-hidden="true" />
-              </summary>
-              <div className="flex flex-wrap items-start gap-x-[1.2rem] gap-y-[0.8rem] px-[0.85rem] pb-[0.85rem] pt-[0.2rem]">
-                {[
-                  ['Principal', 'Botones, precios y lo que tiene que destacar.', colorPrincipal, setPrincipal],
-                  ['Acento', 'Precios, subrayados y detalles.', colorAcento, setAcento],
-                  ['Fondo', 'El fondo de la carta: claro u oscuro.', colorFondo, setFondo],
-                  ['Texto', 'Las letras sobre el fondo.', colorDelTexto, setColorTexto],
-                ].map(([nombreColor, ayuda, valor, poner]) => (
-                  <div key={nombreColor} className="grid justify-items-center gap-[0.25rem]" title={ayuda}>
-                    <p className="text-[0.8rem] font-semibold text-zinc-500">{nombreColor}</p>
-                    <CampoColor valor={valor} cambiar={poner} soloCirculo />
-                  </div>
-                ))}
-                {/* El color del número del precio del menú: su color propio; con el borde de rayitas, el de cada estilo (el principal, el de acento o blanco) */}
-                <div className="grid justify-items-center gap-[0.25rem]" title="El color del número del precio del menú del día. Sin elegir, el de cada estilo.">
-                  <p className="text-[0.8rem] font-semibold text-zinc-500">Color del precio</p>
-                  <CampoColor valor={colorPrecioTexto || (estilo === 'galeria' ? colorAcento : estilo === 'inmersiva' ? '#FFFFFF' : colorPrincipal)} auto={!colorPrecioTexto} soloCirculo cambiar={setColorPrecioTexto} />
-                  {colorPrecioTexto && (
-                    <button type="button" title="Volver al color del estilo" aria-label="Volver al color del precio de cada estilo" onClick={() => setColorPrecioTexto('')} className="rounded-full p-[0.2rem] text-zinc-400 hover:text-zinc-900">
-                      <RotateCcw className="h-[0.95rem] w-[0.95rem]" strokeWidth={2.2} aria-hidden="true" />
-                    </button>
-                  )}
-                </div>
-                {/* El detalle del precio del menú (la línea bajo el precio): su color propio; con el borde de rayitas, el de acento */}
-                <div className="grid justify-items-center gap-[0.25rem]" title="La línea que remarca el precio del menú del día. Sin elegir, el color de acento.">
-                  <p className="text-[0.8rem] font-semibold text-zinc-500">Detalle del precio</p>
-                  <CampoColor valor={colorPrecio || colorAcento} auto={!colorPrecio} soloCirculo cambiar={setColorPrecio} />
-                  {colorPrecio && (
-                    <button type="button" title="Volver al color de acento" aria-label="Volver al color de acento en el detalle del precio" onClick={() => setColorPrecio('')} className="rounded-full p-[0.2rem] text-zinc-400 hover:text-zinc-900">
-                      <RotateCcw className="h-[0.95rem] w-[0.95rem]" strokeWidth={2.2} aria-hidden="true" />
-                    </button>
-                  )}
-                </div>
-              </div>
-            </details>
-          )}
-          {/* Los textos de la portada: el grande (en dos líneas) y el pequeño, con su máximo de caracteres (el de ahora con margen) */}
-          {/* Cuarto desplegable (solo miniweb): Textos, con el nombre del negocio y los textos de la miniweb, tal como estaban */}
-          {producto === 'miniweb' && (
-          <details className="group/textos rounded-[0.75rem] ring-1 ring-zinc-200">
-            <summary className="flex cursor-pointer list-none items-center gap-[0.75rem] px-[0.85rem] py-[0.8rem] [&::-webkit-details-marker]:hidden">
-              <span className="text-[1rem] font-bold">Textos</span>
-              <ChevronDown className="ml-auto h-[1rem] w-[1rem] shrink-0 text-zinc-500 transition-transform group-open/textos:rotate-180" aria-hidden="true" />
-            </summary>
-            <div className="grid gap-[1rem] px-[0.85rem] pb-[0.85rem] pt-[0.2rem]">
-            {bloqueNombre}
-            {/* Tipografía, encima de Texto inicio, directamente en Textos (sin desplegable propio) */}
-            {campoTipografia}
+    </>
+  )
+  const bloqueTextoInicio = (
             <Plegable titulo="Texto inicio" elegido={textosEditados ? 'Cambiados' : 'Los de la plantilla'}>
               <div className="grid gap-[0.9rem]">
                 <div className="grid gap-[0.3rem]">
@@ -4080,50 +3938,280 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                 )}
               </div>
             </Plegable>
-            {/* Debajo, los textos de la página del Horario */}
-            {datosEnBruto && (
+  )
+  const bloqueTextoHorarios = datosEnBruto && (
               <Plegable titulo="Texto horarios">
                 <TextosHorario original={datosEnBruto} cambios={cambiosExtra} cambiar={cambiarExtra} />
               </Plegable>
-            )}
-            {/* Debajo, los nombres de las pestañas del menú */}
-            {datosEnBruto && (
-              <Plegable titulo="Texto pestañas">
-                <TextosPestanas original={datosEnBruto} cambios={cambiosExtra} cambiar={cambiarExtra} />
-              </Plegable>
-            )}
+  )
+  const autosColores = coloresAutomaticos({ colors: { ...marcaBase?.theme?.colors, bg: colorFondo, primary: colorPrincipal, accent: colorAcento, text: colorDelTexto, header: colorCabecera } }, { barra, portada: hero }, coloresMini)
+
+  return (
+    // peer: abierto, se oculta el botón de "Crear con el asistente" que va justo debajo (en Lista)
+    <details open={abierto} onToggle={e => setAbierto(e.currentTarget.open)} className="group/perfil peer rounded-[1rem] bg-white ring-1 ring-zinc-200">
+      {/* Cerrado: "Nuevo perfil" con una flecha para abrir. Abierto: solo un icono pequeño de plegar, para que la
+          vista previa empiece casi arriba */}
+      <summary
+        aria-label="Editor"
+        className="flex cursor-pointer list-none items-center px-[1rem] py-[0.9rem] group-open/perfil:justify-center group-open/perfil:pb-0 group-open/perfil:pt-[0.4rem] [&::-webkit-details-marker]:hidden"
+      >
+        <span className="text-[1.05rem] font-bold group-open/perfil:hidden">Editor</span>
+        <ChevronDown className="ml-auto h-[1.1rem] w-[1.1rem] text-zinc-500 group-open/perfil:hidden" aria-hidden="true" />
+        <ChevronsDownUp className="hidden h-[1.1rem] w-[1.1rem] text-zinc-400 group-open/perfil:block" aria-hidden="true" />
+      </summary>
+      {/* En una columna: vista previa, asistente, diseño y crear */}
+      <div className="mx-auto grid w-full max-w-[32rem] gap-[1rem] px-[1rem] py-[1rem] lg:max-w-[60rem] lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:items-start lg:gap-x-[2.5rem]">
+        {/* En el móvil, en una columna: pestañas, vista previa y lo de cada pestaña. En pantalla grande, las pestañas y su contenido a la
+            izquierda y, a la derecha, la vista previa (fija al bajar) (display: contents lo reparte en el móvil) */}
+        <div className="contents lg:col-start-1 lg:row-start-1 lg:grid lg:gap-[1rem]">
+        {/* Dos pestañas arriba: Personalizar y Asistente. La vista previa se ve siempre, y debajo, lo de cada una */}
+        <div role="tablist" aria-label="Editor" className="order-1 grid grid-cols-2 gap-[0.3rem] rounded-[0.75rem] bg-zinc-200 p-[0.25rem] lg:order-none">
+          {[
+            ['personalizar', 'Personalizar'],
+            ['asistente', 'Asistente'],
+          ].map(([clave, texto]) => (
+            <button
+              key={clave}
+              type="button"
+              role="tab"
+              aria-selected={pestana === clave}
+              onClick={() => setPestana(clave)}
+              className={`rounded-[0.55rem] py-[0.5rem] text-[0.95rem] font-semibold ${pestana === clave ? 'bg-white shadow-[0_0.05rem_0.2rem_rgb(0_0_0/0.15)]' : 'text-zinc-600'}`}
+            >
+              {texto}
+            </button>
+          ))}
+        </div>
+
+        {/* El asistente: un cuadro donde pedirle lo que sea y un solo botón que lo monta todo (diseño, nombre, textos y fotos) */}
+        {pestana === 'asistente' && (
+        <div className="order-3 grid gap-[0.6rem] lg:order-none">
+          {/* Qué diseña el asistente: una miniweb o una carta (la ficha ya no se vende) */}
+          <div className="grid grid-cols-3 gap-[0.3rem] rounded-[0.75rem] bg-zinc-200 p-[0.25rem]">
+            {[
+              ['miniweb', 'Miniweb'],
+              ['carta', 'Menú y ofertas'],
+              ['ficha', 'Ficha'],
+            ].map(([clave, texto]) => (
+              <button
+                key={clave}
+                type="button"
+                aria-pressed={producto === clave}
+                disabled={clave === 'ficha' || Boolean(disenando) || Boolean(creando)}
+                onClick={() => cambiarProducto(clave)}
+                className={`rounded-[0.55rem] py-[0.5rem] text-[0.95rem] font-semibold disabled:opacity-40 ${producto === clave ? 'bg-white shadow-[0_0.05rem_0.2rem_rgb(0_0_0/0.15)]' : 'text-zinc-600'}`}
+              >
+                {texto}
+              </button>
+            ))}
+          </div>
+          {/* Con Carta elegida, qué tipo: cada uno con sus reglas en el asistente (es el mismo tipo del selector del Editor) */}
+          {producto === 'carta' && (
+            <div className="grid grid-cols-2 gap-[0.3rem] rounded-[0.75rem] bg-zinc-200 p-[0.25rem]">
+              {TIPOS_CARTA.map(t => (
+                <button
+                  key={t.clave}
+                  type="button"
+                  aria-pressed={tipoCarta === t.clave}
+                  disabled={Boolean(disenando) || Boolean(creando)}
+                  onClick={() => setTipoCarta(t.clave)}
+                  className={`rounded-[0.55rem] py-[0.45rem] text-[0.9rem] font-semibold disabled:opacity-40 ${tipoCarta === t.clave ? 'bg-white shadow-[0_0.05rem_0.2rem_rgb(0_0_0/0.15)]' : 'text-zinc-600'}`}
+                >
+                  {t.clave === 'carta' ? 'Menú del día' : 'Ofertas'}
+                </button>
+              ))}
             </div>
-          </details>
           )}
-          {/* Carta: Estructura, dónde va cada pieza. De momento, el enlace "Conoce [negocio]" (a la miniweb del negocio) */}
+          {/* Lo único seguro: el nombre. Si se escribe, el asistente lo usa tal cual; si no, lo saca de la captura o se lo inventa */}
+          <Etiqueta texto="Nombre del negocio">
+            <input value={nombre} onChange={e => setNombre(e.target.value)} disabled={Boolean(disenando) || Boolean(creando)} className={CAMPO} placeholder="Peluquería Ranita" />
+          </Etiqueta>
+          <textarea
+            value={cuento}
+            onChange={e => setCuento(e.target.value)}
+            disabled={Boolean(disenando) || Boolean(creando)}
+            rows={3}
+            aria-label="Pídele al asistente lo que quieras"
+            placeholder="Opcional: lo que quieras añadir (estilo, colores, datos). Con el nombre y una captura de su Instagram ya basta."
+            className={`${CAMPO} resize-y`}
+          />
+          {/* Dos imágenes opcionales para el asistente, que solo las mira (no se colocan en la miniweb): el logo de referencia (colores y carácter
+              de la marca) y una captura con información (solo se lee su texto: nombre, teléfonos, dirección, horario...) */}
+          <div className="flex flex-wrap items-center gap-x-[1.2rem] gap-y-[0.6rem]">
+            <CampoImagenAsistente titulo="Añadir logo de referencia" valor={referencia} cambiar={setReferencia} conColores bloqueado={Boolean(disenando) || Boolean(creando)} avisar={setError} />
+            <CampoImagenAsistente titulo="Añadir captura con información" valor={captura} cambiar={setCaptura} bloqueado={Boolean(disenando) || Boolean(creando)} avisar={setError} />
+          </div>
+          <button type="button" onClick={montar} disabled={!(nombre.trim() || cuento.trim() || referencia || captura) || Boolean(disenando) || Boolean(creando)} className={BOTON}>
+            {disenando ?? 'Montar el diseño con el asistente'}
+          </button>
+          {resumenDiseno && <p className="text-[0.85rem] font-semibold text-zinc-800">{resumenDiseno}</p>}
+        </div>
+        )}
+
+        <div className="order-3 grid gap-[1rem] lg:order-none">
+          {/* Personalizar: el producto y, debajo, desplegables independientes (todos cerrados al entrar) */}
+          {pestana === 'personalizar' && (
+          <div className="grid gap-[1rem]">
+          {/* 1. Temática: pone el contenido de ejemplo */}
+          {/* 1. Producto */}
+          <div className="grid gap-[0.4rem]">
+            <span className={titulo}>Producto</span>
+            <div className="grid grid-cols-3 gap-[0.3rem] rounded-[0.75rem] bg-zinc-200 p-[0.25rem]">
+              {[
+                ['miniweb', 'Miniweb'],
+                ['carta', 'Menú y ofertas'],
+                ['ficha', 'Ficha'],
+              ].map(([clave, texto]) => (
+                <button
+                  key={clave}
+                  type="button"
+                  aria-pressed={producto === clave}
+                  onClick={() => cambiarProducto(clave)}
+                  className={`rounded-[0.55rem] py-[0.5rem] text-[0.95rem] font-semibold disabled:opacity-40 ${producto === clave ? 'bg-white shadow-[0_0.05rem_0.2rem_rgb(0_0_0/0.15)]' : 'text-zinc-600'}`}
+                >
+                  {texto}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Pestañas de ajustes por grupo: cada una junta todo lo de un grupo (diseño, colores y textos). Pulsar la abierta la cierra. Los desplegables de siempre siguen debajo */}
+          <div className="grid gap-[0.6rem]">
+            <div role="tablist" aria-label="Ajustes por grupo" className="flex flex-wrap gap-[0.4rem]">
+              {(producto === 'miniweb'
+                ? [['negocio', 'Negocio'], ['portada', 'Portada'], ['menu', 'Menú'], ['redes', 'Redes'], ['horario', 'Horario'], ['reserva', 'Reserva'], ['resena', 'Reseña'], ['ajustes', 'Ajustes personalizados']]
+                : [['negocio', 'Negocio'], ['portada', esCarta ? 'Estilo' : 'Diseño'], ['ajustes', 'Ajustes personalizados']]
+              ).map(([clave, texto]) => (
+                <button
+                  key={clave}
+                  type="button"
+                  role="tab"
+                  aria-selected={pestanaAjustes === clave}
+                  onClick={() => setPestanaAjustes(actual => (actual === clave ? null : clave))}
+                  className={`shrink-0 rounded-full px-[0.9rem] py-[0.35rem] text-[0.85rem] font-semibold transition-colors ${pestanaAjustes === clave ? 'bg-zinc-900 text-white' : 'bg-zinc-100 text-zinc-600 hover:text-zinc-900'}`}
+                >
+                  {texto}
+                </button>
+              ))}
+            </div>
+            {pestanaAjustes === 'negocio' && (
+              <div role="tabpanel" className="grid gap-[1rem] rounded-[0.75rem] p-[0.85rem] ring-1 ring-zinc-200">
+                {bloqueTematica}
+                {bloqueNombre}
+                {campoTipografia}
+                {paletaMarca}
+                {datosEnBruto && <ImagenesPorPestana original={datosEnBruto} cambios={cambiosExtra} cambiar={cambiarExtra} soloOtras />}
+                {datosEnBruto && <EditorEnBruto original={datosEnBruto} cambios={cambiosExtra} cambiar={cambiarExtra} soloBloques={b => b.clave === 'datos'} />}
+              </div>
+            )}
+            {pestanaAjustes === 'portada' && (
+              <div role="tabpanel" className="grid gap-[1rem] rounded-[0.75rem] p-[0.85rem] ring-1 ring-zinc-200">
+                {bloquePortada}
+                {producto === 'miniweb' && (
+                  <>
+                    <PanelColoresMiniweb sinTitulo detalle claves={['fondoPortada', 'botonFondo', 'boton', 'titulo', 'titular', 'descripcion', 'subtitulo', 'extra']} valores={coloresMini} cambiar={cambiarColorMini} autos={autosColores} />
+                    {bloqueTextoInicio}
+                  </>
+                )}
+                {datosEnBruto && <ImagenesPorPestana original={datosEnBruto} cambios={cambiosExtra} cambiar={cambiarExtra} tipos={['inicio']} />}
+                {datosEnBruto && <EditorEnBruto original={datosEnBruto} cambios={cambiosExtra} cambiar={cambiarExtra} soloBloques={bloquesDePestana(['inicio'])} />}
+              </div>
+            )}
+            {pestanaAjustes === 'menu' && producto === 'miniweb' && (
+              <div role="tabpanel" className="grid gap-[1rem] rounded-[0.75rem] p-[0.85rem] ring-1 ring-zinc-200">
+                <FilaEstiloMenu valor={barra} cambiar={setBarra} />
+                <PanelColoresMiniweb sinTitulo detalle claves={['menuFondo', 'menuTexto', 'menuSubrayado']} valores={coloresMini} cambiar={cambiarColorMini} autos={autosColores} />
+                {datosEnBruto && <ImagenesPorPestana original={datosEnBruto} cambios={cambiosExtra} cambiar={cambiarExtra} tipos={['menu']} />}
+                {datosEnBruto && (
+                  <Plegable titulo="Texto pestañas">
+                    <TextosPestanas original={datosEnBruto} cambios={cambiosExtra} cambiar={cambiarExtra} />
+                  </Plegable>
+                )}
+                {datosEnBruto && <EditorEnBruto original={datosEnBruto} cambios={cambiosExtra} cambiar={cambiarExtra} soloBloques={bloquesDePestana(['menu'])} />}
+              </div>
+            )}
+            {pestanaAjustes === 'redes' && producto === 'miniweb' && (
+              <div role="tabpanel" className="grid gap-[1rem] rounded-[0.75rem] p-[0.85rem] ring-1 ring-zinc-200">
+                <EstructuraMiniweb sinTitulo contactoPorDefecto={plantilla.miniweb ? 'reserva' : 'boton'} valores={estructura} cambiar={(clave, valor) => setEstructura(e => ({ ...e, [clave]: valor }))} />
+                <PanelColoresMiniweb sinTitulo detalle claves={['redesFondo', 'redesIconos']} valores={coloresMini} cambiar={cambiarColorMini} autos={autosColores} />
+                {datosEnBruto && <EditorEnBruto original={datosEnBruto} cambios={cambiosExtra} cambiar={cambiarExtra} soloBloques={['Redes']} />}
+              </div>
+            )}
+            {pestanaAjustes === 'horario' && producto === 'miniweb' && (
+              <div role="tabpanel" className="grid gap-[1rem] rounded-[0.75rem] p-[0.85rem] ring-1 ring-zinc-200">
+                <FilaHorario valor={horarioMini} cambiar={setHorarioMini} variante={horarioVar} cambiarVariante={setHorarioVar} />
+                {bloqueTextoHorarios}
+                {datosEnBruto && <ImagenesPorPestana original={datosEnBruto} cambios={cambiosExtra} cambiar={cambiarExtra} tipos={['horario']} />}
+                {datosEnBruto && <EditorEnBruto original={datosEnBruto} cambios={cambiosExtra} cambiar={cambiarExtra} soloBloques={bloquesDePestana(['horario'])} />}
+              </div>
+            )}
+            {pestanaAjustes === 'reserva' && producto === 'miniweb' && (
+              <div role="tabpanel" className="grid gap-[1rem] rounded-[0.75rem] p-[0.85rem] ring-1 ring-zinc-200">
+                {datosEnBruto && <ImagenesPorPestana original={datosEnBruto} cambios={cambiosExtra} cambiar={cambiarExtra} tipos={['reservar', 'contacto', 'cita', 'encargos', 'comanda', 'precios']} />}
+                {datosEnBruto && <EditorEnBruto original={datosEnBruto} cambios={cambiosExtra} cambiar={cambiarExtra} soloBloques={bloquesDePestana(['reservar', 'contacto', 'cita', 'encargos', 'comanda', 'precios'])} />}
+              </div>
+            )}
+            {pestanaAjustes === 'resena' && producto === 'miniweb' && (
+              <div role="tabpanel" className="grid gap-[1rem] rounded-[0.75rem] p-[0.85rem] ring-1 ring-zinc-200">
+                <PanelColoresMiniweb sinTitulo detalle claves={['fondoResena']} valores={coloresMini} cambiar={cambiarColorMini} autos={autosColores} />
+                {datosEnBruto && <EditorEnBruto original={datosEnBruto} cambios={cambiosExtra} cambiar={cambiarExtra} soloBloques={['Reseña de Google']} />}
+                {datosEnBruto && <EditorEnBruto original={datosEnBruto} cambios={cambiosExtra} cambiar={cambiarExtra} soloBloques={b => ['destacada', 'carrusel'].includes(b.clave)} />}
+              </div>
+            )}
+          {pestanaAjustes === 'ajustes' && (
+            <div role="tabpanel" className="grid gap-[0.75rem] rounded-[0.75rem] p-[0.85rem] ring-1 ring-zinc-200">
+              {/* Lo que no se puede cambiar desde las otras pestañas: la carta del menú, los ajustes de Menú y ofertas y de la Ficha, y los datos en bruto */}
+          {producto === 'ficha' && (
+            <Plegable titulo={producto === 'miniweb' ? 'Estilo del menú de navegación' : 'Estilo de pestañas'} elegido={barra ? BARRAS[barra]?.nombre : producto === 'miniweb' ? 'La rayita' : 'El suyo'}>
+              <div className="flex flex-wrap gap-[0.4rem]">
+                {[['', { nombre: producto === 'miniweb' ? 'La rayita (la de siempre)' : 'El suyo' }], ...Object.entries(BARRAS)].map(([clave, b]) => (
+                  <button key={clave || 'suyo'} type="button" aria-pressed={barra === clave} onClick={() => setBarra(clave)} className={opcion(barra === clave)}>
+                    {b.nombre}
+                  </button>
+                ))}
+              </div>
+            </Plegable>
+          )}
+
+          {/* Carta: sus colores en un desplegable Colores generales, con un círculo por color, como en las miniwebs */}
           {esCarta && (
-            <details className="group/estructuracarta rounded-[0.75rem] ring-1 ring-zinc-200">
+            <details className="group/colores rounded-[0.75rem] ring-1 ring-zinc-200">
               <summary className="flex cursor-pointer list-none items-center gap-[0.75rem] px-[0.85rem] py-[0.8rem] [&::-webkit-details-marker]:hidden">
-                <span className="text-[1rem] font-bold">Estructura</span>
-                <ChevronDown className="ml-auto h-[1rem] w-[1rem] shrink-0 text-zinc-500 transition-transform group-open/estructuracarta:rotate-180" aria-hidden="true" />
+                <span className="text-[1rem] font-bold">Colores generales</span>
+                <ChevronDown className="ml-auto h-[1rem] w-[1rem] shrink-0 text-zinc-500 transition-transform group-open/colores:rotate-180" aria-hidden="true" />
               </summary>
-              <div className="grid gap-[0.4rem] px-[0.85rem] pb-[0.85rem] pt-[0.2rem]">
-                <span className="text-[0.8rem] text-zinc-500">Enlace al negocio (Conoce...)</span>
-                <div className="flex flex-wrap items-center gap-[0.4rem]">
-                  {[
-                    ['ninguno', 'Sin enlace', '<path d="M9 8l6 6M15 8l-6 6" stroke-width="1.4"/>'],
-                    ['izquierda', 'Arriba a la izquierda', '<rect x="7.5" y="4" width="6" height="2.6" rx="1.3" fill="currentColor"/>'],
-                    ['derecha', 'Arriba a la derecha', '<rect x="10.5" y="4" width="6" height="2.6" rx="1.3" fill="currentColor"/>'],
-                  ].map(([clave, nombreLado, dibujo]) => (
-                    <button
-                      key={clave}
-                      type="button"
-                      title={nombreLado}
-                      aria-label={`Enlace al negocio: ${nombreLado}`}
-                      aria-pressed={enlaceNegocio === clave}
-                      onClick={() => setEnlaceNegocio(clave)}
-                      className={`flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 bg-white transition-transform duration-300 ${enlaceNegocio === clave ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
-                    >
-                      <svg viewBox="0 0 24 24" className="h-[1.5rem] w-[1.5rem]" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: '<rect x="5.5" y="2" width="13" height="20" rx="2.5"/>' + dibujo }} />
+              <div className="flex flex-wrap items-start gap-x-[1.2rem] gap-y-[0.8rem] px-[0.85rem] pb-[0.85rem] pt-[0.2rem]">
+                {[
+                  ['Principal', 'Botones, precios y lo que tiene que destacar.', colorPrincipal, setPrincipal],
+                  ['Acento', 'Precios, subrayados y detalles.', colorAcento, setAcento],
+                  ['Fondo', 'El fondo de la carta: claro u oscuro.', colorFondo, setFondo],
+                  ['Texto', 'Las letras sobre el fondo.', colorDelTexto, setColorTexto],
+                ].map(([nombreColor, ayuda, valor, poner]) => (
+                  <div key={nombreColor} className="grid justify-items-center gap-[0.25rem]" title={ayuda}>
+                    <p className="text-[0.8rem] font-semibold text-zinc-500">{nombreColor}</p>
+                    <CampoColor valor={valor} cambiar={poner} soloCirculo />
+                  </div>
+                ))}
+                {/* El color del número del precio del menú: su color propio; con el borde de rayitas, el de cada estilo (el principal, el de acento o blanco) */}
+                <div className="grid justify-items-center gap-[0.25rem]" title="El color del número del precio del menú del día. Sin elegir, el de cada estilo.">
+                  <p className="text-[0.8rem] font-semibold text-zinc-500">Color del precio</p>
+                  <CampoColor valor={colorPrecioTexto || (estilo === 'galeria' ? colorAcento : estilo === 'inmersiva' ? '#FFFFFF' : colorPrincipal)} auto={!colorPrecioTexto} soloCirculo cambiar={setColorPrecioTexto} />
+                  {colorPrecioTexto && (
+                    <button type="button" title="Volver al color del estilo" aria-label="Volver al color del precio de cada estilo" onClick={() => setColorPrecioTexto('')} className="rounded-full p-[0.2rem] text-zinc-400 hover:text-zinc-900">
+                      <RotateCcw className="h-[0.95rem] w-[0.95rem]" strokeWidth={2.2} aria-hidden="true" />
                     </button>
-                  ))}
+                  )}
                 </div>
-                <p className="text-[0.85rem] font-semibold">{{ ninguno: 'Sin enlace', izquierda: 'Arriba a la izquierda', derecha: 'Arriba a la derecha' }[enlaceNegocio]}</p>
+                {/* El detalle del precio del menú (la línea bajo el precio): su color propio; con el borde de rayitas, el de acento */}
+                <div className="grid justify-items-center gap-[0.25rem]" title="La línea que remarca el precio del menú del día. Sin elegir, el color de acento.">
+                  <p className="text-[0.8rem] font-semibold text-zinc-500">Detalle del precio</p>
+                  <CampoColor valor={colorPrecio || colorAcento} auto={!colorPrecio} soloCirculo cambiar={setColorPrecio} />
+                  {colorPrecio && (
+                    <button type="button" title="Volver al color de acento" aria-label="Volver al color de acento en el detalle del precio" onClick={() => setColorPrecio('')} className="rounded-full p-[0.2rem] text-zinc-400 hover:text-zinc-900">
+                      <RotateCcw className="h-[0.95rem] w-[0.95rem]" strokeWidth={2.2} aria-hidden="true" />
+                    </button>
+                  )}
+                </div>
               </div>
             </details>
           )}
@@ -4225,10 +4313,8 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
               </div>
             </details>
           )}
-          {/* La tipografía: en miniweb va dentro de Textos de la miniweb, abajo del todo */}
-          {producto !== 'miniweb' && campoTipografia}
             {/* Imágenes: todas las de la página, por pestaña, con el buscador de fotos y para subir la tuya */}
-            {datosEnBruto && (
+            {producto !== 'miniweb' && datosEnBruto && (
               <details className="group/imagenes rounded-[0.75rem] ring-1 ring-zinc-200">
                 <summary className="flex cursor-pointer list-none items-center gap-[0.75rem] px-[0.85rem] py-[0.8rem] [&::-webkit-details-marker]:hidden">
                   <span className="text-[1rem] font-bold">Imágenes</span>
@@ -4240,9 +4326,41 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
               </details>
             )}
             {/* Todos los datos editables en bruto, en sus desplegables (los del editor de un perfil) */}
-            {!esCarta && datosEnBruto && <EditorEnBruto original={datosEnBruto} cambios={cambiosExtra} cambiar={cambiarExtra} />}
+            {!esCarta && datosEnBruto && <EditorEnBruto original={datosEnBruto} cambios={cambiosExtra} cambiar={cambiarExtra} soloAjustes />}
             {/* La carta del menú, abajo del todo */}
             {producto === 'miniweb' && <SelectorCartaMiniweb valor={cartaMini} cambiar={valor => setCartaMini(valor ?? '')} exportadas={(filas ?? []).filter(f => f.tipo === 'carta' && f.base && f.cambios?._cliente)} />}
+              {/* La Estructura de Menú y ofertas (el enlace al negocio) */}
+          {/* Carta: Estructura, dónde va cada pieza. De momento, el enlace "Conoce [negocio]" (a la miniweb del negocio) */}
+          {esCarta && (
+            <Plegable titulo="Estructura" elegido={{ ninguno: 'Sin enlace', izquierda: 'Enlace a la izquierda', derecha: 'Enlace a la derecha' }[enlaceNegocio]}>
+              <div className="grid gap-[0.4rem]">
+                <span className="text-[0.8rem] text-zinc-500">Enlace al negocio (Conoce...)</span>
+                <div className="flex flex-wrap items-center gap-[0.4rem]">
+                  {[
+                    ['ninguno', 'Sin enlace', '<path d="M9 8l6 6M15 8l-6 6" stroke-width="1.4"/>'],
+                    ['izquierda', 'Arriba a la izquierda', '<rect x="7.5" y="4" width="6" height="2.6" rx="1.3" fill="currentColor"/>'],
+                    ['derecha', 'Arriba a la derecha', '<rect x="10.5" y="4" width="6" height="2.6" rx="1.3" fill="currentColor"/>'],
+                  ].map(([clave, nombreLado, dibujo]) => (
+                    <button
+                      key={clave}
+                      type="button"
+                      title={nombreLado}
+                      aria-label={`Enlace al negocio: ${nombreLado}`}
+                      aria-pressed={enlaceNegocio === clave}
+                      onClick={() => setEnlaceNegocio(clave)}
+                      className={`flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 bg-white transition-transform duration-300 ${enlaceNegocio === clave ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
+                    >
+                      <svg viewBox="0 0 24 24" className="h-[1.5rem] w-[1.5rem]" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: '<rect x="5.5" y="2" width="13" height="20" rx="2.5"/>' + dibujo }} />
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[0.85rem] font-semibold">{{ ninguno: 'Sin enlace', izquierda: 'Arriba a la izquierda', derecha: 'Arriba a la derecha' }[enlaceNegocio]}</p>
+              </div>
+            </Plegable>
+          )}
+            </div>
+          )}
+          </div>
           </div>
           )}
 
