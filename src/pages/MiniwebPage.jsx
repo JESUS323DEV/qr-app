@@ -290,7 +290,8 @@ export default function MiniwebPage({ demo = false }) {
           {/* Los ejemplos de la landing (copias del Editor, una lista fija): flechas entre ellos, en el orden de /miniweb */}
           {negocio.copia && !secuenciaGrupo && SECUENCIA_EJEMPLOS.some(e => e.slug === negocio.slug) && <DemoPager negocio={negocio} secuencia={SECUENCIA_EJEMPLOS} conTransicion={false} />}
           {negocio.copia && secuenciaGrupo && <DemoPager negocio={{ slug: `negocio:${negocio.slug}` }} secuencia={secuenciaGrupo} rutaDe={n => n.ruta} conTransicion={false} enEscritorio />}
-          <DemoHomeButton slug={negocio.slug} />
+          {/* En el Vistazo de un grupo (o un QR que apunta a un grupo) solo hay flechas: sin la X de volver */}
+          {!secuenciaGrupo && <DemoHomeButton slug={negocio.slug} />}
         </>
       )}
       {/* key: al pasar a otra demo el hero empieza de cero */}

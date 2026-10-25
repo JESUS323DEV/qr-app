@@ -377,7 +377,7 @@ function Carta({ carta, negocio, demo = false, incrustada = false }) {
       {/* Las copias para enseñar a un negocio no llevan flechas: no están en el catálogo */}
       {!carta.copia && <DemoPager negocio={carta} secuencia={cartas.filter(c => c.demo)} rutaDe={rutaCarta} conTransicion={false} />}
       {carta.copia && secuenciaGrupo && <DemoPager negocio={{ slug: `carta:${carta.slug}` }} secuencia={secuenciaGrupo} rutaDe={n => n.ruta} conTransicion={false} enEscritorio />}
-      <DemoHomeButton slug={carta.slug} />
+      {!secuenciaGrupo && <DemoHomeButton slug={carta.slug} />}
     </>
   )
 
