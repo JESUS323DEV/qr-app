@@ -3157,6 +3157,8 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
         cambios = fusionar(cambios, cambiosIA.cambios)
         historial = cambiosIA.historial
       }
+      // Los textos escritos de la portada mandan sobre los del asistente (como en la vista previa), y lo cambiado a mano en los datos en bruto va el último
+      if (Object.keys(textosPrevia).length) cambios = fusionar(cambios, textosPrevia)
       if (Object.keys(cambiosExtra).length) cambios = fusionar(cambios, cambiosExtra)
       cambios = { ...cambios, _nuevoPerfil: instantanea() }
       // La marca de cliente (Exportar para cliente) se conserva
@@ -3216,6 +3218,8 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
         setCreando('Creando...')
       }
 
+      // Los textos escritos de la portada mandan sobre los del asistente (como en la vista previa), y lo cambiado a mano en los datos en bruto va el último
+      if (Object.keys(textosPrevia).length) cambios = fusionar(cambios, textosPrevia)
       if (Object.keys(cambiosExtra).length) cambios = fusionar(cambios, cambiosExtra)
       // La instantánea de Nuevo perfil, para poder reabrir la copia y retocarla
       cambios = { ...cambios, _nuevoPerfil: instantanea() }
