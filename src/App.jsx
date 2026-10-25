@@ -28,10 +28,11 @@ const GestionPage = import.meta.env.DEV ? lazy(() => import('./pages/GestionPage
 // El SEO de cada ruta, que se pone al cambiar de página (todas salen del mismo HTML): la dirección canónica en mostraq.es (sin parámetros, así
 // Google se queda con ella aunque la web se abra por la dirección de Netlify o con ?utm_... de Instagram), si se indexa o no y la descripción.
 // Los paneles, las demos y las copias para enseñar no se indexan.
-const NO_INDEXAR = ['/generador-qr', '/demo', '/admin', '/mi-carta', '/mi-qr', '/panel', '/disenos', '/gestion', '/miniweb']
+const NO_INDEXAR = ['/planes', '/demo', '/admin', '/mi-carta', '/mi-qr', '/panel', '/disenos', '/gestion', '/miniweb']
 const DESCRIPCIONES = {
-  '/catalogo': 'Mira los diseños de Mostraq para negocios locales: miniwebs y cartas para restaurantes, belleza, salud y tiendas.',
+  '/catalogo': 'Ejemplos de miniwebs, menús del día y ofertas con QR para negocios locales: restaurantes, belleza, salud y tiendas. Míralos en tu móvil.',
   '/crear-qr': 'Diseño de QR personalizado para tu negocio: tus colores, tu logo y tus redes, impreso en una placa de calidad.',
+  '/generador-qr': 'Crea gratis un QR personalizado para tu negocio: tus colores, tu logo, tus redes y una placa lista para descargar. Sin registro.',
   '/planes': 'Los planes de Mostraq: la miniweb básica y la plataforma completa, con carta digital, SEO y placas con QR para tu local.',
   '/aviso-legal': 'Aviso legal de Mostraq.',
   '/privacidad': 'Política de privacidad de Mostraq.',
@@ -96,7 +97,7 @@ export default function App() {
         {/* Panel de Jesús: textos, fotos y colores de cualquier página, y copias de demos (Supabase) */}
         <Route path="/admin" element={<Suspense fallback={null}><AdminPage /></Suspense>} />
         {/* Editor de QR del cliente: el enlace y el PIN se los da Jesús (se crean en /admin) */}
-        {/* El editor de QR gratis: sin enlaces desde ningún sitio y sin indexar, de momento */}
+        {/* El editor de QR gratis: enlazado desde el menú y el pie de la landing, e indexable */}
         <Route path="/generador-qr" element={<Suspense fallback={null}><GeneradorPublicoPage /></Suspense>} />
         <Route path="/mi-qr/:slug" element={<Suspense fallback={null}><MiQrPage /></Suspense>} />
         {GestionPage && (

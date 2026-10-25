@@ -1087,6 +1087,13 @@ function LandingEscritorio() {
                 <ArrowUpRight className="h-[1rem] w-[1rem]" aria-hidden="true" />
               </a>
             </li>
+            {/* El editor de QR gratis, debajo de la web completa */}
+            <li>
+              <Link to={generadorQr.url} className="inline-flex items-center gap-[0.35rem] font-semibold transition-colors hover:text-acento">
+                {generadorQr.texto}
+                <ArrowUpRight className="h-[1rem] w-[1rem]" aria-hidden="true" />
+              </Link>
+            </li>
             {menu.legales.map(l => (
               <li key={l.texto}>
                 <a href={l.url} className="text-suave transition-colors hover:text-tinta">
