@@ -5,6 +5,7 @@ import { cartas, getCarta, marcaDe, rutaCarta } from '../cartas'
 
 /* Lo que comparten varias partes del panel de administración: direcciones reservadas, nombre a dirección, llamada a las funciones de Supabase y las páginas con QR. */
 
+// Direcciones que no puede usar una copia: las de las páginas de la web
 export const RESERVADAS = new Set(['demo', 'tematicas', 'gestion', 'catalogo', 'planes', 'panel', 'mi-carta', 'admin', 'miniweb', 'disenos', 'aviso-legal', 'privacidad', 'mi-qr', 'crear-qr', 'generador-qr'])
 
 // "Peluquería Ranita" → "peluqueria-ranita"
@@ -85,3 +86,6 @@ export const avisarElegida = foto => {
 /* Logo del negocio: se sube tal cual (sin pasarlo a JPG, para que no pierda el fondo transparente), a la carpeta logos
    del almacén de fotos. PNG, SVG, WebP o JPG, de 1 MB como mucho */
 export const TIPOS_LOGO = { 'image/png': 'png', 'image/svg+xml': 'svg', 'image/webp': 'webp', 'image/jpeg': 'jpg' }
+
+// El nombre interno de una copia (el que solo ves tú), si lo tiene
+export const nombreInterno = f => f.cambios?._nuevoPerfil?.etiqueta?.trim() || null
