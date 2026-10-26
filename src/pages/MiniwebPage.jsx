@@ -299,7 +299,7 @@ export default function MiniwebPage({ demo = false }) {
       {/* El logo del negocio (si tiene): los diseños de arriba lo ponen en lugar del nombre escrito */}
       <LogoNegocio.Provider value={negocio.logo ?? null}>
         <TamanoNombre.Provider value={negocio.hero?.tamanoNombre ?? 'md'}>
-        <ColoresMiniweb.Provider value={{ colores: negocio.hero?.colores ?? {}, acento: negocio.theme?.colors?.accent ?? null, filtro: negocio.hero?.filtro ?? null }}>
+        <ColoresMiniweb.Provider value={{ colores: negocio.hero?.colores ?? {}, acento: negocio.theme?.colors?.accent ?? null, filtro: negocio.hero?.filtro ?? null, cabecera: negocio.theme?.colors?.header ?? negocio.theme?.colors?.primary ?? null }}>
         <main key={negocio.slug} className="mx-auto flex min-h-svh w-full max-w-[30rem] flex-col bg-demo-bg">
           <Hero hero={negocio.hero} nombre={negocio.nombre} lema={negocio.lema} redes={negocio.redes} redesTexto={negocio.redesTexto} cuerpo={<Cuerpo negocio={negocio} soloResena={Boolean(negocio.hero.redesArriba)} compacta />} />
           {!paginaCompleta && <Cuerpo negocio={negocio} />}

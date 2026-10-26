@@ -14,6 +14,8 @@ export default function Movil({ src, titulo, children, className = '', ancho = A
     if (!src || !pantalla.current) return
     const obs = new ResizeObserver(([e]) => {
       const { width, height } = e.contentRect
+      // Con el Editor cerrado, el marco mide 0: sin medida válida no se calcula nada (daba NaN en el alto del iframe)
+      if (!width || !height) return
       setMedida({ escala: width / ancho, alto: height })
     })
     obs.observe(pantalla.current)

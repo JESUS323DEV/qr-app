@@ -46,7 +46,9 @@ function MenuDia({ menu }) {
         {menu.grupos.map(g => (
           <div key={g.nombre} className={`${RAYA} pt-[0.4rem] [@media(min-height:46rem)]:pt-[0.55rem]`}>
             <p className="font-demo-heading text-[1.15rem] italic leading-none text-demo-accent [@media(min-height:46rem)]:text-[1.25rem] [@media(min-height:56rem)]:text-[1.35rem]">{g.nombre}</p>
-            <p className="mt-[0.2rem] text-[1rem] leading-[1.35] [@media(min-height:46rem)]:text-[1.08rem] [@media(min-height:56rem)]:text-[1.16rem]">{g.platos.join(', ')}</p>
+            <ul className="mt-[0.2rem] text-[1rem] leading-[1.35] [@media(min-height:46rem)]:text-[1.08rem] [@media(min-height:56rem)]:text-[1.16rem]">
+              {g.platos.map(p => <li key={p}>{p}</li>)}
+            </ul>
           </div>
         ))}
       </div>

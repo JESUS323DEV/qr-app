@@ -85,7 +85,9 @@ export function marcaDePrueba(marca, params) {
   // El diseño del horario (hero.horario)
   const horario = CLAVES_HORARIOS.includes(params.get('horario')) ? params.get('horario') : null
   // La carta que pinta el menú de la miniweb (hero.carta)
-  const carta = cartas.some(c => c.slug === params.get('carta')) ? params.get('carta') : null
+  // Una de las cartas de src/cartas o una carta exportada desde el Editor (vive en Supabase y solo se conoce por su dirección): vale cualquier dirección bien escrita
+  const cartaParam = params.get('carta') ?? ''
+  const carta = cartas.some(c => c.slug === cartaParam) || /^[a-z0-9]+(-[a-z0-9]+)*$/.test(cartaParam) ? cartaParam : null
   // Formato de Editorial (hero.formato)
   const formato = CLAVES_FORMATOS.includes(params.get('formato')) ? params.get('formato') : null
   // Texto grande (titular, un solo texto) y texto pequeño (descripción) de la portada de Inicio: van en la primera pestaña

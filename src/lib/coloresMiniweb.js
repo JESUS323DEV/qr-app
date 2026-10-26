@@ -40,6 +40,25 @@ export const COLORES_MINIWEB = [
     ],
   },
   {
+    grupo: 'Pantalla del Horario',
+    campos: [
+      { clave: 'horarioTitulo', nombre: 'Título del Horario', corto: 'Título', ayuda: 'La palabra «Horario» que encabeza la pantalla. Sin elegir, el color del texto.' },
+      { clave: 'horarioDias', nombre: 'Días del horario', corto: 'Días', ayuda: 'Lunes a viernes, Sábado, Domingo... Sin elegir, el color del texto.' },
+      { clave: 'horarioHoras', nombre: 'Horas del horario', corto: 'Horas', ayuda: 'Las horas de cada día y «Cerrado». Sin elegir, el color de siempre de cada variante.' },
+      { clave: 'horarioMapa', nombre: 'Dirección y «Cómo llegar»', corto: 'Mapa', ayuda: 'El texto de la tarjeta de dirección sobre el mapa y su enlace «Cómo llegar». Sin elegir, el color principal.' },
+    ],
+  },
+  {
+    grupo: 'Pantalla de Reservar',
+    campos: [
+      { clave: 'reservaTitulo', nombre: 'Título de Reservar', corto: 'Título', ayuda: 'El título de la pantalla («Reserva tu mesa»). Sin elegir, el color del texto.' },
+      { clave: 'reservaTexto', nombre: 'Texto de Reservar', corto: 'Texto', ayuda: 'La frase bajo el título. Sin elegir, el texto suave.' },
+      { clave: 'reservaBoton', nombre: 'Fondo del botón de Reservar', corto: 'Botón', ayuda: 'El fondo del botón de WhatsApp. Sin elegir, el color principal.' },
+      { clave: 'reservaBotonTexto', nombre: 'Texto del botón de Reservar', corto: 'Letras', ayuda: 'Las letras del botón. Sin elegir, blanco u oscuro según su fondo.' },
+      { clave: 'reservaTelefono', nombre: 'Teléfono de Reservar', corto: 'Teléfono', ayuda: 'La línea «o por teléfono». Sin elegir, el texto suave.' },
+    ],
+  },
+  {
     grupo: 'Textos',
     ancho: true, // en el editor, a todo el ancho (con sus cinco colores en una fila)
     campos: [
@@ -74,6 +93,8 @@ export function coloresAutomaticos(theme, hero = {}, elegidos = {}) {
   const menuFondo = hex6(elegidos.menuFondo, cabecera)
   const redesFondo = hex6(elegidos.redesFondo, hero.colorRedes ? hex6(hero.colorRedes, cabecera) : cabecera)
   const botonFondo = hex6(elegidos.botonFondo, acento)
+  // En Polaroid los textos van en blanco u oscuro según el fondo de la portada (el elegido o la cabecera); en los demás, el color del texto
+  const textoPortada = hero.portada === 'polaroid' ? oscuroOBlanco(hex6(elegidos.fondoPortada, cabecera)) : texto
   return {
     menuFondo,
     menuTexto: oscuroOBlanco(menuFondo),
@@ -83,11 +104,20 @@ export function coloresAutomaticos(theme, hero = {}, elegidos = {}) {
     fondoPortada: hero.portada === 'polaroid' ? cabecera : bg,
     fondoResena: surface,
     filtroFoto: hero.portada === 'diagonal' ? bg : texto,
-    titulo: texto,
-    titular: texto,
-    descripcion: texto,
-    subtitulo: texto,
-    extra: texto,
+    reservaTitulo: texto,
+    reservaTexto: hex6(c.muted, texto),
+    reservaBoton: principal,
+    reservaBotonTexto: oscuroOBlanco(hex6(elegidos.reservaBoton, principal)),
+    reservaTelefono: hex6(c.muted, texto),
+    horarioTitulo: texto,
+    horarioDias: texto,
+    horarioHoras: texto,
+    horarioMapa: principal,
+    titulo: textoPortada,
+    titular: textoPortada,
+    descripcion: textoPortada,
+    subtitulo: textoPortada,
+    extra: textoPortada,
     botonFondo,
     boton: oscuroOBlanco(botonFondo),
   }

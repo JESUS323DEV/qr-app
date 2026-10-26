@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useContext, useEffect, useMemo, useState } from 'react'
 import { CompartirJuntoAlBoton } from '../components/BotonCompartir'
 import NombreMarca from '../components/NombreMarca'
 import { ChevronLeft, ChevronRight, X } from 'lucide-react'
@@ -8,7 +8,7 @@ import BotonCompartir from '../components/BotonCompartir'
 import { loadFont } from '../lib/applyTheme'
 import Escena, { fotoDeRespaldo, fotosDe, tipoComun } from '../fichas/escenas'
 import BarraPestanas from '../fichas/barras'
-import { useFondoBoton, useRol } from '../components/ColoresPortada'
+import { ColoresMiniweb, esClaroHex, useFondoBoton, useRol } from '../components/ColoresPortada'
 import { montajeDe } from '../lib/montajes'
 
 /* Polaroid (inspirado en la carta Polaroid de Forno Nonna). Hero por piezas: acepta cualquier pestaña común y
@@ -78,6 +78,10 @@ export default function HeroPolaroid({ hero, nombre, lema, sinBarra = false, ini
   const rolSub = useRol('subtitulo')
   const rolTitular = useRol('titular')
   const rolDescripcion = useRol('descripcion')
+  // El texto sin color propio va en blanco u oscuro según el fondo de la portada (el elegido o, sin él, el color de cabecera)
+  const { colores: coloresMini, cabecera } = useContext(ColoresMiniweb)
+  const fondoHero = coloresMini?.fondoPortada ?? hero.fondoInicio ?? cabecera
+  const textoAuto = fondoHero && esClaroHex(fondoHero) ? '#141414' : '#FFFFFF'
   const rolBoton = useRol('boton')
   const fondoBoton = useFondoBoton()
   // Solo las pestañas que sabe pintar (las comunes)
@@ -118,7 +122,7 @@ export default function HeroPolaroid({ hero, nombre, lema, sinBarra = false, ini
           ))}
         </h2>
       )}
-      {inicio.descripcion && <p style={rolDescripcion} className="mt-[0.4rem] max-w-[22rem] text-[0.88rem] leading-[1.4] text-white/85">{inicio.descripcion}</p>}
+      {inicio.descripcion && <p style={rolDescripcion} className="mt-[0.4rem] max-w-[22rem] text-[0.88rem] leading-[1.4] opacity-85">{inicio.descripcion}</p>}
       {inicio.boton && inicio.botonA && (
         <div className="mt-[0.65rem] flex flex-wrap items-center gap-[0.75rem]">
           <button
@@ -144,14 +148,14 @@ export default function HeroPolaroid({ hero, nombre, lema, sinBarra = false, ini
 
   return (
     // Cualquier toque en el hero para la vuelta de presentación
-    <div className="flex flex-1 flex-col bg-demo-header text-white" onPointerDown={parar}>
+    <div className="flex flex-1 flex-col bg-demo-header" style={{ color: textoAuto }} onPointerDown={parar}>
       {/* Nombre a mano y lema; compartir a la derecha */}
       <div className="flex items-start justify-between gap-[1rem] px-[1.25rem] pt-[0.8rem]">
         <div className="min-w-0">
           <h1 className="text-[clamp(2.2rem,1.8rem+2vw,2.8rem)] font-bold leading-[0.85]" style={{ fontFamily: A_MANO }}>
             <NombreMarca nombre={nombre} tamano="grande" />
           </h1>
-          {lema && <p style={rolSub} className="mt-[0.2rem] text-[0.85rem] text-white/80">{lema}</p>}
+          {lema && <p style={rolSub} className="mt-[0.2rem] text-[0.85rem] opacity-80">{lema}</p>}
         </div>
         <BotonCompartir titulo={nombre} className="mt-[0.4rem] shrink-0" />
       </div>

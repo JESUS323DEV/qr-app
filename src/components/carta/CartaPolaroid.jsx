@@ -108,14 +108,14 @@ function MenuDia({ menu }) {
           <div className="relative aspect-[5/4] min-h-[5rem] overflow-hidden">
             <Img src={menu.foto} alt="" className="absolute inset-0 h-full w-full object-cover" />
           </div>
-          {/* El precio, en su sitio (a la derecha del título), más grande que él y con una línea gruesa debajo que lo remarca (del color "Detalle del precio" de la carta o, sin él, el de acento) */}
-          <div className="flex shrink-0 items-center justify-between gap-[0.5rem] px-[0.3rem] pb-[0.8rem] pt-[0.7rem]">
-            <div className="min-w-0 flex-1">
+          {/* El precio, en su sitio (a la derecha del título y, si no cabe a su lado, justo debajo, a la derecha), más grande que él y con una línea gruesa debajo que lo remarca (del color "Detalle del precio" de la carta o, sin él, el de acento) */}
+          <div className="flex shrink-0 flex-wrap items-center justify-between gap-x-[0.5rem] gap-y-[0.3rem] px-[0.3rem] pb-[0.8rem] pt-[0.7rem]">
+            <div className="shrink-0">
               <span className="block whitespace-nowrap font-demo-heading text-[1.3rem] font-bold leading-none [@media(min-height:46rem)]:text-[1.5rem]">{menu.titulo}</span>
               {/* Cuándo vale el menú (de martes a viernes, a mediodía...), justo debajo del título */}
               {menu.cuando && <span className="mt-[0.3rem] block text-[0.82rem] leading-[1.25] text-demo-muted [@media(min-height:46rem)]:text-[0.9rem]">{menu.cuando}</span>}
             </div>
-            <span className="shrink-0 whitespace-nowrap precio-detalle font-demo-heading text-[length:calc(1.9rem*var(--demo-precio-escala,1))] font-bold leading-none text-[color:var(--demo-precio-texto,var(--demo-primary))] [@media(min-height:46rem)]:text-[length:calc(2.2rem*var(--demo-precio-escala,1))] [@media(min-height:56rem)]:text-[length:calc(2.5rem*var(--demo-precio-escala,1))]">{menu.precio}</span>
+            <span className="ml-auto shrink-0 whitespace-nowrap precio-detalle font-demo-heading text-[length:calc(1.9rem*var(--demo-precio-escala,1))] font-bold leading-none text-[color:var(--demo-precio-texto,var(--demo-primary))] [@media(min-height:46rem)]:text-[length:calc(2.2rem*var(--demo-precio-escala,1))] [@media(min-height:56rem)]:text-[length:calc(2.5rem*var(--demo-precio-escala,1))]">{menu.precio}</span>
           </div>
         </div>
       )}
