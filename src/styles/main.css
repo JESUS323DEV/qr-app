@@ -363,3 +363,32 @@ body {
 @media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
   html { scroll-behavior: smooth; }
 }
+
+/* Textos de las páginas de las miniwebs (Horario, Reservar, Precios...) que crecen en móviles largos: igual que siempre hasta unos 780 px de alto
+   (XS, S y M) y, desde ahí, un poco más por saltos hasta un 20 % a 950 px o más. Se aplica con la clase escala-pagina */
+:root {
+  --escala-pagina: 1;
+}
+@media (min-height: 800px) {
+  :root {
+    --escala-pagina: 1.04;
+  }
+}
+@media (min-height: 860px) {
+  :root {
+    --escala-pagina: 1.1;
+  }
+}
+@media (min-height: 920px) {
+  :root {
+    --escala-pagina: 1.16;
+  }
+}
+@media (min-height: 950px) {
+  :root {
+    --escala-pagina: 1.2;
+  }
+}
+.escala-pagina {
+  zoom: var(--escala-pagina, 1);
+}

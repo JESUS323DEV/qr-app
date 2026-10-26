@@ -780,18 +780,18 @@ function PaginaContacto({ pestana, respaldo }) {
     <div className="flex h-full flex-col">
       <Franja foto={pestana.foto ?? respaldo} className="min-h-[6rem] flex-1" />
       <div className="px-[1.25rem] pb-[1.5rem] pt-[1.1rem]">
-        <h2 className="font-demo-heading text-[1.9rem] font-extrabold leading-none">{pestana.titulo}</h2>
-        {pestana.texto_encargo && <p className="mt-[0.5rem] text-[0.95rem] leading-[1.5] text-demo-muted">{pestana.texto_encargo}</p>}
+        <h2 className="escala-pagina font-demo-heading text-[1.9rem] font-extrabold leading-none">{pestana.titulo}</h2>
+        {pestana.texto_encargo && <p className="escala-pagina mt-[0.5rem] text-[0.95rem] leading-[1.5] text-demo-muted">{pestana.texto_encargo}</p>}
         <a
           href={pestana.url}
           target="_blank"
           rel="noreferrer"
-          className="mt-[1rem] flex min-h-[3rem] w-full items-center justify-center rounded-[0.7rem] bg-demo-primary px-[1.1rem] text-[1rem] font-semibold text-white"
+          className="escala-pagina mt-[1rem] flex min-h-[3rem] w-full items-center justify-center rounded-[0.7rem] bg-demo-primary px-[1.1rem] text-[1rem] font-semibold text-white"
         >
           {pestana.boton}
         </a>
         {pestana.telefono && (
-          <a href={`tel:${pestana.telefono.replace(/\s/g, '')}`} className="mt-[0.7rem] block text-center text-[0.88rem] text-demo-muted">
+          <a href={`tel:${pestana.telefono.replace(/\s/g, '')}`} className="escala-pagina mt-[0.7rem] block text-center text-[0.88rem] text-demo-muted">
             {pestana.texto_telefono ?? 'o por teléfono'} <span className="underline underline-offset-[0.2em]">{pestana.telefono}</span>
           </a>
         )}
@@ -806,8 +806,8 @@ function PaginaPrecios({ pestana, respaldo }) {
     <div className="flex h-full flex-col">
       <Franja foto={pestana.foto ?? respaldo} className="min-h-[5rem] flex-1" />
       <div className="px-[1.25rem] pb-[1.25rem] pt-[1rem]">
-        <h2 className="font-demo-heading text-[1.8rem] font-extrabold leading-none">{pestana.titulo ?? pestana.texto}</h2>
-        <ul className="mt-[0.6rem] text-[0.95rem]">
+        <h2 className="escala-pagina font-demo-heading text-[1.8rem] font-extrabold leading-none">{pestana.titulo ?? pestana.texto}</h2>
+        <ul className="escala-pagina mt-[0.6rem] text-[0.95rem]">
           {(pestana.servicios ?? []).map(s => (
             <li key={s.nombre} className="flex justify-between gap-[1rem] border-b border-dashed border-demo-text/20 py-[0.5rem]">
               <span className="font-semibold">{s.nombre}</span>

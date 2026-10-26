@@ -343,13 +343,14 @@ export default function CartaPage(props) {
   if (incrustada && carta) carta = { ...carta, negocio: null }
   // La clave cambia si el menú del día aparece o desaparece (horario, interruptor): la carta empieza de cero
   // en lo que toca, y no se queda en blanco en la pestaña del menú que ya no existe
-  return <CartaConTamanos key={`${slug}-${Boolean(carta?.menuDia)}`} carta={carta} negocio={negocio} incrustada={incrustada} {...props} />
+  return <CartaConTamanos key={`${slug}-${Boolean(carta?.menuDia)}`} carta={carta} negocio={negocio} incrustada={incrustada} grupoQr={destino.grupo} {...props} />
 }
 
-function Carta({ carta, negocio, demo = false, incrustada = false }) {
+// grupoQr: el grupo de copias al que apunta el QR por el que se ha entrado (para las flechas del Vistazo)
+function Carta({ carta, negocio, demo = false, incrustada = false, grupoQr = null }) {
   const lado = ladoEnlace(carta, 'derecha')
   // ?grupo=nombre (Vistazo en /admin): las flechas recorren las copias de ese grupo
-  const secuenciaGrupo = useSecuenciaGrupo(destino.grupo)
+  const secuenciaGrupo = useSecuenciaGrupo(grupoQr)
   // Dos niveles: Menú del día o Carta; dentro de Carta, las secciones
   const [modo, setModo] = useState(carta?.menuDia ? 'menu' : 'carta')
   const [seccionActiva, setSeccionActiva] = useState(carta?.secciones?.[0]?.nombre)
