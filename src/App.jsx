@@ -28,7 +28,7 @@ const GestionPage = import.meta.env.DEV ? lazy(() => import('./pages/GestionPage
 // El SEO de cada ruta, que se pone al cambiar de página (todas salen del mismo HTML): la dirección canónica en mostraq.es (sin parámetros, así
 // Google se queda con ella aunque la web se abra por la dirección de Netlify o con ?utm_... de Instagram), si se indexa o no y la descripción.
 // Los paneles, las demos y las copias para enseñar no se indexan.
-const NO_INDEXAR = ['/planes', '/demo', '/admin', '/mi-carta', '/mi-qr', '/panel', '/disenos', '/gestion', '/miniweb']
+const NO_INDEXAR = ['/planes', '/demo', '/admin', '/mi-panel', '/mi-carta', '/mi-qr', '/panel', '/disenos', '/gestion', '/miniweb']
 const DESCRIPCIONES = {
   '/catalogo': 'Ejemplos de miniwebs, menús del día y ofertas con QR para negocios locales: restaurantes, belleza, salud y tiendas. Míralos en tu móvil.',
   '/crear-qr': 'Diseño de QR personalizado para tu negocio: tus colores, tu logo y tus redes, impreso en una placa de calidad.',
@@ -89,9 +89,11 @@ export default function App() {
         <Route path="/privacidad" element={<LegalPage tipo="privacidad" />} />
         <Route path="/cookies" element={<LegalPage tipo="cookies" />} />
         {/* Panel del dueño: cambiar su menú del día (Supabase) */}
-        <Route path="/mi-carta" element={<PanelPage />} />
+        <Route path="/mi-panel" element={<PanelPage />} />
+        {/* La dirección de antes del panel: lleva a la nueva */}
+        <Route path="/mi-carta" element={<Navigate to="/mi-panel" replace />} />
         {/* Dirección antigua del panel del dueño: lleva a la nueva */}
-        <Route path="/panel" element={<Navigate to="/mi-carta" replace />} />
+        <Route path="/panel" element={<Navigate to="/mi-panel" replace />} />
         {/* Escaparate de diseños: probar y enseñar las fichas por piezas (diseño de arriba y estilo de pestañas) */}
         <Route path="/disenos" element={<Suspense fallback={null}><DisenosPage /></Suspense>} />
         {/* Panel de Jesús: textos, fotos y colores de cualquier página, y copias de demos (Supabase) */}

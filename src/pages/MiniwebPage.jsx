@@ -6,6 +6,7 @@ import { fichaAMiniweb } from '../lib/miniweb'
 import { ChevronRight } from 'lucide-react'
 import { aplicar, conEdicion, useEdicion } from '../lib/ediciones'
 import { useDestino } from '../lib/destinos'
+import { conHorarioDueno, useHorarioDueno } from '../lib/horarioDueno'
 import { SECUENCIA_EJEMPLOS } from '../lib/ejemplosMiniwebs'
 import { useSecuenciaGrupo } from '../lib/vistazoGrupo'
 import { HEROS } from '../heros'
@@ -246,7 +247,7 @@ export default function MiniwebPage({ demo = false }) {
   }, [slug, fila, pruebaDiseno, pruebaBarra, pruebaMiniweb, params])
   // ?ia=N: los textos y fotos que ha hecho el asistente de Nuevo perfil (los deja en localStorage, del mismo origen), solo en la vista previa
   const pruebaIA = params.get('ia')
-  const negocio = useMemo(() => {
+  const negocioConIA = useMemo(() => {
     if (!pruebaIA || !negocioBase?.demo) return negocioBase
     try {
       return aplicar(negocioBase, JSON.parse(localStorage.getItem('mostraq-vista-ia') ?? 'null'))
@@ -254,6 +255,9 @@ export default function MiniwebPage({ demo = false }) {
       return negocioBase
     }
   }, [negocioBase, pruebaIA])
+  // El horario que haya puesto el dueño del negocio desde su panel (tabla horarios) manda sobre el de la copia
+  const horarioDueno = useHorarioDueno(slug)
+  const negocio = useMemo(() => conHorarioDueno(negocioConIA, horarioDueno.fila), [negocioConIA, horarioDueno.fila])
 
   useEffect(() => {
     if (!negocio) return
@@ -263,7 +267,7 @@ export default function MiniwebPage({ demo = false }) {
   }, [negocio])
 
   // Mientras llegan los cambios no se pinta nada, para no enseñar un momento la versión del archivo
-  if (cargando || destino.cargando) return null
+  if (cargando || destino.cargando || horarioDueno.cargando) return null
 
   // Una demo abierta en la raíz (enlaces antiguos) se lleva a /demo/slug; si se llega por un QR impreso (qr_destinos), se queda en su dirección
   if (negocio?.demo && !demo && destino.slug === slugUrl) return <Navigate to={`/demo/${negocio.slug}`} replace />

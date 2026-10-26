@@ -1,3 +1,4 @@
+import Turnos from '../components/Turnos'
 import { useMemo, useState } from 'react'
 import NombreMarca from '../components/NombreMarca'
 import { MessageCircle, Phone } from 'lucide-react'
@@ -125,7 +126,7 @@ function EscenaHorario({ pestana }) {
         {(pestana.lineas ?? []).map(l => (
           <div key={l.dias} className="flex items-baseline justify-between gap-[1rem] border-t border-white/15 pt-[0.3rem]">
             <dt className="font-semibold text-white">{l.dias}</dt>
-            <dd className="shrink-0 text-white/75">{l.horas}</dd>
+            <dd className="shrink-0 text-white/75"><Turnos horas={l.horas} /></dd>
           </div>
         ))}
       </dl>

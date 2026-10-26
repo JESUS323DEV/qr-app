@@ -1,3 +1,4 @@
+import Turnos from '../components/Turnos'
 import { useEffect, useState } from 'react'
 import { Phone } from 'lucide-react'
 import Img from '../components/Img'
@@ -147,7 +148,7 @@ function HorarioFoto({ pestana, respaldo, info }) {
         <dl className="mt-[0.45rem] grid gap-[0.1rem] text-[0.88rem]">
           {(pestana.lineas ?? []).map(l => (
             <div key={l.dias}>
-              <dt className="inline font-semibold">{l.dias}</dt> <dd className="inline text-white/85">{l.horas}</dd>
+              <dt className="inline font-semibold">{l.dias}</dt> <dd className="inline text-white/85"><Turnos horas={l.horas} /></dd>
             </div>
           ))}
         </dl>
@@ -164,7 +165,7 @@ function HorarioTarjeta({ pestana }) {
         {(pestana.lineas ?? []).map(l => (
           <div key={l.dias} className="flex flex-wrap justify-between gap-x-[0.75rem] border-b border-demo-text/10 pb-[0.35rem]">
             <dt className="font-semibold">{l.dias}</dt>
-            <dd className="text-demo-muted">{l.horas}</dd>
+            <dd className="text-demo-muted"><Turnos horas={l.horas} /></dd>
           </div>
         ))}
       </dl>

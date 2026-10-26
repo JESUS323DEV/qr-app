@@ -1,3 +1,4 @@
+import Turnos from '../components/Turnos'
 import { ArrowUpRight } from 'lucide-react'
 import Img from '../components/Img'
 import { clipDeCorte } from '../lib/cortes'
@@ -68,7 +69,7 @@ function LineasLista({ lineas }) {
       {lineas.map(l => (
         <div key={l.dias} className="flex justify-between gap-[1rem] border-b border-dashed border-demo-text/20 py-[0.35rem]">
           <dt style={rolDias} className="font-semibold">{l.dias}</dt>
-          <dd style={rolHoras} className="text-right text-demo-muted">{l.horas}</dd>
+          <dd style={rolHoras} className="text-right text-demo-muted"><Turnos horas={l.horas} /></dd>
         </div>
       ))}
     </dl>
@@ -111,7 +112,7 @@ export default function PaginaHorario({ pestana, cargarMapa, heroBase, respaldo 
               {lineas.map(l => (
                 <div key={l.dias}>
                   <dt style={rolDias} className="text-[0.78rem] text-white/70">{l.dias}</dt>
-                  <dd style={rolHoras} className={`font-demo-heading text-[1.15rem] font-bold leading-tight ${cerrado(l) ? 'text-white/55' : ''}`}>{l.horas}</dd>
+                  <dd style={rolHoras} className={`font-demo-heading text-[1.15rem] font-bold leading-tight ${cerrado(l) ? 'text-white/55' : ''}`}><Turnos horas={l.horas} /></dd>
                 </div>
               ))}
             </dl>
@@ -124,7 +125,7 @@ export default function PaginaHorario({ pestana, cargarMapa, heroBase, respaldo 
               {lineas.map(l => (
                 <div key={l.dias} className="flex justify-between gap-[1rem] border-b border-white/25 py-[0.35rem] last:border-b-0">
                   <dt style={rolDias} className="font-semibold">{l.dias}</dt>
-                  <dd style={rolHoras} className={`text-right ${cerrado(l) ? 'text-white/60' : 'text-white/90'}`}>{l.horas}</dd>
+                  <dd style={rolHoras} className={`text-right ${cerrado(l) ? 'text-white/60' : 'text-white/90'}`}><Turnos horas={l.horas} /></dd>
                 </div>
               ))}
             </dl>
@@ -162,7 +163,7 @@ export default function PaginaHorario({ pestana, cargarMapa, heroBase, respaldo 
               {lineas.map(l => (
                 <div key={l.dias} className="flex justify-between gap-[1rem] border-b border-demo-text/10 py-[0.35rem] last:border-b-0">
                   <dt style={rolDias} className="font-semibold">{l.dias}</dt>
-                  <dd style={rolHoras} className={`text-right ${cerrado(l) ? 'text-demo-muted' : 'font-semibold text-demo-primary'}`}>{l.horas}</dd>
+                  <dd style={rolHoras} className={`text-right ${cerrado(l) ? 'text-demo-muted' : 'font-semibold text-demo-primary'}`}><Turnos horas={l.horas} /></dd>
                 </div>
               ))}
             </dl>
@@ -179,7 +180,7 @@ export default function PaginaHorario({ pestana, cargarMapa, heroBase, respaldo 
     const horas = lineas.map((l, i) => (
       <div key={l.dias} className={i ? 'border-t border-demo-text/15 pt-[0.5rem]' : ''}>
         <dt style={rolDias} className="text-[0.78rem] text-demo-muted">{l.dias}</dt>
-        <dd style={rolHoras} className={`font-demo-heading text-[1.05rem] font-bold leading-tight ${cerrado(l) ? 'text-demo-muted' : ''}`}>{l.horas}</dd>
+        <dd style={rolHoras} className={`font-demo-heading text-[1.05rem] font-bold leading-tight ${cerrado(l) ? 'text-demo-muted' : ''}`}><Turnos horas={l.horas} /></dd>
       </div>
     ))
     return (
@@ -208,7 +209,7 @@ export default function PaginaHorario({ pestana, cargarMapa, heroBase, respaldo 
               {lineas.map(l => (
                 <div key={l.dias} className="border-b border-demo-text/10 py-[0.35rem] last:border-b-0">
                   <dt style={rolDias} className="font-semibold">{l.dias}</dt>
-                  <dd style={rolHoras} className="text-demo-muted">{l.horas}</dd>
+                  <dd style={rolHoras} className="text-demo-muted"><Turnos horas={l.horas} /></dd>
                 </div>
               ))}
             </dl>

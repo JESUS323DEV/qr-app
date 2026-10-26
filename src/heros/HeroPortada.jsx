@@ -1,3 +1,4 @@
+import Turnos from '../components/Turnos'
 import { useEffect, useMemo, useState } from 'react'
 import TextoInicio from '../components/TextoInicio'
 import NombreMarca from '../components/NombreMarca'
@@ -147,7 +148,7 @@ function EscenaHorario({ pestana, respaldo }) {
           {(pestana.lineas ?? []).map(l => (
             <div key={l.dias} className="flex items-baseline justify-between gap-[1rem] border-t border-white/20 pt-[0.3rem]">
               <dt className="font-semibold">{l.dias}</dt>
-              <dd className="shrink-0 text-white/75">{l.horas}</dd>
+              <dd className="shrink-0 text-white/75"><Turnos horas={l.horas} /></dd>
             </div>
           ))}
         </dl>
