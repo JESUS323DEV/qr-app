@@ -475,7 +475,7 @@ function Carta({ carta, negocio, demo = false, incrustada = false, grupoQr = nul
                 aria-pressed={modo === p.key}
                 onClick={() => setModo(p.key)}
                 className={`flex-1 rounded-[0.8rem] py-[0.7rem] text-[0.95rem] font-semibold transition-colors ${
-                  modo === p.key ? 'bg-demo-primary text-demo-bg' : 'bg-demo-surface hover:bg-demo-text/10'
+                  modo === p.key ? 'bg-[var(--c-activa,var(--demo-primary))] text-demo-bg' : 'bg-demo-surface hover:bg-demo-text/10'
                 }`}
               >
                 {p.texto}

@@ -19,6 +19,7 @@ import { derivadosDeFondoYTexto } from '../lib/mezclarColores'
 import { DIBUJOS_MENU, GRUPOS_MENU } from '../lib/estilosMenu'
 import { leerReferencia } from '../asistente/referencia'
 import { ICONOS_ESTRUCTURA } from '../lib/iconosEstructura'
+import { COLORES_CARTA } from '../lib/coloresCarta'
 import { HORARIOS } from '../lib/horarios'
 import Movil from '../components/Movil'
 import { COLORES_MINIWEB, coloresAutomaticos } from '../lib/coloresMiniweb'
@@ -1850,8 +1851,10 @@ const ICONOS_TEMA = {
 // detalle: en pantalla ancha (desde 1024 px), cada grupo de colores en un desplegable y, dentro, cada color en columna con su nombre, su ayuda, el círculo y el
 // código, como en Personalizado (en móvil, solo los círculos). claves: si se da, solo esos colores
 // extrasPorGrupo: contenido que va dentro de un grupo, por su nombre (por ejemplo el texto del botón en el grupo del botón)
-function PanelColoresMiniweb({ valores, cambiar, autos = {}, sinTitulo = false, claves, detalle = false, extrasPorGrupo }) {
-  const grupos = (claves ? COLORES_MINIWEB.map(g => ({ ...g, campos: g.campos.filter(c => claves.includes(c.clave)) })) : COLORES_MINIWEB).filter(g => g.campos.length > 0)
+// catalogo: los grupos de colores (por defecto, los de la miniweb); estilo: el estilo de carta elegido, para avisar de los colores que no usa
+function PanelColoresMiniweb({ valores, cambiar, autos = {}, sinTitulo = false, claves, detalle = false, extrasPorGrupo, catalogo = COLORES_MINIWEB, estilo }) {
+  const grupos = (claves ? catalogo.map(g => ({ ...g, campos: g.campos.filter(c => claves.includes(c.clave)) })) : catalogo).filter(g => g.campos.length > 0)
+  const sinUso = c => Boolean(estilo && c.estilos && !c.estilos.includes(estilo))
   return (
     <>
       {detalle && (
@@ -1879,7 +1882,7 @@ function PanelColoresMiniweb({ valores, cambiar, autos = {}, sinTitulo = false, 
                           {c.nombre}
                           {!valor && <span className="font-normal text-zinc-400"> · automático (aproximado)</span>}
                         </p>
-                        <p className="text-[0.8rem] text-zinc-400">{c.ayuda}</p>
+                        <p className="text-[0.8rem] text-zinc-400">{c.ayuda}{sinUso(c) ? ' No se usa en este estilo, pero puedes cambiarlo.' : ''}</p>
                       </div>
                       <div className="flex items-center gap-[0.5rem]">
                         <div className="min-w-0 flex-1">
@@ -2655,6 +2658,10 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
   const [colorPrecio, setColorPrecio] = useState('')
   // El color del número del precio del menú ('' : el de cada estilo)
   const [colorPrecioTexto, setColorPrecioTexto] = useState('')
+  // Más colores de Menú y ofertas: fondo secundario (las tarjetas), texto suave y los colores propios (nombre, títulos, activo, alérgenos...)
+  const [fondo2, setFondo2] = useState('')
+  const [textoSuave, setTextoSuave] = useState('')
+  const [coloresCarta, setColoresCarta] = useState({})
   // El tamaño del precio del menú de la carta: 'xs', 'md' (el de cada estilo) o 'xl'
   const [tamanoPrecio, setTamanoPrecio] = useState('md')
   // Dónde va el enlace "Conoce [negocio]" de la carta: 'ninguno' (no sale), 'derecha' o 'izquierda'
@@ -2841,6 +2848,9 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
     esCarta && 'derivar=1',
     esCarta && colorPrecio && `precio=${colorPrecio.slice(1)}`,
     esCarta && colorPrecioTexto && `ptxt=${colorPrecioTexto.slice(1)}`,
+    esCarta && fondo2 && `f2=${fondo2.slice(1)}`,
+    esCarta && textoSuave && `ts=${textoSuave.slice(1)}`,
+    esCarta && Object.keys(coloresCarta).length > 0 && `colcarta=${Object.entries(coloresCarta).map(([clave, valor]) => `${clave}-${valor.slice(1)}`).join(',')}`,
     esCarta && tamanoPrecio !== 'md' && `tprecio=${tamanoPrecio}`,
     esCarta && `enlace=${enlaceNegocio}`,
     esCarta && estilo === 'inmersiva' && filtroCarta !== 100 && `filtro=${filtroCarta}`,
@@ -2933,6 +2943,10 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
         ...(detallePrecio !== 'raya' ? { detallePrecio } : {}),
         // La superficie de las tarjetas y el texto suave salen del fondo y del texto elegidos (no se quedan con los de la plantilla)
         ...(fondo || colorTexto ? { 'marca.theme.colors.surface': derivadosDeFondoYTexto(colorFondo, colorDelTexto).surface, 'marca.theme.colors.muted': derivadosDeFondoYTexto(colorFondo, colorDelTexto).muted } : {}),
+        // Fondo secundario y texto suave elegidos (mandan sobre los que salen del fondo y del texto) y los colores propios de la carta
+        ...(fondo2 ? { 'marca.theme.colors.surface': fondo2 } : {}),
+        ...(textoSuave ? { 'marca.theme.colors.muted': textoSuave } : {}),
+        ...Object.fromEntries(Object.entries(coloresCarta).map(([clave, valor]) => [`marca.theme.colors.${clave}`, valor])),
         ...(tipografia ? { 'marca.theme.fonts': tipografia.fonts } : {}),
       })
     } else {
@@ -3094,6 +3108,9 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
     subCarta,
     colorPrecio,
     colorPrecioTexto,
+    fondo2,
+    textoSuave,
+    coloresCarta,
     tamanoPrecio,
     enlaceNegocio,
     filtroCarta,
@@ -3200,6 +3217,9 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
     setSubCarta(i.subCarta ?? 'fila')
     setColorPrecio(i.colorPrecio ?? '')
     setColorPrecioTexto(i.colorPrecioTexto ?? '')
+    setFondo2(i.fondo2 ?? '')
+    setTextoSuave(i.textoSuave ?? '')
+    setColoresCarta(i.coloresCarta ?? {})
     setTamanoPrecio(i.tamanoPrecio ?? 'md')
     setEnlaceNegocio(i.enlaceNegocio ?? 'ninguno')
     setFiltroCarta(i.filtroCarta ?? 100)
@@ -3491,13 +3511,6 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
               ['Color de fondo', 'El fondo de la página: claro u oscuro.', colorFondo, setFondo],
               // En Menú y ofertas con el estilo Inmersiva el texto va en blanco fijo sobre la foto: este color no se usa (el 6.º dato lo marca)
               ['Color del texto', 'Las letras sobre el fondo.', colorDelTexto, setColorTexto, undefined, esCarta && estilo === 'inmersiva'],
-              // Solo en Menú y ofertas: el color del número del precio y el de su detalle (la línea que lo remarca). El 5.º dato es el color elegido: con él sale el botón de volver al del estilo
-              ...(esCarta
-                ? [
-                    ['Color del precio', 'El número del precio del menú del día. Sin elegir, el de cada estilo.', colorPrecioTexto || (estilo === 'galeria' ? colorAcento : estilo === 'inmersiva' ? '#FFFFFF' : colorPrincipal), setColorPrecioTexto, colorPrecioTexto],
-                    ['Detalle del precio', 'La línea que remarca el precio del menú del día. Sin elegir, el color de acento.', colorPrecio || colorAcento, setColorPrecio, colorPrecio],
-                  ]
-                : []),
             ].map(([nombreColor, ayuda, valor, poner, elegido, sinUso]) => (
               <div key={nombreColor} className="grid gap-[0.3rem]">
                 <div>
@@ -3972,6 +3985,53 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                 <TextosHorario original={datosEnBruto} cambios={cambiosExtra} cambiar={cambiarExtra} />
               </Plegable>
   )
+  // Los colores de Menú y ofertas: lo elegido (cada uno en su estado) y el color que lleva si no se elige
+  const derivadosCarta = derivadosDeFondoYTexto(colorFondo, colorDelTexto)
+  const PROPIOS_CARTA = { nombre: 'cNombre', fondoPolaroid: 'cFondoPolaroid', menuTitulo: 'cMenuTitulo', menuCuando: 'cMenuCuando', seccion: 'cSeccion', activa: 'cActiva', alergenos: 'cAlergenos' }
+  const valoresCarta = {
+    fondo,
+    fondo2,
+    texto: colorTexto,
+    textoSuave,
+    precio: colorPrecioTexto,
+    detalle: colorPrecio,
+    ...Object.fromEntries(Object.entries(PROPIOS_CARTA).map(([clave, propio]) => [clave, coloresCarta[propio]])),
+  }
+  const autosCarta = {
+    nombre: colorDelTexto,
+    fondo: colorFondo,
+    fondo2: derivadosCarta.surface,
+    fondoPolaroid: colorPrincipal,
+    texto: colorDelTexto,
+    textoSuave: derivadosCarta.muted,
+    menuTitulo: colorDelTexto,
+    menuCuando: derivadosCarta.muted,
+    precio: estilo === 'galeria' ? colorAcento : estilo === 'inmersiva' ? '#FFFFFF' : colorPrincipal,
+    detalle: colorAcento,
+    seccion: colorAcento,
+    activa: estilo === 'galeria' ? colorAcento : colorPrincipal,
+    alergenos: colorPrincipal,
+  }
+  const cambiarColorCarta = (clave, valor) => {
+    const v = valor || ''
+    if (clave === 'fondo') setFondo(v)
+    else if (clave === 'fondo2') setFondo2(v)
+    else if (clave === 'texto') setColorTexto(v)
+    else if (clave === 'textoSuave') setTextoSuave(v)
+    else if (clave === 'precio') setColorPrecioTexto(v)
+    else if (clave === 'detalle') setColorPrecio(v)
+    else if (PROPIOS_CARTA[clave]) {
+      setColoresCarta(c => {
+        const n = { ...c }
+        if (v) n[PROPIOS_CARTA[clave]] = v
+        else delete n[PROPIOS_CARTA[clave]]
+        return n
+      })
+    }
+  }
+  const panelColoresCarta = (
+    <PanelColoresMiniweb sinTitulo detalle catalogo={COLORES_CARTA} estilo={estilo} valores={valoresCarta} cambiar={cambiarColorCarta} autos={autosCarta} />
+  )
   const autosColores = coloresAutomaticos({ colors: { ...marcaBase?.theme?.colors, bg: colorFondo, primary: colorPrincipal, accent: colorAcento, text: colorDelTexto, header: colorCabecera } }, { barra, portada: hero }, coloresMini)
 
   return (
@@ -4109,7 +4169,7 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
               {(producto === 'miniweb'
                 ? [['negocio', 'Negocio'], ['portada', 'Portada'], ['menu', 'Menú'], ['redes', 'Redes'], ['horario', 'Horario'], ['reserva', 'Reserva'], ['resena', 'Reseña'], ['ajustes', 'Ajustes personalizados']]
                 : esCarta
-                  ? [['negocio', 'Negocio'], ['portada', 'Estilo'], ['imagenes', 'Imágenes'], ['estructura', 'Estructura']]
+                  ? [['negocio', 'Negocio'], ['portada', 'Estilo'], ['imagenes', 'Imágenes'], ['estructura', 'Estructura'], ['ajustes', 'Ajustes personalizados']]
                   : [['negocio', 'Negocio'], ['portada', 'Diseño'], ['ajustes', 'Ajustes personalizados']]
               ).map(([clave, texto]) => (
                 <button
@@ -4130,7 +4190,8 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                 {bloqueNombre}
                 {producto !== 'miniweb' && campoTipografia}
                 {/* En miniweb esos cuatro colores (Personalizado) van en Ajustes personalizados; en Menú y ofertas y Ficha, aquí */}
-                {producto !== 'miniweb' && paletaMarca}
+                {producto === 'ficha' && paletaMarca}
+                {esCarta && panelColoresCarta}
                 {datosEnBruto && <ImagenesPorPestana original={datosEnBruto} cambios={cambiosExtra} cambiar={cambiarExtra} soloOtras />}
                 {datosEnBruto && <EditorEnBruto original={datosEnBruto} cambios={cambiosExtra} cambiar={cambiarExtra} soloBloques={b => b.clave === 'datos'} />}
               </div>
@@ -4320,7 +4381,7 @@ function NuevoPerfil({ filas, recargar, abrir, cargar }) {
           {pestanaAjustes === 'ajustes' && (
             <div role="tabpanel" className="grid gap-[0.75rem] rounded-[0.75rem] p-[0.85rem] ring-1 ring-zinc-200">
               {/* Lo que no se puede cambiar desde las otras pestañas: la carta del menú, los ajustes de Menú y ofertas y de la Ficha, y los datos en bruto. En miniweb, también los colores de partida (Personalizado) */}
-              {producto === 'miniweb' && paletaMarca}
+              {(producto === 'miniweb' || esCarta) && paletaMarca}
           {producto === 'ficha' && (
             <Plegable titulo={producto === 'miniweb' ? 'Estilo del menú de navegación' : 'Estilo de pestañas'} elegido={barra ? BARRAS[barra]?.nombre : producto === 'miniweb' ? 'La rayita' : 'El suyo'}>
               <div className="flex flex-wrap gap-[0.4rem]">

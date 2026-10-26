@@ -29,8 +29,8 @@ function MenuDia({ menu }) {
       <div className="flex shrink-0 items-end justify-between gap-[1rem]">
         {/* w-min: la columna del título mide lo que mide el título (que va en una sola línea) y el texto de cuándo se parte dentro de ese ancho */}
         <div className="w-min min-w-0">
-          <h2 className="whitespace-nowrap font-demo-heading text-[2rem] leading-[0.95] [@media(min-height:46rem)]:text-[2.4rem] [@media(min-height:56rem)]:text-[2.8rem]">{menu.titulo}</h2>
-          {menu.cuando && <p className="mt-[0.3rem] text-[0.82rem] text-demo-muted [@media(min-height:46rem)]:text-[0.9rem]">{menu.cuando}</p>}
+          <h2 className="text-[color:var(--c-menu-titulo,inherit)] whitespace-nowrap font-demo-heading text-[2rem] leading-[0.95] [@media(min-height:46rem)]:text-[2.4rem] [@media(min-height:56rem)]:text-[2.8rem]">{menu.titulo}</h2>
+          {menu.cuando && <p className="mt-[0.3rem] text-[0.82rem] text-[color:var(--c-menu-cuando,var(--demo-muted))] [@media(min-height:46rem)]:text-[0.9rem]">{menu.cuando}</p>}
         </div>
         <p className="shrink-0 whitespace-nowrap precio-detalle font-demo-heading text-[length:calc(1.8rem*var(--demo-precio-escala,1))] italic leading-none text-[color:var(--demo-precio-texto,var(--demo-primary))] [@media(min-height:46rem)]:text-[length:calc(2.1rem*var(--demo-precio-escala,1))] [@media(min-height:56rem)]:text-[length:calc(2.4rem*var(--demo-precio-escala,1))]">{menu.precio}</p>
       </div>
@@ -45,7 +45,7 @@ function MenuDia({ menu }) {
       <div className={`mt-[0.7rem] shrink-0 grid gap-[0.5rem] [@media(min-height:46rem)]:mt-[0.9rem] [@media(min-height:46rem)]:gap-[0.7rem] ${menu.grupos.length > 3 ? 'grid-cols-2 gap-x-[1rem]' : ''}`}>
         {menu.grupos.map(g => (
           <div key={g.nombre} className={`${RAYA} pt-[0.4rem] [@media(min-height:46rem)]:pt-[0.55rem]`}>
-            <p className="font-demo-heading text-[1.15rem] italic leading-none text-demo-accent [@media(min-height:46rem)]:text-[1.25rem] [@media(min-height:56rem)]:text-[1.35rem]">{g.nombre}</p>
+            <p className="font-demo-heading text-[1.15rem] italic leading-none text-[color:var(--c-seccion,var(--demo-accent))] [@media(min-height:46rem)]:text-[1.25rem] [@media(min-height:56rem)]:text-[1.35rem]">{g.nombre}</p>
             <ul className="mt-[0.2rem] text-[1rem] leading-[1.35] [@media(min-height:46rem)]:text-[1.08rem] [@media(min-height:56rem)]:text-[1.16rem]">
               {g.platos.map(p => <li key={p}>{p}</li>)}
             </ul>
@@ -136,7 +136,7 @@ function HojaAlergenos({ claves, cerrar }) {
         <ul className="mt-[0.9rem] grid grid-cols-2 gap-x-[1rem] gap-y-[0.4rem] text-[0.95rem]">
           {claves.map(a => (
             <li key={a}>
-              <span className="font-bold text-demo-primary">{ALERGENOS[a].corto}</span> {ALERGENOS[a].nombre}
+              <span className="font-bold text-[color:var(--c-alergenos,var(--demo-primary))]">{ALERGENOS[a].corto}</span> {ALERGENOS[a].nombre}
             </li>
           ))}
         </ul>
@@ -189,7 +189,7 @@ export default function CartaRevista({ carta, negocio }) {
           )}
         </div>
         <header className="mt-[0.4rem] shrink-0 border-b-2 border-demo-text pb-[0.45rem] [@media(min-height:46rem)]:mt-[0.6rem] [@media(min-height:46rem)]:pb-[0.6rem]">
-          <h1 className="font-demo-heading text-[2.6rem] leading-[0.9] tracking-[-0.02em] [@media(min-height:46rem)]:text-[3.1rem] [@media(min-height:56rem)]:text-[3.6rem]" style={ZOOM_NOMBRE}>{negocio.nombre}</h1>
+          <h1 className="text-[color:var(--c-nombre,inherit)] font-demo-heading text-[2.6rem] leading-[0.9] tracking-[-0.02em] [@media(min-height:46rem)]:text-[3.1rem] [@media(min-height:56rem)]:text-[3.6rem]" style={ZOOM_NOMBRE}>{negocio.nombre}</h1>
         </header>
 
         {/* Menú del día y Carta; en la carta, sus secciones */}
@@ -217,7 +217,7 @@ export default function CartaRevista({ carta, negocio }) {
                 aria-pressed={abierta?.nombre === s.nombre}
                 onClick={() => setSeccion(s.nombre)}
                 className={`shrink-0 font-demo-heading text-[1.1rem] italic leading-none [@media(min-height:46rem)]:text-[1.2rem] ${
-                  abierta?.nombre === s.nombre ? 'text-demo-primary' : 'text-demo-muted hover:text-demo-text'
+                  abierta?.nombre === s.nombre ? 'text-[color:var(--c-activa,var(--demo-primary))]' : 'text-demo-muted hover:text-demo-text'
                 }`}
               >
                 {s.nombre}

@@ -111,9 +111,9 @@ function MenuDia({ menu }) {
           {/* El precio, en su sitio (a la derecha del título y, si no cabe a su lado, justo debajo, a la derecha), más grande que él y con una línea gruesa debajo que lo remarca (del color "Detalle del precio" de la carta o, sin él, el de acento) */}
           <div className="flex shrink-0 flex-wrap items-center justify-between gap-x-[0.5rem] gap-y-[0.3rem] px-[0.3rem] pb-[0.8rem] pt-[0.7rem]">
             <div className="shrink-0">
-              <span className="block whitespace-nowrap font-demo-heading text-[1.3rem] font-bold leading-none [@media(min-height:46rem)]:text-[1.5rem]">{menu.titulo}</span>
+              <span className="block whitespace-nowrap text-[color:var(--c-menu-titulo,inherit)] font-demo-heading text-[1.3rem] font-bold leading-none [@media(min-height:46rem)]:text-[1.5rem]">{menu.titulo}</span>
               {/* Cuándo vale el menú (de martes a viernes, a mediodía...), justo debajo del título */}
-              {menu.cuando && <span className="mt-[0.3rem] block text-[0.82rem] leading-[1.25] text-demo-muted [@media(min-height:46rem)]:text-[0.9rem]">{menu.cuando}</span>}
+              {menu.cuando && <span className="mt-[0.3rem] block text-[0.82rem] leading-[1.25] text-[color:var(--c-menu-cuando,var(--demo-muted))] [@media(min-height:46rem)]:text-[0.9rem]">{menu.cuando}</span>}
             </div>
             <span className="ml-auto shrink-0 whitespace-nowrap precio-detalle font-demo-heading text-[length:calc(1.9rem*var(--demo-precio-escala,1))] font-bold leading-none text-[color:var(--demo-precio-texto,var(--demo-primary))] [@media(min-height:46rem)]:text-[length:calc(2.2rem*var(--demo-precio-escala,1))] [@media(min-height:56rem)]:text-[length:calc(2.5rem*var(--demo-precio-escala,1))]">{menu.precio}</span>
           </div>
@@ -123,16 +123,16 @@ function MenuDia({ menu }) {
       <div className={`shrink-0 bg-demo-surface px-[0.9rem] py-[0.7rem] text-demo-text rotate-[1deg] [@media(min-height:46rem)]:px-[1.1rem] [@media(min-height:46rem)]:py-[0.9rem] ${SOMBRA}`}>
         {!menu.foto && (
           <div className="mb-[0.4rem] flex items-baseline justify-between gap-[0.5rem]">
-            <span className="font-demo-heading text-[1.6rem] font-bold leading-none">{menu.titulo}</span>
+            <span className="font-demo-heading text-[color:var(--c-menu-titulo,inherit)] text-[1.6rem] font-bold leading-none">{menu.titulo}</span>
             <span className="font-demo-heading text-[length:calc(2.4rem*var(--demo-precio-escala,1))] font-bold leading-none text-[color:var(--demo-precio-texto,var(--demo-primary))]">{menu.precio}</span>
           </div>
         )}
         {/* Sin foto, el cuándo va aquí, bajo el título; con foto, ya va en su polaroid */}
-        {!menu.foto && menu.cuando && <p className="text-[0.8rem] text-demo-muted [@media(min-height:46rem)]:text-[0.88rem]">{menu.cuando}</p>}
+        {!menu.foto && menu.cuando && <p className="text-[0.8rem] text-[color:var(--c-menu-cuando,var(--demo-muted))] [@media(min-height:46rem)]:text-[0.88rem]">{menu.cuando}</p>}
         <div className={`mt-[0.35rem] grid gap-[0.35rem] [@media(min-height:46rem)]:mt-[0.5rem] [@media(min-height:46rem)]:gap-[0.5rem] ${menu.grupos.length > 3 ? 'grid-cols-2 gap-x-[0.8rem]' : ''}`}>
           {menu.grupos.map(g => (
             <div key={g.nombre}>
-              <p className="font-demo-heading text-[1.15rem] font-bold leading-none text-demo-accent [@media(min-height:46rem)]:text-[1.25rem] [@media(min-height:56rem)]:text-[1.35rem]">{g.nombre}</p>
+              <p className="font-demo-heading text-[1.15rem] font-bold leading-none text-[color:var(--c-seccion,var(--demo-accent))] [@media(min-height:46rem)]:text-[1.25rem] [@media(min-height:56rem)]:text-[1.35rem]">{g.nombre}</p>
               <ul className="mt-[0.2rem] text-[0.98rem] leading-[1.32] [@media(min-height:46rem)]:text-[1.08rem] [@media(min-height:56rem)]:text-[1.16rem]">
                 {g.platos.map(p => <li key={p}>{p}</li>)}
               </ul>
@@ -196,13 +196,13 @@ export default function CartaPolaroid({ carta, negocio }) {
   const filas = Math.ceil(platos.length / 2)
 
   return (
-    <div className="sp h-svh overflow-hidden bg-demo-primary font-demo-body">
+    <div className="sp h-svh overflow-hidden bg-[var(--c-fondo-polaroid,var(--demo-primary))] font-demo-body">
       <main className="mx-auto flex h-full w-full max-w-[30rem] flex-col px-[1.1rem] pb-[0.9rem] pt-[0.9rem] [@media(min-height:46rem)]:px-[1.3rem] [@media(min-height:46rem)]:pb-[1.2rem] [@media(min-height:46rem)]:pt-[1.2rem]">
         {/* Nombre a mano y lema; idioma a la derecha */}
         <header className="flex shrink-0 items-start justify-between gap-[1rem]">
           <div className="min-w-0">
             {lado === 'izquierda' && <EnlaceNegocio carta={carta} negocio={negocio} className="mb-[0.5rem] inline-flex items-center gap-[0.25rem] sp sp-fondo rounded-full px-[0.7rem] py-[0.3rem] text-[0.72rem] font-semibold" />}
-            <h1 className="font-demo-heading text-[2.6rem] font-bold leading-[0.85] [@media(min-height:46rem)]:text-[3rem] [@media(min-height:56rem)]:text-[3.4rem]" style={ZOOM_NOMBRE}>{negocio.nombre}</h1>
+            <h1 className="text-[color:var(--c-nombre,inherit)] font-demo-heading text-[2.6rem] font-bold leading-[0.85] [@media(min-height:46rem)]:text-[3rem] [@media(min-height:56rem)]:text-[3.4rem]" style={ZOOM_NOMBRE}>{negocio.nombre}</h1>
             {negocio.lema && <p className="mt-[0.25rem] text-[0.85rem] sp-80 [@media(min-height:46rem)]:text-[0.92rem]">{negocio.lema}</p>}
           </div>
           {/* A la derecha: el idioma y, debajo, el enlace a la miniweb del negocio (si la carta es de un negocio con ficha) */}

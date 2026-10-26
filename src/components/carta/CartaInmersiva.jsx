@@ -18,13 +18,13 @@ function MenuDia({ menu }) {
   if (menu.ofertas) return <Ofertas menu={menu} sobreFoto estilo="inmersiva" />
   return (
     <div>
-      <h1 className="font-demo-heading text-[1.75rem] leading-none [@media(min-height:50rem)]:text-[2.1rem]">{menu.titulo}</h1>
-      <p className="mt-[0.25rem] text-[0.8rem] text-white/70 [@media(min-height:50rem)]:mt-[0.35rem] [@media(min-height:50rem)]:text-[0.88rem]">{menu.cuando}</p>
+      <h1 className="text-[color:var(--c-menu-titulo,inherit)] font-demo-heading text-[1.75rem] leading-none [@media(min-height:50rem)]:text-[2.1rem]">{menu.titulo}</h1>
+      <p className="mt-[0.25rem] text-[0.8rem] text-[color:var(--c-menu-cuando,rgb(255_255_255/0.7))] [@media(min-height:50rem)]:mt-[0.35rem] [@media(min-height:50rem)]:text-[0.88rem]">{menu.cuando}</p>
 
       <div className="mt-[0.7rem] grid gap-[0.7rem] [@media(min-height:50rem)]:mt-[0.9rem] [@media(min-height:50rem)]:gap-[0.9rem]">
         {menu.grupos.map(g => (
           <div key={g.nombre} className="border-t border-dashed border-white/25 pt-[0.5rem] [@media(min-height:50rem)]:pt-[0.7rem]">
-            <p className="font-demo-heading text-[1rem] leading-none text-demo-accent [@media(min-height:50rem)]:text-[1.2rem]">{g.nombre}</p>
+            <p className="font-demo-heading text-[1rem] leading-none text-[color:var(--c-seccion,var(--demo-accent))] [@media(min-height:50rem)]:text-[1.2rem]">{g.nombre}</p>
             <ul className="mt-[0.3rem] text-[0.9rem] leading-[1.35] [@media(min-height:50rem)]:mt-[0.4rem] [@media(min-height:50rem)]:text-[1.02rem] [@media(min-height:50rem)]:leading-[1.45]">
               {g.platos.map(p => <li key={p}>{p}</li>)}
             </ul>
@@ -99,7 +99,7 @@ export default function CartaInmersiva({ carta, negocio, foto }) {
         <div className="flex items-start justify-between gap-[0.75rem] px-[1.25rem] pb-[0.5rem] pt-[1rem]">
           <div className="min-w-0">
             {lado === 'izquierda' && <EnlaceNegocio carta={carta} negocio={negocio} className="mb-[0.5rem] inline-flex items-center gap-[0.25rem] rounded-full bg-black/45 px-[0.7rem] py-[0.3rem] text-[0.75rem] font-semibold text-white backdrop-blur-sm" />}
-            <p className="font-demo-heading text-[2.4rem] leading-[0.95] [text-shadow:0_0.1rem_1rem_rgb(0_0_0/0.35)]" style={ZOOM_NOMBRE}>{negocio.nombre}</p>
+            <p className="text-[color:var(--c-nombre,inherit)] font-demo-heading text-[2.4rem] leading-[0.95] [text-shadow:0_0.1rem_1rem_rgb(0_0_0/0.35)]" style={ZOOM_NOMBRE}>{negocio.nombre}</p>
             {negocio.lema && <p className="mt-[0.35rem] text-[0.85rem] text-white/85">{negocio.lema}</p>}
 
             {/* Subdiseño en columna: Menú del día y Carta, en columna debajo del nombre */}

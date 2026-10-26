@@ -9,6 +9,7 @@ import { CLAVES_DISTRIBUCIONES } from './distribuciones'
 import { CLAVES_GALERIAS } from './galerias'
 import { CLAVES_MONTAJES } from './montajes'
 import { cartas } from '../cartas'
+import { COLORES_PROPIOS_CARTA } from './applyTheme'
 import { CLAVES_HORARIOS, CLAVES_VARIANTES_HORARIO } from './horarios'
 
 /* Marca de prueba desde la dirección, solo para las demos (vista previa del "Nuevo perfil" de /admin):
@@ -35,6 +36,15 @@ import { CLAVES_HORARIOS, CLAVES_VARIANTES_HORARIO } from './horarios'
    Nunca se usa en las páginas de clientes. */
 
 const hex = valor => (/^[0-9a-f]{6}$/i.test(valor ?? '') ? `#${valor}` : null)
+// Los colores propios de una carta (?colcarta=cNombre-RRGGBB,cSeccion-RRGGBB...): solo las claves conocidas
+const coloresPropiosDeCarta = params =>
+  Object.fromEntries(
+    (params.get('colcarta') ?? '')
+      .split(',')
+      .map(par => par.split('-'))
+      .filter(([clave, valor]) => clave in COLORES_PROPIOS_CARTA && hex(valor))
+      .map(([clave, valor]) => [clave, `#${valor}`]),
+  )
 // &logo=...: el logo subido en el panel (solo si está guardado en nuestro Supabase, nunca una imagen de fuera)
 const deSupabase = valor => {
   const base = import.meta.env.VITE_SUPABASE_URL
@@ -116,7 +126,7 @@ export function marcaDePrueba(marca, params) {
     ...((redes || inicio || tamanoNombre || corte || formato || disposicion || composicion || distribucion || pase || montaje || carta || horario || horarioVar || filtro !== null || Object.keys(textos).length || Object.keys(coloresElegidos).length || Object.keys(lugares).length) && marca.hero ? { hero: { ...marca.hero, ...(Object.keys(coloresElegidos).length ? { colores: { ...marca.hero.colores, ...coloresElegidos } } : {}), ...(redes ? { colorRedes: redes } : {}), ...(inicio ? { fondoInicio: inicio } : {}), ...(tamanoNombre ? { tamanoNombre } : {}), ...(corte ? { corte } : {}), ...(formato ? { formato } : {}), ...(disposicion ? { disposicion } : {}), ...(composicion ? { composicion } : {}), ...(distribucion ? { distribucion } : {}), ...(pase ? { pase } : {}), ...(montaje ? { montaje } : {}), ...(carta ? { carta } : {}), ...(horario ? { horario } : {}), ...(horarioVar ? { horarioVariante: horarioVar } : {}), ...(filtro !== null ? { filtro } : {}), ...(Object.keys(textos).length && marca.hero.pestanas ? { pestanas: marca.hero.pestanas.map((p, i) => (i === 0 ? { ...p, ...textos } : p)) } : {}), ...lugares } } : {}),
     theme: {
       ...marca.theme,
-      colors: { ...marca.theme?.colors, ...(params.get('derivar') === '1' && (fondo || texto) ? derivadosDeFondoYTexto(fondo ?? marca.theme?.colors?.bg, texto ?? marca.theme?.colors?.text) : {}), ...(hex(params.get('precio')) ? { precio: hex(params.get('precio')) } : {}), ...(hex(params.get('ptxt')) ? { precioTexto: hex(params.get('ptxt')) } : {}), ...(principal ? { primary: principal } : {}), ...(acento ? { accent: acento } : {}), ...(texto ? { text: texto } : {}), ...(fondo ? { bg: fondo } : {}), ...(cabecera ? { header: cabecera } : {}) },
+      colors: { ...marca.theme?.colors, ...(params.get('derivar') === '1' && (fondo || texto) ? derivadosDeFondoYTexto(fondo ?? marca.theme?.colors?.bg, texto ?? marca.theme?.colors?.text) : {}), ...(hex(params.get('precio')) ? { precio: hex(params.get('precio')) } : {}), ...(hex(params.get('ptxt')) ? { precioTexto: hex(params.get('ptxt')) } : {}), ...(principal ? { primary: principal } : {}), ...(acento ? { accent: acento } : {}), ...(texto ? { text: texto } : {}), ...(fondo ? { bg: fondo } : {}), ...(cabecera ? { header: cabecera } : {}), ...(hex(params.get('f2')) ? { surface: hex(params.get('f2')) } : {}), ...(hex(params.get('ts')) ? { muted: hex(params.get('ts')) } : {}), ...coloresPropiosDeCarta(params) },
       ...(letra ? { fonts: letra.fonts } : {}),
     },
   }
