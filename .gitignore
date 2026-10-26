@@ -6,3 +6,6 @@ dist
 .DS_Store
 # Datos de la gestión interna (costes, compras y clientes): solo en este ordenador
 gestion/
+
+# Ajustes personales de Claude Code en este proyecto
+.claude/settings.local.json
