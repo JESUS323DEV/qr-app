@@ -893,8 +893,11 @@ function BarraRedes({ hero, redes, redesTexto, nombre, className = '' }) {
 export default function HeroWeb({ hero, nombre, lema, cuerpo, redes, redesTexto }) {
   const pestanas = hero.pestanas ?? []
   const portada = HEROS[hero.portada]?.piezas ? hero.portada : null
-  // Fotos para la portada del Inicio de una miniweb propia: todas las que lleva repartidas por sus páginas
-  const fotosPortada = [...new Set(pestanas.flatMap(p => [p.foto, ...fotosDe(p).map(f => f.src)]).filter(Boolean))].map(src => ({ src }))
+  // Fotos para la portada del Inicio de una miniweb propia: solo las de la propia pestaña Inicio (el Horario y la Reserva tienen las suyas).
+  // Si Inicio no trae ninguna, todas las que lleva la miniweb repartidas por sus páginas
+  const fotosDe0 = lista => [...new Set(lista.flatMap(p => [p.foto, ...fotosDe(p).map(f => f.src)]).filter(Boolean))].map(src => ({ src }))
+  const fotosInicio = fotosDe0(pestanas.filter(p => p.tipo === 'inicio'))
+  const fotosPortada = fotosInicio.length ? fotosInicio : fotosDe0(pestanas)
   // La foto de las páginas sin foto propia: la primera de una pestaña de fotos o, si no hay, la primera de las que lleva la miniweb (la de Inicio)
   const respaldo = fotoDeRespaldo(pestanas) ?? fotosPortada[0]?.src ?? null
   const [activa, setActiva] = useState(0)

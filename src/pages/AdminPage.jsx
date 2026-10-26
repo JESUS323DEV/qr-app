@@ -2270,8 +2270,11 @@ function ImagenesPorPestana({ original, cambios, cambiar, tipos, soloOtras = fal
     const sinFoto = pestanas.flatMap((p, i) => {
       if (!p || typeof p !== 'object' || 'foto' in p) return []
       const comun = tipoComun(p.tipo)
-      const llevaFoto = p.tipo === 'reservar' ? contactoEn === 'boton' : comun === 'contacto' ? contactoEn === undefined || contactoEn === 'boton' : comun === 'precios'
-      return llevaFoto ? [{ ruta: `hero.pestanas.${i}.foto`, clase: 'foto', grupo: 'Hero y pestañas', etiqueta: `Pestaña ${nombreElemento(pestanas, i)} · Foto` }] : []
+      const llevaFoto = p.tipo === 'horario' || (p.tipo === 'reservar' ? contactoEn === 'boton' : comun === 'contacto' ? contactoEn === undefined || contactoEn === 'boton' : comun === 'precios')
+      // Sin foto guardada, la pestaña enseña la primera de Inicio: esa es la que se ve en su fila hasta que se cambie
+      const inicio = pestanas.find(x => x?.tipo === 'inicio')
+      const porDefecto = inicio?.fotos?.[0]?.src ?? inicio?.foto ?? ''
+      return llevaFoto ? [{ ruta: `hero.pestanas.${i}.foto`, clase: 'foto', grupo: 'Hero y pestañas', etiqueta: `Pestaña ${nombreElemento(pestanas, i)} · Foto`, porDefecto }] : []
     })
     const fotos = [...camposDe(datos).filter(c => c.clase === 'foto'), ...sinFoto]
     const porPestana = new Map()
@@ -2346,7 +2349,7 @@ function ImagenesPorPestana({ original, cambios, cambiar, tipos, soloOtras = fal
                 )}
               </div>
               <CampoFoto
-                valor={leerRuta(datos, c.ruta) ?? ''}
+                valor={leerRuta(datos, c.ruta) ?? c.porDefecto ?? ''}
                 cambiar={v => cambiar(c.ruta, v)}
                 carpeta="negocio/nuevo"
                 sugerencia={datos.sector ?? ''}
