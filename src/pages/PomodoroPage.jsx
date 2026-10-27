@@ -203,7 +203,7 @@ const BOTON_AMBAR = 'flex h-[3.6rem] w-[3.6rem] items-center justify-center roun
 const ICONO_BOTON = 'h-[1.5rem] w-[1.5rem] fill-current lg:h-[2.4rem] lg:w-[2.4rem]'
 
 // La demo: el contador sale de la duración elegida y la cuenta atrás dura solo 5 minutos reales, porque es una maqueta para enseñar
-const DURACIONES = [25, 30, 40]
+const DURACIONES = [20, 25, 30, 40]
 const DEMO_MS = 5 * 60 * 1000
 const formato = ms => {
   const s = Math.ceil(ms / 1000)
