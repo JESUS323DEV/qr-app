@@ -378,11 +378,8 @@ export const catalogo = {
 export const menu = {
   texto: 'Placas con QR, miniwebs y cartas digitales para negocios locales, con la marca de cada uno. Hecho en Barcelona.',
   redesTexto: 'Sígueme',
-  // Redes de la marca (pendiente: poner los perfiles cuando existan)
-  redes: [
-    { platform: 'instagram', href: 'https://instagram.com' },
-    { platform: 'tiktok', href: 'https://tiktok.com' },
-  ],
+  // Redes de la marca: de momento solo el Instagram de Jesús (el de Mostraq y el de TikTok, cuando existan)
+  redes: [{ platform: 'instagram', href: 'https://instagram.com/jesussdev' }],
   // Textos legales (sus páginas: pages/LegalPage.jsx, con los textos de legales, abajo)
   legales: [
     { texto: 'Política de privacidad', url: '/privacidad' },
