@@ -6,7 +6,7 @@ import { supabase } from '../lib/supabase'
 
 /* Barra de arriba de /admin, en todas sus pantallas: el título y un menú hamburguesa con el correo y Salir.
    El menú se cierra tocando fuera o con Escape. */
-export function BarraAdmin({ email, irA }) {
+export function BarraAdmin({ email }) {
   const [abierto, setAbierto] = useState(false)
   const caja = useRef(null)
 
@@ -42,16 +42,6 @@ export function BarraAdmin({ email, irA }) {
         {abierto && (
           <div className="absolute right-0 top-[calc(100%+0.4rem)] z-20 grid w-[16rem] max-w-[calc(100vw-2rem)] gap-[0.6rem] rounded-[0.9rem] bg-white p-[0.9rem] shadow-[0_0.3rem_1.2rem_rgb(0_0_0/0.15)] ring-1 ring-zinc-200">
             <p className="truncate text-[0.85rem] text-zinc-500">{email}</p>
-            <button
-              type="button"
-              onClick={() => {
-                setAbierto(false)
-                irA('clientes')
-              }}
-              className="rounded-[0.6rem] bg-zinc-900 py-[0.55rem] text-[0.92rem] font-semibold text-white"
-            >
-              Buscar clientes
-            </button>
             <button
               type="button"
               onClick={() => supabase.auth.signOut()}

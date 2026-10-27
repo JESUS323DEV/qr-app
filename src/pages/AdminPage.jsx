@@ -1,4 +1,4 @@
-import { Suspense, lazy, useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { Entrar, usePaginaPrivada } from '../components/panel'
@@ -6,9 +6,6 @@ import { CrearConAsistente } from '../admin/Asistente'
 import { Editor } from '../admin/Editor'
 import { Lista } from '../admin/Lista'
 import { BarraAdmin, SubirArriba } from '../admin/Barra'
-
-// Buscar clientes lleva su propio mapa: solo se descarga al abrir esa pantalla
-const Prospeccion = lazy(() => import('../admin/prospeccion/Prospeccion'))
 
 /* Panel de Jesús (/admin): cambiar textos, fotos y colores de cualquier ficha, miniweb o carta desde el móvil,
    sin tocar código, y duplicar una demo para adaptarla en segundos al negocio que tiene delante.
@@ -71,17 +68,13 @@ export default function AdminPage() {
           <Entrar titulo="Administración" texto="Entra para editar las fichas, miniwebs y cartas." />
         ) : (
           <>
-            <BarraAdmin email={sesion.user.email} irA={abrir} />
+            <BarraAdmin email={sesion.user.email} />
             <SubirArriba />
 
             {esAdmin === undefined || (esAdmin && !filas) ? (
               <p className="text-zinc-500">Cargando...</p>
             ) : !esAdmin ? (
               <p className="text-zinc-500">Esta cuenta no tiene acceso a este panel.</p>
-            ) : editar === 'clientes' ? (
-              <Suspense fallback={<p className="text-zinc-500">Cargando...</p>}>
-                <Prospeccion volver={() => abrir(null)} />
-              </Suspense>
             ) : editar === 'asistente' ? (
               <CrearConAsistente filas={filas} volver={() => abrir(null)} recargar={recargar} abrir={abrir} />
             ) : editar && (tipo === 'negocio' || tipo === 'carta') ? (
