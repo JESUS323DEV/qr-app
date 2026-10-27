@@ -6,7 +6,7 @@ const ANCHO_REAL = 390
 // Marco de móvil. Con `src` enseña esa página dentro, como en un teléfono de verdad.
 // ancho: el ancho del móvil que se imita (en /admin, 360: el móvil bajo)
 // alto: el alto de la página dentro del móvil (lo visible, con el navegador); sin él, el marco tiene la proporción de siempre (9/17)
-export default function Movil({ src, titulo, children, className = '', ancho = ANCHO_REAL, alto }) {
+export default function Movil({ src, titulo, children, className = '', ancho = ANCHO_REAL, alto, iframeRef }) {
   const pantalla = useRef(null)
   const [medida, setMedida] = useState(null)
 
@@ -30,6 +30,7 @@ export default function Movil({ src, titulo, children, className = '', ancho = A
         {src ? (
           medida && (
             <iframe
+              ref={iframeRef}
               src={src}
               title={titulo}
               loading="lazy"

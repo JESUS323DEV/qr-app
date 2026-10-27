@@ -1,4 +1,5 @@
 import { estiloPrecio, ZOOM_NOMBRE } from '../components/carta/precio'
+import { EdicionContext, SIN_EDICION } from '../lib/edicionPanel'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { FAMILIAS } from '../familias'
@@ -226,10 +227,11 @@ const hoyEnEspana = ahora => ahora.toLocaleDateString('sv-SE', { timeZone: 'Euro
 /* Perfil de belleza o de tienda: el hueco del menú del día lo ocupan las ofertas que están en fecha
    (desde y hasta, si las tienen). Las caducadas desaparecen solas; si no queda ninguna, la pestaña tampoco sale.
    ofertas: { texto (pestaña), titulo, cuando?, foto?, lista[{ nombre, descripcion?, precio, antes?, desde?, hasta? }] } */
-const conOfertas = (carta, ahora) => {
+const conOfertas = (carta, ahora, todas = false) => {
   if (!carta?.ofertas) return carta
   const hoy = hoyEnEspana(ahora)
-  const vigentes = (carta.ofertas.lista ?? []).filter(o => (!o.desde || o.desde <= hoy) && (!o.hasta || o.hasta >= hoy))
+  const lista = carta.ofertas.lista ?? []
+  const vigentes = todas ? lista : lista.filter(o => (!o.desde || o.desde <= hoy) && (!o.hasta || o.hasta >= hoy))
   if (vigentes.length === 0) return { ...carta, menuDia: null }
   const o = carta.ofertas
   return { ...carta, menuDia: { texto: o.texto ?? 'Ofertas', titulo: o.titulo ?? 'Ofertas', cuando: o.cuando, foto: o.foto, fotos: o.fotos, ofertas: vigentes } }
@@ -237,10 +239,10 @@ const conOfertas = (carta, ahora) => {
 
 /* Horario del menú del día: fuera de él, la carta no lo enseña; dentro, el "cuándo se sirve" se escribe solo
    a partir del horario ("De lunes a viernes, de 12 a 17 h"), para que nunca diga una cosa y haga otra */
-const conHorario = (carta, ahora) => {
+const conHorario = (carta, ahora, siempre = false) => {
   const menu = carta?.menuDia
   if (!menu?.horario?.dias?.length) return carta
-  if (!menuActivo(menu.horario, ahora)) return { ...carta, menuDia: null }
+  if (!siempre && !menuActivo(menu.horario, ahora)) return { ...carta, menuDia: null }
   return { ...carta, menuDia: { ...menu, cuando: textoHorario(menu.horario) } }
 }
 
@@ -297,6 +299,32 @@ export default function CartaPage(props) {
   const pruebaCFiltro = params.get('cfiltro')
   // ?incrustada=1: la carta dentro de la pestaña del menú de una miniweb (sin flechas de demos ni enlace de vuelta a la miniweb)
   const incrustada = params.get('incrustada') === '1'
+  // ?vista=panel: la vista previa de /mi-panel. Escucha el borrador que le manda el panel (lo que el dueño va escribiendo, aunque no lo haya publicado)
+  // y lo pinta en lugar de lo publicado. Solo se aceptan mensajes de la misma web, y nunca escribe nada
+  const vistaPanel = params.get('vista') === 'panel'
+  const [borrador, setBorrador] = useState(null)
+  useEffect(() => {
+    if (!vistaPanel) return
+    const alRecibir = e => {
+      if (e.origin === window.location.origin && e.data?.tipo === 'mostraq-borrador') setBorrador(e.data.datos ?? null)
+    }
+    window.addEventListener('message', alRecibir)
+    window.parent.postMessage({ tipo: 'mostraq-borrador-listo' }, window.location.origin)
+    return () => window.removeEventListener('message', alRecibir)
+  }, [vistaPanel])
+  // ?editar=1 (con ?vista=panel): las partes del menú se pueden tocar. Los lápices salen con el primer toque, y al tocar una parte se avisa al panel de cuál es
+  const editable = vistaPanel && params.get('editar') === '1'
+  const [lapices, setLapices] = useState(params.get('lapices') === '1')
+  useEffect(() => {
+    if (!editable) return
+    const mostrar = () => setLapices(true)
+    document.addEventListener('pointerdown', mostrar, { once: true })
+    return () => document.removeEventListener('pointerdown', mostrar)
+  }, [editable])
+  const edicion = useMemo(
+    () => (editable ? { activa: true, lapices, editar: campo => window.parent.postMessage({ tipo: 'mostraq-editar', campo }, window.location.origin) } : SIN_EDICION),
+    [editable, lapices],
+  )
   const { cargando, fila } = useCartaRemota(slug)
   const ahora = useAhora()
   // Cambios de /admin: los de la carta (textos, fotos, platos; o una copia, que solo vive en Supabase)
@@ -317,7 +345,7 @@ export default function CartaPage(props) {
   if (destino.cargando || cargando || edicionCarta.cargando || edicionMarca.cargando) return null
   // ?ia=N: los cambios de imágenes (y textos) hechos en el Editor, que deja en localStorage, solo en la vista previa de una demo. Se ponen ANTES de
   // sacar las ofertas y el menú del día (que copian sus fotos y textos de la carta): si no, la vista previa enseñaba las fotos de antes
-  let conVista = juntar(conCambios, fila)
+  let conVista = juntar(conCambios, vistaPanel && borrador ? { ...(fila ?? {}), ...borrador } : fila)
   if (conVista?.demo && params.get('ia')) {
     try {
       conVista = aplicar(conVista, JSON.parse(localStorage.getItem('mostraq-vista-ia') ?? 'null'))
@@ -325,7 +353,7 @@ export default function CartaPage(props) {
       // Sin ellos, la carta se ve como está guardada
     }
   }
-  let carta = conOfertas(conHorario(conVista, ahora), ahora)
+  let carta = conOfertas(conHorario(conVista, ahora, vistaPanel), ahora, vistaPanel)
   // En las demos, el estilo de carta se puede probar desde la dirección (?diseno=polaroid): lo usa /admin
   if (carta?.demo && ESTILOS_CARTA.has(pruebaDiseno)) carta = { ...carta, diseno: pruebaDiseno }
   // ?tprecio=xs|xl: el tamaño del precio del menú (carta.tamanoPrecio), para la vista previa del Editor
@@ -343,7 +371,11 @@ export default function CartaPage(props) {
   if (incrustada && carta) carta = { ...carta, negocio: null }
   // La clave cambia si el menú del día aparece o desaparece (horario, interruptor): la carta empieza de cero
   // en lo que toca, y no se queda en blanco en la pestaña del menú que ya no existe
-  return <CartaConTamanos key={`${slug}-${Boolean(carta?.menuDia)}`} carta={carta} negocio={negocio} incrustada={incrustada} grupoQr={destino.grupo} {...props} />
+  return (
+    <EdicionContext.Provider value={edicion}>
+    <CartaConTamanos key={`${slug}-${Boolean(carta?.menuDia)}`} carta={carta} negocio={negocio} incrustada={incrustada} grupoQr={destino.grupo} {...props} />
+    </EdicionContext.Provider>
+  )
 }
 
 // grupoQr: el grupo de copias al que apunta el QR por el que se ha entrado (para las flechas del Vistazo)

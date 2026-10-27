@@ -1,4 +1,5 @@
 import { estiloPrecio, ZOOM_NOMBRE } from './precio'
+import { Editable } from '../../lib/edicionPanel'
 import { useState } from 'react'
 import { ALERGENOS } from '../../cartas'
 import Img from '../Img'
@@ -18,23 +19,23 @@ function MenuDia({ menu }) {
   if (menu.ofertas) return <Ofertas menu={menu} sobreFoto estilo="inmersiva" />
   return (
     <div>
-      <h1 className="text-[color:var(--c-menu-titulo,inherit)] font-demo-heading text-[1.75rem] leading-none [@media(min-height:50rem)]:text-[2.1rem]">{menu.titulo}</h1>
-      <p className="mt-[0.25rem] text-[0.8rem] text-[color:var(--c-menu-cuando,rgb(255_255_255/0.7))] [@media(min-height:50rem)]:mt-[0.35rem] [@media(min-height:50rem)]:text-[0.88rem]">{menu.cuando}</p>
+      <Editable campo="titulo" como="h1" className="text-[color:var(--c-menu-titulo,inherit)] font-demo-heading text-[1.75rem] leading-none [@media(min-height:50rem)]:text-[2.1rem]">{menu.titulo}</Editable>
+      <Editable campo="cuando" como="p" className="mt-[0.25rem] text-[0.8rem] text-[color:var(--c-menu-cuando,rgb(255_255_255/0.7))] [@media(min-height:50rem)]:mt-[0.35rem] [@media(min-height:50rem)]:text-[0.88rem]">{menu.cuando}</Editable>
 
       <div className="mt-[0.7rem] grid gap-[0.7rem] [@media(min-height:50rem)]:mt-[0.9rem] [@media(min-height:50rem)]:gap-[0.9rem]">
-        {menu.grupos.map(g => (
-          <div key={g.nombre} className="border-t border-dashed border-white/25 pt-[0.5rem] [@media(min-height:50rem)]:pt-[0.7rem]">
+        {menu.grupos.map((g, i) => (
+          <Editable key={g.nombre} campo={`grupo:${menu._indices?.[i] ?? i}`} como="div" bloque className="border-t border-dashed border-white/25 pt-[0.5rem] [@media(min-height:50rem)]:pt-[0.7rem]">
             <p className="font-demo-heading text-[1rem] leading-none text-[color:var(--c-seccion,var(--demo-accent))] [@media(min-height:50rem)]:text-[1.2rem]">{g.nombre}</p>
             <ul className="mt-[0.3rem] text-[0.9rem] leading-[1.35] [@media(min-height:50rem)]:mt-[0.4rem] [@media(min-height:50rem)]:text-[1.02rem] [@media(min-height:50rem)]:leading-[1.45]">
               {g.platos.map(p => <li key={p}>{p}</li>)}
             </ul>
-          </div>
+          </Editable>
         ))}
       </div>
 
       <div className="mt-[0.7rem] flex items-end justify-between gap-[1rem] border-t border-dashed border-white/25 pt-[0.6rem] [@media(min-height:50rem)]:mt-[0.9rem] [@media(min-height:50rem)]:pt-[0.8rem]">
-        <p className="text-[0.8rem] leading-[1.4] text-white/70 [@media(min-height:50rem)]:text-[0.88rem]">{menu.incluye}</p>
-        <p className="shrink-0 whitespace-nowrap precio-detalle font-demo-heading text-[length:calc(1.75rem*var(--demo-precio-escala,1))] leading-none text-[color:var(--demo-precio-texto,#fff)] [@media(min-height:50rem)]:text-[length:calc(2.1rem*var(--demo-precio-escala,1))]">{menu.precio}</p>
+        <Editable campo="incluye" como="p" className="text-[0.8rem] leading-[1.4] text-white/70 [@media(min-height:50rem)]:text-[0.88rem]">{menu.incluye}</Editable>
+        <Editable campo="precio" como="p" className="shrink-0 whitespace-nowrap precio-detalle font-demo-heading text-[length:calc(1.75rem*var(--demo-precio-escala,1))] leading-none text-[color:var(--demo-precio-texto,#fff)] [@media(min-height:50rem)]:text-[length:calc(2.1rem*var(--demo-precio-escala,1))]">{menu.precio}</Editable>
       </div>
     </div>
   )

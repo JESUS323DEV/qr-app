@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { ArrowUpRight, Camera, ChevronDown, ChevronUp, Lock, Plus, Trash2 } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { ArrowUpRight, Camera, ChevronDown, ChevronUp, Lock, Pencil, Plus, Trash2, X } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { marcaDe, rutaCarta } from '../cartas'
 import { conEdicion } from '../lib/ediciones'
 import { BOTON, CAMPO, Confirmar, Entrar, Etiqueta, usePaginaPrivada } from '../components/panel'
 import { INICIALES, SEMANA, textoHorario } from '../lib/horarioMenu'
+import Movil from '../components/Movil'
 
 /* Panel del dueño (/mi-carta): entra con su email y contraseña (las cuentas las crea Jesús en Supabase)
    y cambia el menú del día de su carta desde el móvil. Al publicar, la carta de las mesas cambia al momento.
@@ -49,8 +50,29 @@ function precioOrdenado(texto = '') {
 
 const MENU_VACIO = { titulo: 'Menú del día', cuando: '', precio: '', incluye: '', grupos: [{ nombre: 'Primeros', platos: [''] }] }
 
+// Lo que se guarda al publicar el menú: fuera platos y grupos vacíos; con horario, el "cuándo se sirve" es el del horario, para que nunca diga una cosa y haga otra.
+// La vista previa de al lado usa esta misma función, para enseñar justo lo que quedará publicado
+const limpiarMenu = menu => ({
+  ...menu,
+  cuando: menu.horario ? textoHorario(menu.horario) : menu.cuando,
+  precio: precioOrdenado(menu.precio),
+  grupos: menu.grupos
+    .map(g => ({ nombre: g.nombre.trim(), platos: g.platos.map(p => p.trim()).filter(Boolean) }))
+    .filter(g => g.nombre || g.platos.length),
+})
+
+// Lo mismo con las ofertas: fuera las vacías, los precios en euros con el formato de la carta ("19,00 €") y sin campos vacíos
+const limpiarOfertas = lista =>
+  lista
+    .filter(o => o.nombre.trim())
+    .map(o =>
+      Object.fromEntries(
+        Object.entries({ ...o, nombre: o.nombre.trim(), precio: precioOrdenado(o.precio), antes: precioOrdenado(o.antes) }).filter(([, v]) => typeof v === 'string' && v.trim()),
+      ),
+    )
+
 // Editor del menú del día de una carta: datos, grupos con sus platos e interruptor "Hoy no hay menú"
-function EditorMenu({ fila, alGuardar }) {
+function EditorMenu({ fila, alGuardar, alBorrador, zona, alZona, modoVista = false }) {
   // El horario empieza activado (de lunes a viernes, de 12 a 17 h) si el menú aún no tiene: si el dueño lo apagó y publicó, se respeta
   const [menu, setMenu] = useState(() => {
     const base = fila.menu_dia ?? MENU_VACIO
@@ -63,6 +85,58 @@ function EditorMenu({ fila, alGuardar }) {
   const cerrarPregunta = useCallback(() => setPregunta(null), [])
   const carta = fila.carta
   const nombre = (carta && marcaDe(carta)?.nombre) || fila.slug
+
+  // El borrador para la vista previa (lo mismo que se guardaría al publicar), si hay cambios sin publicar y cuál era cada grupo en el editor
+  // (la carta no pinta los grupos vacíos, y así, al tocar un grupo, se sabe cuál abrir)
+  const borradorMenu = JSON.stringify({ perfil: 'menu', hay_menu: hayMenu, menu_dia: limpiarMenu(menu) })
+  const publicado = useRef(borradorMenu)
+  const vistaLocal = useMemo(() => {
+    const datos = JSON.parse(borradorMenu)
+    datos.menu_dia._indices = menu.grupos.map((g, i) => (g.nombre.trim() || g.platos.some(p => p.trim()) ? i : -1)).filter(i => i >= 0)
+    return { datos, sinPublicar: borradorMenu !== publicado.current }
+  }, [borradorMenu, estado, menu.grupos])
+  useEffect(() => {
+    alBorrador?.(vistaLocal)
+  }, [vistaLocal])
+  useEffect(() => () => alBorrador?.(null), [])
+  // Si el grupo abierto ya no existe (se ha borrado), se cierra; y al salir del editor no queda ninguna parte abierta
+  useEffect(() => {
+    const g = /^grupo:(\d+)$/.exec(zona ?? '')
+    if (g && Number(g[1]) >= menu.grupos.length) alZona?.(null)
+  }, [zona, menu.grupos.length])
+  useEffect(() => () => alZona?.(null), [])
+  // En la vista con móvil solo se ve la parte tocada: ver(...) dice si una parte se enseña
+  const ver = (...zonas) => (!modoVista || zonas.includes(zona) ? '' : 'hidden')
+  const verDatos = ver('titulo', 'precio', 'incluye')
+  // Pantalla completa (móvil): al abrirla se apunta cómo estaba el menú, y al cerrarla, si ha cambiado, se avisa
+  const [pantalla, setPantalla] = useState(false)
+  const alAbrir = useRef('')
+  const abrirPantalla = () => {
+    alAbrir.current = borradorMenu
+    setPantalla(true)
+  }
+  const anadirGrupo = () => {
+    cambiar('grupos', [...menu.grupos, { nombre: '', platos: [''] }])
+    alZona?.('grupo:' + menu.grupos.length)
+  }
+  const publicarYCerrar = () => {
+    setPantalla(false)
+    if (hayMenu && menu.horario && !menu.horario.dias.length) setEstado('sinDias')
+    else publicar()
+  }
+  const cerrarPantalla = () => {
+    if (borradorMenu === alAbrir.current) return setPantalla(false)
+    setPregunta({
+      titulo: 'Tienes cambios sin publicar',
+      texto: 'Si cierras, se quedan en tu panel, pero tus clientes no los verán hasta que pulses Publicar.',
+      boton: 'Publicar ahora',
+      cancelar: 'Seguir editando',
+      accion: publicarYCerrar,
+      otra: { texto: 'Cerrar sin publicar', accion: () => setPantalla(false) },
+    })
+  }
+  const tituloZona =
+    zona === 'titulo' ? 'Título' : zona === 'cuando' ? 'Cuándo se sirve' : zona === 'precio' || zona === 'incluye' ? 'Precio y qué incluye' : /^grupo:/.test(zona ?? '') ? 'Grupo ' + (Number(zona.slice(6)) + 1) : ''
 
   const cambiar = (campo, valor) => {
     setMenu(m => ({ ...m, [campo]: valor }))
@@ -146,20 +220,13 @@ function EditorMenu({ fila, alGuardar }) {
   const publicar = async () => {
     setEstado('guardando')
     // Fuera platos y grupos vacíos antes de guardar
-    const limpio = {
-      ...menu,
-      // Con horario, el "cuándo se sirve" es el del horario, para que nunca diga una cosa y haga otra
-      cuando: menu.horario ? textoHorario(menu.horario) : menu.cuando,
-      precio: precioOrdenado(menu.precio),
-      grupos: menu.grupos
-        .map(g => ({ nombre: g.nombre.trim(), platos: g.platos.map(p => p.trim()).filter(Boolean) }))
-        .filter(g => g.nombre || g.platos.length),
-    }
+    const limpio = limpiarMenu(menu)
     const { error } = await supabase.from('cartas').update({ menu_dia: limpio, hay_menu: hayMenu }).eq('slug', fila.slug)
     if (error) {
       setEstado('error')
       return
     }
+    publicado.current = JSON.stringify({ perfil: 'menu', hay_menu: hayMenu, menu_dia: limpiarMenu(limpio) })
     setMenu(limpio)
     setEstado('publicado')
     alGuardar?.()
@@ -247,17 +314,53 @@ function EditorMenu({ fila, alGuardar }) {
           )}
         </div>
 
-        <div className="grid gap-[0.8rem] rounded-[0.8rem] bg-white p-[1rem] ring-1 ring-zinc-200">
-          <Etiqueta texto="Título">
-            <input value={menu.titulo} onChange={e => cambiar('titulo', e.target.value)} className={CAMPO} />
-          </Etiqueta>
-          {/* Sin horario, el "cuándo se sirve" se escribe a mano; con horario, se escribe solo (abajo) */}
-          {!menu.horario && (
-            <Etiqueta texto="Cuándo se sirve">
-              <input value={menu.cuando} onChange={e => cambiar('cuando', e.target.value)} className={CAMPO} placeholder="De lunes a viernes, a mediodía" />
-            </Etiqueta>
+        {/* En el móvil: el botón Editar (el menú a pantalla completa) y debajo el menú en pequeño, que se rellena con la foto y, al tocarlo, abre también la pantalla completa.
+            En escritorio, solo el botón de añadir grupo (el móvil está al lado) */}
+        {modoVista && (
+          <>
+            <button type="button" onClick={abrirPantalla} className="flex items-center justify-center gap-[0.5rem] rounded-[0.8rem] bg-zinc-900 px-[1rem] py-[0.9rem] font-semibold text-white lg:hidden">
+              <Pencil className="h-[1.1rem] w-[1.1rem]" aria-hidden="true" />
+              Editar
+            </button>
+            <VistaPrevia carta={carta} borrador={vistaLocal} alTocar={abrirPantalla} className="lg:hidden" />
+            {pantalla && <PantallaCompleta carta={carta} borrador={vistaLocal} alEditar={alZona} alCerrar={cerrarPantalla} alAnadir={anadirGrupo} puedeAnadir={menu.grupos.length < MAX_GRUPOS} />}
+            {menu.grupos.length < MAX_GRUPOS && (
+              <button
+                type="button"
+                onClick={anadirGrupo}
+                className="hidden items-center justify-center gap-[0.3rem] rounded-[0.8rem] border border-dashed border-zinc-400 py-[0.8rem] text-[0.95rem] font-semibold text-zinc-700 lg:flex"
+              >
+                <Plus className="h-[1rem] w-[1rem]" aria-hidden="true" />
+                Añadir grupo
+              </button>
+            )}
+          </>
+        )}
+
+        {/* Las partes del menú. Con el móvil, solo se ve la que se ha tocado: como una hoja desde abajo en el móvil y, en escritorio, en su sitio */}
+        <div
+          className={
+            modoVista
+              ? `content-start gap-[0.8rem] fixed inset-x-0 bottom-0 z-40 max-h-[75svh] overflow-y-auto rounded-t-[1.5rem] bg-zinc-100 px-[1rem] pb-[1.5rem] pt-[0.9rem] shadow-[0_-1rem_2.5rem_rgb(0_0_0/0.25)] lg:static lg:z-auto lg:max-h-none lg:overflow-visible lg:rounded-none lg:bg-transparent lg:p-0 lg:shadow-none ${zona ? 'grid' : 'hidden lg:grid'}`
+              : 'contents'
+          }
+        >
+          {modoVista && zona && (
+            <div className="flex items-center justify-between">
+              <p className="font-semibold">{tituloZona}</p>
+              <button type="button" onClick={() => alZona?.(null)} className="font-semibold underline underline-offset-[0.2em]">
+                Hecho
+              </button>
+            </div>
           )}
-          <div className="grid grid-cols-2 gap-[0.6rem]">
+          {modoVista && !zona && <p className="text-[0.9rem] text-zinc-500">Toca una parte del menú, en el móvil, para editarla.</p>}
+        <div className={`grid gap-[0.8rem] rounded-[0.8rem] bg-white p-[1rem] ring-1 ring-zinc-200 ${verDatos}`}>
+          <div className={ver('titulo')}>
+            <Etiqueta texto="Título">
+              <input value={menu.titulo} onChange={e => cambiar('titulo', e.target.value)} className={CAMPO} />
+            </Etiqueta>
+          </div>
+          <div className={`grid grid-cols-2 gap-[0.6rem] ${ver('precio', 'incluye')}`}>
             <Etiqueta texto="Precio">
               <input value={menu.precio} onChange={e => cambiar('precio', e.target.value)} className={CAMPO} placeholder="14,90 €" />
             </Etiqueta>
@@ -268,21 +371,32 @@ function EditorMenu({ fila, alGuardar }) {
         </div>
 
         {/* Horario del menú: fuera de él, la carta no lo enseña, y el "cuándo se sirve" se escribe solo */}
-        <div className="grid gap-[0.8rem] rounded-[0.8rem] bg-white p-[1rem] ring-1 ring-zinc-200">
-          <label className="flex items-center justify-between gap-[1rem]">
-            <span>
-              <span className="block font-semibold">Horario del menú</span>
-              <span className="text-[0.85rem] text-zinc-500">
-                {menu.horario ? 'Activado: el menú solo sale los días y horas que marques.' : 'Desactivado: el menú sale todos los días, a todas horas.'}
-              </span>
-            </span>
-            <input
-              type="checkbox"
-              checked={Boolean(menu.horario)}
-              onChange={e => cambiar('horario', e.target.checked ? HORARIO_INICIAL : null)}
-              className="h-[1.4rem] w-[1.4rem] shrink-0 accent-zinc-900"
-            />
-          </label>
+        <div className={`grid gap-[0.8rem] rounded-[0.8rem] bg-white p-[1rem] ring-1 ring-zinc-200 ${ver('cuando')}`}>
+          <div className="grid grid-cols-2 gap-[0.4rem] rounded-[0.7rem] bg-zinc-100 p-[0.25rem]">
+            {[
+              [true, 'Días y horas'],
+              [false, 'Escribirlo a mano'],
+            ].map(([porHoras, texto]) => (
+              <button
+                key={texto}
+                type="button"
+                aria-pressed={Boolean(menu.horario) === porHoras}
+                onClick={() => Boolean(menu.horario) !== porHoras && cambiar('horario', porHoras ? HORARIO_INICIAL : null)}
+                className={`rounded-[0.5rem] py-[0.55rem] text-[0.95rem] font-semibold transition-colors ${Boolean(menu.horario) === porHoras ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500'}`}
+              >
+                {texto}
+              </button>
+            ))}
+          </div>
+          <p className="text-[0.85rem] text-zinc-500">
+            {menu.horario ? 'El menú solo sale los días y horas que marques.' : 'El menú sale todos los días, a todas horas.'}
+          </p>
+
+          {!menu.horario && (
+            <Etiqueta texto="Cuándo se sirve">
+              <input value={menu.cuando} onChange={e => cambiar('cuando', e.target.value)} className={CAMPO} placeholder="De lunes a viernes, a mediodía" />
+            </Etiqueta>
+          )}
 
           {menu.horario && (
             <>
@@ -332,7 +446,7 @@ function EditorMenu({ fila, alGuardar }) {
 
         {/* Grupos (Primeros, Segundos, Postres...) con sus platos */}
         {menu.grupos.map((g, i) => (
-          <div key={i} className="grid gap-[0.6rem] rounded-[0.8rem] bg-white p-[1rem] ring-1 ring-zinc-200">
+          <div key={i} className={`grid gap-[0.6rem] rounded-[0.8rem] bg-white p-[1rem] ring-1 ring-zinc-200 ${ver('grupo:' + i)}`}>
             {/* Borrar el grupo, discreto y en rojo, encima de su nombre; pide confirmación porque se lleva sus platos */}
             <button
               type="button"
@@ -402,7 +516,7 @@ function EditorMenu({ fila, alGuardar }) {
             )}
           </div>
         ))}
-        {menu.grupos.length < MAX_GRUPOS ? (
+        {modoVista ? null : menu.grupos.length < MAX_GRUPOS ? (
           <button
             type="button"
             onClick={() => cambiar('grupos', [...menu.grupos, { nombre: '', platos: [''] }])}
@@ -414,6 +528,7 @@ function EditorMenu({ fila, alGuardar }) {
         ) : (
           <p className="text-center text-[0.85rem] text-zinc-500">Máximo {MAX_GRUPOS} grupos.</p>
         )}
+        </div>
       </div>
 
       {/* Publicar: fijo abajo para tenerlo siempre a mano en el móvil */}
@@ -438,7 +553,7 @@ const hoy = () => new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Mad
 
 /* Editor de ofertas (perfil de belleza o de tienda): cada oferta con su nombre, precio, precio de antes (sale
    tachado) y, si quiere, desde y hasta cuándo. Las que pasan de fecha desaparecen solas de la carta. */
-function EditorOfertas({ fila }) {
+function EditorOfertas({ fila, alBorrador }) {
   const carta = fila.carta
   const nombre = (carta && marcaDe(carta)?.nombre) || fila.slug
   const [ofertas, setOfertas] = useState(() => {
@@ -448,6 +563,14 @@ function EditorOfertas({ fila }) {
   const [estado, setEstado] = useState('')
   const [pregunta, setPregunta] = useState(null)
   const cerrarPregunta = useCallback(() => setPregunta(null), [])
+
+  // El borrador para la vista previa de al lado (lo mismo que se guardaría al publicar) y si hay cambios sin publicar
+  const borradorOfertas = JSON.stringify({ perfil: 'ofertas', ofertas: { lista: limpiarOfertas(ofertas.lista) } })
+  const publicado = useRef(borradorOfertas)
+  useEffect(() => {
+    alBorrador?.({ datos: JSON.parse(borradorOfertas), sinPublicar: borradorOfertas !== publicado.current })
+  }, [borradorOfertas])
+  useEffect(() => () => alBorrador?.(null), [])
 
   // Foto de un cartel o lista de ofertas: se reduce en el móvil, la lee la función leer-pizarra (Claude, modo ofertas) y se rellena la lista (no publica)
   const entradaFoto = useRef(null)
@@ -501,16 +624,11 @@ function EditorOfertas({ fila }) {
   const publicar = async () => {
     setEstado('guardando')
     // Fuera las vacías; los precios en euros con el formato de la carta ("19,00 €"); sin campos vacíos
-    const lista = ofertas.lista
-      .filter(o => o.nombre.trim())
-      .map(o =>
-        Object.fromEntries(
-          Object.entries({ ...o, nombre: o.nombre.trim(), precio: precioOrdenado(o.precio), antes: precioOrdenado(o.antes) }).filter(([, v]) => typeof v === 'string' && v.trim()),
-        ),
-      )
+    const lista = limpiarOfertas(ofertas.lista)
     // Solo se guarda la lista: lo demás de las ofertas (fotos, título, texto de la pestaña) es del Editor y no se congela aquí
     const { error } = await supabase.from('cartas').update({ ofertas: { lista } }).eq('slug', fila.slug)
     if (error) return setEstado('error')
+    publicado.current = JSON.stringify({ perfil: 'ofertas', ofertas: { lista: limpiarOfertas(lista.map(o => ({ ...OFERTA_VACIA, ...o }))) } })
     setOfertas({ ...ofertas, lista: lista.map(o => ({ ...OFERTA_VACIA, ...o })) })
     setEstado('publicado')
   }
@@ -1058,6 +1176,80 @@ function PestanasPanel({ actual, alCambiar }) {
   )
 }
 
+// Habla con la carta de un iframe con ?vista=panel: le manda el borrador (con un pequeño retraso para no mandar cada letra suelta) y, si es editable,
+// recibe cuál parte se ha tocado. Solo mensajes de la misma web
+function useCartaEnVivo(marco, datos, editable, alEditar) {
+  const enviar = useCallback(() => marco.current?.contentWindow?.postMessage({ tipo: 'mostraq-borrador', datos }, window.location.origin), [marco, datos])
+  useEffect(() => {
+    const id = setTimeout(enviar, 150)
+    return () => clearTimeout(id)
+  }, [enviar])
+  // Cuando la carta termina de cargar, avisa, y se le manda el borrador de ese momento
+  useEffect(() => {
+    const alRecibir = e => {
+      if (e.origin !== window.location.origin) return
+      if (e.data?.tipo === 'mostraq-borrador-listo') enviar()
+      if (e.data?.tipo === 'mostraq-editar' && editable) alEditar?.(e.data.campo)
+    }
+    window.addEventListener('message', alRecibir)
+    return () => window.removeEventListener('message', alRecibir)
+  }, [enviar, editable, alEditar])
+}
+
+// La vista previa de la carta (en escritorio, al lado del editor; en el móvil, debajo del botón Editar): la carta de verdad dentro de un móvil, con lo que el
+// dueño va escribiendo aunque no lo haya publicado. Con editable, la carta deja tocar sus partes. Con alTocar, es solo para mirar y, al tocarla, se abre la pantalla completa
+function VistaPrevia({ carta, borrador, alEditar, editable = false, alTocar, className = '' }) {
+  const marco = useRef(null)
+  useCartaEnVivo(marco, borrador?.datos, editable, alEditar)
+  return (
+    <aside className={`lg:sticky lg:top-[1rem] ${className}`} aria-label="Vista previa de tu carta">
+      <p className="mb-[0.6rem] flex items-center justify-center gap-[0.5rem] text-[0.85rem] text-zinc-500">
+        <span className={`h-[0.5rem] w-[0.5rem] rounded-full ${borrador?.sinPublicar ? 'bg-amber-500' : 'bg-emerald-500'}`} aria-hidden="true" />
+        {borrador?.sinPublicar ? 'Borrador, aún sin publicar' : 'Publicado'}
+      </p>
+      <div className="relative mx-auto w-full max-w-[21rem]">
+        <Movil src={`${rutaCarta(carta)}?vista=panel${editable ? '&editar=1' : ''}`} titulo="Vista previa de tu carta" ancho={360} iframeRef={marco} className="w-full" />
+        {alTocar && <button type="button" onClick={alTocar} aria-label="Abrir el menú a pantalla completa para editarlo" className="absolute inset-0 z-10 rounded-[2.4rem]" />}
+      </div>
+      <p className="mt-[0.6rem] text-center text-[0.8rem] text-zinc-500">
+        {alTocar ? 'Toca para verlo a pantalla completa y editarlo.' : editable ? 'Toca el menú para editarlo. Se actualiza mientras escribes.' : 'Así lo ven tus clientes. Se actualiza mientras escribes.'}
+      </p>
+    </aside>
+  )
+}
+
+// El menú a pantalla completa (solo en móvil), con los lápices ya puestos: la carta a su tamaño real y, abajo, una barra con Cerrar y Añadir grupo.
+// La hoja con los campos de cada parte sube por encima, como siempre
+function PantallaCompleta({ carta, borrador, alEditar, alCerrar, alAnadir, puedeAnadir }) {
+  const marco = useRef(null)
+  useCartaEnVivo(marco, borrador?.datos, true, alEditar)
+  // Mientras está abierta, la página de debajo no se mueve
+  useEffect(() => {
+    const antes = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = antes
+    }
+  }, [])
+  return (
+    <div className="fixed inset-0 z-30 bg-black lg:hidden" role="dialog" aria-modal="true" aria-label="Editar tu menú">
+      <iframe ref={marco} src={`${rutaCarta(carta)}?vista=panel&editar=1&lapices=1`} title="Tu carta" className="absolute inset-x-0 top-0 h-[calc(100%-3.6rem)] w-full border-0" />
+      <div className="absolute inset-x-0 bottom-0 flex h-[3.6rem] items-center justify-between gap-[0.8rem] bg-zinc-900 px-[1rem] pb-[env(safe-area-inset-bottom)] text-white">
+        <button type="button" onClick={alCerrar} className="flex items-center gap-[0.4rem] rounded-full bg-white/15 px-[1rem] py-[0.55rem] font-semibold">
+          <X className="h-[1.1rem] w-[1.1rem]" aria-hidden="true" />
+          Cerrar
+        </button>
+        {puedeAnadir && (
+          <button type="button" onClick={alAnadir} className="flex items-center gap-[0.4rem] rounded-full bg-white px-[1rem] py-[0.55rem] font-semibold text-zinc-900">
+            <Plus className="h-[1.1rem] w-[1.1rem]" aria-hidden="true" />
+            Añadir grupo
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function PanelPage() {
   // Sesión del dueño; la página no sale en buscadores ni recarga al tirar hacia abajo
   const sesion = usePaginaPrivada('Tu panel')
@@ -1069,6 +1261,10 @@ export default function PanelPage() {
   // Los horarios de esta cuenta (tabla horarios) y la pestaña del panel abierta ('menu' o 'horarios')
   const [horariosDueno, setHorariosDueno] = useState(null)
   const [seccion, setSeccion] = useState(null)
+  // El borrador del editor abierto, para la vista previa de al lado: { datos, sinPublicar }
+  const [vistaPrevia, setVistaPrevia] = useState(null)
+  // La parte del menú que se ha tocado en el móvil (titulo, cuando, precio, incluye o grupo:N)
+  const [zona, setZona] = useState(null)
   useEffect(() => {
     if (!sesion) {
       setEsAdmin(false)
@@ -1120,12 +1316,19 @@ export default function PanelPage() {
   const hayMenu = (cartasDueno?.length ?? 0) > 0
   const hayHorarios = (horariosDueno?.length ?? 0) > 0
   const seccionActual = seccion ?? (hayMenu ? 'menu' : 'horarios')
+  // En escritorio, con un menú u ofertas abierto, la página se parte en dos: el editor y la vista previa
+  const conVistaPrevia = seccionActual === 'menu' && Boolean(fila?.carta) && (esAdmin || Boolean(fila?.perfil))
+  // Editar tocando el menú del móvil: por ahora, el menú del día de las cartas de estilo Inmersiva (los otros estilos siguen con su formulario)
+  const perfilActivo = esAdmin ? (pestanaAdmin ?? fila?.perfil ?? (fila?.carta?.ofertas ? 'ofertas' : 'menu')) : fila?.perfil
+  const editable = conVistaPrevia && perfilActivo === 'menu' && fila.carta.diseno === 'inmersiva'
   // Guardada la elección en Supabase, se apunta también aquí para no volver a leer
   const apuntarPerfil = perfil => setCartasDueno(lista => lista.map(c => (c.slug === elegida ? { ...c, perfil } : c)))
 
   return (
     <div className="min-h-svh bg-zinc-100 font-sans text-zinc-900">
-      <div className="mx-auto w-full max-w-[32rem] px-[1rem] pt-[1rem]">
+      <div className={`mx-auto w-full max-w-[32rem] px-[1rem] pt-[1rem] ${conVistaPrevia ? 'lg:max-w-[60rem]' : ''}`}>
+        <div className={conVistaPrevia ? 'lg:grid lg:grid-cols-[32rem_1fr] lg:items-start lg:gap-[3rem]' : ''}>
+        <div>
         {!supabase ? (
           <p className="mt-[3rem] text-center text-zinc-500">El panel no está disponible ahora mismo.</p>
         ) : sesion === undefined ? null : !sesion ? (
@@ -1170,14 +1373,14 @@ export default function PanelPage() {
                         {esAdmin ? (
                           <>
                             <PestanasPerfil perfil={pestanaAdmin ?? fila.perfil ?? (fila.carta?.ofertas ? 'ofertas' : 'menu')} alCambiar={setPestanaAdmin} />
-                            {(pestanaAdmin ?? fila.perfil ?? (fila.carta?.ofertas ? 'ofertas' : 'menu')) === 'ofertas' ? <EditorOfertas key={`${fila.slug}-ofertas`} fila={fila} /> : <EditorMenu key={`${fila.slug}-menu`} fila={fila} />}
+                            {(pestanaAdmin ?? fila.perfil ?? (fila.carta?.ofertas ? 'ofertas' : 'menu')) === 'ofertas' ? <EditorOfertas key={`${fila.slug}-ofertas`} fila={fila} alBorrador={setVistaPrevia} /> : <EditorMenu key={`${fila.slug}-menu`} fila={fila} alBorrador={setVistaPrevia} zona={zona} alZona={setZona} modoVista={editable} />}
                           </>
                         ) : !fila.perfil ? (
                           <ElegirPerfil key={fila.slug} fila={fila} alElegir={apuntarPerfil} />
                         ) : (
                           <>
                             <PestanasPerfil perfil={fila.perfil} />
-                            {fila.perfil === 'ofertas' ? <EditorOfertas key={fila.slug} fila={fila} /> : <EditorMenu key={fila.slug} fila={fila} />}
+                            {fila.perfil === 'ofertas' ? <EditorOfertas key={fila.slug} fila={fila} alBorrador={setVistaPrevia} /> : <EditorMenu key={fila.slug} fila={fila} alBorrador={setVistaPrevia} zona={zona} alZona={setZona} modoVista={editable} />}
                           </>
                         )}
                       </>
@@ -1188,6 +1391,9 @@ export default function PanelPage() {
             )}
           </>
         )}
+        </div>
+        {conVistaPrevia && <VistaPrevia carta={fila.carta} borrador={vistaPrevia} alEditar={setZona} editable={editable} className="hidden lg:block" />}
+        </div>
       </div>
     </div>
   )

@@ -41,7 +41,7 @@ export function Confirmar({ pregunta, alCerrar }) {
         {pregunta.texto && <p className="mt-[0.35rem] text-[0.95rem] leading-[1.45] text-zinc-600">{pregunta.texto}</p>}
         <div className="mt-[1.1rem] grid grid-cols-2 gap-[0.6rem]">
           <button type="button" onClick={alCerrar} className="rounded-[0.6rem] py-[0.75rem] text-[1rem] font-semibold ring-1 ring-zinc-300">
-            Cancelar
+            {pregunta.cancelar ?? 'Cancelar'}
           </button>
           <button
             type="button"
@@ -55,6 +55,18 @@ export function Confirmar({ pregunta, alCerrar }) {
             {pregunta.boton}
           </button>
         </div>
+        {pregunta.otra && (
+          <button
+            type="button"
+            onClick={() => {
+              alCerrar()
+              pregunta.otra.accion()
+            }}
+            className="mt-[0.6rem] w-full rounded-[0.6rem] py-[0.7rem] text-[0.95rem] font-semibold text-zinc-600 underline underline-offset-[0.2em]"
+          >
+            {pregunta.otra.texto}
+          </button>
+        )}
       </div>
     </div>
   )
