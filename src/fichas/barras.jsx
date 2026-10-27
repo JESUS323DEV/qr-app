@@ -218,7 +218,7 @@ export default function BarraPestanas({ estilo = 'subrayado', pestanas, activa, 
     return (
       <div className={`flex border-t ${oscuro ? 'border-white/15 bg-black/40 backdrop-blur-sm' : 'border-demo-text/10 bg-demo-surface'}`}>
         {pestanas.map((p, i) => {
-          const Icono = ICONOS[tipoComun(p.tipo)] ?? ICONOS[p.tipo]
+          const Icono = p.icono ?? ICONOS[tipoComun(p.tipo)] ?? ICONOS[p.tipo]
           return boton(
             p,
             i,
