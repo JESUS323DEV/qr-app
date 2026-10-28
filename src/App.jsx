@@ -30,7 +30,7 @@ const GestionPage = import.meta.env.DEV ? lazy(() => import('./pages/GestionPage
 // El SEO de cada ruta, que se pone al cambiar de página (todas salen del mismo HTML): la dirección canónica en mostraq.es (sin parámetros, así
 // Google se queda con ella aunque la web se abra por la dirección de Netlify o con ?utm_... de Instagram), si se indexa o no y la descripción.
 // Los paneles, las demos y las copias para enseñar no se indexan.
-const NO_INDEXAR = ['/planes', '/demo', '/admin', '/mi-panel', '/mi-carta', '/mi-qr', '/panel', '/disenos', '/gestion', '/miniweb', '/pomodoro']
+const NO_INDEXAR = ['/planes', '/demo', '/admin', '/mi-panel', '/mi-carta', '/mi-qr', '/panel', '/disenos', '/gestion', '/pomodoro']
 const DESCRIPCIONES = {
   '/catalogo': 'Ejemplos de miniwebs, menús del día y ofertas con QR para negocios locales: restaurantes, belleza, salud y tiendas. Míralos en tu móvil.',
   '/crear-qr': 'Diseño de QR personalizado para tu negocio: tus colores, tu logo y tus redes, impreso en una placa de calidad.',
@@ -80,8 +80,8 @@ export default function App() {
         <Route path="/tematicas/:key" element={<TematicaPage />} />
         {/* Catálogo completo: todas las demos por tipo (fichas, miniwebs, cartas) y temática */}
         <Route path="/catalogo" element={<CatalogoPage />} />
-        {/* Miniwebs: no salen en la landing ni en el catálogo; se enseñan solo con esta dirección */}
-        <Route path="/miniweb" element={<CatalogoPage soloMiniwebs />} />
+        {/* Las miniwebs están en el catálogo: la dirección antigua lleva allí */}
+        <Route path="/miniweb" element={<Navigate to="/catalogo" replace />} />
         {/* Planes en detalle */}
         <Route path="/planes" element={<PlanesPage />} />
         {/* Crea el tuyo: cómo ayuda Jesús con el QR (a donde lleva el botón de la sección Tu QR) */}

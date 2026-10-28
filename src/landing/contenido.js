@@ -248,7 +248,7 @@ export const webCompleta = {
   url: 'https://landig-demos.netlify.app/',
 }
 
-// Escaparate de la landing: Inicio enseña las miniwebs; la pestaña Cartas, las cartas. Las miniwebs no salen (se enseñan en /miniweb).
+// Escaparate de la landing: Inicio enseña las miniwebs; la pestaña Cartas, las cartas. Las miniwebs se ven en /catalogo.
 // Las demos salen solas de sus archivos (con destacada: false se quitan del escaparate, pero siguen en el catálogo).
 // Sin captura, el móvil enseña un texto que lleva a la demo.
 export const escaparate = {
@@ -366,10 +366,9 @@ export const catalogo = {
   titulo: 'Así quedaría tu negocio.',
   texto: 'Diseños cuidados y todo a un escaneo: reseñas, WhatsApp, carta y redes. Ábrelas en tu móvil y pruébalas como lo haría tu cliente; la tuya, con tu marca y tus fotos.',
   tipos: [
+    { key: 'miniweb', texto: 'Miniwebs', descripcion: 'Como una web en el móvil: varias páginas, menú y reservas.' },
     { key: 'carta', texto: 'Menú y ofertas', descripcion: 'Tu menú del día y tus ofertas, con QR para las mesas.' },
   ],
-  // Página escondida /miniweb: las miniwebs no salen en el catálogo público, solo aquí
-  miniwebs: { key: 'miniweb', texto: 'Miniwebs', descripcion: 'Como una web en el móvil: varias páginas, menú y reservas.' },
   todas: 'Todas',
   volver: 'Volver al inicio',
 }

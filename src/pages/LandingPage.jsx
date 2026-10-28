@@ -276,7 +276,7 @@ function VerTodas({ to, children }) {
   )
 }
 
-// Pestaña Cartas: las cartas de demo. Las miniwebs no salen en la landing (se enseñan en /miniweb)
+// Pestaña Cartas: las cartas de demo. Las miniwebs no salen en la landing (se enseñan en /catalogo)
 const WEBS_Y_CARTAS = [
   ...cartas
     .filter(c => c.demo && enEscaparate(c))
@@ -524,7 +524,7 @@ function HeroMiniweb() {
               {subEj === 'cartas' ? (
                 <VerTodas to="/catalogo?tipo=carta">{escaparate.verCartasMiniwebs}</VerTodas>
               ) : (
-                <VerTodas to="/miniweb">{escaparate.verMiniwebs}</VerTodas>
+                <VerTodas to="/catalogo">{escaparate.verMiniwebs}</VerTodas>
               )}
             </div>
             <div className="relative mt-[1rem] min-h-[9rem] flex-1">
@@ -887,7 +887,7 @@ function LandingEscritorio() {
             <TarjetaEjemplo key={d.ruta} d={d} />
           ))}
         </ul>
-        <VerTodas to="/miniweb">{escaparate.verMiniwebs}</VerTodas>
+        <VerTodas to="/catalogo">{escaparate.verMiniwebs}</VerTodas>
         {WEBS_Y_CARTAS.length > 0 && (
           <>
             <h3 className="mt-[3.5rem] font-titulo text-[1.3rem] font-black">{cartasMiniwebs.subpestanas[1].texto}</h3>

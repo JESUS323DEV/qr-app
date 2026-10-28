@@ -8,7 +8,7 @@ import { TEMATICAS, porTematica, secuenciaDemos, tematicaDe, tipoDe } from '../l
 import { catalogo, marca } from '../landing/contenido'
 import { captura, MINIWEBS_DEL_EDITOR } from '../lib/ejemplosMiniwebs'
 
-/* Catálogo completo (/catalogo): todas las demos, separadas por tipo (Fichas y Cartas; las Miniwebs, en /miniweb)
+/* Catálogo completo (/catalogo): todas las demos, separadas por tipo (Miniwebs y Menú y ofertas)
    y filtrables por temática. El tipo y la temática van en la dirección (?tipo=ficha&tematica=comida),
    así los enlaces "Ver todas" de la landing abren directamente lo que toca.
    En la landing solo salen las destacadas; aquí salen todas. */
@@ -44,12 +44,11 @@ function Filtro({ activo, onClick, children }) {
   )
 }
 
-// soloMiniwebs: la página escondida /miniweb, con las miniwebs, que no salen en el catálogo público
-export default function CatalogoPage({ soloMiniwebs = false }) {
+export default function CatalogoPage() {
   const [params, setParams] = useSearchParams()
-  const tipos = soloMiniwebs ? [catalogo.miniwebs] : catalogo.tipos
+  const tipos = catalogo.tipos
   const pedido = params.get('tipo')
-  const tipo = soloMiniwebs ? 'miniweb' : tipos.some(t => t.key === pedido) ? pedido : tipos[0].key
+  const tipo = tipos.some(t => t.key === pedido) ? pedido : tipos[0].key
   const tematica = params.get('tematica') ?? ''
 
   const delTipo = DEMOS[tipo]
@@ -83,7 +82,7 @@ export default function CatalogoPage({ soloMiniwebs = false }) {
         <h1 className="font-titulo text-[clamp(2rem,1.5rem+2.4vw,3.25rem)] font-black leading-[1.05] tracking-tight">{catalogo.titulo}</h1>
         <p className="mt-[0.6rem] max-w-[34rem] text-[1rem] leading-[1.6] text-suave">{catalogo.texto}</p>
 
-        {/* Tipo: Fichas y Cartas (en /miniweb, solo Miniwebs) */}
+        {/* Tipo: Miniwebs y Menú y ofertas */}
         <nav className="mt-[1.75rem] flex gap-[1.5rem] overflow-x-auto border-b border-linea text-[1.05rem] [scrollbar-width:none]">
           {tipos.map(t => (
             <Filtro key={t.key} activo={tipo === t.key} onClick={() => elegirTipo(t.key)}>

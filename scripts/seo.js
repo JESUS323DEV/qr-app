@@ -11,7 +11,7 @@ const DIST = 'dist'
 const dominio = (process.env.DOMINIO || 'https://mostraq.es').replace(/\/+$/, '')
 
 // Rutas que Google no tiene que ver: lo interno y las demos
-const PRIVADAS = ['/admin', '/mi-panel', '/mi-carta', '/panel', '/gestion', '/disenos', '/miniweb', '/pomodoro', '/demo/', '/mi-qr/']
+const PRIVADAS = ['/admin', '/mi-panel', '/mi-carta', '/panel', '/gestion', '/disenos', '/pomodoro', '/demo/', '/mi-qr/']
 
 // Páginas de clientes reales: se leen los archivos como texto (importarlos no vale fuera de Vite: llevan fotos)
 function clientes(carpeta, sufijo = '') {
