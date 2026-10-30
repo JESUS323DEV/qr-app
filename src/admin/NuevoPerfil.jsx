@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { FilaIconos, HojaCtx } from './FilaIconos'
 import CampoColor from '../components/CampoColor'
-import { BadgePercent, List, Camera, ChevronDown, ChevronLeft, ChevronRight, ChevronsDownUp, Copy, CalendarCheck, Clock, Image as ImageIcon, LayoutTemplate, Share2, SlidersHorizontal, Star, X as IconoX, Frame, GalleryHorizontal, ImagePlus, Maximize, Minus, Newspaper, Plus, RotateCcw, Store, UtensilsCrossed } from 'lucide-react'
+import { BadgePercent, List, Camera, ChevronDown, ChevronLeft, ChevronRight, ChevronsDownUp, Copy, Save, CalendarCheck, Clock, Image as ImageIcon, LayoutTemplate, Share2, SlidersHorizontal, Star, X as IconoX, Frame, GalleryHorizontal, ImagePlus, Maximize, Minus, Newspaper, Plus, RotateCcw, Store, UtensilsCrossed } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { aplicar, conEdicion } from '../lib/ediciones'
 import { getNegocio, negocios } from '../negocios'
@@ -224,21 +224,31 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
       document.body.style.overflow = antes
     }
   }, [abierto])
-  // Las flechas de la vista previa en móvil: se ven al abrir el Editor y cada vez que se toca la pantalla, y a los 4 s se vuelven invisibles (siguen ahí para tocarlas)
+  // Las flechas de la vista previa en móvil y el contenido de la hoja de ajustes abierta: se ven al abrir el Editor y cada vez que se toca la pantalla, y a los 3 s se vuelven
+  // invisibles (las flechas siguen ahí para tocarlas; la hoja deja pasar los toques hasta que reaparece). No se esconde mientras se escribe en un campo
   const [flechasVisibles, setFlechasVisibles] = useState(true)
   useEffect(() => {
     if (!abierto) return
     let id
+    const ocultar = () => {
+      const activo = document.activeElement
+      if (activo && /^(INPUT|TEXTAREA|SELECT)$/.test(activo.tagName)) {
+        id = setTimeout(ocultar, 3000)
+        return
+      }
+      setFlechasVisibles(false)
+    }
     const mostrar = () => {
       setFlechasVisibles(true)
       clearTimeout(id)
-      id = setTimeout(() => setFlechasVisibles(false), 4000)
+      id = setTimeout(ocultar, 3000)
     }
     mostrar()
-    document.addEventListener('pointerdown', mostrar)
+    const eventos = ['pointerdown', 'keydown', 'input', 'scroll', 'wheel']
+    eventos.forEach(e => document.addEventListener(e, mostrar, true))
     return () => {
       clearTimeout(id)
-      document.removeEventListener('pointerdown', mostrar)
+      eventos.forEach(e => document.removeEventListener(e, mostrar, true))
     }
   }, [abierto, vistaMovil])
   // Los cambios hechos a mano en los datos en bruto (ruta → valor) y su versión (para recargar la vista previa, con un pequeño retraso al escribir)
@@ -1657,7 +1667,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
         <div className="order-3 grid gap-[1rem] md:order-none md:max-lg:col-start-1 md:max-lg:row-start-2 md:max-lg:min-w-0">
           {/* Personalizar: el producto y, debajo, desplegables independientes (todos cerrados al entrar) */}
           {pestana === 'personalizar' && (
-          <div className={`grid gap-[1rem] ${hoja ? 'fixed inset-x-0 top-[4rem] z-30 max-h-[60svh] overflow-y-auto rounded-b-[1.25rem] bg-white px-[1rem] pb-[1.5rem] pt-[1rem] shadow-[0_0.5rem_1.5rem_rgb(0_0_0/0.4)] ring-1 ring-zinc-300 [&>*]:[zoom:0.85]' : ''}`}>
+          <div className={`grid gap-[1rem] ${hoja ? `fixed inset-x-0 top-[4rem] z-30 max-h-[60svh] overflow-y-auto rounded-b-[1.25rem] bg-white px-[1rem] pb-[1.5rem] pt-[1rem] shadow-[0_0.5rem_1.5rem_rgb(0_0_0/0.4)] ring-1 ring-zinc-300 [&>*]:[zoom:0.85] transition-opacity duration-500 ${flechasVisibles ? '' : 'pointer-events-none opacity-0'}` : ''}`}>
           {/* 1. Temática: pone el contenido de ejemplo */}
           {/* 1. Producto */}
           <div className={`grid gap-[0.4rem] ${hoja ? 'hidden' : ''}`}>
@@ -1946,19 +1956,31 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                 type="button"
                 aria-label="Elegir copia"
                 aria-expanded={popover === 'copia'}
-                onClick={() => setPopover(p => (p === 'copia' ? null : 'copia'))}
+                onClick={() => {
+                  setHojaAbierta(false)
+                  setPopover(p => (p === 'copia' ? null : 'copia'))
+                }}
                 className={`flex h-[2rem] min-w-[2rem] shrink-0 items-center justify-center rounded-full px-[0.25rem] text-[0.72rem] font-semibold ring-1 transition-colors ${popover === 'copia' || copiaCargada ? 'bg-zinc-900 text-white ring-zinc-900' : 'text-zinc-400 ring-zinc-300'}`}
               >
                 <Copy className="h-[1rem] w-[1rem]" aria-hidden="true" />
               </button>
               <button
                 type="button"
-                aria-label={`Tamaño del móvil: ${TAMANOS_MOVIL.find(m => m.clave === tamanoMovil)?.nombre}`}
-                aria-expanded={popover === 'tamano'}
-                onClick={() => setPopover(p => (p === 'tamano' ? null : 'tamano'))}
-                className={`flex h-[2rem] min-w-[2rem] shrink-0 items-center justify-center rounded-full px-[0.25rem] text-[0.72rem] font-semibold ring-1 transition-colors ${popover === 'tamano' ? 'bg-zinc-900 text-white ring-zinc-900' : 'text-zinc-400 ring-zinc-300'}`}
+                aria-label="Guardar"
+                aria-expanded={popover === 'guardar'}
+                disabled={Boolean(creando) || Boolean(disenando) || (!copiaCargada && !nombre.trim())}
+                onClick={() => {
+                  // Con una copia cargada: Guardar cambios o Guardar como nueva (en un panelito); sin copia, se añade a copias directamente
+                  if (copiaCargada) {
+                    setHojaAbierta(false)
+                    return setPopover(p => (p === 'guardar' ? null : 'guardar'))
+                  }
+                  setPopover(null)
+                  crear()
+                }}
+                className={`flex h-[2rem] min-w-[2rem] shrink-0 items-center justify-center rounded-full px-[0.25rem] text-[0.72rem] font-semibold ring-1 transition-colors ${popover === 'guardar' ? 'bg-zinc-900 text-white ring-zinc-900' : 'text-zinc-400 ring-zinc-300'} disabled:opacity-40`}
               >
-                {TAMANOS_MOVIL.find(m => m.clave === tamanoMovil)?.nombre}
+                <Save className="h-[1rem] w-[1rem]" aria-hidden="true" />
               </button>
               <span className="mx-[0.1rem] h-[1.2rem] w-px shrink-0 bg-zinc-300" aria-hidden="true" />
               {/* Los grupos de ajustes, como iconos: se deslizan hacia el lado (el degradado de la derecha avisa de que hay más). Cada uno abre su hoja desde abajo */}
@@ -2012,23 +2034,30 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                   })}
                 </div>
               )}
-              {popover === 'tamano' && (
-                <div className="absolute left-0 top-full mt-[0.4rem] grid w-[8rem] gap-[0.15rem] rounded-[0.75rem] bg-white p-[0.4rem] shadow-[0_0.5rem_1.5rem_rgb(0_0_0/0.4)] ring-1 ring-zinc-300">
-                  {TAMANOS_MOVIL.map(m => (
-                    <button
-                      key={m.clave}
-                      type="button"
-                      title={m.ayuda}
-                      aria-pressed={tamanoMovil === m.clave}
-                      onClick={() => {
-                        setPopover(null)
-                        elegirTamanoMovil(m.clave)
-                      }}
-                      className={`rounded-[0.5rem] px-[0.7rem] py-[0.55rem] text-left text-[0.9rem] font-semibold disabled:opacity-40 ${tamanoMovil === m.clave ? 'bg-zinc-900 text-white' : 'text-zinc-600'}`}
-                    >
-                      {m.nombre}
-                    </button>
-                  ))}
+              {popover === 'guardar' && copiaCargada && (
+                <div className="absolute left-0 top-full mt-[0.4rem] grid w-[13rem] gap-[0.15rem] rounded-[0.75rem] bg-white p-[0.4rem] shadow-[0_0.5rem_1.5rem_rgb(0_0_0/0.4)] ring-1 ring-zinc-300">
+                  <button
+                    type="button"
+                    disabled={Boolean(creando) || Boolean(disenando)}
+                    onClick={() => {
+                      setPopover(null)
+                      guardarCopia()
+                    }}
+                    className={`rounded-[0.5rem] px-[0.7rem] py-[0.55rem] text-left text-[0.9rem] font-semibold disabled:opacity-40 text-zinc-600`}
+                  >
+                    Guardar cambios
+                  </button>
+                  <button
+                    type="button"
+                    disabled={!nombre.trim() || Boolean(creando) || Boolean(disenando)}
+                    onClick={() => {
+                      setPopover(null)
+                      crear()
+                    }}
+                    className={`rounded-[0.5rem] px-[0.7rem] py-[0.55rem] text-left text-[0.9rem] font-semibold disabled:opacity-40 text-zinc-600`}
+                  >
+                    Guardar como nueva
+                  </button>
                 </div>
               )}
             </div>
@@ -2084,7 +2113,22 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
               ))}
             </div>
             {/* Sin copia cargada y sin nada generado, el móvil va vacío: solo se llena al elegir una copia (o al generar con el asistente) */}
-            {!copiaCargada && !generado ? (
+            {esMovil ? (
+              <div className="absolute inset-x-0 bottom-0 top-[3.6rem] bg-black">
+                {(error || aviso) && (
+                  <p className={`absolute inset-x-[1rem] top-[0.6rem] z-10 rounded-[0.6rem] bg-white px-[0.8rem] py-[0.5rem] text-[0.85rem] font-semibold ring-1 ring-zinc-300 ${error ? 'text-red-600' : 'text-emerald-700'}`}>{error || aviso}</p>
+                )}
+                {!copiaCargada && !generado ? (
+                  <div className="flex h-full items-center justify-center px-[1.5rem] text-center text-[0.95rem] font-semibold text-[rgb(255_255_255/0.6)]">
+                    {pestana === 'asistente' ? 'Genera algo con el asistente y aparecerá aquí' : 'Elige una copia y aparecerá aquí'}
+                  </div>
+                ) : (
+                  vista && <iframe key={vista} src={vista} title="Vista previa" className="h-full w-full border-0" />
+                )}
+                {/* Con la hoja de ajustes abierta pero invisible, una capa transparente sobre la miniweb recoge el toque (un toque dentro del iframe no llega a esta página) y la hace reaparecer */}
+                {hoja && !flechasVisibles && <div className="absolute inset-0 z-[5]" aria-hidden="true" />}
+              </div>
+            ) : !copiaCargada && !generado ? (
               <Movil ancho={medidaMovil.ancho} alto={medidaMovil.alto} className={`mx-auto w-full max-w-[20rem] max-md:order-1`}>
                 <div className="flex h-full items-center justify-center bg-black px-[1.5rem] text-center text-[0.95rem] font-semibold text-[rgb(255_255_255/0.6)]">{pestana === 'asistente' ? 'Genera algo con el asistente y aparecerá aquí' : 'Elige una copia y aparecerá aquí'}</div>
               </Movil>
@@ -2094,7 +2138,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
             {(copiaCargada || generado) && <p className="mt-[0.5rem] text-center text-[0.8rem] text-zinc-500 max-md:hidden">Con el contenido de ejemplo de la temática</p>}
           {/* Debajo del móvil en dos columnas (escritorio); en tablet, una barra fija abajo para tener siempre a mano Guardar; en móvil, debajo de los tamaños. Ya no hay muestras: todo lo que se crea es una copia para enseñar */}
           {(error || aviso || pestana !== 'asistente' || cambiosIA || copiaCargada) && (
-            <div className="md:max-lg:fixed md:max-lg:inset-x-0 md:max-lg:bottom-0 md:max-lg:z-30 md:max-lg:border-t md:max-lg:border-zinc-200 md:max-lg:bg-white/95 md:max-lg:px-[1rem] md:max-lg:py-[0.7rem] md:max-lg:backdrop-blur max-md:order-5 max-md:mt-[1rem]">
+            <div className="md:max-lg:fixed md:max-lg:inset-x-0 md:max-lg:bottom-0 md:max-lg:z-30 md:max-lg:border-t md:max-lg:border-zinc-200 md:max-lg:bg-white/95 md:max-lg:px-[1rem] md:max-lg:py-[0.7rem] md:max-lg:backdrop-blur max-md:hidden">
               <div className="mx-auto mt-[0.9rem] grid w-full max-w-[20rem] gap-[0.5rem] md:max-lg:mt-0 md:max-lg:max-w-[32rem]">
                 {error && <p className="text-[0.9rem] font-semibold text-red-600">{error}</p>}
                 {(pestana !== 'asistente' || cambiosIA || copiaCargada) &&
