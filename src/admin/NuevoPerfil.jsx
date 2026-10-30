@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { FilaIconos, HojaCtx } from './FilaIconos'
 import CampoColor from '../components/CampoColor'
-import { BadgePercent, List, Camera, ChevronDown, ChevronLeft, ChevronRight, ChevronsDownUp, Frame, GalleryHorizontal, ImagePlus, Maximize, Minus, Newspaper, Plus, RotateCcw, Store, UtensilsCrossed } from 'lucide-react'
+import { BadgePercent, List, Camera, ChevronDown, ChevronLeft, ChevronRight, ChevronsDownUp, Copy, CalendarCheck, Clock, Image as ImageIcon, LayoutTemplate, Share2, SlidersHorizontal, Star, X as IconoX, Frame, GalleryHorizontal, ImagePlus, Maximize, Minus, Newspaper, Plus, RotateCcw, Store, UtensilsCrossed } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { aplicar, conEdicion } from '../lib/ediciones'
 import { getNegocio, negocios } from '../negocios'
@@ -44,12 +45,37 @@ const ICONOS_ESTILO_CARTA = { polaroid: Camera, galeria: GalleryHorizontal, revi
 
 const ICONOS_TIPO_CARTA = { carta: UtensilsCrossed, promociones: BadgePercent }
 
+// El icono de cada grupo de ajustes, en la fila de iconos de la vista previa del móvil
+const ICONO_GRUPO = {
+  negocio: Store,
+  portada: ImageIcon,
+  menu: List,
+  redes: Share2,
+  horario: Clock,
+  reserva: CalendarCheck,
+  resena: Star,
+  ajustes: SlidersHorizontal,
+  imagenes: Camera,
+  estructura: LayoutTemplate,
+}
+
 export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
   const [tema, setTema] = useState(PLANTILLAS[0].clave)
   // La pestaña abierta: el asistente o el diseño (la vista previa se ve siempre)
   const [pestana, setPestana] = useState('personalizar')
   // En móvil, la vista previa es una pantalla aparte, a la derecha de los ajustes: se abre con la flecha de la derecha y se vuelve con la de la izquierda
   const [vistaMovil, setVistaMovil] = useState(false)
+  // El panelito abierto en la pantalla de la vista previa del móvil: 'copia', 'tamano' o ninguno
+  const [popover, setPopover] = useState(null)
+  // La hoja de ajustes del móvil (sube desde abajo sobre la vista previa) y si la pantalla es de móvil (menos de 768 px)
+  const [hojaAbierta, setHojaAbierta] = useState(false)
+  const [esMovil, setEsMovil] = useState(() => window.matchMedia('(max-width: 767px)').matches)
+  useEffect(() => {
+    const medida = window.matchMedia('(max-width: 767px)')
+    const alCambiar = () => setEsMovil(medida.matches)
+    medida.addEventListener('change', alCambiar)
+    return () => medida.removeEventListener('change', alCambiar)
+  }, [])
   // En tablet vertical (768 a 1023 px) Ficha queda bloqueada en el selector de Producto
   const [tabletVertical, setTabletVertical] = useState(() => window.matchMedia('(min-width: 768px) and (max-width: 1023px)').matches)
   useEffect(() => {
@@ -69,6 +95,8 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
   })
   // Pestañas de ajustes por grupo (en prueba, encima de los desplegables de siempre): cada una junta todo lo de un grupo
   const [pestanaAjustes, setPestanaAjustes] = useState(null)
+  // La hoja de ajustes del móvil está abierta: sube desde arriba con el panel del grupo elegido, encima de la vista previa
+  const hoja = esMovil && vistaMovil && hojaAbierta && pestanaAjustes != null
   const medidaMovil = TAMANOS_MOVIL.find(t => t.clave === tamanoMovil) ?? TAMANOS_MOVIL[1]
   const elegirTamanoMovil = clave => {
     setTamanoMovil(clave)
@@ -997,7 +1025,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
           {esCarta ? (
             <div className="grid gap-[0.45rem]">
               <span className={titulo}>Tipo</span>
-              <div className="flex flex-wrap items-center gap-[0.4rem]">
+              <FilaIconos className="flex flex-wrap items-center gap-[0.4rem]">
                 {TIPOS_CARTA.map(t => {
                   const Icono = ICONOS_TIPO_CARTA[t.clave] ?? Store
                   return (
@@ -1014,7 +1042,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                     </button>
                   )
                 })}
-              </div>
+              </FilaIconos>
               <p className="text-[0.85rem] font-semibold">{TIPOS_CARTA.find(t => t.clave === tipoCarta)?.texto}</p>
               <p className="text-[0.8rem] text-zinc-500">{TIPOS_CARTA.find(t => t.clave === tipoCarta)?.descripcion}</p>
             </div>
@@ -1022,7 +1050,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
           <div className="grid gap-[0.45rem]">
             <span className={titulo}>Temática del negocio</span>
             {/* Los grupos (Restauración, Belleza...): al tocar uno, sus temáticas salen debajo como subpestañas; tocarlo otra vez las cierra */}
-            <div className="flex flex-wrap items-center gap-[0.4rem]">
+            <FilaIconos className="flex flex-wrap items-center gap-[0.4rem]">
               {GRUPOS_PLANTILLAS.map(g => {
                 const Icono = ICONOS_TEMA[g.claves[0]] ?? Store
                 return (
@@ -1045,11 +1073,11 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                   </button>
                 )
               })}
-            </div>
+            </FilaIconos>
             <p className="text-[0.85rem] font-semibold">{grupoTema.nombre}</p>
             {subTemas && (
               <div className="grid gap-[0.4rem]">
-                <div className="flex flex-wrap gap-[0.4rem]">
+                <FilaIconos className="flex flex-wrap gap-[0.4rem]">
                   {grupoTema.claves.map(clave => {
                     const p = PLANTILLAS.find(x => x.clave === clave)
                     const Icono = ICONOS_TEMA[clave] ?? Store
@@ -1067,7 +1095,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                       </button>
                     )
                   })}
-                </div>
+                </FilaIconos>
                 <p className="text-[0.8rem] text-zinc-500">{plantilla.nombre}</p>
               </div>
             )}
@@ -1084,7 +1112,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
             // Una fila de iconos: 5 a la vista y un + que abre el resto, con el nombre del elegido debajo
             <div className="grid gap-[0.45rem]">
               <span className={titulo}>{producto === 'miniweb' ? 'Portada' : 'Diseño de arriba'}</span>
-              <div className="flex flex-wrap items-center gap-[0.4rem]">
+              <FilaIconos className="flex flex-wrap items-center gap-[0.4rem]">
                 {/* En el móvil, 5 a la vista y un + que abre el resto; en pantalla grande, la lista completa y sin el + */}
                 {herosEnOrden.map(([clave, h], i) => {
                   const Icono = ICONOS_DISENO[clave] ?? Frame
@@ -1103,28 +1131,30 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                           setSubAbierta(true)
                         }
                       }}
-                      className={`${i >= 5 && !masDisenos ? 'hidden md:flex' : 'flex'} h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 bg-white transition-transform duration-300 ${hero === clave ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
+                      className={`${i >= 5 && !masDisenos && !hoja ? 'hidden md:flex' : 'flex'} h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 bg-white transition-transform duration-300 ${hero === clave ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
                     >
                       <Icono className="h-[1.3rem] w-[1.3rem]" strokeWidth={2} aria-hidden="true" />
                     </button>
                   )
                 })}
-                <button
-                  type="button"
-                  aria-label={masDisenos ? 'Ver menos diseños' : 'Ver más diseños'}
-                  aria-expanded={masDisenos}
-                  onClick={() => setMasDisenos(v => !v)}
-                  className="flex h-[2.5rem] md:hidden w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 border-zinc-300 transition-transform duration-300 hover:scale-105"
-                  style={{ background: 'conic-gradient(#E5484D, #F5A524, #F2D33B, #46A758, #2E9FD9, #5B5BD6, #B04BC4, #E5484D)', color: '#141414' }}
-                >
-                  {masDisenos ? <Minus className="h-[1.1rem] w-[1.1rem]" strokeWidth={3} aria-hidden="true" /> : <Plus className="h-[1.1rem] w-[1.1rem]" strokeWidth={3} aria-hidden="true" />}
-                </button>
-              </div>
+                {!hoja && (
+                  <button
+                    type="button"
+                    aria-label={masDisenos ? 'Ver menos diseños' : 'Ver más diseños'}
+                    aria-expanded={masDisenos}
+                    onClick={() => setMasDisenos(v => !v)}
+                    className="flex h-[2.5rem] md:hidden w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 border-zinc-300 transition-transform duration-300 hover:scale-105"
+                    style={{ background: 'conic-gradient(#E5484D, #F5A524, #F2D33B, #46A758, #2E9FD9, #5B5BD6, #B04BC4, #E5484D)', color: '#141414' }}
+                  >
+                    {masDisenos ? <Minus className="h-[1.1rem] w-[1.1rem]" strokeWidth={3} aria-hidden="true" /> : <Plus className="h-[1.1rem] w-[1.1rem]" strokeWidth={3} aria-hidden="true" />}
+                  </button>
+                )}
+              </FilaIconos>
               <p className="text-[0.85rem] font-semibold">{nombreDeDiseno(hero)}</p>
               {/* Con Formatos (Editorial) elegido, sus formatos con icono: la Clásica de siempre primero */}
               {hero === 'editorial' && subAbierta && (
                 <div className="grid gap-[0.4rem]">
-                  <div className="flex flex-wrap gap-[0.4rem]">
+                  <FilaIconos className="flex flex-wrap gap-[0.4rem]">
                     {FORMATOS.map(f => (
                       <button
                         key={f.clave}
@@ -1138,14 +1168,14 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                         <svg viewBox="0 0 24 24" className="h-[1.4rem] w-[1.4rem]" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: f.dibujo }} />
                       </button>
                     ))}
-                  </div>
+                  </FilaIconos>
                   <p className="text-[0.8rem] text-zinc-500">{FORMATOS.find(f => f.clave === formato)?.nombre}</p>
                 </div>
               )}
               {/* Con Polaroid elegido, sus montajes con icono: el Clásico de siempre primero */}
               {hero === 'polaroid' && subAbierta && (
                 <div className="grid gap-[0.4rem]">
-                  <div className="flex flex-wrap gap-[0.4rem]">
+                  <FilaIconos className="flex flex-wrap gap-[0.4rem]">
                     {MONTAJES.map(m => (
                       <button
                         key={m.clave}
@@ -1159,14 +1189,14 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                         <svg viewBox="0 0 24 24" className="h-[1.4rem] w-[1.4rem]" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: m.dibujo }} />
                       </button>
                     ))}
-                  </div>
+                  </FilaIconos>
                   <p className="text-[0.8rem] text-zinc-500">{MONTAJES.find(m => m.clave === montaje)?.nombre}</p>
                 </div>
               )}
               {/* Con una galería elegida, sus estilos con icono: la Clásica de siempre primero */}
               {hero === 'galeria' && subAbierta && (
                 <div className="grid gap-[0.4rem]">
-                  <div className="flex flex-wrap gap-[0.4rem]">
+                  <FilaIconos className="flex flex-wrap gap-[0.4rem]">
                     {GALERIAS.map(g => (
                       <button
                         key={g.clave}
@@ -1180,14 +1210,14 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                         <svg viewBox="0 0 24 24" className="h-[1.4rem] w-[1.4rem]" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: g.dibujo }} />
                       </button>
                     ))}
-                  </div>
+                  </FilaIconos>
                   <p className="text-[0.8rem] text-zinc-500">{GALERIAS.find(g => g.clave === pase)?.nombre}</p>
                 </div>
               )}
               {/* Con Distribuciones (Retrato) elegido, sus distribuciones con icono: la Clásica de siempre primero */}
               {hero === 'retrato' && subAbierta && (
                 <div className="grid gap-[0.4rem]">
-                  <div className="flex flex-wrap gap-[0.4rem]">
+                  <FilaIconos className="flex flex-wrap gap-[0.4rem]">
                     {DISTRIBUCIONES.map(d => (
                       <button
                         key={d.clave}
@@ -1201,14 +1231,14 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                         <svg viewBox="0 0 24 24" className="h-[1.4rem] w-[1.4rem]" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: d.dibujo }} />
                       </button>
                     ))}
-                  </div>
+                  </FilaIconos>
                   <p className="text-[0.8rem] text-zinc-500">{DISTRIBUCIONES.find(d => d.clave === distribucion)?.nombre}</p>
                 </div>
               )}
               {/* Con Composiciones (Mosaico) elegido, sus composiciones con icono: la Clásica de siempre primero */}
               {hero === 'mosaico' && subAbierta && (
                 <div className="grid gap-[0.4rem]">
-                  <div className="flex flex-wrap gap-[0.4rem]">
+                  <FilaIconos className="flex flex-wrap gap-[0.4rem]">
                     {COMPOSICIONES.map(c => (
                       <button
                         key={c.clave}
@@ -1222,14 +1252,14 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                         <svg viewBox="0 0 24 24" className="h-[1.4rem] w-[1.4rem]" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: c.dibujo }} />
                       </button>
                     ))}
-                  </div>
+                  </FilaIconos>
                   <p className="text-[0.8rem] text-zinc-500">{COMPOSICIONES.find(c => c.clave === composicion)?.nombre}</p>
                 </div>
               )}
               {/* Con Disposiciones (Fullbleed) elegido, sus disposiciones con icono: la Clásica de siempre primero */}
               {hero === 'fullbleed' && subAbierta && (
                 <div className="grid gap-[0.4rem]">
-                  <div className="flex flex-wrap gap-[0.4rem]">
+                  <FilaIconos className="flex flex-wrap gap-[0.4rem]">
                     {DISPOSICIONES.map(d => (
                       <button
                         key={d.clave}
@@ -1243,14 +1273,14 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                         <svg viewBox="0 0 24 24" className="h-[1.4rem] w-[1.4rem]" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: d.dibujo }} />
                       </button>
                     ))}
-                  </div>
+                  </FilaIconos>
                   <p className="text-[0.8rem] text-zinc-500">{DISPOSICIONES.find(d => d.clave === disposicion)?.nombre}</p>
                 </div>
               )}
               {/* Con Cortes (Diagonal) elegido, la lista de cortes: la Diagonal de siempre primero */}
               {hero === 'diagonal' && subAbierta && (
                 <div className="grid gap-[0.4rem]">
-                  <div className="flex flex-wrap gap-[0.4rem]">
+                  <FilaIconos className="flex flex-wrap gap-[0.4rem]">
                     {CORTES.map(c => (
                       <button
                         key={c.clave}
@@ -1267,7 +1297,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                         </svg>
                       </button>
                     ))}
-                  </div>
+                  </FilaIconos>
                   <p className="text-[0.8rem] text-zinc-500">{CORTES.find(c => c.clave === corte)?.nombre}</p>
                 </div>
               )}
@@ -1275,7 +1305,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
           ) : (
             <div className="grid gap-[0.45rem]">
               <span className={titulo}>Estilo</span>
-              <div className="flex flex-wrap items-center gap-[0.4rem]">
+              <FilaIconos className="flex flex-wrap items-center gap-[0.4rem]">
                 {estilos.map(f => {
                   const Icono = ICONOS_ESTILO_CARTA[f.carta] ?? Frame
                   return (
@@ -1292,12 +1322,12 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                     </button>
                   )
                 })}
-              </div>
+              </FilaIconos>
               <p className="text-[0.85rem] font-semibold">{estilos.find(f => f.carta === estilo)?.nombre}</p>
               {/* Subdiseños de Inmersiva: las pestañas en fila (la base) o en columna */}
               {estilo === 'inmersiva' && (
                 <div className="grid gap-[0.4rem]">
-                  <div className="flex flex-wrap gap-[0.4rem]">
+                  <FilaIconos className="flex flex-wrap gap-[0.4rem]">
                     {[
                       ['fila', 'Pestañas en fila', '<rect x="3" y="9" width="5" height="6" rx="3"/><rect x="9.5" y="9" width="5" height="6" rx="3"/><rect x="16" y="9" width="5" height="6" rx="3"/>'],
                       ['columna', 'Pestañas en columna', '<rect x="7" y="3" width="10" height="5" rx="2.5"/><rect x="7" y="9.5" width="10" height="5" rx="2.5"/><rect x="7" y="16" width="10" height="5" rx="2.5"/>'],
@@ -1314,7 +1344,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                         <svg viewBox="0 0 24 24" className="h-[1.4rem] w-[1.4rem]" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: dibujo }} />
                       </button>
                     ))}
-                  </div>
+                  </FilaIconos>
                   <p className="text-[0.8rem] text-zinc-500">{subCarta === 'columna' ? 'Pestañas en columna' : 'Pestañas en fila'}</p>
                 </div>
               )}
@@ -1492,8 +1522,38 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
   )
   const autosColores = coloresAutomaticos({ colors: { ...marcaBase?.theme?.colors, bg: colorFondo, primary: colorPrincipal, accent: colorAcento, text: colorDelTexto, header: colorCabecera } }, { barra, portada: hero }, coloresMini)
 
+  // Elegir una copia para cargarla aquí (valor "tipo:slug"; vacío, una nueva)
+  const elegirCopia = valor => {
+    if (!valor) return setCopiaCargada(null)
+    const [t, sl] = valor.split(':')
+    const abrirCopia = () => cargarCopia((filas ?? []).find(f => f.tipo === t && f.slug === sl))
+    // Con cambios sin guardar, cargar otra copia los perdería: se pregunta antes (si se cancela, se queda como estaba)
+    if (sinGuardar) {
+      setPreguntaSalir({ titulo: '¿Cambiar de copia?', texto: 'Tienes cambios sin guardar. Si cambias de copia, se pierden.', boton: 'Cambiar', peligro: true, accion: abrirCopia })
+      return
+    }
+    abrirCopia()
+  }
+  // Las copias para enseñar del producto elegido (las antiguas no se abren aquí)
+  const copiasDisponibles = (filas ?? [])
+    .filter(f => f.base && (f.tipo === 'carta' ? producto === 'carta' : producto !== 'carta' && (f.cambios?._nuevoPerfil?.producto ?? tipoDe(conEdicion('negocio', f.slug, f) ?? {})) === producto))
+    .map(f => ({
+      valor: `${f.tipo}:${f.slug}`,
+      antigua: !f.cambios?._nuevoPerfil,
+      nombre: f.cambios?._nuevoPerfil?.etiqueta?.trim() || f.cambios?._nuevoPerfil?.nombre || f.cambios?.nombre || f.cambios?.['marca.nombre'] || f.slug,
+    }))
+
+  // Los grupos de ajustes de cada producto (las pestañas de ajustes y los iconos de la vista previa del móvil)
+  const gruposAjustes = (producto === 'miniweb'
+                ? [['negocio', 'Negocio'], ['portada', 'Portada'], ['menu', 'Menú'], ['redes', 'Redes'], ['horario', 'Horario'], ['reserva', 'Reserva'], ['resena', 'Reseña'], ['ajustes', 'Ajustes personalizados']]
+                : esCarta
+                  ? [['negocio', 'Negocio'], ['portada', 'Estilo'], ['imagenes', 'Imágenes'], ['estructura', 'Estructura'], ['ajustes', 'Ajustes personalizados']]
+                  : [['negocio', 'Negocio'], ['portada', 'Diseño'], ['ajustes', 'Ajustes personalizados']]
+              )
+
   return (
     // peer: abierto, se oculta el botón de "Crear con el asistente" que va justo debajo (en Lista)
+    <HojaCtx.Provider value={hoja}>
     <details open={abierto} onToggle={e => setAbierto(e.currentTarget.open)} className="group/perfil peer rounded-[1rem] bg-white ring-1 ring-zinc-200 open:fixed open:inset-0 open:z-40 open:overflow-y-auto open:rounded-none open:ring-0">
       {/* Cerrado: "Nuevo perfil" con una flecha para abrir. Abierto: solo un icono pequeño de plegar, para que la
           vista previa empiece casi arriba */}
@@ -1597,10 +1657,10 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
         <div className="order-3 grid gap-[1rem] md:order-none md:max-lg:col-start-1 md:max-lg:row-start-2 md:max-lg:min-w-0">
           {/* Personalizar: el producto y, debajo, desplegables independientes (todos cerrados al entrar) */}
           {pestana === 'personalizar' && (
-          <div className="grid gap-[1rem]">
+          <div className={`grid gap-[1rem] ${hoja ? 'fixed inset-x-0 top-[4rem] z-30 max-h-[60svh] overflow-y-auto rounded-b-[1.25rem] bg-white px-[1rem] pb-[1.5rem] pt-[1rem] shadow-[0_0.5rem_1.5rem_rgb(0_0_0/0.4)] ring-1 ring-zinc-300 [&>*]:[zoom:0.85]' : ''}`}>
           {/* 1. Temática: pone el contenido de ejemplo */}
           {/* 1. Producto */}
-          <div className="grid gap-[0.4rem]">
+          <div className={`grid gap-[0.4rem] ${hoja ? 'hidden' : ''}`}>
             <span className={titulo}>Producto</span>
             <div className="grid grid-cols-3 gap-[0.3rem] rounded-[0.75rem] bg-zinc-200 p-[0.25rem] md:max-lg:grid-cols-1">
               {[
@@ -1624,13 +1684,8 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
 
           {/* Pestañas de ajustes por grupo: cada una junta todo lo de un grupo (diseño, colores y textos). Pulsar la abierta la cierra. Los desplegables de siempre siguen debajo */}
           <div className="grid gap-[0.6rem]">
-            <div role="tablist" aria-label="Ajustes por grupo" className="flex flex-wrap gap-[0.4rem] md:max-lg:grid md:max-lg:grid-cols-2 md:max-lg:[&>*:last-child:nth-child(odd)]:col-span-2">
-              {(producto === 'miniweb'
-                ? [['negocio', 'Negocio'], ['portada', 'Portada'], ['menu', 'Menú'], ['redes', 'Redes'], ['horario', 'Horario'], ['reserva', 'Reserva'], ['resena', 'Reseña'], ['ajustes', 'Ajustes personalizados']]
-                : esCarta
-                  ? [['negocio', 'Negocio'], ['portada', 'Estilo'], ['imagenes', 'Imágenes'], ['estructura', 'Estructura'], ['ajustes', 'Ajustes personalizados']]
-                  : [['negocio', 'Negocio'], ['portada', 'Diseño'], ['ajustes', 'Ajustes personalizados']]
-              ).map(([clave, texto]) => (
+            <div role="tablist" aria-label="Ajustes por grupo" className={`flex flex-wrap gap-[0.4rem] md:max-lg:grid md:max-lg:grid-cols-2 md:max-lg:[&>*:last-child:nth-child(odd)]:col-span-2 ${hoja ? 'hidden' : ''}`}>
+              {gruposAjustes.map(([clave, texto]) => (
                 <button
                   key={clave}
                   type="button"
@@ -1725,19 +1780,19 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                   return (
                     <>
                       <div className="grid gap-[0.35rem]">
-                        <div className="flex gap-[0.4rem]">
+                        <FilaIconos className="flex gap-[0.4rem]">
                           {boton('sin', 'Sin estilo', '', familia === 'sin', () => setDetallePrecio('ninguno'))}
                           {boton('lineas', 'Líneas', '<path d="M4 18h16" stroke-width="2.5"/>', familia === 'lineas', () => familia !== 'lineas' && setDetallePrecio('raya'))}
                           {boton('circulos', 'Círculos', '<ellipse cx="12" cy="12" rx="9.5" ry="6.2" transform="rotate(-3 12 12)"/>', familia === 'circulos', () => familia !== 'circulos' && setDetallePrecio('ovalo'))}
                           {boton('formas', 'Formas', '<path d="M4 6.5h16l2 5.5-2 5.5H4l-2-5.5z" fill="currentColor" opacity=".2" stroke="none"/>', familia === 'formas', () => familia !== 'formas' && setDetallePrecio('estrella'))}
-                        </div>
+                        </FilaIconos>
                         <p className="text-[0.85rem] font-semibold">{{ sin: 'Sin estilo', lineas: 'Líneas', circulos: 'Círculos', formas: 'Formas' }[familia]}</p>
                       </div>
                       {familia !== 'sin' && (
                         <div className="grid gap-[0.35rem]">
-                          <div className="flex flex-wrap gap-[0.4rem]">
+                          <FilaIconos className="flex flex-wrap gap-[0.4rem]">
                             {SUBESTILOS[familia].map(([clave, nombreSub, dibujo]) => boton(clave, nombreSub, dibujo, detallePrecio === clave, () => setDetallePrecio(clave)))}
-                          </div>
+                          </FilaIconos>
                           <p className="text-[0.8rem] text-zinc-500">{nombreDe}</p>
                         </div>
                       )}
@@ -1814,7 +1869,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
             <Plegable titulo="Estructura" elegido={{ ninguno: 'Sin enlace', izquierda: 'Enlace a la izquierda', derecha: 'Enlace a la derecha' }[enlaceNegocio]}>
               <div className="grid gap-[0.4rem]">
                 <span className="text-[0.8rem] text-zinc-500">Enlace al negocio (Conoce...)</span>
-                <div className="flex flex-wrap items-center gap-[0.4rem]">
+                <FilaIconos className="flex flex-wrap items-center gap-[0.4rem]">
                   {[
                     ['ninguno', 'Sin enlace', '<path d="M9 8l6 6M15 8l-6 6" stroke-width="1.4"/>'],
                     ['izquierda', 'Arriba a la izquierda', '<rect x="7.5" y="4" width="6" height="2.6" rx="1.3" fill="currentColor"/>'],
@@ -1832,7 +1887,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                       <svg viewBox="0 0 24 24" className="h-[1.5rem] w-[1.5rem]" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: '<rect x="5.5" y="2" width="13" height="20" rx="2.5"/>' + dibujo }} />
                     </button>
                   ))}
-                </div>
+                </FilaIconos>
                 <p className="text-[0.85rem] font-semibold">{{ ninguno: 'Sin enlace', izquierda: 'Arriba a la izquierda', derecha: 'Arriba a la derecha' }[enlaceNegocio]}</p>
               </div>
             </Plegable>
@@ -1885,10 +1940,105 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
         <div className={`${pestana === 'asistente' ? 'order-2' : 'order-4'} ${pestana === 'asistente' ? 'lg:sticky lg:top-[1rem] lg:order-none lg:col-start-2 lg:row-start-1' : 'md:sticky md:top-[1rem] md:order-none md:col-start-2 md:max-lg:row-start-2 lg:row-start-1'}`}>
           {/* En móvil: la vista previa a pantalla completa cuando se abre (vistaMovil) y, si no, escondida. Desde 768 px, en su sitio de siempre */}
           <div className={vistaMovil ? 'max-md:fixed max-md:inset-0 max-md:z-20 max-md:flex max-md:flex-col max-md:overflow-y-auto max-md:bg-white max-md:px-[1rem] max-md:pb-[2rem] max-md:pt-[1rem]' : 'max-md:hidden'}>
+            {/* Dos iconos arriba: la copia (abre la lista de copias) y el tamaño del móvil (con la letra elegida; abre XS, S, M y L). El panelito se cierra al elegir o al tocar fuera */}
+            <div className="relative z-20 mb-[0.8rem] flex items-center gap-[0.4rem] md:hidden">
+              <button
+                type="button"
+                aria-label="Elegir copia"
+                aria-expanded={popover === 'copia'}
+                onClick={() => setPopover(p => (p === 'copia' ? null : 'copia'))}
+                className={`flex h-[2rem] min-w-[2rem] shrink-0 items-center justify-center rounded-full px-[0.25rem] text-[0.72rem] font-semibold ring-1 transition-colors ${popover === 'copia' || copiaCargada ? 'bg-zinc-900 text-white ring-zinc-900' : 'text-zinc-400 ring-zinc-300'}`}
+              >
+                <Copy className="h-[1rem] w-[1rem]" aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                aria-label={`Tamaño del móvil: ${TAMANOS_MOVIL.find(m => m.clave === tamanoMovil)?.nombre}`}
+                aria-expanded={popover === 'tamano'}
+                onClick={() => setPopover(p => (p === 'tamano' ? null : 'tamano'))}
+                className={`flex h-[2rem] min-w-[2rem] shrink-0 items-center justify-center rounded-full px-[0.25rem] text-[0.72rem] font-semibold ring-1 transition-colors ${popover === 'tamano' ? 'bg-zinc-900 text-white ring-zinc-900' : 'text-zinc-400 ring-zinc-300'}`}
+              >
+                {TAMANOS_MOVIL.find(m => m.clave === tamanoMovil)?.nombre}
+              </button>
+              <span className="mx-[0.1rem] h-[1.2rem] w-px shrink-0 bg-zinc-300" aria-hidden="true" />
+              {/* Los grupos de ajustes, como iconos: se deslizan hacia el lado (el degradado de la derecha avisa de que hay más). Cada uno abre su hoja desde abajo */}
+              <div className="relative min-w-0 flex-1 after:pointer-events-none after:absolute after:inset-y-0 after:right-0 after:w-[1.5rem] after:bg-gradient-to-l after:from-white after:to-transparent">
+                <div className="flex gap-[0.4rem] overflow-x-auto [scrollbar-width:none]">
+                  {gruposAjustes.map(([clave, nombreGrupo]) => {
+                    const Icono = ICONO_GRUPO[clave] ?? SlidersHorizontal
+                    const activo = hojaAbierta && pestanaAjustes === clave
+                    return (
+                      <button
+                        key={clave}
+                        type="button"
+                        title={nombreGrupo}
+                        aria-label={nombreGrupo}
+                        aria-pressed={activo}
+                        onClick={() => {
+                          setPopover(null)
+                          if (activo) return setHojaAbierta(false)
+                          setPestanaAjustes(clave)
+                          setHojaAbierta(true)
+                        }}
+                        className={`flex h-[2rem] min-w-[2rem] shrink-0 items-center justify-center rounded-full px-[0.25rem] text-[0.72rem] font-semibold ring-1 transition-colors ${activo ? 'bg-zinc-900 text-white ring-zinc-900' : 'text-zinc-400 ring-zinc-300'}`}
+                      >
+                        <Icono className="h-[1rem] w-[1rem]" aria-hidden="true" />
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+              {popover && <button type="button" aria-label="Cerrar" onClick={() => setPopover(null)} className="fixed inset-0 -z-10 cursor-default" />}
+              {popover === 'copia' && (
+                <div className="absolute left-0 top-full mt-[0.4rem] grid max-h-[60svh] w-[min(18rem,calc(100vw-2rem))] gap-[0.15rem] overflow-y-auto rounded-[0.75rem] bg-white p-[0.4rem] shadow-[0_0.5rem_1.5rem_rgb(0_0_0/0.4)] ring-1 ring-zinc-300">
+                  {[{ valor: '', nombre: 'Ninguna (una nueva)', antigua: false }, ...copiasDisponibles].map(c => {
+                    const activa = c.valor === (copiaCargada ? `${copiaCargada.tipo}:${copiaCargada.slug}` : '')
+                    return (
+                      <button
+                        key={c.valor || 'nueva'}
+                        type="button"
+                        disabled={c.antigua}
+                        aria-pressed={activa}
+                        onClick={() => {
+                          setPopover(null)
+                          elegirCopia(c.valor)
+                        }}
+                        className={`rounded-[0.5rem] px-[0.7rem] py-[0.55rem] text-left text-[0.9rem] font-semibold disabled:opacity-40 ${activa ? 'bg-zinc-900 text-white' : 'text-zinc-600'}`}
+                      >
+                        {c.nombre}
+                        {c.antigua ? ' (antigua, no se abre aquí)' : ''}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+              {popover === 'tamano' && (
+                <div className="absolute left-0 top-full mt-[0.4rem] grid w-[8rem] gap-[0.15rem] rounded-[0.75rem] bg-white p-[0.4rem] shadow-[0_0.5rem_1.5rem_rgb(0_0_0/0.4)] ring-1 ring-zinc-300">
+                  {TAMANOS_MOVIL.map(m => (
+                    <button
+                      key={m.clave}
+                      type="button"
+                      title={m.ayuda}
+                      aria-pressed={tamanoMovil === m.clave}
+                      onClick={() => {
+                        setPopover(null)
+                        elegirTamanoMovil(m.clave)
+                      }}
+                      className={`rounded-[0.5rem] px-[0.7rem] py-[0.55rem] text-left text-[0.9rem] font-semibold disabled:opacity-40 ${tamanoMovil === m.clave ? 'bg-zinc-900 text-white' : 'text-zinc-600'}`}
+                    >
+                      {m.nombre}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             {vistaMovil && (
               <button
                 type="button"
-                onClick={() => setVistaMovil(false)}
+                onClick={() => {
+                  setVistaMovil(false)
+                  setHojaAbierta(false)
+                }}
                 aria-label="Volver a los ajustes"
                 className={`fixed left-0 top-1/2 z-10 -translate-y-1/2 rounded-r-[0.6rem] bg-zinc-100/70 px-[0.3rem] py-[1rem] text-zinc-400 transition-opacity duration-500 md:hidden ${flechasVisibles ? 'opacity-100' : 'opacity-0'}`}
               >
@@ -1896,21 +2046,11 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
               </button>
             )}
             {/* Las copias para enseñar (sin las demos originales) del producto elegido, para cargarlas aquí y retocarlas */}
-            <label className="mx-auto mb-[0.7rem] grid w-full max-w-[20rem] gap-[0.25rem]">
+            <label className="mx-auto mb-[0.7rem] grid w-full max-w-[20rem] gap-[0.25rem] max-md:hidden">
               <span className="text-[0.8rem] font-semibold text-zinc-500">Copia</span>
               <select
                 value={copiaCargada ? `${copiaCargada.tipo}:${copiaCargada.slug}` : ''}
-                onChange={e => {
-                  if (!e.target.value) return setCopiaCargada(null)
-                  const [t, sl] = e.target.value.split(':')
-                  const abrirCopia = () => cargarCopia((filas ?? []).find(f => f.tipo === t && f.slug === sl))
-                  // Con cambios sin guardar, cargar otra copia los perdería: se pregunta antes (si se cancela, el desplegable se queda como estaba)
-                  if (sinGuardar) {
-                    setPreguntaSalir({ titulo: '¿Cambiar de copia?', texto: 'Tienes cambios sin guardar. Si cambias de copia, se pierden.', boton: 'Cambiar', peligro: true, accion: abrirCopia })
-                    return
-                  }
-                  abrirCopia()
-                }}
+                onChange={e => elegirCopia(e.target.value)}
                 className={CAMPO}
               >
                 <option value="">Ninguna (una nueva)</option>
@@ -1929,7 +2069,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
               </select>
             </label>
             {/* El tamaño del móvil: para ver la miniweb en un móvil bajo, normal o largo sin tener el real delante (siempre aproximado) */}
-            <div role="group" aria-label="Tamaño del móvil" className="mx-auto mb-[0.6rem] flex w-full max-w-[20rem] flex-wrap justify-center gap-[0.35rem] max-md:order-4 max-md:mb-0 max-md:mt-[0.6rem]">
+            <div role="group" aria-label="Tamaño del móvil" className="mx-auto mb-[0.6rem] flex w-full max-w-[20rem] flex-wrap justify-center gap-[0.35rem] max-md:hidden">
               {TAMANOS_MOVIL.map(t => (
                 <button
                   key={t.clave}
@@ -1945,13 +2085,13 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
             </div>
             {/* Sin copia cargada y sin nada generado, el móvil va vacío: solo se llena al elegir una copia (o al generar con el asistente) */}
             {!copiaCargada && !generado ? (
-              <Movil ancho={medidaMovil.ancho} alto={medidaMovil.alto} className="mx-auto w-full max-w-[20rem] max-md:order-1">
+              <Movil ancho={medidaMovil.ancho} alto={medidaMovil.alto} className={`mx-auto w-full max-w-[20rem] max-md:order-1`}>
                 <div className="flex h-full items-center justify-center bg-black px-[1.5rem] text-center text-[0.95rem] font-semibold text-[rgb(255_255_255/0.6)]">{pestana === 'asistente' ? 'Genera algo con el asistente y aparecerá aquí' : 'Elige una copia y aparecerá aquí'}</div>
               </Movil>
             ) : (
-              vista && <Movil key={vista} src={vista} titulo="Vista previa" ancho={medidaMovil.ancho} alto={medidaMovil.alto} className="mx-auto w-full max-w-[20rem] max-md:order-1" />
+              vista && <Movil key={vista} src={vista} titulo="Vista previa" ancho={medidaMovil.ancho} alto={medidaMovil.alto} className={`mx-auto w-full max-w-[20rem] max-md:order-1`} />
             )}
-            {(copiaCargada || generado) && <p className="mt-[0.5rem] text-center text-[0.8rem] text-zinc-500 max-md:order-2">Con el contenido de ejemplo de la temática</p>}
+            {(copiaCargada || generado) && <p className="mt-[0.5rem] text-center text-[0.8rem] text-zinc-500 max-md:hidden">Con el contenido de ejemplo de la temática</p>}
           {/* Debajo del móvil en dos columnas (escritorio); en tablet, una barra fija abajo para tener siempre a mano Guardar; en móvil, debajo de los tamaños. Ya no hay muestras: todo lo que se crea es una copia para enseñar */}
           {(error || aviso || pestana !== 'asistente' || cambiosIA || copiaCargada) && (
             <div className="md:max-lg:fixed md:max-lg:inset-x-0 md:max-lg:bottom-0 md:max-lg:z-30 md:max-lg:border-t md:max-lg:border-zinc-200 md:max-lg:bg-white/95 md:max-lg:px-[1rem] md:max-lg:py-[0.7rem] md:max-lg:backdrop-blur max-md:order-5 max-md:mt-[1rem]">
@@ -1996,6 +2136,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
       </div>
       <Confirmar pregunta={preguntaSalir} alCerrar={cerrarPreguntaSalir} />
     </details>
+    </HojaCtx.Provider>
   )
 }
 

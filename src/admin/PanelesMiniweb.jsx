@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useContext, useState } from 'react'
+import { FilaIconos, HojaCtx } from './FilaIconos'
 import CampoColor from '../components/CampoColor'
 import { Armchair, Beer, BookImage, Camera, ChevronDown, CircleUser, Coffee, Croissant, Fish, GalleryHorizontal, IdCard, LayoutGrid, Maximize, Minus, Newspaper, PanelTop, Pizza, Plus, RotateCcw, Scissors, Slice, Smartphone, Sparkles, UtensilsCrossed } from 'lucide-react'
 import { cartas, marcaDe } from '../cartas'
@@ -182,7 +183,7 @@ export function FilaEstiloMenu({ valor, cambiar }) {
       <p className="text-[0.85rem] font-semibold">{grupo.nombre}</p>
       {abierta && (
         <div className="grid gap-[0.4rem]">
-          <div className="flex flex-wrap gap-[0.4rem]">
+          <FilaIconos className="flex flex-wrap gap-[0.4rem]">
             {grupo.claves.map(clave => (
               <button
                 key={clave || 'rayita'}
@@ -196,7 +197,7 @@ export function FilaEstiloMenu({ valor, cambiar }) {
                 {dibujar(DIBUJOS_MENU[clave])}
               </button>
             ))}
-          </div>
+          </FilaIconos>
           <p className="text-[0.8rem] text-zinc-500">{nombres[valor]}</p>
         </div>
       )}
@@ -208,6 +209,7 @@ export function FilaEstiloMenu({ valor, cambiar }) {
 // debajo. Al tocar el diseño elegido se abre o se cierra la lista de sus variantes (subpestañas). valor: la clave de lib/horarios.js o ''
 // (la lista de siempre); variante: la clave de la variante ('clasica' es la primera)
 export function FilaHorario({ valor, cambiar, variante, cambiarVariante }) {
+  const enHoja = useContext(HojaCtx)
   const [mas, setMas] = useState(false)
   const [abierta, setAbierta] = useState(true)
   const actual = valor || 'lista'
@@ -216,7 +218,7 @@ export function FilaHorario({ valor, cambiar, variante, cambiarVariante }) {
   return (
     <div className="grid gap-[0.45rem]">
       <span className="text-[0.8rem] font-semibold text-zinc-500">Diseño del horario</span>
-      <div className="flex flex-wrap items-center gap-[0.4rem]">
+      <FilaIconos className="flex flex-wrap items-center gap-[0.4rem]">
         {HORARIOS.map((h, i) => (
           <button
             key={h.clave}
@@ -233,27 +235,29 @@ export function FilaHorario({ valor, cambiar, variante, cambiarVariante }) {
                 setAbierta(true)
               }
             }}
-            className={`${i >= 5 && !mas ? 'hidden md:flex' : 'flex'} h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 bg-white transition-transform duration-300 ${actual === h.clave ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
+            className={`${i >= 5 && !mas && !enHoja ? 'hidden md:flex' : 'flex'} h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 bg-white transition-transform duration-300 ${actual === h.clave ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
           >
             <svg viewBox="0 0 24 24" className="h-[1.4rem] w-[1.4rem]" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: h.dibujo }} />
           </button>
         ))}
-        <button
-          type="button"
-          aria-label={mas ? 'Ver menos diseños' : 'Ver más diseños'}
-          aria-expanded={mas}
-          onClick={() => setMas(v => !v)}
-          className="flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 border-zinc-300 transition-transform duration-300 hover:scale-105 md:hidden"
-          style={{ background: 'conic-gradient(#E5484D, #F5A524, #F2D33B, #46A758, #2E9FD9, #5B5BD6, #B04BC4, #E5484D)', color: '#141414' }}
-        >
-          {mas ? <Minus className="h-[1.1rem] w-[1.1rem]" strokeWidth={3} aria-hidden="true" /> : <Plus className="h-[1.1rem] w-[1.1rem]" strokeWidth={3} aria-hidden="true" />}
-        </button>
-      </div>
+        {!enHoja && (
+          <button
+            type="button"
+            aria-label={mas ? 'Ver menos diseños' : 'Ver más diseños'}
+            aria-expanded={mas}
+            onClick={() => setMas(v => !v)}
+            className="flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 border-zinc-300 transition-transform duration-300 hover:scale-105 md:hidden"
+            style={{ background: 'conic-gradient(#E5484D, #F5A524, #F2D33B, #46A758, #2E9FD9, #5B5BD6, #B04BC4, #E5484D)', color: '#141414' }}
+          >
+            {mas ? <Minus className="h-[1.1rem] w-[1.1rem]" strokeWidth={3} aria-hidden="true" /> : <Plus className="h-[1.1rem] w-[1.1rem]" strokeWidth={3} aria-hidden="true" />}
+          </button>
+        )}
+      </FilaIconos>
       <p className="text-[0.85rem] font-semibold">{diseno?.nombre}</p>
       {/* Las variantes del diseño elegido, como subpestañas con su icono */}
       {abierta && variantes.length > 0 && (
         <div className="grid gap-[0.4rem]">
-          <div className="flex flex-wrap gap-[0.4rem]">
+          <FilaIconos className="flex flex-wrap gap-[0.4rem]">
             {variantes.map(v => (
               <button
                 key={v.clave}
@@ -267,7 +271,7 @@ export function FilaHorario({ valor, cambiar, variante, cambiarVariante }) {
                 <svg viewBox="0 0 24 24" className="h-[1.4rem] w-[1.4rem]" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: v.dibujo }} />
               </button>
             ))}
-          </div>
+          </FilaIconos>
           <p className="text-[0.8rem] text-zinc-500">{variantes.find(v => v.clave === variante)?.nombre}</p>
         </div>
       )}
@@ -313,7 +317,7 @@ export function EstructuraMiniweb({ valores, cambiar, sinTitulo = false, contact
           <div key={clave} className={`grid gap-[0.4rem] ${clave === 'compartirEn' ? 'md:col-span-2' : ''}`}>
             <span className="text-[0.8rem] text-zinc-500">{texto}</span>
             {/* Un icono por opción (un móvil con la pieza en su sitio) y, debajo, el nombre de la elegida */}
-            <div className={`flex flex-wrap items-center gap-[0.4rem] ${bloqueada ? 'opacity-50' : ''}`}>
+            <FilaIconos className={`flex flex-wrap items-center gap-[0.4rem] ${bloqueada ? 'opacity-50' : ''}`}>
               {opciones.map(([valor, etiqueta]) => (
                 <button
                   key={valor}
@@ -328,7 +332,7 @@ export function EstructuraMiniweb({ valores, cambiar, sinTitulo = false, contact
                   <svg viewBox="0 0 24 24" className="h-[1.5rem] w-[1.5rem]" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: ICONOS_ESTRUCTURA[clave]?.[valor] ?? '' }} />
                 </button>
               ))}
-            </div>
+            </FilaIconos>
             <p className="text-[0.85rem] font-semibold">{opciones.find(([valor]) => valor === actual)?.[1]}</p>
             {/* Redes: pegarlas siempre al menú de navegación (debajo de él si está arriba y encima si está abajo) */}
             {clave === 'redesEn' && (
