@@ -65,6 +65,8 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
   const [pestana, setPestana] = useState('personalizar')
   // En móvil, la vista previa es una pantalla aparte, a la derecha de los ajustes: se abre con la flecha de la derecha y se vuelve con la de la izquierda
   const [vistaMovil, setVistaMovil] = useState(false)
+  // Móvil, antes del editor: 'inicio' (Personalizar o Asistente, Producto y Continuar) o 'asistente' (el cuadro del Asistente, con su botón Editar)
+  const [pasoMovil, setPasoMovil] = useState('inicio')
   // El panelito abierto en la pantalla de la vista previa del móvil: 'copia', 'tamano' o ninguno
   const [popover, setPopover] = useState(null)
   // La hoja de ajustes del móvil (sube desde abajo sobre la vista previa) y si la pantalla es de móvil (menos de 768 px)
@@ -97,6 +99,9 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
   const [pestanaAjustes, setPestanaAjustes] = useState(null)
   // La hoja de ajustes del móvil está abierta: sube desde arriba con el panel del grupo elegido, encima de la vista previa
   const hoja = esMovil && vistaMovil && hojaAbierta && pestanaAjustes != null
+  // En móvil, qué pantalla de antes del editor se ve
+  const enInicio = esMovil && !vistaMovil && pasoMovil === 'inicio'
+  const enAsistenteMovil = esMovil && !vistaMovil && pasoMovil === 'asistente'
   const medidaMovil = TAMANOS_MOVIL.find(t => t.clave === tamanoMovil) ?? TAMANOS_MOVIL[1]
   const elegirTamanoMovil = clave => {
     setTamanoMovil(clave)
@@ -1581,7 +1586,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
             izquierda y, a la derecha, la vista previa (fija al bajar) (display: contents lo reparte en el móvil) */}
         <div className={`contents ${pestana === 'asistente' ? 'lg:col-start-1 lg:row-start-1 lg:grid lg:gap-[1rem]' : 'lg:col-start-1 lg:row-start-1 lg:grid lg:min-w-0 lg:gap-[1rem]'}`}>
         {/* Dos pestañas arriba: Personalizar y Asistente. La vista previa se ve siempre, y debajo, lo de cada una */}
-        <div role="tablist" aria-label="Editor" className={`order-1 grid grid-cols-2 gap-[0.3rem] rounded-[0.75rem] bg-zinc-200 p-[0.25rem] ${pestana === 'asistente' ? 'lg:order-none' : 'md:order-none md:max-lg:col-span-2 md:max-lg:row-start-1'}`}>
+        <div role="tablist" aria-label="Editor" className={`order-1 grid grid-cols-2 gap-[0.3rem] rounded-[0.75rem] bg-zinc-200 p-[0.25rem] ${pestana === 'asistente' ? 'lg:order-none' : 'md:order-none md:max-lg:col-span-2 md:max-lg:row-start-1'} ${enAsistenteMovil ? 'hidden' : ''}`}>
           {[
             ['personalizar', 'Personalizar'],
             ['asistente', 'Asistente'],
@@ -1598,10 +1603,51 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
             </button>
           ))}
         </div>
+        {/* Móvil: la pantalla de inicio, con el producto y Continuar (al editor nuevo o, con el Asistente, a su pantalla) */}
+        {enInicio && (
+          <div className="order-2 grid gap-[1rem] md:hidden">
+            <div className="grid gap-[0.4rem]">
+              <span className={titulo}>Producto</span>
+              <div className="grid grid-cols-3 gap-[0.3rem] rounded-[0.75rem] bg-zinc-200 p-[0.25rem]">
+                {[
+                  ['miniweb', 'Miniweb'],
+                  ['carta', 'Menú y ofertas'],
+                  ['ficha', 'Ficha'],
+                ].map(([clave, texto]) => (
+                  <button
+                    key={clave}
+                    type="button"
+                    aria-pressed={producto === clave}
+                    disabled={clave === 'ficha' && pestana === 'asistente'}
+                    onClick={() => cambiarProducto(clave)}
+                    className={`rounded-[0.55rem] py-[0.5rem] text-[0.95rem] font-semibold disabled:opacity-40 max-md:whitespace-nowrap max-md:px-[0.15rem] max-md:text-[0.78rem] ${producto === clave ? 'bg-white shadow-[0_0.05rem_0.2rem_rgb(0_0_0/0.15)]' : 'text-zinc-600'}`}
+                  >
+                    {texto}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <button type="button" onClick={() => (pestana === 'asistente' ? setPasoMovil('asistente') : setVistaMovil(true))} className={BOTON}>
+              Continuar
+            </button>
+          </div>
+        )}
 
         {/* El asistente: un cuadro donde pedirle lo que sea y un solo botón que lo monta todo (diseño, nombre, textos y fotos) */}
         {pestana === 'asistente' && (
-        <div className="order-3 grid gap-[0.6rem] lg:order-none">
+        <div className={`order-3 grid gap-[0.6rem] lg:order-none ${esMovil && pasoMovil !== 'asistente' ? 'hidden' : ''}`}>
+          {esMovil && (
+            <div className="flex items-center justify-between md:hidden">
+              <button type="button" onClick={() => setPasoMovil('inicio')} className="flex items-center gap-[0.2rem] text-[0.9rem] font-semibold text-zinc-500">
+                <ChevronLeft className="h-[1.1rem] w-[1.1rem]" aria-hidden="true" />
+                Inicio
+              </button>
+              <button type="button" onClick={() => setVistaMovil(true)} className="flex items-center gap-[0.2rem] rounded-full bg-zinc-900 px-[0.9rem] py-[0.4rem] text-[0.9rem] font-semibold text-white">
+                Editar
+                <ChevronRight className="h-[1.1rem] w-[1.1rem]" aria-hidden="true" />
+              </button>
+            </div>
+          )}
           {/* Qué diseña el asistente: una miniweb o una carta (la ficha ya no se vende) */}
           <div className="grid grid-cols-3 gap-[0.3rem] rounded-[0.75rem] bg-zinc-200 p-[0.25rem]">
             {[
@@ -1667,7 +1713,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
         <div className="order-3 grid gap-[1rem] md:order-none md:max-lg:col-start-1 md:max-lg:row-start-2 md:max-lg:min-w-0">
           {/* Personalizar: el producto y, debajo, desplegables independientes (todos cerrados al entrar) */}
           {pestana === 'personalizar' && (
-          <div className={`grid gap-[1rem] ${hoja ? `fixed inset-x-0 top-[4rem] z-30 max-h-[60svh] overflow-y-auto rounded-b-[1.25rem] bg-white px-[1rem] pb-[1.5rem] pt-[1rem] shadow-[0_0.5rem_1.5rem_rgb(0_0_0/0.4)] ring-1 ring-zinc-300 [&>*]:[zoom:0.85] transition-opacity duration-500 ${flechasVisibles ? '' : 'pointer-events-none opacity-0'}` : ''}`}>
+          <div className={`grid gap-[1rem] ${hoja ? `fixed inset-x-0 top-[4rem] z-30 max-h-[60svh] overflow-y-auto rounded-b-[1.25rem] bg-white px-[1rem] pb-[1.5rem] pt-[1rem] shadow-[0_0.5rem_1.5rem_rgb(0_0_0/0.4)] ring-1 ring-zinc-300 [&>*]:[zoom:0.85] transition-opacity duration-500 ${flechasVisibles ? '' : 'pointer-events-none opacity-0'}` : 'max-md:hidden'}`}>
           {/* 1. Temática: pone el contenido de ejemplo */}
           {/* 1. Producto */}
           <div className={`grid gap-[0.4rem] ${hoja ? 'hidden' : ''}`}>
@@ -2067,6 +2113,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                 onClick={() => {
                   setVistaMovil(false)
                   setHojaAbierta(false)
+                  setPasoMovil('inicio')
                 }}
                 aria-label="Volver a los ajustes"
                 className={`fixed left-0 top-1/2 z-10 -translate-y-1/2 rounded-r-[0.6rem] bg-zinc-100/70 px-[0.3rem] py-[1rem] text-zinc-400 transition-opacity duration-500 md:hidden ${flechasVisibles ? 'opacity-100' : 'opacity-0'}`}
@@ -2166,16 +2213,6 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
             </div>
           )}
           </div>
-          {!vistaMovil && (
-            <button
-              type="button"
-              onClick={() => setVistaMovil(true)}
-              aria-label="Ver la vista previa"
-              className={`fixed right-0 top-1/2 z-30 -translate-y-1/2 rounded-l-[0.6rem] bg-zinc-100/70 px-[0.3rem] py-[1rem] text-zinc-400 transition-opacity duration-500 md:hidden ${flechasVisibles ? 'opacity-100' : 'opacity-0'}`}
-            >
-              <ChevronRight className="h-[1.3rem] w-[1.3rem]" aria-hidden="true" />
-            </button>
-          )}
         </div>
       </div>
       <Confirmar pregunta={preguntaSalir} alCerrar={cerrarPreguntaSalir} />
