@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import CampoColor from '../components/CampoColor'
-import { BadgePercent, List, Camera, ChevronDown, ChevronsDownUp, Frame, GalleryHorizontal, ImagePlus, Maximize, Minus, Newspaper, Plus, RotateCcw, Store, UtensilsCrossed } from 'lucide-react'
+import { BadgePercent, List, Camera, ChevronDown, ChevronLeft, ChevronRight, ChevronsDownUp, Frame, GalleryHorizontal, ImagePlus, Maximize, Minus, Newspaper, Plus, RotateCcw, Store, UtensilsCrossed } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { aplicar, conEdicion } from '../lib/ediciones'
 import { getNegocio, negocios } from '../negocios'
@@ -48,6 +48,8 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
   const [tema, setTema] = useState(PLANTILLAS[0].clave)
   // La pestaña abierta: el asistente o el diseño (la vista previa se ve siempre)
   const [pestana, setPestana] = useState('personalizar')
+  // En móvil, la vista previa es una pantalla aparte, a la derecha de los ajustes: se abre con la flecha de la derecha y se vuelve con la de la izquierda
+  const [vistaMovil, setVistaMovil] = useState(false)
   // En tablet vertical (768 a 1023 px) Ficha queda bloqueada en el selector de Producto
   const [tabletVertical, setTabletVertical] = useState(() => window.matchMedia('(min-width: 768px) and (max-width: 1023px)').matches)
   useEffect(() => {
@@ -194,6 +196,23 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
       document.body.style.overflow = antes
     }
   }, [abierto])
+  // Las flechas de la vista previa en móvil: se ven al abrir el Editor y cada vez que se toca la pantalla, y a los 4 s se vuelven invisibles (siguen ahí para tocarlas)
+  const [flechasVisibles, setFlechasVisibles] = useState(true)
+  useEffect(() => {
+    if (!abierto) return
+    let id
+    const mostrar = () => {
+      setFlechasVisibles(true)
+      clearTimeout(id)
+      id = setTimeout(() => setFlechasVisibles(false), 4000)
+    }
+    mostrar()
+    document.addEventListener('pointerdown', mostrar)
+    return () => {
+      clearTimeout(id)
+      document.removeEventListener('pointerdown', mostrar)
+    }
+  }, [abierto, vistaMovil])
   // Los cambios hechos a mano en los datos en bruto (ruta → valor) y su versión (para recargar la vista previa, con un pequeño retraso al escribir)
   const [cambiosExtra, setCambiosExtra] = useState({})
   const [versionExtra, setVersionExtra] = useState(0)
@@ -1487,7 +1506,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
         <ChevronsDownUp className="hidden h-[1.1rem] w-[1.1rem] text-zinc-400 group-open/perfil:block" aria-hidden="true" />
       </summary>
       {/* En una columna: vista previa, asistente, diseño y crear */}
-      <div className={`mx-auto grid w-full max-w-[32rem] gap-[1rem] px-[1rem] py-[1rem] max-lg:pb-[9rem] ${pestana === 'asistente' ? 'lg:max-w-[60rem] lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:items-start lg:gap-x-[2.5rem]' : 'md:max-w-[60rem] md:grid-cols-[minmax(0,1fr)_minmax(0,16rem)] md:items-start md:gap-x-[2.5rem]'}`}>
+      <div className={`mx-auto grid w-full max-w-[32rem] gap-[1rem] px-[1rem] py-[1rem] md:max-lg:pb-[9rem] ${pestana === 'asistente' ? 'lg:max-w-[60rem] lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:items-start lg:gap-x-[2.5rem]' : 'md:max-w-[60rem] md:grid-cols-[minmax(0,1fr)_minmax(0,16rem)] md:items-start md:gap-x-[2.5rem]'}`}>
         {/* En el móvil, en una columna: pestañas, vista previa y lo de cada pestaña. En pantalla grande, las pestañas y su contenido a la
             izquierda y, a la derecha, la vista previa (fija al bajar) (display: contents lo reparte en el móvil) */}
         <div className={`contents ${pestana === 'asistente' ? 'lg:col-start-1 lg:row-start-1 lg:grid lg:gap-[1rem]' : 'lg:col-start-1 lg:row-start-1 lg:grid lg:min-w-0 lg:gap-[1rem]'}`}>
@@ -1526,7 +1545,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                 aria-pressed={producto === clave}
                 disabled={clave === 'ficha' || Boolean(disenando) || Boolean(creando)}
                 onClick={() => cambiarProducto(clave)}
-                className={`rounded-[0.55rem] py-[0.5rem] text-[0.95rem] font-semibold disabled:opacity-40 ${producto === clave ? 'bg-white shadow-[0_0.05rem_0.2rem_rgb(0_0_0/0.15)]' : 'text-zinc-600'}`}
+                className={`rounded-[0.55rem] py-[0.5rem] text-[0.95rem] font-semibold disabled:opacity-40 max-md:whitespace-nowrap max-md:px-[0.15rem] max-md:text-[0.78rem] ${producto === clave ? 'bg-white shadow-[0_0.05rem_0.2rem_rgb(0_0_0/0.15)]' : 'text-zinc-600'}`}
               >
                 {texto}
               </button>
@@ -1595,7 +1614,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                   aria-pressed={producto === clave}
                   disabled={clave === 'ficha' && tabletVertical}
                   onClick={() => cambiarProducto(clave)}
-                  className={`rounded-[0.55rem] py-[0.5rem] text-[0.95rem] font-semibold disabled:opacity-40 ${producto === clave ? 'bg-white shadow-[0_0.05rem_0.2rem_rgb(0_0_0/0.15)]' : 'text-zinc-600'}`}
+                  className={`rounded-[0.55rem] py-[0.5rem] text-[0.95rem] font-semibold disabled:opacity-40 max-md:whitespace-nowrap max-md:px-[0.15rem] max-md:text-[0.78rem] ${producto === clave ? 'bg-white shadow-[0_0.05rem_0.2rem_rgb(0_0_0/0.15)]' : 'text-zinc-600'}`}
                 >
                   {texto}
                 </button>
@@ -1863,68 +1882,80 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
 
         {/* Vista previa: el contenido de la temática con el diseño elegido. A 360 px de ancho por dentro, como el móvil bajo:
             se ve lo mismo que verá el cliente. En pantalla grande, a la derecha y fija al bajar */}
-        <div className={`order-2 ${pestana === 'asistente' ? 'lg:sticky lg:top-[1rem] lg:order-none lg:col-start-2 lg:row-start-1' : 'md:sticky md:top-[1rem] md:order-none md:col-start-2 md:max-lg:row-start-2 lg:row-start-1'}`}>
-          {/* Las copias para enseñar (sin las demos originales) del producto elegido, para cargarlas aquí y retocarlas */}
-          <label className="mx-auto mb-[0.7rem] grid w-full max-w-[20rem] gap-[0.25rem]">
-            <span className="text-[0.8rem] font-semibold text-zinc-500">Copia</span>
-            <select
-              value={copiaCargada ? `${copiaCargada.tipo}:${copiaCargada.slug}` : ''}
-              onChange={e => {
-                if (!e.target.value) return setCopiaCargada(null)
-                const [t, sl] = e.target.value.split(':')
-                const abrirCopia = () => cargarCopia((filas ?? []).find(f => f.tipo === t && f.slug === sl))
-                // Con cambios sin guardar, cargar otra copia los perdería: se pregunta antes (si se cancela, el desplegable se queda como estaba)
-                if (sinGuardar) {
-                  setPreguntaSalir({ titulo: '¿Cambiar de copia?', texto: 'Tienes cambios sin guardar. Si cambias de copia, se pierden.', boton: 'Cambiar', peligro: true, accion: abrirCopia })
-                  return
-                }
-                abrirCopia()
-              }}
-              className={CAMPO}
-            >
-              <option value="">Ninguna (una nueva)</option>
-              {(filas ?? [])
-                .filter(f => f.base && (f.tipo === 'carta' ? producto === 'carta' : producto !== 'carta' && (f.cambios?._nuevoPerfil?.producto ?? tipoDe(conEdicion('negocio', f.slug, f) ?? {})) === producto))
-                .map(f => {
-                  const antigua = !f.cambios?._nuevoPerfil
-                  const nombreFila = f.cambios?._nuevoPerfil?.etiqueta?.trim() || f.cambios?._nuevoPerfil?.nombre || f.cambios?.nombre || f.cambios?.['marca.nombre'] || f.slug
-                  return (
-                    <option key={`${f.tipo}:${f.slug}`} value={`${f.tipo}:${f.slug}`} disabled={antigua}>
-                      {nombreFila}
-                      {antigua ? ' (antigua, no se abre aquí)' : ''}
-                    </option>
-                  )
-                })}
-            </select>
-          </label>
-          {/* El tamaño del móvil: para ver la miniweb en un móvil bajo, normal o largo sin tener el real delante (siempre aproximado) */}
-          <div role="group" aria-label="Tamaño del móvil" className="mx-auto mb-[0.6rem] flex w-full max-w-[20rem] flex-wrap justify-center gap-[0.35rem]">
-            {TAMANOS_MOVIL.map(t => (
+        <div className={`${pestana === 'asistente' ? 'order-2' : 'order-4'} ${pestana === 'asistente' ? 'lg:sticky lg:top-[1rem] lg:order-none lg:col-start-2 lg:row-start-1' : 'md:sticky md:top-[1rem] md:order-none md:col-start-2 md:max-lg:row-start-2 lg:row-start-1'}`}>
+          {/* En móvil: la vista previa a pantalla completa cuando se abre (vistaMovil) y, si no, escondida. Desde 768 px, en su sitio de siempre */}
+          <div className={vistaMovil ? 'max-md:fixed max-md:inset-0 max-md:z-20 max-md:flex max-md:flex-col max-md:overflow-y-auto max-md:bg-white max-md:px-[1rem] max-md:pb-[2rem] max-md:pt-[1rem]' : 'max-md:hidden'}>
+            {vistaMovil && (
               <button
-                key={t.clave}
                 type="button"
-                title={t.ayuda}
-                aria-pressed={tamanoMovil === t.clave}
-                onClick={() => elegirTamanoMovil(t.clave)}
-                className={`rounded-full px-[0.7rem] py-[0.25rem] text-[0.78rem] font-semibold ring-1 transition-colors ${tamanoMovil === t.clave ? 'bg-zinc-900 text-white ring-zinc-900' : 'text-zinc-600 ring-zinc-300 hover:ring-zinc-500'}`}
+                onClick={() => setVistaMovil(false)}
+                aria-label="Volver a los ajustes"
+                className={`fixed left-0 top-1/2 z-10 -translate-y-1/2 rounded-r-[0.6rem] bg-zinc-100/70 px-[0.3rem] py-[1rem] text-zinc-400 transition-opacity duration-500 md:hidden ${flechasVisibles ? 'opacity-100' : 'opacity-0'}`}
               >
-                {t.nombre}
+                <ChevronLeft className="h-[1.3rem] w-[1.3rem]" aria-hidden="true" />
               </button>
-            ))}
-          </div>
-          {/* Sin copia cargada y sin nada generado, el móvil va vacío: solo se llena al elegir una copia (o al generar con el asistente) */}
-          {!copiaCargada && !generado ? (
-            <Movil ancho={medidaMovil.ancho} alto={medidaMovil.alto} className="mx-auto w-full max-w-[20rem]">
-              <div className="flex h-full items-center justify-center bg-black px-[1.5rem] text-center text-[0.95rem] font-semibold text-[rgb(255_255_255/0.6)]">{pestana === 'asistente' ? 'Genera algo con el asistente y aparecerá aquí' : 'Elige una copia y aparecerá aquí'}</div>
-            </Movil>
-          ) : (
-            vista && <Movil key={vista} src={vista} titulo="Vista previa" ancho={medidaMovil.ancho} alto={medidaMovil.alto} className="mx-auto w-full max-w-[20rem]" />
-          )}
-          {(copiaCargada || generado) && <p className="mt-[0.5rem] text-center text-[0.8rem] text-zinc-500">Con el contenido de ejemplo de la temática</p>}
-          {/* Debajo del móvil en dos columnas (escritorio); en una sola columna (móvil y tablet), una barra fija abajo para tener siempre a mano Guardar. Ya no hay muestras: todo lo que se crea es una copia para enseñar */}
+            )}
+            {/* Las copias para enseñar (sin las demos originales) del producto elegido, para cargarlas aquí y retocarlas */}
+            <label className="mx-auto mb-[0.7rem] grid w-full max-w-[20rem] gap-[0.25rem]">
+              <span className="text-[0.8rem] font-semibold text-zinc-500">Copia</span>
+              <select
+                value={copiaCargada ? `${copiaCargada.tipo}:${copiaCargada.slug}` : ''}
+                onChange={e => {
+                  if (!e.target.value) return setCopiaCargada(null)
+                  const [t, sl] = e.target.value.split(':')
+                  const abrirCopia = () => cargarCopia((filas ?? []).find(f => f.tipo === t && f.slug === sl))
+                  // Con cambios sin guardar, cargar otra copia los perdería: se pregunta antes (si se cancela, el desplegable se queda como estaba)
+                  if (sinGuardar) {
+                    setPreguntaSalir({ titulo: '¿Cambiar de copia?', texto: 'Tienes cambios sin guardar. Si cambias de copia, se pierden.', boton: 'Cambiar', peligro: true, accion: abrirCopia })
+                    return
+                  }
+                  abrirCopia()
+                }}
+                className={CAMPO}
+              >
+                <option value="">Ninguna (una nueva)</option>
+                {(filas ?? [])
+                  .filter(f => f.base && (f.tipo === 'carta' ? producto === 'carta' : producto !== 'carta' && (f.cambios?._nuevoPerfil?.producto ?? tipoDe(conEdicion('negocio', f.slug, f) ?? {})) === producto))
+                  .map(f => {
+                    const antigua = !f.cambios?._nuevoPerfil
+                    const nombreFila = f.cambios?._nuevoPerfil?.etiqueta?.trim() || f.cambios?._nuevoPerfil?.nombre || f.cambios?.nombre || f.cambios?.['marca.nombre'] || f.slug
+                    return (
+                      <option key={`${f.tipo}:${f.slug}`} value={`${f.tipo}:${f.slug}`} disabled={antigua}>
+                        {nombreFila}
+                        {antigua ? ' (antigua, no se abre aquí)' : ''}
+                      </option>
+                    )
+                  })}
+              </select>
+            </label>
+            {/* El tamaño del móvil: para ver la miniweb en un móvil bajo, normal o largo sin tener el real delante (siempre aproximado) */}
+            <div role="group" aria-label="Tamaño del móvil" className="mx-auto mb-[0.6rem] flex w-full max-w-[20rem] flex-wrap justify-center gap-[0.35rem] max-md:order-4 max-md:mb-0 max-md:mt-[0.6rem]">
+              {TAMANOS_MOVIL.map(t => (
+                <button
+                  key={t.clave}
+                  type="button"
+                  title={t.ayuda}
+                  aria-pressed={tamanoMovil === t.clave}
+                  onClick={() => elegirTamanoMovil(t.clave)}
+                  className={`rounded-full px-[0.7rem] py-[0.25rem] text-[0.78rem] font-semibold ring-1 transition-colors ${tamanoMovil === t.clave ? 'bg-zinc-900 text-white ring-zinc-900' : 'text-zinc-600 ring-zinc-300 hover:ring-zinc-500'}`}
+                >
+                  {t.nombre}
+                </button>
+              ))}
+            </div>
+            {/* Sin copia cargada y sin nada generado, el móvil va vacío: solo se llena al elegir una copia (o al generar con el asistente) */}
+            {!copiaCargada && !generado ? (
+              <Movil ancho={medidaMovil.ancho} alto={medidaMovil.alto} className="mx-auto w-full max-w-[20rem] max-md:order-1">
+                <div className="flex h-full items-center justify-center bg-black px-[1.5rem] text-center text-[0.95rem] font-semibold text-[rgb(255_255_255/0.6)]">{pestana === 'asistente' ? 'Genera algo con el asistente y aparecerá aquí' : 'Elige una copia y aparecerá aquí'}</div>
+              </Movil>
+            ) : (
+              vista && <Movil key={vista} src={vista} titulo="Vista previa" ancho={medidaMovil.ancho} alto={medidaMovil.alto} className="mx-auto w-full max-w-[20rem] max-md:order-1" />
+            )}
+            {(copiaCargada || generado) && <p className="mt-[0.5rem] text-center text-[0.8rem] text-zinc-500 max-md:order-2">Con el contenido de ejemplo de la temática</p>}
+          {/* Debajo del móvil en dos columnas (escritorio); en tablet, una barra fija abajo para tener siempre a mano Guardar; en móvil, debajo de los tamaños. Ya no hay muestras: todo lo que se crea es una copia para enseñar */}
           {(error || aviso || pestana !== 'asistente' || cambiosIA || copiaCargada) && (
-            <div className="max-lg:fixed max-lg:inset-x-0 max-lg:bottom-0 max-lg:z-30 max-lg:border-t max-lg:border-zinc-200 max-lg:bg-white/95 max-lg:px-[1rem] max-lg:py-[0.7rem] max-lg:backdrop-blur">
-              <div className="mx-auto mt-[0.9rem] grid w-full max-w-[20rem] gap-[0.5rem] max-lg:mt-0 max-lg:max-w-[32rem]">
+            <div className="md:max-lg:fixed md:max-lg:inset-x-0 md:max-lg:bottom-0 md:max-lg:z-30 md:max-lg:border-t md:max-lg:border-zinc-200 md:max-lg:bg-white/95 md:max-lg:px-[1rem] md:max-lg:py-[0.7rem] md:max-lg:backdrop-blur max-md:order-5 max-md:mt-[1rem]">
+              <div className="mx-auto mt-[0.9rem] grid w-full max-w-[20rem] gap-[0.5rem] md:max-lg:mt-0 md:max-lg:max-w-[32rem]">
                 {error && <p className="text-[0.9rem] font-semibold text-red-600">{error}</p>}
                 {(pestana !== 'asistente' || cambiosIA || copiaCargada) &&
                   (copiaCargada ? (
@@ -1949,6 +1980,17 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                 {aviso && <p className="text-center text-[0.8rem] font-semibold text-emerald-700">{aviso}</p>}
               </div>
             </div>
+          )}
+          </div>
+          {!vistaMovil && (
+            <button
+              type="button"
+              onClick={() => setVistaMovil(true)}
+              aria-label="Ver la vista previa"
+              className={`fixed right-0 top-1/2 z-30 -translate-y-1/2 rounded-l-[0.6rem] bg-zinc-100/70 px-[0.3rem] py-[1rem] text-zinc-400 transition-opacity duration-500 md:hidden ${flechasVisibles ? 'opacity-100' : 'opacity-0'}`}
+            >
+              <ChevronRight className="h-[1.3rem] w-[1.3rem]" aria-hidden="true" />
+            </button>
           )}
         </div>
       </div>
