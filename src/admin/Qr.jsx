@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase'
 import { BOTON, CAMPO, Confirmar, Etiqueta } from '../components/panel'
 import { TIPOGRAFIAS } from '../asistente/tipografias'
 import { DOMINIO, rutaDe, conDominio } from '../lib/dominio'
+import BotonCopiar from '../components/BotonCopiar'
 import { RESERVADAS, aSlug, llamar, paginasConQR } from './comun'
 import { ElegirPagina, MoverCopias, NuevoGrupo } from './Grupos'
 
@@ -154,6 +155,7 @@ export function CambiarQR({ copias }) {
               <span className="min-w-0 break-all">
                 <span className="font-semibold">{direccion(f.tipo, f.slug).replace(`${DOMINIO}/`, '/')}</span> enseña {f.grupo ? `el grupo «${f.grupo}»` : f.destino}
               </span>
+              <BotonCopiar enlace={direccion(f.tipo, f.slug)} texto="Copiar" className="shrink-0" />
               <button type="button" onClick={() => quitar(f)} className="shrink-0 text-red-600 underline underline-offset-[0.2em]">
                 Quitar
               </button>
@@ -577,6 +579,7 @@ export function EditorClientes({ copias }) {
                 <a href={enlaceDe(s.slug)} target="_blank" rel="noreferrer" className="underline underline-offset-[0.2em]">
                   Abrir enlace
                 </a>
+                <BotonCopiar enlace={enlaceDe(s.slug)} />
                 {estadoDe(s) === 'Abierta' && (
                   <button type="button" onClick={() => cerrar(s.slug)} className="underline underline-offset-[0.2em]">
                     Cerrar

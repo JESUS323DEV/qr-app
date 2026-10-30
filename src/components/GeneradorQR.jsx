@@ -1854,16 +1854,20 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
     </>
   )
 
+  // En el panel de Jesús, en tablet vertical (768 a 1023 px), Tu QR y Personalizar se ven con el diseño de escritorio (dos columnas) y Asistente con el de móvil.
+  // El panel de Jesús agranda todo un 25 % en tablet (html.admin-tablet): aquí se compensa con zoom 0,8 para que las dos columnas quepan
+  const adminMd = modo === 'admin' && pestana !== 'asistente'
+
   return (
     // En el panel de Jesús (admin), en pantallas anchas (desde 1024 px): dos columnas, como el Editor: las opciones a la izquierda y, a la derecha,
     // la placa fija al bajar (lg:col-start-2!, la placa, pasa por encima de la regla de las demás piezas, que van a la columna 1)
-    <div className={`mx-auto grid w-full max-w-[32rem] grid-cols-[minmax(0,1fr)] gap-[1rem] ${modo === 'admin' || publico ? 'lg:max-w-[60rem] lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:gap-x-[2.5rem] lg:[&>*]:col-start-1' : ''}`}>
+    <div className={`mx-auto grid w-full max-w-[32rem] grid-cols-[minmax(0,1fr)] gap-[1rem] ${modo === 'admin' || publico ? (adminMd ? 'md:max-w-[60rem] md:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] md:gap-x-[2.5rem] md:[&>*]:col-start-1 md:max-lg:[zoom:0.8]' : 'lg:max-w-[60rem] lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:gap-x-[2.5rem] lg:[&>*]:col-start-1') : ''}`}>
       {/* En el editor del cliente, la placa se queda fija arriba al bajar (más pequeña en el móvil, para que quede sitio
           para las opciones); así se ve cada cambio sin volver arriba */}
       {/* Editor del cliente: tres pestañas arriba (Tu QR, Personalizar y Asistente); la placa sale en las tres y solo
           cambia lo de debajo */}
       {(
-        <div role="tablist" aria-label="Editor de tu QR" className="grid grid-cols-3 gap-[0.25rem] rounded-[1.2rem] bg-zinc-100 p-[0.25rem]">
+        <div role="tablist" aria-label="Editor de tu QR" className={`grid grid-cols-3 gap-[0.25rem] rounded-[1.2rem] bg-zinc-100 p-[0.25rem] ${adminMd ? 'md:max-lg:grid-cols-1' : ''}`}>
           {[
             ['qr', 'Tu QR'],
             ['asistente', 'Asistente'],
@@ -1885,7 +1889,7 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
         </div>
       )}
       {(
-        <div ref={placaGrande} className={modo === 'admin' ? 'lg:sticky lg:top-[1rem] lg:col-start-2! lg:row-start-1 lg:row-span-6 lg:self-start' : publico ? 'lg:sticky lg:top-[1rem] lg:col-start-2! lg:row-start-1 lg:row-span-4 lg:self-start' : undefined}>
+        <div ref={placaGrande} className={modo === 'admin' ? (adminMd ? 'md:sticky md:top-[1rem] md:col-start-2! md:row-start-1 md:row-span-6 md:self-start' : 'lg:sticky lg:top-[1rem] lg:col-start-2! lg:row-start-1 lg:row-span-6 lg:self-start') : publico ? 'lg:sticky lg:top-[1rem] lg:col-start-2! lg:row-start-1 lg:row-span-4 lg:self-start' : undefined}>
           {/* En la pestaña Asistente, con propuestas: la placa hace de galería (flechas para pasar de una a otra, y al
               tocarla se abre en grande con "Enviar mi diseño") */}
           {pestana === 'asistente' && propuestas?.length && indicePropuesta != null ? (

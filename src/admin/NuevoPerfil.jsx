@@ -48,6 +48,14 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
   const [tema, setTema] = useState(PLANTILLAS[0].clave)
   // La pestaña abierta: el asistente o el diseño (la vista previa se ve siempre)
   const [pestana, setPestana] = useState('personalizar')
+  // En tablet vertical (768 a 1023 px) Ficha queda bloqueada en el selector de Producto
+  const [tabletVertical, setTabletVertical] = useState(() => window.matchMedia('(min-width: 768px) and (max-width: 1023px)').matches)
+  useEffect(() => {
+    const medida = window.matchMedia('(min-width: 768px) and (max-width: 1023px)')
+    const alCambiar = () => setTabletVertical(medida.matches)
+    medida.addEventListener('change', alCambiar)
+    return () => medida.removeEventListener('change', alCambiar)
+  }, [])
   // El tamaño del móvil de la vista previa (lo visible dentro del navegador de un móvil, aproximado); se recuerda en este navegador
   const [tamanoMovil, setTamanoMovil] = useState(() => {
     try {
@@ -177,6 +185,15 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
   // La copia que se ha cargado para retocarla ({ tipo, slug }) o null si se está montando una nueva, y si todo Nuevo perfil está abierto
   const [copiaCargada, setCopiaCargada] = useState(null)
   const [abierto, setAbierto] = useState(false)
+  // Abierto, el Editor ocupa toda la pantalla desde arriba, en cualquier dispositivo (tapa el título del panel y el menú); la página de debajo no se mueve
+  useEffect(() => {
+    if (!abierto) return
+    const antes = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = antes
+    }
+  }, [abierto])
   // Los cambios hechos a mano en los datos en bruto (ruta → valor) y su versión (para recargar la vista previa, con un pequeño retraso al escribir)
   const [cambiosExtra, setCambiosExtra] = useState({})
   const [versionExtra, setVersionExtra] = useState(0)
@@ -1067,7 +1084,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                           setSubAbierta(true)
                         }
                       }}
-                      className={`${i >= 5 && !masDisenos ? 'hidden lg:flex' : 'flex'} h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 bg-white transition-transform duration-300 ${hero === clave ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
+                      className={`${i >= 5 && !masDisenos ? 'hidden md:flex' : 'flex'} h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 bg-white transition-transform duration-300 ${hero === clave ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
                     >
                       <Icono className="h-[1.3rem] w-[1.3rem]" strokeWidth={2} aria-hidden="true" />
                     </button>
@@ -1078,7 +1095,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                   aria-label={masDisenos ? 'Ver menos diseños' : 'Ver más diseños'}
                   aria-expanded={masDisenos}
                   onClick={() => setMasDisenos(v => !v)}
-                  className="flex h-[2.5rem] lg:hidden w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 border-zinc-300 transition-transform duration-300 hover:scale-105"
+                  className="flex h-[2.5rem] md:hidden w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 border-zinc-300 transition-transform duration-300 hover:scale-105"
                   style={{ background: 'conic-gradient(#E5484D, #F5A524, #F2D33B, #46A758, #2E9FD9, #5B5BD6, #B04BC4, #E5484D)', color: '#141414' }}
                 >
                   {masDisenos ? <Minus className="h-[1.1rem] w-[1.1rem]" strokeWidth={3} aria-hidden="true" /> : <Plus className="h-[1.1rem] w-[1.1rem]" strokeWidth={3} aria-hidden="true" />}
@@ -1458,7 +1475,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
 
   return (
     // peer: abierto, se oculta el botón de "Crear con el asistente" que va justo debajo (en Lista)
-    <details open={abierto} onToggle={e => setAbierto(e.currentTarget.open)} className="group/perfil peer rounded-[1rem] bg-white ring-1 ring-zinc-200">
+    <details open={abierto} onToggle={e => setAbierto(e.currentTarget.open)} className="group/perfil peer rounded-[1rem] bg-white ring-1 ring-zinc-200 open:fixed open:inset-0 open:z-40 open:overflow-y-auto open:rounded-none open:ring-0">
       {/* Cerrado: "Nuevo perfil" con una flecha para abrir. Abierto: solo un icono pequeño de plegar, para que la
           vista previa empiece casi arriba */}
       <summary
@@ -1470,12 +1487,12 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
         <ChevronsDownUp className="hidden h-[1.1rem] w-[1.1rem] text-zinc-400 group-open/perfil:block" aria-hidden="true" />
       </summary>
       {/* En una columna: vista previa, asistente, diseño y crear */}
-      <div className="mx-auto grid w-full max-w-[32rem] gap-[1rem] px-[1rem] py-[1rem] lg:max-w-[60rem] lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:items-start lg:gap-x-[2.5rem]">
+      <div className={`mx-auto grid w-full max-w-[32rem] gap-[1rem] px-[1rem] py-[1rem] max-lg:pb-[9rem] ${pestana === 'asistente' ? 'lg:max-w-[60rem] lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:items-start lg:gap-x-[2.5rem]' : 'md:max-w-[60rem] md:grid-cols-[minmax(0,1fr)_minmax(0,16rem)] md:items-start md:gap-x-[2.5rem]'}`}>
         {/* En el móvil, en una columna: pestañas, vista previa y lo de cada pestaña. En pantalla grande, las pestañas y su contenido a la
             izquierda y, a la derecha, la vista previa (fija al bajar) (display: contents lo reparte en el móvil) */}
-        <div className="contents lg:col-start-1 lg:row-start-1 lg:grid lg:gap-[1rem]">
+        <div className={`contents ${pestana === 'asistente' ? 'lg:col-start-1 lg:row-start-1 lg:grid lg:gap-[1rem]' : 'lg:col-start-1 lg:row-start-1 lg:grid lg:min-w-0 lg:gap-[1rem]'}`}>
         {/* Dos pestañas arriba: Personalizar y Asistente. La vista previa se ve siempre, y debajo, lo de cada una */}
-        <div role="tablist" aria-label="Editor" className="order-1 grid grid-cols-2 gap-[0.3rem] rounded-[0.75rem] bg-zinc-200 p-[0.25rem] lg:order-none">
+        <div role="tablist" aria-label="Editor" className={`order-1 grid grid-cols-2 gap-[0.3rem] rounded-[0.75rem] bg-zinc-200 p-[0.25rem] ${pestana === 'asistente' ? 'lg:order-none' : 'md:order-none md:max-lg:col-span-2 md:max-lg:row-start-1'}`}>
           {[
             ['personalizar', 'Personalizar'],
             ['asistente', 'Asistente'],
@@ -1558,7 +1575,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
         </div>
         )}
 
-        <div className="order-3 grid gap-[1rem] lg:order-none">
+        <div className="order-3 grid gap-[1rem] md:order-none md:max-lg:col-start-1 md:max-lg:row-start-2 md:max-lg:min-w-0">
           {/* Personalizar: el producto y, debajo, desplegables independientes (todos cerrados al entrar) */}
           {pestana === 'personalizar' && (
           <div className="grid gap-[1rem]">
@@ -1566,7 +1583,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
           {/* 1. Producto */}
           <div className="grid gap-[0.4rem]">
             <span className={titulo}>Producto</span>
-            <div className="grid grid-cols-3 gap-[0.3rem] rounded-[0.75rem] bg-zinc-200 p-[0.25rem]">
+            <div className="grid grid-cols-3 gap-[0.3rem] rounded-[0.75rem] bg-zinc-200 p-[0.25rem] md:max-lg:grid-cols-1">
               {[
                 ['miniweb', 'Miniweb'],
                 ['carta', 'Menú y ofertas'],
@@ -1576,6 +1593,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                   key={clave}
                   type="button"
                   aria-pressed={producto === clave}
+                  disabled={clave === 'ficha' && tabletVertical}
                   onClick={() => cambiarProducto(clave)}
                   className={`rounded-[0.55rem] py-[0.5rem] text-[0.95rem] font-semibold disabled:opacity-40 ${producto === clave ? 'bg-white shadow-[0_0.05rem_0.2rem_rgb(0_0_0/0.15)]' : 'text-zinc-600'}`}
                 >
@@ -1587,7 +1605,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
 
           {/* Pestañas de ajustes por grupo: cada una junta todo lo de un grupo (diseño, colores y textos). Pulsar la abierta la cierra. Los desplegables de siempre siguen debajo */}
           <div className="grid gap-[0.6rem]">
-            <div role="tablist" aria-label="Ajustes por grupo" className="flex flex-wrap gap-[0.4rem]">
+            <div role="tablist" aria-label="Ajustes por grupo" className="flex flex-wrap gap-[0.4rem] md:max-lg:grid md:max-lg:grid-cols-2 md:max-lg:[&>*:last-child:nth-child(odd)]:col-span-2">
               {(producto === 'miniweb'
                 ? [['negocio', 'Negocio'], ['portada', 'Portada'], ['menu', 'Menú'], ['redes', 'Redes'], ['horario', 'Horario'], ['reserva', 'Reserva'], ['resena', 'Reseña'], ['ajustes', 'Ajustes personalizados']]
                 : esCarta
@@ -1600,7 +1618,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                   role="tab"
                   aria-selected={pestanaAjustes === clave}
                   onClick={() => setPestanaAjustes(actual => (actual === clave ? null : clave))}
-                  className={`shrink-0 rounded-full px-[0.9rem] py-[0.35rem] text-[0.85rem] font-semibold transition-colors ${pestanaAjustes === clave ? 'bg-zinc-900 text-white' : 'bg-zinc-100 text-zinc-600 hover:text-zinc-900'}`}
+                  className={`shrink-0 rounded-full px-[0.9rem] py-[0.35rem] text-[0.85rem] font-semibold transition-colors md:max-lg:leading-tight ${pestanaAjustes === clave ? 'bg-zinc-900 text-white' : 'bg-zinc-100 text-zinc-600 hover:text-zinc-900'}`}
                 >
                   {texto}
                 </button>
@@ -1845,7 +1863,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
 
         {/* Vista previa: el contenido de la temática con el diseño elegido. A 360 px de ancho por dentro, como el móvil bajo:
             se ve lo mismo que verá el cliente. En pantalla grande, a la derecha y fija al bajar */}
-        <div className="order-2 lg:sticky lg:top-[1rem] lg:order-none lg:col-start-2 lg:row-start-1">
+        <div className={`order-2 ${pestana === 'asistente' ? 'lg:sticky lg:top-[1rem] lg:order-none lg:col-start-2 lg:row-start-1' : 'md:sticky md:top-[1rem] md:order-none md:col-start-2 md:max-lg:row-start-2 lg:row-start-1'}`}>
           {/* Las copias para enseñar (sin las demos originales) del producto elegido, para cargarlas aquí y retocarlas */}
           <label className="mx-auto mb-[0.7rem] grid w-full max-w-[20rem] gap-[0.25rem]">
             <span className="text-[0.8rem] font-semibold text-zinc-500">Copia</span>
@@ -1903,32 +1921,35 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
             vista && <Movil key={vista} src={vista} titulo="Vista previa" ancho={medidaMovil.ancho} alto={medidaMovil.alto} className="mx-auto w-full max-w-[20rem]" />
           )}
           {(copiaCargada || generado) && <p className="mt-[0.5rem] text-center text-[0.8rem] text-zinc-500">Con el contenido de ejemplo de la temática</p>}
-          {/* Debajo del móvil: Añadir a copias (crea la copia) o, con una copia cargada, Guardar cambios y Guardar como nueva */}
-          <div className="mx-auto mt-[0.9rem] grid w-full max-w-[20rem] gap-[0.5rem]">
-            {error && <p className="text-[0.9rem] font-semibold text-red-600">{error}</p>}
-            {(pestana !== 'asistente' || cambiosIA || copiaCargada) &&
-              (copiaCargada ? (
-                <div className="grid gap-[0.5rem]">
-                  <button type="button" onClick={guardarCopia} disabled={Boolean(creando) || Boolean(disenando)} className={BOTON}>
-                    {creando ?? 'Guardar cambios'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => crear()}
-                    disabled={!nombre.trim() || Boolean(creando) || Boolean(disenando)}
-                    className="rounded-[0.7rem] bg-white px-[1rem] py-[0.7rem] text-[0.95rem] font-semibold ring-1 ring-zinc-300 hover:ring-zinc-500 disabled:opacity-50"
-                  >
-                    Guardar como nueva
-                  </button>
-                </div>
-              ) : (
-                <button type="button" onClick={crear} disabled={!nombre.trim() || Boolean(creando) || Boolean(disenando)} className={BOTON}>
-                  {creando ?? 'Añadir a copias'}
-                </button>
-              ))}
-          </div>
-          {/* Ya no hay muestras: todo lo que se crea es una copia para enseñar. El aviso de Guardar cambios sale aquí */}
-          {aviso && <p className="mt-[0.7rem] text-center text-[0.8rem] font-semibold text-emerald-700">{aviso}</p>}
+          {/* Debajo del móvil en dos columnas (escritorio); en una sola columna (móvil y tablet), una barra fija abajo para tener siempre a mano Guardar. Ya no hay muestras: todo lo que se crea es una copia para enseñar */}
+          {(error || aviso || pestana !== 'asistente' || cambiosIA || copiaCargada) && (
+            <div className="max-lg:fixed max-lg:inset-x-0 max-lg:bottom-0 max-lg:z-30 max-lg:border-t max-lg:border-zinc-200 max-lg:bg-white/95 max-lg:px-[1rem] max-lg:py-[0.7rem] max-lg:backdrop-blur">
+              <div className="mx-auto mt-[0.9rem] grid w-full max-w-[20rem] gap-[0.5rem] max-lg:mt-0 max-lg:max-w-[32rem]">
+                {error && <p className="text-[0.9rem] font-semibold text-red-600">{error}</p>}
+                {(pestana !== 'asistente' || cambiosIA || copiaCargada) &&
+                  (copiaCargada ? (
+                    <div className="grid gap-[0.5rem] max-lg:grid-cols-2">
+                      <button type="button" onClick={guardarCopia} disabled={Boolean(creando) || Boolean(disenando)} className={BOTON}>
+                        {creando ?? 'Guardar cambios'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => crear()}
+                        disabled={!nombre.trim() || Boolean(creando) || Boolean(disenando)}
+                        className="rounded-[0.7rem] bg-white px-[1rem] py-[0.7rem] text-[0.95rem] font-semibold ring-1 ring-zinc-300 hover:ring-zinc-500 disabled:opacity-50"
+                      >
+                        Guardar como nueva
+                      </button>
+                    </div>
+                  ) : (
+                    <button type="button" onClick={crear} disabled={!nombre.trim() || Boolean(creando) || Boolean(disenando)} className={BOTON}>
+                      {creando ?? 'Añadir a copias'}
+                    </button>
+                  ))}
+                {aviso && <p className="text-center text-[0.8rem] font-semibold text-emerald-700">{aviso}</p>}
+              </div>
+            </div>
+          )}
         </div>
       </div>
       <Confirmar pregunta={preguntaSalir} alCerrar={cerrarPreguntaSalir} />

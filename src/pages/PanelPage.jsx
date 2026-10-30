@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowUpRight, Camera, ChevronDown, ChevronUp, Lock, Pencil, Plus, Trash2, X } from 'lucide-react'
+import BotonCopiar from '../components/BotonCopiar'
+import { conDominio } from '../lib/dominio'
 import { supabase } from '../lib/supabase'
 import { marcaDe, rutaCarta } from '../cartas'
 import { conEdicion } from '../lib/ediciones'
@@ -240,10 +242,13 @@ function EditorMenu({ fila, alGuardar, alBorrador, zona, alZona, modoVista = fal
           <h1 className="truncate text-[1.5rem] font-bold leading-tight">{nombre}</h1>
         </div>
         {carta && (
-          <a href={rutaCarta(carta)} target="_blank" rel="noreferrer" className="flex shrink-0 items-center gap-[0.2rem] text-[0.9rem] font-semibold underline underline-offset-[0.2em]">
-            Ver mi menú
-            <ArrowUpRight className="h-[0.9rem] w-[0.9rem]" aria-hidden="true" />
-          </a>
+          <div className="flex shrink-0 flex-col items-end gap-[0.3rem] text-[0.9rem] font-semibold">
+            <a href={rutaCarta(carta)} target="_blank" rel="noreferrer" className="flex items-center gap-[0.2rem] underline underline-offset-[0.2em]">
+              Ver mi menú
+              <ArrowUpRight className="h-[0.9rem] w-[0.9rem]" aria-hidden="true" />
+            </a>
+            <BotonCopiar enlace={conDominio(rutaCarta(carta))} />
+          </div>
         )}
       </div>
 
@@ -641,10 +646,13 @@ function EditorOfertas({ fila, alBorrador }) {
           <h1 className="truncate text-[1.5rem] font-bold leading-tight">{nombre}</h1>
         </div>
         {carta && (
-          <a href={rutaCarta(carta)} target="_blank" rel="noreferrer" className="flex shrink-0 items-center gap-[0.2rem] text-[0.9rem] font-semibold underline underline-offset-[0.2em]">
-            Ver mis ofertas
-            <ArrowUpRight className="h-[0.9rem] w-[0.9rem]" aria-hidden="true" />
-          </a>
+          <div className="flex shrink-0 flex-col items-end gap-[0.3rem] text-[0.9rem] font-semibold">
+            <a href={rutaCarta(carta)} target="_blank" rel="noreferrer" className="flex items-center gap-[0.2rem] underline underline-offset-[0.2em]">
+              Ver mis ofertas
+              <ArrowUpRight className="h-[0.9rem] w-[0.9rem]" aria-hidden="true" />
+            </a>
+            <BotonCopiar enlace={conDominio(rutaCarta(carta))} />
+          </div>
         )}
       </div>
 
@@ -1120,10 +1128,13 @@ function EditorHorarios({ fila, alGuardar }) {
       {demasiadas && <p className="text-[0.9rem] font-semibold text-red-600">Hay demasiadas líneas. Junta días con el mismo horario o quita alguna.</p>}
       {error && <p className="text-[0.9rem] font-semibold text-red-600">{error}</p>}
       {aviso && <p className="text-[0.9rem] font-semibold text-emerald-700">{aviso}</p>}
-      <a href={`/${fila.slug}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-[0.25rem] justify-self-start text-[0.9rem] font-semibold underline underline-offset-[0.2em]">
-        Ver mi miniweb
-        <ArrowUpRight className="h-[0.9rem] w-[0.9rem]" aria-hidden="true" />
-      </a>
+      <div className="flex flex-wrap items-center gap-x-[1.1rem] gap-y-[0.4rem] justify-self-start text-[0.9rem] font-semibold">
+        <a href={`/${fila.slug}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-[0.25rem] underline underline-offset-[0.2em]">
+          Ver mi miniweb
+          <ArrowUpRight className="h-[0.9rem] w-[0.9rem]" aria-hidden="true" />
+        </a>
+        <BotonCopiar enlace={conDominio(`/${fila.slug}`)} />
+      </div>
     </div>
   )
 }

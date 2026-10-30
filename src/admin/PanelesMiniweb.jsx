@@ -60,7 +60,7 @@ export function PanelColoresMiniweb({ valores, cambiar, autos = {}, sinTitulo = 
   return (
     <>
       {detalle && (
-        <div className="hidden gap-[0.75rem] lg:grid">
+        <div className="hidden gap-[0.75rem] md:grid">
           {grupos.map(g => (
             <Plegable
               key={g.grupo}
@@ -104,10 +104,10 @@ export function PanelColoresMiniweb({ valores, cambiar, autos = {}, sinTitulo = 
           ))}
         </div>
       )}
-      <div className={`grid gap-[1rem] ${detalle ? 'lg:hidden' : 'lg:grid-cols-2 lg:items-start lg:gap-x-[1.75rem]'}`}>
-        {!sinTitulo && <span className="text-[0.8rem] font-semibold text-zinc-500 lg:col-span-2">Colores</span>}
+      <div className={`grid gap-[1rem] ${detalle ? 'md:hidden' : 'md:grid-cols-2 md:items-start md:gap-x-[1.75rem]'}`}>
+        {!sinTitulo && <span className="text-[0.8rem] font-semibold text-zinc-500 md:col-span-2">Colores</span>}
         {grupos.map(g => (
-          <div key={g.grupo} className={`grid gap-[0.5rem] ${g.ancho ? 'lg:col-span-2' : ''}`}>
+          <div key={g.grupo} className={`grid gap-[0.5rem] ${g.ancho ? 'md:col-span-2' : ''}`}>
             <p className="text-[0.85rem] font-bold">{g.grupo}</p>
             {extrasPorGrupo?.[g.grupo]}
             <div className="flex flex-wrap items-start gap-x-[1.2rem] gap-y-[0.8rem]">
@@ -233,7 +233,7 @@ export function FilaHorario({ valor, cambiar, variante, cambiarVariante }) {
                 setAbierta(true)
               }
             }}
-            className={`${i >= 5 && !mas ? 'hidden lg:flex' : 'flex'} h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 bg-white transition-transform duration-300 ${actual === h.clave ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
+            className={`${i >= 5 && !mas ? 'hidden md:flex' : 'flex'} h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 bg-white transition-transform duration-300 ${actual === h.clave ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
           >
             <svg viewBox="0 0 24 24" className="h-[1.4rem] w-[1.4rem]" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: h.dibujo }} />
           </button>
@@ -243,7 +243,7 @@ export function FilaHorario({ valor, cambiar, variante, cambiarVariante }) {
           aria-label={mas ? 'Ver menos diseños' : 'Ver más diseños'}
           aria-expanded={mas}
           onClick={() => setMas(v => !v)}
-          className="flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 border-zinc-300 transition-transform duration-300 hover:scale-105 lg:hidden"
+          className="flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 border-zinc-300 transition-transform duration-300 hover:scale-105 md:hidden"
           style={{ background: 'conic-gradient(#E5484D, #F5A524, #F2D33B, #46A758, #2E9FD9, #5B5BD6, #B04BC4, #E5484D)', color: '#141414' }}
         >
           {mas ? <Minus className="h-[1.1rem] w-[1.1rem]" strokeWidth={3} aria-hidden="true" /> : <Plus className="h-[1.1rem] w-[1.1rem]" strokeWidth={3} aria-hidden="true" />}
@@ -302,15 +302,15 @@ export function SelectorCartaMiniweb({ valor, cambiar, exportadas = [] }) {
 // claves: solo esas piezas (sin ellas, todas)
 export function EstructuraMiniweb({ valores, cambiar, sinTitulo = false, contactoPorDefecto = 'boton', claves }) {
   return (
-    <div className="grid gap-[0.9rem] lg:grid-cols-2 lg:items-start lg:gap-x-[1.75rem]">
-      {!sinTitulo && <span className="text-[0.8rem] font-semibold text-zinc-500 lg:col-span-2">Estructura: dónde va cada pieza</span>}
+    <div className="grid gap-[0.9rem] md:grid-cols-2 md:items-start md:gap-x-[1.75rem]">
+      {!sinTitulo && <span className="text-[0.8rem] font-semibold text-zinc-500 md:col-span-2">Estructura: dónde va cada pieza</span>}
       {ESTRUCTURA_MINIWEB.filter(([clave]) => !claves || claves.includes(clave)).map(([clave, texto, opciones]) => {
         // Los valores viejos de las redes ('barra' y 'boton') son 'arriba' y 'medio'
         const actual = clave === 'contactoEn' ? (valores[clave] === 'formulario' ? (contactoPorDefecto === 'reserva' ? 'reserva' : 'cita') : valores[clave] ?? contactoPorDefecto) : ({ barra: 'arriba', boton: 'medio' })[valores[clave]] ?? valores[clave] ?? ESTRUCTURA_DEFECTO[clave]
         // Con las redes vinculadas al menú, su sitio lo decide el menú: las opciones se bloquean
         const bloqueada = clave === 'redesEn' && Boolean(valores.redesVinculadas)
         return (
-          <div key={clave} className={`grid gap-[0.4rem] ${clave === 'compartirEn' ? 'lg:col-span-2' : ''}`}>
+          <div key={clave} className={`grid gap-[0.4rem] ${clave === 'compartirEn' ? 'md:col-span-2' : ''}`}>
             <span className="text-[0.8rem] text-zinc-500">{texto}</span>
             {/* Un icono por opción (un móvil con la pieza en su sitio) y, debajo, el nombre de la elegida */}
             <div className={`flex flex-wrap items-center gap-[0.4rem] ${bloqueada ? 'opacity-50' : ''}`}>

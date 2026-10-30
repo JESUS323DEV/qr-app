@@ -1,6 +1,8 @@
 import { Fragment, useCallback, useMemo, useState } from 'react'
 import CampoColor from '../components/CampoColor'
 import { ArrowLeft, ArrowUpRight, Copy, Trash2 } from 'lucide-react'
+import BotonCopiar from '../components/BotonCopiar'
+import { conDominio } from '../lib/dominio'
 import { supabase } from '../lib/supabase'
 import { aplicar } from '../lib/ediciones'
 import { getNegocio, rutaNegocio } from '../negocios'
@@ -639,7 +641,7 @@ export function Editor({ tipo, slug, fila, filas, volver, recargar, abrir, irANu
 
   return (
     // En el ordenador, el editor a la izquierda y la vista previa a la derecha; en el móvil, "Ver página"
-    <div className="pb-[6rem] lg:grid lg:grid-cols-[minmax(0,1fr)_23.3rem] lg:items-start lg:gap-[2rem]">
+    <div className="pb-[6rem] md:grid md:grid-cols-[minmax(0,1fr)_23.3rem] md:items-start md:gap-[2rem]">
     <div className="grid gap-[1rem]">
       <button type="button" onClick={volver} className="inline-flex items-center gap-[0.3rem] justify-self-start text-[0.9rem] font-semibold">
         <ArrowLeft className="h-[1rem] w-[1rem]" aria-hidden="true" />
@@ -660,6 +662,7 @@ export function Editor({ tipo, slug, fila, filas, volver, recargar, abrir, irANu
             Ver página
             <ArrowUpRight className="h-[0.95rem] w-[0.95rem]" aria-hidden="true" />
           </a>
+          <BotonCopiar enlace={conDominio(ruta)} />
           {!soloLectura && (
             <button type="button" onClick={() => setDuplicando({ nombre: '', slug: '', error: '' })} className="inline-flex items-center gap-[0.3rem] underline underline-offset-[0.2em]">
               <Copy className="h-[0.95rem] w-[0.95rem]" aria-hidden="true" />
@@ -745,7 +748,7 @@ export function Editor({ tipo, slug, fila, filas, volver, recargar, abrir, irANu
     </div>
 
       {/* Vista previa: la página tal cual está guardada, del tamaño de un móvil; se recarga al guardar */}
-      <aside className="sticky top-[1rem] hidden lg:block">
+      <aside className="sticky top-[1rem] hidden md:block">
         {/* La página a 360 px de ancho (el móvil bajo), reducida entera para caber en el marco */}
         <Movil key={version} src={ruta} titulo="Vista previa" ancho={360} className="mx-auto w-full max-w-[21rem]" />
         <p className="mt-[0.5rem] text-center text-[0.8rem] text-zinc-500">Vista previa de lo guardado</p>

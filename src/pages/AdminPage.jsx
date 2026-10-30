@@ -24,11 +24,12 @@ export default function AdminPage() {
   // ?copia=negocio:slug: la copia que se carga en Nuevo perfil (botón Editar de su pantalla de información)
   const copia = params.get('copia')
 
-  // En tablet vertical (md) todo el panel crece (ver .admin-tablet en main.css); al salir, la web vuelve a su tamaño
+  // En tablet vertical (md) la lista del panel crece (ver .admin-tablet en main.css); el Editor, con su diseño de escritorio, se queda a su tamaño
   useEffect(() => {
+    if (editar) return
     document.documentElement.classList.add('admin-tablet')
     return () => document.documentElement.classList.remove('admin-tablet')
-  }, [])
+  }, [editar])
 
   // ¿Esta cuenta es de administrador?
   useEffect(() => {
@@ -67,7 +68,7 @@ export default function AdminPage() {
 
   return (
     <div className="tema-admin min-h-svh font-sans">
-      <div className={`mx-auto w-full max-w-[32rem] px-[1rem] pb-[2rem] pt-[1rem] ${editar === 'asistente' ? '' : 'lg:max-w-[64rem]'}`}>
+      <div className={`mx-auto w-full max-w-[32rem] px-[1rem] pb-[2rem] pt-[1rem] ${editar === 'asistente' ? '' : 'md:max-w-[64rem]'}`}>
         {!supabase ? (
           <p className="mt-[3rem] text-center text-zinc-500">El panel no está disponible ahora mismo.</p>
         ) : sesion === undefined ? null : !sesion ? (
