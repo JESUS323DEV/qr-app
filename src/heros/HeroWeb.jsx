@@ -789,8 +789,9 @@ function PaginaContacto({ pestana, respaldo }) {
       : undefined
   return (
     <div className="flex h-full flex-col">
-      <Franja foto={pestana.foto ?? respaldo} className="min-h-[6rem] flex-1" />
-      <div className="px-[1.25rem] pb-[1.5rem] pt-[1.1rem]">
+      {/* La foto llena el hueco como siempre, pero con tope de alto: en móviles bajos no cambia nada y en los altos ya no se estira; el texto se centra en lo que sobra */}
+      <Franja foto={pestana.foto ?? respaldo} className="min-h-[6rem] max-h-[min(124vw,40rem)] flex-1" />
+      <div className="my-auto px-[1.25rem] pb-[1.5rem] pt-[1.1rem]">
         <h2 style={rolTitulo} className="escala-pagina font-demo-heading text-[1.9rem] font-extrabold leading-none">{pestana.titulo}</h2>
         {pestana.texto_encargo && <p style={rolTexto} className="escala-pagina mt-[0.5rem] text-[0.95rem] leading-[1.5] text-demo-muted">{pestana.texto_encargo}</p>}
         <a

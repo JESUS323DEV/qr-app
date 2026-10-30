@@ -12,6 +12,13 @@ export const ESCALA_TEXTO = {
   horarioLineas: 'text-[length:min(1.15rem,calc(0.9rem_+_max(0px,100svh_-_640px)_*_0.0127))]',
 }
 
+// Fullbleed, Formatos (Editorial) y Cortes (Diagonal): el titular y la descripción crecen un poco más que en los demás diseños, pero solo a partir de 680 px de alto:
+// en M (780) un poco y en L (956) bastante. Hasta ahí (XS y S) salen exactamente como los de ESCALA_TEXTO
+export const ESCALA_TEXTO_GRANDE = {
+  titular: 'text-[length:min(4.2rem,calc(clamp(1.8rem,1.5rem_+_1.8vw,2.3rem)_+_max(0px,100svh_-_640px)_*_0.037_+_max(0px,100svh_-_680px)_*_0.0574))]',
+  descripcion: 'max-w-[26rem] text-[length:min(1.2rem,calc(0.92rem_+_max(0px,100svh_-_640px)_*_0.0066_+_max(0px,100svh_-_680px)_*_0.0077))]',
+}
+
 // La card de reseña de Google de las miniwebs (la de tamaño normal; la compacta se queda como está): crece con el alto de la pantalla, de un 15 % menos de lo
 // de siempre a 640 px de alto hasta un 14 % más a 956 px, sin saltos. Cada uno son las clases de ese elemento en lugar de las de siempre.
 export const ESCALA_RESENA = {

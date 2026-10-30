@@ -11,7 +11,7 @@ import BarraPestanas from '../fichas/barras'
 import { useRol } from '../components/ColoresPortada'
 import { formatoDe } from '../lib/formatos'
 import CtaPortada from '../components/CtaPortada'
-import { ESCALA_TEXTO } from '../lib/escalaTexto'
+import { ESCALA_TEXTO, ESCALA_TEXTO_GRANDE } from '../lib/escalaTexto'
 
 /* Editorial (adaptado del Apetece de platform). La foto grande cambia según la pestaña:
    - platos: las fotos van pasando solas con una cortina de tiras.
@@ -299,7 +299,7 @@ export default function HeroEditorial({ hero, nombre, lema, sinBarra = false, in
         </div>
       </div>
 
-      {sinBarra && <TextoInicio inicio={inicio} irA={irA} nombre={nombre} sinBoton={ctaArriba} fondo={hero.fondoInicio} color="text-demo-text" className={`${formato.bloque} pb-[1.6rem]! pt-[1.6rem]!`} claseTitular={ESCALA_TEXTO.titular} claseDescripcion={ESCALA_TEXTO.descripcion} />}
+      {sinBarra && <TextoInicio inicio={inicio} irA={irA} nombre={nombre} sinBoton={ctaArriba} fondo={hero.fondoInicio} color="text-demo-text" className={`${formato.bloque} pb-[1.6rem]! pt-[1.6rem]!`} claseTitular={ESCALA_TEXTO_GRANDE.titular} claseDescripcion={ESCALA_TEXTO_GRANDE.descripcion} />}
       {!sinBarra && (
         <div className={formato.bloque}>
           <BarraPestanas estilo={hero.barra ?? 'revista'} pestanas={pestanas} activa={activa} tocar={tocar} />

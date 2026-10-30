@@ -299,11 +299,12 @@ export function SelectorCartaMiniweb({ valor, cambiar, exportadas = [] }) {
 }
 
 // contactoPorDefecto: lo que hace la miniweb si no se elige nada (las de comida, el formulario de reserva; las demás, el botón de WhatsApp)
-export function EstructuraMiniweb({ valores, cambiar, sinTitulo = false, contactoPorDefecto = 'boton' }) {
+// claves: solo esas piezas (sin ellas, todas)
+export function EstructuraMiniweb({ valores, cambiar, sinTitulo = false, contactoPorDefecto = 'boton', claves }) {
   return (
     <div className="grid gap-[0.9rem] lg:grid-cols-2 lg:items-start lg:gap-x-[1.75rem]">
       {!sinTitulo && <span className="text-[0.8rem] font-semibold text-zinc-500 lg:col-span-2">Estructura: dónde va cada pieza</span>}
-      {ESTRUCTURA_MINIWEB.map(([clave, texto, opciones]) => {
+      {ESTRUCTURA_MINIWEB.filter(([clave]) => !claves || claves.includes(clave)).map(([clave, texto, opciones]) => {
         // Los valores viejos de las redes ('barra' y 'boton') son 'arriba' y 'medio'
         const actual = clave === 'contactoEn' ? (valores[clave] === 'formulario' ? (contactoPorDefecto === 'reserva' ? 'reserva' : 'cita') : valores[clave] ?? contactoPorDefecto) : ({ barra: 'arriba', boton: 'medio' })[valores[clave]] ?? valores[clave] ?? ESTRUCTURA_DEFECTO[clave]
         // Con las redes vinculadas al menú, su sitio lo decide el menú: las opciones se bloquean

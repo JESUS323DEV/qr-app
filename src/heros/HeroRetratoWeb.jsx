@@ -107,13 +107,13 @@ export default function HeroRetratoWeb({ hero, nombre, lema, inicio, irA }) {
       {/* Centro: lo que cuenta el negocio, anclado abajo (lo que se añade crece hacia arriba) */}
       <div className={`relative flex min-h-[9rem] flex-[1_0_auto] flex-col justify-center px-[1.25rem] pt-[1rem] ${distribucion.arriba ? 'pb-[1.4rem]' : ''}`}>
         {titular.length > 0 && (
-          <h1 style={rolTitular} className="font-demo-heading text-[clamp(2rem,1.6rem+2vw,2.5rem)] font-bold leading-[1.02] text-white">
+          <h1 style={rolTitular} className="font-demo-heading text-[length:calc(clamp(2rem,1.6rem+2vw,2.5rem)_+_max(0px,100svh_-_680px)_*_0.04)] font-bold leading-[1.02] text-white">
             {titular.map((l, i) => (
               <span key={i} className="block">{l}</span>
             ))}
           </h1>
         )}
-        {inicio?.descripcion && <p style={rolDescripcion} className="mt-[0.5rem] max-w-[22rem] text-[0.92rem] leading-[1.45] text-white/85">{inicio.descripcion}</p>}
+        {inicio?.descripcion && <p style={rolDescripcion} className="mt-[0.5rem] max-w-[22rem] text-[length:calc(0.92rem_+_max(0px,100svh_-_680px)_*_0.0066)] leading-[1.45] text-white/85">{inicio.descripcion}</p>}
         <div className="mt-[0.8rem] flex flex-wrap items-center gap-[0.75rem]">
           {inicio?.boton && inicio.botonA && (
             <button

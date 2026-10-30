@@ -39,13 +39,13 @@ export default function HeroMosaico({ hero, nombre, lema, sinBarra = false, inic
   const composicion = composicionDe(hero.composicion)
   // En pantallas bajas (menos de unos 750 px de alto) el titular se encoge un poco, para que todo el texto de Inicio quepa sin montarse sobre la barra de redes
   const titularMini = clase => (
-    <h1 style={rolTitular} className={`${clase} font-demo-heading text-[length:min(clamp(2rem,1.6rem+2vw,2.5rem),calc(1.5rem_+_max(0px,100svh_-_640px)_*_0.08))] font-semibold leading-[1.02]`}>
+    <h1 style={rolTitular} className={`${clase} font-demo-heading text-[length:calc(min(clamp(2rem,1.6rem+2vw,2.5rem),calc(1.5rem_+_max(0px,100svh_-_640px)_*_0.08))_+_max(0px,100svh_-_680px)_*_0.04)] font-semibold leading-[1.02]`}>
       {inicio?.titular?.map((l, i) => (
         <span key={i} className="block">{l}</span>
       ))}
     </h1>
   )
-  const descripcionMini = inicio?.descripcion && <p style={rolDescripcion} className="max-w-[22rem] text-[0.9rem] leading-[1.4] opacity-85">{inicio.descripcion}</p>
+  const descripcionMini = inicio?.descripcion && <p style={rolDescripcion} className="max-w-[22rem] text-[length:calc(0.9rem_+_max(0px,100svh_-_680px)_*_0.0065)] leading-[1.4] opacity-85">{inicio.descripcion}</p>
   const botonMini = inicio?.boton && inicio?.botonA && (
     <div className={`flex flex-wrap items-center gap-[0.75rem] ${inicio.descripcion ? 'mt-[0.6rem]' : ''}`}>
       <button

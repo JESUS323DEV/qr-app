@@ -57,7 +57,7 @@ function GaleriaMiniweb({ fotos, inicio, irA, nombre, estilo }) {
         ))}
       </h2>
     )
-  const descripcionEl = inicio.descripcion && <p style={rolDescripcion} className="text-[0.9rem] leading-[1.4] opacity-85">{inicio.descripcion}</p>
+  const descripcionEl = inicio.descripcion && <p style={rolDescripcion} className="text-[length:calc(0.9rem_+_max(0px,100svh_-_680px)_*_0.0065)] leading-[1.4] opacity-85">{inicio.descripcion}</p>
   const botonEl = inicio.boton && inicio.botonA && (
     <div className={`flex flex-wrap items-center gap-[0.75rem] ${inicio.descripcion ? 'mt-[0.6rem]' : ''}`}>
       <button
@@ -73,7 +73,7 @@ function GaleriaMiniweb({ fotos, inicio, irA, nombre, estilo }) {
   // El titular pegado abajo sobre un degradado oscuro (y, en 'sobre', también la descripción y el botón)
   const textoSobreFoto = (
     <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/45 to-transparent px-[0.9rem] pb-[0.8rem] pt-[3rem] text-left text-white">
-      {estilo.titularSobre && titularEl('pointer-events-none', 'text-[1.5rem]')}
+      {estilo.titularSobre && titularEl('pointer-events-none', 'text-[length:calc(1.5rem_+_max(0px,100svh_-_680px)_*_0.0288)]')}
       {estilo.textoSobre && (
         <>
           {inicio.descripcion && <p style={rolDescripcion} className="mt-[0.35rem] text-[0.85rem] leading-[1.35] opacity-90">{inicio.descripcion}</p>}
@@ -97,7 +97,7 @@ function GaleriaMiniweb({ fotos, inicio, irA, nombre, estilo }) {
                 <Img src={f.src} alt={f.alt} className="h-full w-full object-cover" />
                 {estilo.titularSobre && inicio.titular?.length > 0 && (
                   <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/45 to-transparent px-[0.9rem] pb-[0.8rem] pt-[3rem] text-white">
-                    {titularEl('pointer-events-none text-left', 'text-[1.35rem]')}
+                    {titularEl('pointer-events-none text-left', 'text-[length:calc(1.35rem_+_max(0px,100svh_-_680px)_*_0.026)]')}
                   </div>
                 )}
               </div>
@@ -123,7 +123,7 @@ function GaleriaMiniweb({ fotos, inicio, irA, nombre, estilo }) {
       {/* Fuera de la foto: el titular (si no va sobre ella), la descripción y el botón */}
       {hayTextoFuera && (
         <div className="shrink-0 pt-[0.7rem] text-demo-text">
-          {!estilo.titularSobre && titularEl('', 'text-[1.5rem]')}
+          {!estilo.titularSobre && titularEl('', 'text-[length:calc(1.5rem_+_max(0px,100svh_-_680px)_*_0.0288)]')}
           {!estilo.textoSobre && (
             <>
               {descripcionEl}

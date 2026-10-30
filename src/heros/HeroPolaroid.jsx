@@ -116,13 +116,13 @@ export default function HeroPolaroid({ hero, nombre, lema, sinBarra = false, ini
   const textoInicio = clase => (
     <div className={clase}>
       {inicio.titular?.length > 0 && (
-        <h2 style={rolTitular} className="font-demo-heading text-[clamp(1.7rem,1.4rem+1.6vw,2.1rem)] font-bold leading-[1.05]">
+        <h2 style={rolTitular} className="font-demo-heading text-[length:calc(clamp(1.7rem,1.4rem+1.6vw,2.1rem)_+_max(0px,100svh_-_680px)_*_0.035)] font-bold leading-[1.05]">
           {inicio.titular.map((l, i) => (
             <span key={i} className="block">{l}</span>
           ))}
         </h2>
       )}
-      {inicio.descripcion && <p style={rolDescripcion} className="mt-[0.4rem] max-w-[22rem] text-[0.88rem] leading-[1.4] opacity-85">{inicio.descripcion}</p>}
+      {inicio.descripcion && <p style={rolDescripcion} className="mt-[0.4rem] max-w-[22rem] text-[length:calc(0.88rem_+_max(0px,100svh_-_680px)_*_0.0064)] leading-[1.4] opacity-85">{inicio.descripcion}</p>}
       {inicio.boton && inicio.botonA && (
         <div className="mt-[0.65rem] flex flex-wrap items-center gap-[0.75rem]">
           <button

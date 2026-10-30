@@ -2,7 +2,7 @@ import Turnos from '../components/Turnos'
 import { useEffect, useMemo, useState } from 'react'
 import TextoInicio from '../components/TextoInicio'
 import CtaPortada from '../components/CtaPortada'
-import { ESCALA_TEXTO } from '../lib/escalaTexto'
+import { ESCALA_TEXTO, ESCALA_TEXTO_GRANDE } from '../lib/escalaTexto'
 import NombreMarca from '../components/NombreMarca'
 import { Phone } from 'lucide-react'
 import Img from '../components/Img'
@@ -262,7 +262,7 @@ export default function HeroFullbleed({ hero, nombre, sinBarra = false, inicio, 
 
         {/* Portada de una miniweb: el texto de Inicio (texto grande, pequeño y el botón) encima de la foto, abajo, sobre un degradado oscuro para que se lea */}
         {sinBarra && (
-          <TextoInicio inicio={inicio} irA={irA} nombre={nombre} sinBoton={ctaArriba} color="text-white" className={disposicion.texto} estilo={degradadoTexto} claseTitular={ESCALA_TEXTO.titular} claseDescripcion={ESCALA_TEXTO.descripcion} />
+          <TextoInicio inicio={inicio} irA={irA} nombre={nombre} sinBoton={ctaArriba} color="text-white" className={disposicion.texto} estilo={degradadoTexto} claseTitular={ESCALA_TEXTO_GRANDE.titular} claseDescripcion={ESCALA_TEXTO_GRANDE.descripcion} />
         )}
       </div>
 

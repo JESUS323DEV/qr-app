@@ -1722,6 +1722,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
             )}
             {pestanaAjustes === 'menu' && producto === 'miniweb' && (
               <div role="tabpanel" className="grid gap-[1rem] rounded-[0.75rem] p-[0.85rem] ring-1 ring-zinc-200">
+                <EstructuraMiniweb sinTitulo claves={['menuEn']} contactoPorDefecto={plantilla.miniweb ? 'reserva' : 'boton'} valores={estructura} cambiar={(clave, valor) => setEstructura(e => ({ ...e, [clave]: valor }))} />
                 <FilaEstiloMenu valor={barra} cambiar={setBarra} />
                 <PanelColoresMiniweb sinTitulo detalle claves={['menuFondo', 'menuTexto', 'menuSubrayado']} valores={coloresMini} cambiar={cambiarColorMini} autos={autosColores} />
                 {datosEnBruto && <ImagenesPorPestana original={datosEnBruto} cambios={cambiosExtra} cambiar={cambiarExtra} tipos={['menu']} />}
@@ -1735,7 +1736,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
             )}
             {pestanaAjustes === 'redes' && producto === 'miniweb' && (
               <div role="tabpanel" className="grid gap-[1rem] rounded-[0.75rem] p-[0.85rem] ring-1 ring-zinc-200">
-                <EstructuraMiniweb sinTitulo contactoPorDefecto={plantilla.miniweb ? 'reserva' : 'boton'} valores={estructura} cambiar={(clave, valor) => setEstructura(e => ({ ...e, [clave]: valor }))} />
+                <EstructuraMiniweb sinTitulo claves={['redesEn', 'compartirEn']} contactoPorDefecto={plantilla.miniweb ? 'reserva' : 'boton'} valores={estructura} cambiar={(clave, valor) => setEstructura(e => ({ ...e, [clave]: valor }))} />
                 <PanelColoresMiniweb sinTitulo detalle claves={['redesFondo', 'redesIconos']} valores={coloresMini} cambiar={cambiarColorMini} autos={autosColores} />
                 {datosEnBruto && <EditorEnBruto original={datosEnBruto} cambios={cambiosExtra} cambiar={cambiarExtra} soloBloques={['Redes']} />}
               </div>
@@ -1752,6 +1753,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
             {pestanaAjustes === 'reserva' && producto === 'miniweb' && (
               <div role="tabpanel" className="grid gap-[1rem] rounded-[0.75rem] p-[0.85rem] ring-1 ring-zinc-200">
                 <PanelColoresMiniweb sinTitulo detalle claves={['reservaTitulo', 'reservaTexto', 'reservaBoton', 'reservaBotonTexto', 'reservaTelefono']} valores={coloresMini} cambiar={cambiarColorMini} autos={autosColores} />
+                <EstructuraMiniweb sinTitulo claves={['contactoEn']} contactoPorDefecto={plantilla.miniweb ? 'reserva' : 'boton'} valores={estructura} cambiar={(clave, valor) => setEstructura(e => ({ ...e, [clave]: valor }))} />
                 {datosEnBruto && <ImagenesPorPestana original={datosEnBruto} cambios={cambiosExtra} cambiar={cambiarExtra} tipos={['reservar', 'contacto', 'cita', 'encargos', 'comanda', 'precios']} />}
                 {datosEnBruto && <EditorEnBruto original={datosEnBruto} cambios={cambiosExtra} cambiar={cambiarExtra} soloBloques={bloquesDePestana(['reservar', 'contacto', 'cita', 'encargos', 'comanda', 'precios'])} />}
               </div>

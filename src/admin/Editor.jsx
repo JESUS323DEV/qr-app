@@ -694,7 +694,7 @@ export function Editor({ tipo, slug, fila, filas, volver, recargar, abrir, irANu
             const fin = tipo === 'carta' ? '/carta' : ''
             return cambios._cliente
               ? setPregunta({ titulo: '¿Volver a demo?', texto: `Dejará de abrirse en /${slug}${fin} y pasará a /demo/${slug}${fin}.${tipo === 'carta' ? ' Las miniwebs que la usen en su menú dejarán de enseñarla.' : ''} Si ya has impreso el QR con la dirección corta, dejaría de funcionar.`, boton: 'Volver a demo', peligro: true, accion: () => marcarCliente(false) })
-              : setPregunta({ titulo: '¿Exportar para cliente?', texto: `Pasa a /${slug}${fin}, la dirección corta del QR, y deja de verse en /demo/${slug}${fin}.${tipo === 'carta' ? ' Así podrás elegirla en el menú de una miniweb.' : ''} Una vez impreso el QR, no cambies nunca esta dirección.`, boton: 'Exportar', accion: () => marcarCliente(true) })
+              : setDuplicando({ nombre, slug: '', error: '', exportar: true })
           }}
         />}
       {esCopia && editando && <Retocar historial={historial} enviar={retocar} />}
@@ -778,12 +778,19 @@ export function Editor({ tipo, slug, fila, filas, volver, recargar, abrir, irANu
           tipo={tipo}
           datos={duplicando}
           setDatos={setDuplicando}
+          slugActual={slug}
+          alMisma={() => {
+            setDuplicando(null)
+            marcarCliente(true)
+          }}
           crear={async ({ nombre: nuevoNombre, slug: nuevoSlug }) => {
             // Una copia de carta lleva su propia marca (si aún no la tiene, la de la carta de la que sale)
-            const deLaCopia =
+            const base =
               tipo === 'carta'
                 ? fusionar(vista.marca ? cambios : fusionar(cambios, inicioCopiaCarta(original)), { 'marca.nombre': nuevoNombre })
                 : fusionar(cambios, { nombre: nuevoNombre })
+            // Exportar para cliente con otra dirección: la copia nueva ya es de cliente y la de trabajo se queda como está
+            const deLaCopia = duplicando.exportar ? { ...base, _cliente: true } : base
             const { error } = await supabase
               .from('ediciones')
               .insert({ tipo, slug: nuevoSlug, base: fila?.base ?? slug, cambios: deLaCopia })
@@ -813,8 +820,10 @@ export function Editor({ tipo, slug, fila, filas, volver, recargar, abrir, irANu
 }
 
 // Hoja para duplicar: el nombre del negocio nuevo y su dirección (se rellena sola a partir del nombre)
-function Duplicar({ tipo, datos, setDatos, crear }) {
+function Duplicar({ tipo, datos, setDatos, crear, slugActual, alMisma }) {
   const [enviando, setEnviando] = useState(false)
+  // Exportar para cliente: el nombre del negocio ya está puesto y solo se elige la dirección corta del QR
+  const exportar = Boolean(datos.exportar)
   const slug = datos.slug || aSlug(datos.nombre)
   // Una ficha y su carta pueden compartir dirección (/demo/casa-pepe y /demo/casa-pepe/carta)
   const ocupada = RESERVADAS.has(slug) || Boolean(tipo === 'carta' ? getCarta(slug) : getNegocio(slug))
@@ -836,15 +845,21 @@ function Duplicar({ tipo, datos, setDatos, crear }) {
         className="grid w-full max-w-[26rem] gap-[0.9rem] rounded-t-[1.25rem] bg-white px-[1.25rem] pb-[1.25rem] pt-[1.1rem] sm:rounded-[1.25rem]"
       >
         <div>
-          <h2 className="text-[1.15rem] font-bold">Duplicar para otro negocio</h2>
-          <p className="mt-[0.3rem] text-[0.92rem] leading-[1.45] text-zinc-600">Se crea una copia con este diseño y tus cambios. La demo original no se toca.</p>
+          <h2 className="text-[1.15rem] font-bold">{exportar ? 'Exportar para cliente' : 'Duplicar para otro negocio'}</h2>
+          <p className="mt-[0.3rem] text-[0.92rem] leading-[1.45] text-zinc-600">
+            {exportar
+              ? 'Se crea la página del cliente en esta dirección corta, que será la del QR. Tu copia de trabajo se queda como está. Una vez impreso el QR, no cambies nunca esta dirección.'
+              : 'Se crea una copia con este diseño y tus cambios. La demo original no se toca.'}
+          </p>
         </div>
-        <Etiqueta texto="Nombre del negocio">
-          <input autoFocus required value={datos.nombre} onChange={e => setDatos(d => ({ ...d, nombre: e.target.value, error: '' }))} className={CAMPO} />
-        </Etiqueta>
+        {!exportar && (
+          <Etiqueta texto="Nombre del negocio">
+            <input autoFocus required value={datos.nombre} onChange={e => setDatos(d => ({ ...d, nombre: e.target.value, error: '' }))} className={CAMPO} />
+          </Etiqueta>
+        )}
         <Etiqueta texto="Dirección">
           <div className="flex items-center gap-[0.3rem]">
-            <span className="shrink-0 text-[0.92rem] text-zinc-500">/demo/</span>
+            <span className="shrink-0 text-[0.92rem] text-zinc-500">{exportar ? '/' : '/demo/'}</span>
             <input
               value={slug}
               onChange={e => setDatos(d => ({ ...d, slug: aSlug(e.target.value) || e.target.value.toLowerCase(), error: '' }))}
@@ -864,9 +879,14 @@ function Duplicar({ tipo, datos, setDatos, crear }) {
             Cancelar
           </button>
           <button type="submit" disabled={!valida || !datos.nombre.trim() || enviando} className={BOTON}>
-            {enviando ? 'Creando...' : 'Crear copia'}
+            {enviando ? (exportar ? 'Exportando...' : 'Creando...') : exportar ? 'Exportar' : 'Crear copia'}
           </button>
         </div>
+        {exportar && (
+          <button type="button" onClick={alMisma} className="text-center text-[0.9rem] font-semibold text-zinc-600 underline underline-offset-[0.2em]">
+            Usar esta misma copia, con su dirección actual (/{slugActual})
+          </button>
+        )}
       </form>
     </div>
   )
