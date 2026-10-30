@@ -24,6 +24,12 @@ export default function AdminPage() {
   // ?copia=negocio:slug: la copia que se carga en Nuevo perfil (botón Editar de su pantalla de información)
   const copia = params.get('copia')
 
+  // En tablet vertical (md) todo el panel crece (ver .admin-tablet en main.css); al salir, la web vuelve a su tamaño
+  useEffect(() => {
+    document.documentElement.classList.add('admin-tablet')
+    return () => document.documentElement.classList.remove('admin-tablet')
+  }, [])
+
   // ¿Esta cuenta es de administrador?
   useEffect(() => {
     if (!sesion) {

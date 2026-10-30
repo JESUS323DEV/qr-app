@@ -392,3 +392,11 @@ body {
 .escala-pagina {
   zoom: var(--escala-pagina, 1);
 }
+
+/* El panel de /admin en tablet vertical (768 a 1023 px): todo en rem, así que subir el tamaño base agranda textos, botones y espacios a la vez.
+   AdminPage pone la clase en <html> mientras está abierto */
+@media (min-width: 768px) and (max-width: 1023px) {
+  html.admin-tablet {
+    font-size: 125%;
+  }
+}
