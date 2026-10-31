@@ -1,6 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { FilaIconos, HojaCtx } from './FilaIconos'
+import { HojaCtx } from './FilaIconos'
 import usePantallaMovil from './usePantallaMovil'
+import PanelAsistente from './perfil/paneles/PanelAsistente'
+import PanelPortada from './perfil/paneles/PanelPortada'
+import PanelAjustes from './perfil/paneles/PanelAjustes'
+import PanelEstructura from './perfil/paneles/PanelEstructura'
+import PanelImagenes from './perfil/paneles/PanelImagenes'
+import PanelResena from './perfil/paneles/PanelResena'
+import PanelReserva from './perfil/paneles/PanelReserva'
+import PanelHorario from './perfil/paneles/PanelHorario'
+import PanelRedes from './perfil/paneles/PanelRedes'
+import PanelMenu from './perfil/paneles/PanelMenu'
+import PanelNegocio from './perfil/paneles/PanelNegocio'
 import BloqueTextoInicio from './perfil/BloqueTextoInicio'
 import BloqueTematica from './perfil/BloqueTematica'
 import PaletaMarca from './perfil/PaletaMarca'
@@ -14,16 +25,16 @@ import usePerfilCarta from './perfil/usePerfilCarta'
 import usePerfilNegocio from './perfil/usePerfilNegocio'
 import usePerfilAsistente from './perfil/usePerfilAsistente'
 import usePerfilCopias from './perfil/usePerfilCopias'
-import { BarraAsistenteMovil, BarraIconosMovil, FlechaVolver, InicioMovil } from './EditorMovil'
+import { BarraIconosMovil, FlechaVolver, InicioMovil } from './EditorMovil'
 import { ChevronDown, ChevronsDownUp } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { aplicar, conEdicion } from '../lib/ediciones'
 import { getNegocio } from '../negocios'
 import { getCarta, marcaDe } from '../cartas'
-import { BOTON, CAMPO, Confirmar, Etiqueta, claseIcono, opcion } from '../components/panel'
+import { BOTON, CAMPO, Confirmar } from '../components/panel'
 import { GRUPOS_PLANTILLAS, PLANTILLAS } from '../plantillas'
 import { catalogoMiniweb, validarDiseno } from '../asistente/miniweb'
-import { TIPOS_CARTA, catalogoCarta, validarDisenoCarta } from '../asistente/carta'
+import { catalogoCarta, validarDisenoCarta } from '../asistente/carta'
 import { derivadosDeFondoYTexto } from '../lib/mezclarColores'
 import { COLORES_CARTA } from '../lib/coloresCarta'
 import Movil from '../components/Movil'
@@ -31,13 +42,12 @@ import { coloresAutomaticos } from '../lib/coloresMiniweb'
 import { pestanasDeMiniweb } from '../lib/miniweb'
 import { tipoDe } from '../lib/tematicas'
 import { HEROS } from '../heros'
-import { BARRAS } from '../fichas/barras'
 import { FAMILIAS } from '../familias'
 import { llamar, nombreInterno } from './comun'
-import { bloquesDePestana, leerRuta, maxDe } from './datos'
+import { leerRuta, maxDe } from './datos'
 import { crearCartaConDueno, fusionar, menuDelPanel } from './ia'
-import { ESTRUCTURA_DEFECTO, EstructuraMiniweb, FilaEstiloMenu, FilaHorario, PanelColoresMiniweb, Plegable, SIN_PORTADA_MINIWEB, SelectorCartaMiniweb } from './PanelesMiniweb'
-import { CampoImagenAsistente, EditorEnBruto, ImagenesPorPestana, TEXTO_EXTRA_EJEMPLO, TextosHorario, TextosPestanas } from './TextosEditor'
+import { ESTRUCTURA_DEFECTO, PanelColoresMiniweb, Plegable, SIN_PORTADA_MINIWEB } from './PanelesMiniweb'
+import { TEXTO_EXTRA_EJEMPLO, TextosHorario } from './TextosEditor'
 
 /* Nuevo perfil: crear una miniweb o una carta desde cero, con el asistente, la vista previa en vivo y todos los ajustes. */
 
@@ -849,68 +859,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
 
         {/* El asistente: un cuadro donde pedirle lo que sea y un solo botón que lo monta todo (diseño, nombre, textos y fotos) */}
         {pestana === 'asistente' && (
-        <div className={`order-3 grid gap-[0.6rem] lg:order-none ${esMovil && pasoMovil !== 'asistente' ? 'hidden' : ''}`}>
-          {esMovil && <BarraAsistenteMovil alInicio={() => setPasoMovil('inicio')} alEditar={() => setVistaMovil(true)} />}
-          {/* Qué diseña el asistente: una miniweb o una carta (la ficha ya no se vende) */}
-          <div className="grid grid-cols-3 gap-[0.3rem] rounded-[0.75rem] bg-zinc-200 p-[0.25rem]">
-            {[
-              ['miniweb', 'Miniweb'],
-              ['carta', 'Menú y ofertas'],
-              ['ficha', 'Ficha'],
-            ].map(([clave, texto]) => (
-              <button
-                key={clave}
-                type="button"
-                aria-pressed={producto === clave}
-                disabled={clave === 'ficha' || Boolean(disenando) || Boolean(creando)}
-                onClick={() => cambiarProducto(clave)}
-                className={`rounded-[0.55rem] py-[0.5rem] text-[0.95rem] font-semibold disabled:opacity-40 max-md:whitespace-nowrap max-md:px-[0.15rem] max-md:text-[0.78rem] ${producto === clave ? 'bg-white shadow-[0_0.05rem_0.2rem_rgb(0_0_0/0.15)]' : 'text-zinc-600'}`}
-              >
-                {texto}
-              </button>
-            ))}
-          </div>
-          {/* Con Carta elegida, qué tipo: cada uno con sus reglas en el asistente (es el mismo tipo del selector del Editor) */}
-          {producto === 'carta' && (
-            <div className="grid grid-cols-2 gap-[0.3rem] rounded-[0.75rem] bg-zinc-200 p-[0.25rem]">
-              {TIPOS_CARTA.map(t => (
-                <button
-                  key={t.clave}
-                  type="button"
-                  aria-pressed={tipoCarta === t.clave}
-                  disabled={Boolean(disenando) || Boolean(creando)}
-                  onClick={() => setTipoCarta(t.clave)}
-                  className={`rounded-[0.55rem] py-[0.45rem] text-[0.9rem] font-semibold disabled:opacity-40 ${tipoCarta === t.clave ? 'bg-white shadow-[0_0.05rem_0.2rem_rgb(0_0_0/0.15)]' : 'text-zinc-600'}`}
-                >
-                  {t.clave === 'carta' ? 'Menú del día' : 'Ofertas'}
-                </button>
-              ))}
-            </div>
-          )}
-          {/* Lo único seguro: el nombre. Si se escribe, el asistente lo usa tal cual; si no, lo saca de la captura o se lo inventa */}
-          <Etiqueta texto="Nombre del negocio">
-            <input value={nombre} onChange={e => setNombre(e.target.value)} disabled={Boolean(disenando) || Boolean(creando)} className={CAMPO} placeholder="Peluquería Ranita" />
-          </Etiqueta>
-          <textarea
-            value={cuento}
-            onChange={e => setCuento(e.target.value)}
-            disabled={Boolean(disenando) || Boolean(creando)}
-            rows={3}
-            aria-label="Pídele al asistente lo que quieras"
-            placeholder="Opcional: lo que quieras añadir (estilo, colores, datos). Con el nombre y una captura de su Instagram ya basta."
-            className={`${CAMPO} resize-y`}
-          />
-          {/* Dos imágenes opcionales para el asistente, que solo las mira (no se colocan en la miniweb): el logo de referencia (colores y carácter
-              de la marca) y una captura con información (solo se lee su texto: nombre, teléfonos, dirección, horario...) */}
-          <div className="flex flex-wrap items-center gap-x-[1.2rem] gap-y-[0.6rem]">
-            <CampoImagenAsistente titulo="Añadir logo de referencia" valor={referencia} cambiar={setReferencia} conColores bloqueado={Boolean(disenando) || Boolean(creando)} avisar={setError} />
-            <CampoImagenAsistente titulo="Añadir captura con información" valor={captura} cambiar={setCaptura} bloqueado={Boolean(disenando) || Boolean(creando)} avisar={setError} />
-          </div>
-          <button type="button" onClick={montar} disabled={!(nombre.trim() || cuento.trim() || referencia || captura) || Boolean(disenando) || Boolean(creando)} className={BOTON}>
-            {disenando ?? 'Montar el diseño con el asistente'}
-          </button>
-          {resumenDiseno && <p className="text-[0.85rem] font-semibold text-zinc-800">{resumenDiseno}</p>}
-        </div>
+        <PanelAsistente diseno={diseno} carta={carta} negocio={negocio} cambiarProducto={cambiarProducto} captura={captura} creando={creando} cuento={cuento} disenando={disenando} esMovil={esMovil} montar={montar} pasoMovil={pasoMovil} referencia={referencia} resumenDiseno={resumenDiseno} setCaptura={setCaptura} setCuento={setCuento} setError={setError} setPasoMovil={setPasoMovil} setReferencia={setReferencia} setVistaMovil={setVistaMovil} />
         )}
 
         <div className="order-3 grid gap-[1rem] md:order-none md:max-lg:col-start-1 md:max-lg:row-start-2 md:max-lg:min-w-0">
@@ -960,234 +909,34 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
               ))}
             </div>
             {pestanaAjustes === 'negocio' && (
-              <div role="tabpanel" className="grid gap-[1rem] rounded-[0.75rem] p-[0.85rem] ring-1 ring-zinc-200">
-                {bloqueTematica}
-                {bloqueNombre}
-                {producto !== 'miniweb' && campoTipografia}
-                {/* En miniweb esos cuatro colores (Personalizado) van en Ajustes personalizados; en Menú y ofertas y Ficha, aquí */}
-                {producto === 'ficha' && paletaMarca}
-                {esCarta && panelColoresCarta}
-                {datosEnBruto && <ImagenesPorPestana original={datosEnBruto} cambios={cambiosExtra} cambiar={cambiarExtra} soloOtras />}
-                {datosEnBruto && <EditorEnBruto original={datosEnBruto} cambios={cambiosExtra} cambiar={cambiarExtra} soloBloques={b => b.clave === 'datos'} />}
-              </div>
+              <PanelNegocio diseno={diseno} bloqueNombre={bloqueNombre} bloqueTematica={bloqueTematica} cambiarExtra={cambiarExtra} cambiosExtra={cambiosExtra} campoTipografia={campoTipografia} datosEnBruto={datosEnBruto} esCarta={esCarta} paletaMarca={paletaMarca} panelColoresCarta={panelColoresCarta} />
             )}
             {pestanaAjustes === 'portada' && (
-              <div role="tabpanel" className="grid gap-[1rem] rounded-[0.75rem] p-[0.85rem] ring-1 ring-zinc-200">
-                {bloquePortada}
-          {/* Carta: Diseño del precio, el detalle que remarca el precio del menú. Primero la familia (Sin estilo, Líneas o Círculos) y debajo sus subestilos */}
-          {esCarta && (
-            <details className="group/dprecio rounded-[0.75rem] ring-1 ring-zinc-200">
-              <summary className="flex cursor-pointer list-none items-center gap-[0.75rem] px-[0.85rem] py-[0.8rem] [&::-webkit-details-marker]:hidden">
-                <span className="text-[1rem] font-bold">Diseño del precio</span>
-                <ChevronDown className="ml-auto h-[1rem] w-[1rem] shrink-0 text-zinc-500 transition-transform group-open/dprecio:rotate-180" aria-hidden="true" />
-              </summary>
-              <div className="grid gap-[0.7rem] px-[0.85rem] pb-[0.85rem] pt-[0.2rem]">
-                <div className="grid gap-[0.4rem]">
-                <span className="text-[0.8rem] font-semibold text-zinc-500">Tamaño del precio</span>
-                <div className="flex gap-[0.4rem]">
-                  {['xs', 'md', 'xl'].map(t => (
-                    <button
-                      key={t}
-                      type="button"
-                      aria-pressed={tamanoPrecio === t}
-                      onClick={() => setTamanoPrecio(t)}
-                      className={`rounded-full px-[0.8rem] py-[0.25rem] text-[0.78rem] font-semibold uppercase ring-1 transition-colors ${tamanoPrecio === t ? 'bg-zinc-900 text-white ring-zinc-900' : 'bg-white text-zinc-600 ring-zinc-300 hover:ring-zinc-500'}`}
-                    >
-                      {t}
-                    </button>
-                  ))}
-                </div>
-                </div>
-                {(() => {
-                  const TEXTO = '<text x="12" y="13" text-anchor="middle" font-size="9" font-weight="700" fill="currentColor" stroke="none">12€</text>'
-                  const SUBESTILOS = {
-                    lineas: [
-                      ['raya', 'Raya', '<path d="M4 18h16" stroke-width="2.5"/>'],
-                      ['ondulada', 'Ondulada', '<path d="M3 18c1.6-2 3.2-2 4.8 0s3.2 2 4.8 0 3.2-2 4.8 0 2.2 1.4 2.6 0"/>'],
-                      ['pincelada', 'Pincelada', '<path d="M3.5 18.5c4.5-2.2 9 1.2 17-1.2" stroke-width="2.2"/>'],
-                      ['doble', 'Doble línea', '<path d="M4 17h16M4 20h16" stroke-width="1.2"/>'],
-                    ],
-                    circulos: [
-                      ['ovalo', 'Óvalo a mano', '<ellipse cx="12" cy="12" rx="9.5" ry="6.2" transform="rotate(-3 12 12)"/>'],
-                      ['repasado', 'Óvalo repasado', '<ellipse cx="12" cy="12" rx="9.5" ry="6" transform="rotate(-4 12 12)"/><ellipse cx="12" cy="12" rx="9" ry="6.6" transform="rotate(4 12 12)"/>'],
-                      ['arco', 'Arco abierto', '<path d="M6 17A9.5 6.2 0 1 0 5.5 8.5"/>'],
-                      ['sello', 'Sello de puntos', '<ellipse cx="12" cy="12" rx="9.5" ry="6.2" stroke-dasharray="0.1 2.4"/>'],
-                    ],
-                    formas: [
-                      ['estrella', 'Estrella de oferta', '<path d="M12 3l1.6 2.2 2.6-.7.5 2.7 2.6 1-1.2 2.4 1.2 2.4-2.6 1-.5 2.7-2.6-.7L12 21l-1.6-2.2-2.6.7-.5-2.7-2.6-1L5.9 13 4.7 10.6l2.6-1 .5-2.7 2.6.7z" fill="currentColor" opacity=".2" stroke="none"/>'],
-                      ['pastilla', 'Pastilla', '<rect x="2.5" y="6.5" width="19" height="11" rx="5.5" fill="currentColor" opacity=".2" stroke="none"/>'],
-                      ['etiqueta', 'Etiqueta de precio', '<path d="M2.5 12l3.5-5.5h15v11H6z" fill="currentColor" opacity=".2" stroke="none"/><circle cx="6.2" cy="12" r=".9" fill="white" stroke="none"/>'],
-                      ['cinta', 'Cinta', '<path d="M2 6.5h20l-1.8 5.5 1.8 5.5H2l1.8-5.5z" fill="currentColor" opacity=".2" stroke="none"/>'],
-                      ['burbuja', 'Burbuja', '<path d="M3.5 5.5h17v9.5H10l-3.5 3.5V15h-3z" fill="currentColor" opacity=".2" stroke="none"/>'],
-                      ['rombo', 'Rombo', '<path d="M5 6.5h14l3 5.5-3 5.5H5L2 12z" fill="currentColor" opacity=".2" stroke="none"/>'],
-                      ['escudo', 'Escudo', '<path d="M4.5 5.5h15v8l-7.5 6-7.5-6z" fill="currentColor" opacity=".2" stroke="none"/>'],
-                    ],
-                  }
-                  const familia = detallePrecio === 'ninguno' ? 'sin' : SUBESTILOS.lineas.some(([c]) => c === detallePrecio) ? 'lineas' : SUBESTILOS.formas.some(([c]) => c === detallePrecio) ? 'formas' : 'circulos'
-                  const nombreDe = [...SUBESTILOS.lineas, ...SUBESTILOS.circulos, ...SUBESTILOS.formas].find(([c]) => c === detallePrecio)?.[1]
-                  const boton = (clave, nombreBoton, dibujo, activo, alTocar) => (
-                    <button
-                      key={clave}
-                      type="button"
-                      title={nombreBoton}
-                      aria-label={nombreBoton}
-                      aria-pressed={activo}
-                      onClick={alTocar}
-                      className={claseIcono(activo)}
-                    >
-                      <svg viewBox="0 0 24 24" className="h-[1.5rem] w-[1.5rem]" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: TEXTO + dibujo }} />
-                    </button>
-                  )
-                  return (
-                    <>
-                      <div className="grid gap-[0.35rem]">
-                        <FilaIconos className="flex gap-[0.4rem]">
-                          {boton('sin', 'Sin estilo', '', familia === 'sin', () => setDetallePrecio('ninguno'))}
-                          {boton('lineas', 'Líneas', '<path d="M4 18h16" stroke-width="2.5"/>', familia === 'lineas', () => familia !== 'lineas' && setDetallePrecio('raya'))}
-                          {boton('circulos', 'Círculos', '<ellipse cx="12" cy="12" rx="9.5" ry="6.2" transform="rotate(-3 12 12)"/>', familia === 'circulos', () => familia !== 'circulos' && setDetallePrecio('ovalo'))}
-                          {boton('formas', 'Formas', '<path d="M4 6.5h16l2 5.5-2 5.5H4l-2-5.5z" fill="currentColor" opacity=".2" stroke="none"/>', familia === 'formas', () => familia !== 'formas' && setDetallePrecio('estrella'))}
-                        </FilaIconos>
-                        <p className="text-[0.85rem] font-semibold">{{ sin: 'Sin estilo', lineas: 'Líneas', circulos: 'Círculos', formas: 'Formas' }[familia]}</p>
-                      </div>
-                      {familia !== 'sin' && (
-                        <div className="grid gap-[0.35rem]">
-                          <FilaIconos className="flex flex-wrap gap-[0.4rem]">
-                            {SUBESTILOS[familia].map(([clave, nombreSub, dibujo]) => boton(clave, nombreSub, dibujo, detallePrecio === clave, () => setDetallePrecio(clave)))}
-                          </FilaIconos>
-                          <p className="text-[0.8rem] text-zinc-500">{nombreDe}</p>
-                        </div>
-                      )}
-                    </>
-                  )
-                })()}
-              </div>
-            </details>
-          )}
-                {producto === 'miniweb' && (
-                  <>
-                    <PanelColoresMiniweb sinTitulo detalle claves={['fondoPortada', 'botonFondo', 'boton', 'titulo', 'titular', 'descripcion', 'subtitulo', 'extra']} valores={coloresMini} cambiar={cambiarColorMini} autos={autosColores} extrasPorGrupo={{ 'Botón "Ver menú"': campoTextoBoton }} />
-                    {bloqueTextoInicio}
-                  </>
-                )}
-                {datosEnBruto && <ImagenesPorPestana original={datosEnBruto} cambios={cambiosExtra} cambiar={cambiarExtra} tipos={['inicio']} />}
-                {datosEnBruto && <EditorEnBruto original={datosEnBruto} cambios={cambiosExtra} cambiar={cambiarExtra} soloBloques={bloquesDePestana(['inicio'])} />}
-              </div>
+              <PanelPortada diseno={diseno} carta={carta} autosColores={autosColores} bloquePortada={bloquePortada} bloqueTextoInicio={bloqueTextoInicio} cambiarColorMini={cambiarColorMini} cambiarExtra={cambiarExtra} cambiosExtra={cambiosExtra} campoTextoBoton={campoTextoBoton} datosEnBruto={datosEnBruto} esCarta={esCarta} />
             )}
             {pestanaAjustes === 'menu' && producto === 'miniweb' && (
-              <div role="tabpanel" className="grid gap-[1rem] rounded-[0.75rem] p-[0.85rem] ring-1 ring-zinc-200">
-                <EstructuraMiniweb sinTitulo claves={['menuEn']} contactoPorDefecto={plantilla.miniweb ? 'reserva' : 'boton'} valores={estructura} cambiar={(clave, valor) => setEstructura(e => ({ ...e, [clave]: valor }))} />
-                <FilaEstiloMenu valor={barra} cambiar={setBarra} />
-                <PanelColoresMiniweb sinTitulo detalle claves={['menuFondo', 'menuTexto', 'menuSubrayado']} valores={coloresMini} cambiar={cambiarColorMini} autos={autosColores} />
-                {datosEnBruto && <ImagenesPorPestana original={datosEnBruto} cambios={cambiosExtra} cambiar={cambiarExtra} tipos={['menu']} />}
-                {datosEnBruto && (
-                  <Plegable titulo="Texto pestañas">
-                    <TextosPestanas original={datosEnBruto} cambios={cambiosExtra} cambiar={cambiarExtra} />
-                  </Plegable>
-                )}
-                {datosEnBruto && <EditorEnBruto original={datosEnBruto} cambios={cambiosExtra} cambiar={cambiarExtra} soloBloques={bloquesDePestana(['menu'])} />}
-              </div>
+              <PanelMenu diseno={diseno} autosColores={autosColores} cambiarColorMini={cambiarColorMini} cambiarExtra={cambiarExtra} cambiosExtra={cambiosExtra} datosEnBruto={datosEnBruto} plantilla={plantilla} />
             )}
             {pestanaAjustes === 'redes' && producto === 'miniweb' && (
-              <div role="tabpanel" className="grid gap-[1rem] rounded-[0.75rem] p-[0.85rem] ring-1 ring-zinc-200">
-                <EstructuraMiniweb sinTitulo claves={['redesEn', 'compartirEn']} contactoPorDefecto={plantilla.miniweb ? 'reserva' : 'boton'} valores={estructura} cambiar={(clave, valor) => setEstructura(e => ({ ...e, [clave]: valor }))} />
-                <PanelColoresMiniweb sinTitulo detalle claves={['redesFondo', 'redesIconos']} valores={coloresMini} cambiar={cambiarColorMini} autos={autosColores} />
-                {datosEnBruto && <EditorEnBruto original={datosEnBruto} cambios={cambiosExtra} cambiar={cambiarExtra} soloBloques={['Redes']} />}
-              </div>
+              <PanelRedes diseno={diseno} autosColores={autosColores} cambiarColorMini={cambiarColorMini} cambiarExtra={cambiarExtra} cambiosExtra={cambiosExtra} datosEnBruto={datosEnBruto} plantilla={plantilla} />
             )}
             {pestanaAjustes === 'horario' && producto === 'miniweb' && (
-              <div role="tabpanel" className="grid gap-[1rem] rounded-[0.75rem] p-[0.85rem] ring-1 ring-zinc-200">
-                <FilaHorario valor={horarioMini} cambiar={setHorarioMini} variante={horarioVar} cambiarVariante={setHorarioVar} />
-                <PanelColoresMiniweb sinTitulo detalle claves={['horarioTitulo', 'horarioDias', 'horarioHoras', 'horarioMapa']} valores={coloresMini} cambiar={cambiarColorMini} autos={autosColores} />
-                {bloqueTextoHorarios}
-                {datosEnBruto && <ImagenesPorPestana original={datosEnBruto} cambios={cambiosExtra} cambiar={cambiarExtra} tipos={['horario']} />}
-                {datosEnBruto && <EditorEnBruto original={datosEnBruto} cambios={cambiosExtra} cambiar={cambiarExtra} soloBloques={bloquesDePestana(['horario'])} />}
-              </div>
+              <PanelHorario diseno={diseno} autosColores={autosColores} bloqueTextoHorarios={bloqueTextoHorarios} cambiarColorMini={cambiarColorMini} cambiarExtra={cambiarExtra} cambiosExtra={cambiosExtra} datosEnBruto={datosEnBruto} />
             )}
             {pestanaAjustes === 'reserva' && producto === 'miniweb' && (
-              <div role="tabpanel" className="grid gap-[1rem] rounded-[0.75rem] p-[0.85rem] ring-1 ring-zinc-200">
-                <PanelColoresMiniweb sinTitulo detalle claves={['reservaTitulo', 'reservaTexto', 'reservaBoton', 'reservaBotonTexto', 'reservaTelefono']} valores={coloresMini} cambiar={cambiarColorMini} autos={autosColores} />
-                <EstructuraMiniweb sinTitulo claves={['contactoEn']} contactoPorDefecto={plantilla.miniweb ? 'reserva' : 'boton'} valores={estructura} cambiar={(clave, valor) => setEstructura(e => ({ ...e, [clave]: valor }))} />
-                {datosEnBruto && <ImagenesPorPestana original={datosEnBruto} cambios={cambiosExtra} cambiar={cambiarExtra} tipos={['reservar', 'contacto', 'cita', 'encargos', 'comanda', 'precios']} />}
-                {datosEnBruto && <EditorEnBruto original={datosEnBruto} cambios={cambiosExtra} cambiar={cambiarExtra} soloBloques={bloquesDePestana(['reservar', 'contacto', 'cita', 'encargos', 'comanda', 'precios'])} />}
-              </div>
+              <PanelReserva diseno={diseno} autosColores={autosColores} cambiarColorMini={cambiarColorMini} cambiarExtra={cambiarExtra} cambiosExtra={cambiosExtra} datosEnBruto={datosEnBruto} plantilla={plantilla} />
             )}
             {pestanaAjustes === 'resena' && producto === 'miniweb' && (
-              <div role="tabpanel" className="grid gap-[1rem] rounded-[0.75rem] p-[0.85rem] ring-1 ring-zinc-200">
-                <PanelColoresMiniweb sinTitulo detalle claves={['fondoResena']} valores={coloresMini} cambiar={cambiarColorMini} autos={autosColores} />
-                {datosEnBruto && <EditorEnBruto original={datosEnBruto} cambios={cambiosExtra} cambiar={cambiarExtra} soloBloques={['Reseña de Google']} />}
-                {datosEnBruto && <EditorEnBruto original={datosEnBruto} cambios={cambiosExtra} cambiar={cambiarExtra} soloBloques={b => ['destacada', 'carrusel'].includes(b.clave)} />}
-              </div>
+              <PanelResena diseno={diseno} autosColores={autosColores} cambiarColorMini={cambiarColorMini} cambiarExtra={cambiarExtra} cambiosExtra={cambiosExtra} datosEnBruto={datosEnBruto} />
             )}
           {pestanaAjustes === 'imagenes' && esCarta && (
-            <div role="tabpanel" className="grid gap-[1rem] rounded-[0.75rem] p-[0.85rem] ring-1 ring-zinc-200">
-              {datosEnBruto && <ImagenesPorPestana original={datosEnBruto} cambios={cambiosExtra} cambiar={cambiarExtra} />}
-            </div>
+            <PanelImagenes cambiarExtra={cambiarExtra} cambiosExtra={cambiosExtra} datosEnBruto={datosEnBruto} />
           )}
           {pestanaAjustes === 'estructura' && esCarta && (
-            <div role="tabpanel" className="grid gap-[1rem] rounded-[0.75rem] p-[0.85rem] ring-1 ring-zinc-200">
-          {/* Carta: Estructura, dónde va cada pieza. De momento, el enlace "Conoce [negocio]" (a la miniweb del negocio) */}
-          {esCarta && (
-            <Plegable titulo="Estructura" elegido={{ ninguno: 'Sin enlace', izquierda: 'Enlace a la izquierda', derecha: 'Enlace a la derecha' }[enlaceNegocio]}>
-              <div className="grid gap-[0.4rem]">
-                <span className="text-[0.8rem] text-zinc-500">Enlace al negocio (Conoce...)</span>
-                <FilaIconos className="flex flex-wrap items-center gap-[0.4rem]">
-                  {[
-                    ['ninguno', 'Sin enlace', '<path d="M9 8l6 6M15 8l-6 6" stroke-width="1.4"/>'],
-                    ['izquierda', 'Arriba a la izquierda', '<rect x="7.5" y="4" width="6" height="2.6" rx="1.3" fill="currentColor"/>'],
-                    ['derecha', 'Arriba a la derecha', '<rect x="10.5" y="4" width="6" height="2.6" rx="1.3" fill="currentColor"/>'],
-                  ].map(([clave, nombreLado, dibujo]) => (
-                    <button
-                      key={clave}
-                      type="button"
-                      title={nombreLado}
-                      aria-label={`Enlace al negocio: ${nombreLado}`}
-                      aria-pressed={enlaceNegocio === clave}
-                      onClick={() => setEnlaceNegocio(clave)}
-                      className={claseIcono(enlaceNegocio === clave)}
-                    >
-                      <svg viewBox="0 0 24 24" className="h-[1.5rem] w-[1.5rem]" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: '<rect x="5.5" y="2" width="13" height="20" rx="2.5"/>' + dibujo }} />
-                    </button>
-                  ))}
-                </FilaIconos>
-                <p className="text-[0.85rem] font-semibold">{{ ninguno: 'Sin enlace', izquierda: 'Arriba a la izquierda', derecha: 'Arriba a la derecha' }[enlaceNegocio]}</p>
-              </div>
-            </Plegable>
-          )}
-            </div>
+            <PanelEstructura carta={carta} esCarta={esCarta} />
           )}
           {pestanaAjustes === 'ajustes' && (
-            <div role="tabpanel" className="grid gap-[0.75rem] rounded-[0.75rem] p-[0.85rem] ring-1 ring-zinc-200">
-              {/* Lo que no se puede cambiar desde las otras pestañas: la carta del menú, los ajustes de Menú y ofertas y de la Ficha, y los datos en bruto. En miniweb, también los colores de partida (Personalizado) */}
-              {(producto === 'miniweb' || esCarta) && paletaMarca}
-          {producto === 'ficha' && (
-            <Plegable titulo={producto === 'miniweb' ? 'Estilo del menú de navegación' : 'Estilo de pestañas'} elegido={barra ? BARRAS[barra]?.nombre : producto === 'miniweb' ? 'La rayita' : 'El suyo'}>
-              <div className="flex flex-wrap gap-[0.4rem]">
-                {[['', { nombre: producto === 'miniweb' ? 'La rayita (la de siempre)' : 'El suyo' }], ...Object.entries(BARRAS)].map(([clave, b]) => (
-                  <button key={clave || 'suyo'} type="button" aria-pressed={barra === clave} onClick={() => setBarra(clave)} className={opcion(barra === clave)}>
-                    {b.nombre}
-                  </button>
-                ))}
-              </div>
-            </Plegable>
-          )}
-
-            {/* Imágenes: todas las de la página, por pestaña, con el buscador de fotos y para subir la tuya */}
-            {producto === 'ficha' && datosEnBruto && (
-              <details className="group/imagenes rounded-[0.75rem] ring-1 ring-zinc-200">
-                <summary className="flex cursor-pointer list-none items-center gap-[0.75rem] px-[0.85rem] py-[0.8rem] [&::-webkit-details-marker]:hidden">
-                  <span className="text-[1rem] font-bold">Imágenes</span>
-                  <ChevronDown className="ml-auto h-[1rem] w-[1rem] shrink-0 text-zinc-500 transition-transform group-open/imagenes:rotate-180" aria-hidden="true" />
-                </summary>
-                <div className="px-[0.85rem] pb-[0.85rem] pt-[0.2rem]">
-                  <ImagenesPorPestana original={datosEnBruto} cambios={cambiosExtra} cambiar={cambiarExtra} />
-                </div>
-              </details>
-            )}
-            {/* Todos los datos editables en bruto, en sus desplegables (los del editor de un perfil) */}
-            {!esCarta && datosEnBruto && <EditorEnBruto original={datosEnBruto} cambios={cambiosExtra} cambiar={cambiarExtra} soloAjustes />}
-            {/* La carta del menú, abajo del todo */}
-            {producto === 'miniweb' && <SelectorCartaMiniweb valor={cartaMini} cambiar={valor => setCartaMini(valor ?? '')} exportadas={(filas ?? []).filter(f => f.tipo === 'carta' && f.base && f.cambios?._cliente)} />}
-            </div>
+            <PanelAjustes diseno={diseno} cambiarExtra={cambiarExtra} cambiosExtra={cambiosExtra} datosEnBruto={datosEnBruto} esCarta={esCarta} filas={filas} paletaMarca={paletaMarca} />
           )}
           </div>
           </div>
