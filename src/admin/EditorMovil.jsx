@@ -1,7 +1,8 @@
-import { CalendarCheck, Camera, ChevronLeft, Clock, Copy, Image as ImageIcon, LayoutTemplate, List, Save, Share2, SlidersHorizontal, Star, Store } from 'lucide-react'
+import { CalendarCheck, Camera, ChevronLeft, ChevronRight, Clock, Copy, Image as ImageIcon, LayoutTemplate, List, Save, Share2, SlidersHorizontal, Star, Store } from 'lucide-react'
+import { BOTON } from '../components/panel'
 
-/* Las piezas del editor nuevo de móvil (Nuevo perfil, menos de 768 px): la fila de iconos de arriba (copia, guardar y los grupos de ajustes, con sus
-   panelitos) y la flecha de volver. El estado (en qué pantalla se está, qué panelito está abierto...) vive en usePantallaMovil y en NuevoPerfil. */
+/* Las piezas del editor nuevo de móvil (Nuevo perfil, menos de 768 px): la pantalla de inicio, la fila de arriba de la pantalla del Asistente, la fila de iconos
+   de arriba del editor (copia, guardar y los grupos de ajustes, con sus panelitos) y la flecha de volver. El estado (en qué pantalla se está, qué panelito está abierto...) vive en usePantallaMovil y en NuevoPerfil. */
 
 // El icono de cada grupo de ajustes, en la fila de iconos de la vista previa del móvil
 const ICONO_GRUPO = {
@@ -160,5 +161,53 @@ export function FlechaVolver({ flechasVisibles, alVolver }) {
     >
       <ChevronLeft className="h-[1.3rem] w-[1.3rem]" aria-hidden="true" />
     </button>
+  )
+}
+
+// La pantalla de inicio: el selector de Producto y Continuar. alContinuar lleva al editor o, con el Asistente elegido, a su pantalla
+export function InicioMovil({ producto, pestana, cambiarProducto, alContinuar }) {
+  return (
+    <div className="order-2 grid gap-[1rem] md:hidden">
+      <div className="grid gap-[0.4rem]">
+        <span className="text-[0.8rem] font-semibold text-zinc-500">Producto</span>
+        <div className="grid grid-cols-3 gap-[0.3rem] rounded-[0.75rem] bg-zinc-200 p-[0.25rem]">
+          {[
+            ['miniweb', 'Miniweb'],
+            ['carta', 'Menú y ofertas'],
+            ['ficha', 'Ficha'],
+          ].map(([clave, texto]) => (
+            <button
+              key={clave}
+              type="button"
+              aria-pressed={producto === clave}
+              disabled={clave === 'ficha' && pestana === 'asistente'}
+              onClick={() => cambiarProducto(clave)}
+              className={`rounded-[0.55rem] py-[0.5rem] text-[0.95rem] font-semibold disabled:opacity-40 max-md:whitespace-nowrap max-md:px-[0.15rem] max-md:text-[0.78rem] ${producto === clave ? 'bg-white shadow-[0_0.05rem_0.2rem_rgb(0_0_0/0.15)]' : 'text-zinc-600'}`}
+            >
+              {texto}
+            </button>
+          ))}
+        </div>
+      </div>
+      <button type="button" onClick={alContinuar} className={BOTON}>
+        Continuar
+      </button>
+    </div>
+  )
+}
+
+// La fila de arriba de la pantalla del Asistente: volver al inicio y pasar al editor con lo que haya generado
+export function BarraAsistenteMovil({ alInicio, alEditar }) {
+  return (
+  <div className="flex items-center justify-between md:hidden">
+    <button type="button" onClick={alInicio} className="flex items-center gap-[0.2rem] text-[0.9rem] font-semibold text-zinc-500">
+      <ChevronLeft className="h-[1.1rem] w-[1.1rem]" aria-hidden="true" />
+      Inicio
+    </button>
+    <button type="button" onClick={alEditar} className="flex items-center gap-[0.2rem] rounded-full bg-zinc-900 px-[0.9rem] py-[0.4rem] text-[0.9rem] font-semibold text-white">
+      Editar
+      <ChevronRight className="h-[1.1rem] w-[1.1rem]" aria-hidden="true" />
+    </button>
+  </div>
   )
 }

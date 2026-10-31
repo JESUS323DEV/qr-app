@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { BotonMasDisenos, FilaIconos, HojaCtx } from './FilaIconos'
 import usePantallaMovil from './usePantallaMovil'
-import { BarraIconosMovil, FlechaVolver } from './EditorMovil'
+import { BarraAsistenteMovil, BarraIconosMovil, FlechaVolver, InicioMovil } from './EditorMovil'
 import CampoColor from '../components/CampoColor'
-import { BadgePercent, List, Camera, ChevronDown, ChevronLeft, ChevronRight, ChevronsDownUp, Frame, GalleryHorizontal, ImagePlus, Maximize, Newspaper, RotateCcw, Store, UtensilsCrossed } from 'lucide-react'
+import { BadgePercent, List, Camera, ChevronDown, ChevronsDownUp, Frame, GalleryHorizontal, ImagePlus, Maximize, Newspaper, RotateCcw, Store, UtensilsCrossed } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { aplicar, conEdicion } from '../lib/ediciones'
 import { getNegocio, negocios } from '../negocios'
@@ -1536,49 +1536,18 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
         </div>
         {/* Móvil: la pantalla de inicio, con el producto y Continuar (al editor nuevo o, con el Asistente, a su pantalla) */}
         {enInicio && (
-          <div className="order-2 grid gap-[1rem] md:hidden">
-            <div className="grid gap-[0.4rem]">
-              <span className={titulo}>Producto</span>
-              <div className="grid grid-cols-3 gap-[0.3rem] rounded-[0.75rem] bg-zinc-200 p-[0.25rem]">
-                {[
-                  ['miniweb', 'Miniweb'],
-                  ['carta', 'Menú y ofertas'],
-                  ['ficha', 'Ficha'],
-                ].map(([clave, texto]) => (
-                  <button
-                    key={clave}
-                    type="button"
-                    aria-pressed={producto === clave}
-                    disabled={clave === 'ficha' && pestana === 'asistente'}
-                    onClick={() => cambiarProducto(clave)}
-                    className={`rounded-[0.55rem] py-[0.5rem] text-[0.95rem] font-semibold disabled:opacity-40 max-md:whitespace-nowrap max-md:px-[0.15rem] max-md:text-[0.78rem] ${producto === clave ? 'bg-white shadow-[0_0.05rem_0.2rem_rgb(0_0_0/0.15)]' : 'text-zinc-600'}`}
-                  >
-                    {texto}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <button type="button" onClick={() => (pestana === 'asistente' ? setPasoMovil('asistente') : setVistaMovil(true))} className={BOTON}>
-              Continuar
-            </button>
-          </div>
+          <InicioMovil
+            producto={producto}
+            pestana={pestana}
+            cambiarProducto={cambiarProducto}
+            alContinuar={() => (pestana === 'asistente' ? setPasoMovil('asistente') : setVistaMovil(true))}
+          />
         )}
 
         {/* El asistente: un cuadro donde pedirle lo que sea y un solo botón que lo monta todo (diseño, nombre, textos y fotos) */}
         {pestana === 'asistente' && (
         <div className={`order-3 grid gap-[0.6rem] lg:order-none ${esMovil && pasoMovil !== 'asistente' ? 'hidden' : ''}`}>
-          {esMovil && (
-            <div className="flex items-center justify-between md:hidden">
-              <button type="button" onClick={() => setPasoMovil('inicio')} className="flex items-center gap-[0.2rem] text-[0.9rem] font-semibold text-zinc-500">
-                <ChevronLeft className="h-[1.1rem] w-[1.1rem]" aria-hidden="true" />
-                Inicio
-              </button>
-              <button type="button" onClick={() => setVistaMovil(true)} className="flex items-center gap-[0.2rem] rounded-full bg-zinc-900 px-[0.9rem] py-[0.4rem] text-[0.9rem] font-semibold text-white">
-                Editar
-                <ChevronRight className="h-[1.1rem] w-[1.1rem]" aria-hidden="true" />
-              </button>
-            </div>
-          )}
+          {esMovil && <BarraAsistenteMovil alInicio={() => setPasoMovil('inicio')} alEditar={() => setVistaMovil(true)} />}
           {/* Qué diseña el asistente: una miniweb o una carta (la ficha ya no se vende) */}
           <div className="grid grid-cols-3 gap-[0.3rem] rounded-[0.75rem] bg-zinc-200 p-[0.25rem]">
             {[
