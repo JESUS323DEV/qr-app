@@ -5,6 +5,9 @@ import { maxDe } from '../datos'
 // BloqueTextoInicio: sacado de NuevoPerfil.jsx. Recibe los objetos de los hooks (diseno, carta, negocio) y lo demás que se calcula en NuevoPerfil
 export default function BloqueTextoInicio({ negocio, MAX_TEXTO_EXTRA, campoTipografia, conTextoExtra, inicioBase, maxGrande, textoExtra, textoGrande, textoPequeno, textosEditados }) {
   const { setTextosMini } = negocio
+  // Lo recomendado (el largo del ejemplo de la plantilla, algo más): avisa con el contador, pero no impide escribir más
+  const maxPequeno = maxDe(inicioBase?.descripcion ?? 'Descripción de la portada del negocio, en pocas palabras')
+  const claseContador = (largo, max) => `justify-self-end text-[0.75rem] ${largo > max ? 'font-semibold text-amber-500' : 'text-zinc-500'}`
   return (
     <Plegable titulo="Texto inicio" elegido={textosEditados ? 'Cambiados' : 'Los de la plantilla'}>
       <div className="grid gap-[0.9rem]">
@@ -15,8 +18,8 @@ export default function BloqueTextoInicio({ negocio, MAX_TEXTO_EXTRA, campoTipog
             <p className="text-[0.8rem] font-semibold text-zinc-500">Texto grande</p>
             <p className="text-[0.8rem] text-zinc-400">El titular de la portada. Si no cabe en una línea, baja solo a la siguiente.</p>
           </div>
-          <input value={textoGrande} maxLength={maxGrande} onChange={e => setTextosMini(t => ({ ...t, titular: e.target.value }))} className={CAMPO} />
-          <span className="justify-self-end text-[0.75rem] text-zinc-500">
+          <input value={textoGrande} onChange={e => setTextosMini(t => ({ ...t, titular: e.target.value }))} className={CAMPO} />
+          <span className={claseContador(textoGrande.length, maxGrande)}>
             {textoGrande.length}/{maxGrande}
           </span>
         </div>
@@ -27,13 +30,12 @@ export default function BloqueTextoInicio({ negocio, MAX_TEXTO_EXTRA, campoTipog
           </div>
           <textarea
             value={textoPequeno}
-            maxLength={maxDe(inicioBase?.descripcion ?? 'Descripción de la portada del negocio, en pocas palabras')}
             onChange={e => setTextosMini(t => ({ ...t, descripcion: e.target.value }))}
             rows={3}
             className={`${CAMPO} resize-y`}
           />
-          <span className="justify-self-end text-[0.75rem] text-zinc-500">
-            {textoPequeno.length}/{maxDe(inicioBase?.descripcion ?? 'Descripción de la portada del negocio, en pocas palabras')}
+          <span className={claseContador(textoPequeno.length, maxPequeno)}>
+            {textoPequeno.length}/{maxPequeno}
           </span>
         </div>
         {conTextoExtra && (
@@ -44,12 +46,11 @@ export default function BloqueTextoInicio({ negocio, MAX_TEXTO_EXTRA, campoTipog
             </div>
             <input
               value={textoExtra}
-              maxLength={MAX_TEXTO_EXTRA}
               onChange={e => setTextosMini(t => ({ ...t, info: e.target.value }))}
               placeholder="De martes a domingo, de 13:00 a 23:00"
               className={CAMPO}
             />
-            <span className="justify-self-end text-[0.75rem] text-zinc-500">
+            <span className={claseContador(textoExtra.length, MAX_TEXTO_EXTRA)}>
               {textoExtra.length}/{MAX_TEXTO_EXTRA}
             </span>
           </div>
