@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { HojaCtx } from './FilaIconos'
 import usePantallaMovil from './usePantallaMovil'
+import instantaneaPerfil from './perfil/instantaneaPerfil'
+import marcaVista from './perfil/marcaVista'
 import PanelAsistente from './perfil/paneles/PanelAsistente'
 import PanelPortada from './perfil/paneles/PanelPortada'
 import PanelAjustes from './perfil/paneles/PanelAjustes'
@@ -61,13 +63,15 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
   const [pestana, setPestana] = useState('personalizar')
   // El resto del estado, agrupado por temas (src/admin/perfil/)
   const diseno = usePerfilDiseno()
-  const { tema, setTema, producto, setProducto, hero, setHero, barra, setBarra, corte, setCorte, formato, setFormato, disposicion, setDisposicion, composicion, setComposicion, distribucion, setDistribucion, pase, setPase, montaje, setMontaje, horarioMini, setHorarioMini, horarioVar, setHorarioVar, filtroFoto, setFiltroFoto, tamanoNombre, setTamanoNombre, cabecera, setCabecera, estructura, setEstructura, cartaMini, setCartaMini, coloresMini, setColoresMini } = diseno
+  const { tema, setTema, producto, setProducto, hero, setHero, barra, setBarra, setCorte, setFormato, setDisposicion, setComposicion, setDistribucion, setPase, setMontaje, setHorarioMini, setHorarioVar, setFiltroFoto, setTamanoNombre, cabecera, setCabecera, estructura, setEstructura, setCartaMini, coloresMini, setColoresMini } = diseno
   const carta = usePerfilCarta()
-  const { tipoCarta, setTipoCarta, subCarta, setSubCarta, estilo, setEstilo, colorPrecio, setColorPrecio, colorPrecioTexto, setColorPrecioTexto, fondo2, setFondo2, textoSuave, setTextoSuave, coloresCarta, setColoresCarta, tamanoPrecio, setTamanoPrecio, enlaceNegocio, setEnlaceNegocio, filtroCarta, setFiltroCarta, colorFiltroCarta, setColorFiltroCarta, detallePrecio, setDetallePrecio } = carta
+  const { tipoCarta, setTipoCarta, setSubCarta, estilo, setEstilo, colorPrecio, setColorPrecio, colorPrecioTexto, setColorPrecioTexto, fondo2, setFondo2, textoSuave, setTextoSuave, coloresCarta, setColoresCarta, setTamanoPrecio, setEnlaceNegocio, setFiltroCarta, setColorFiltroCarta, setDetallePrecio } = carta
   const negocio = usePerfilNegocio()
-  const { nombre, setNombre, etiqueta, setEtiqueta, lema, setLema, logo, setLogo, principal, setPrincipal, acento, setAcento, colorTexto, setColorTexto, fondo, setFondo, letra, setLetra, textosMini, setTextosMini, nombreVista, setNombreVista } = negocio
-  const { cuento, setCuento, disenando, setDisenando, resumenDiseno, setResumenDiseno, cambiosIA, setCambiosIA, versionIA, setVersionIA, redactando, setRedactando, referencia, setReferencia, captura, setCaptura, infoImagen, setInfoImagen, horarioIA, setHorarioIA, generado, setGenerado } = usePerfilAsistente()
-  const { creando, setCreando, aviso, setAviso, error, setError, copiaCargada, setCopiaCargada, huellaBase, setHuellaBase, versionBase, setVersionBase, preguntaSalir, setPreguntaSalir, cambiosExtra, setCambiosExtra, versionExtra, setVersionExtra } = usePerfilCopias()
+  const { nombre, setNombre, etiqueta, setEtiqueta, setLema, logo, setLogo, principal, setPrincipal, acento, setAcento, colorTexto, setColorTexto, fondo, setFondo, setLetra, textosMini, setTextosMini, setNombreVista } = negocio
+  const asistente = usePerfilAsistente()
+  const { cuento, setCuento, disenando, setDisenando, resumenDiseno, setResumenDiseno, cambiosIA, setCambiosIA, setVersionIA, redactando, setRedactando, referencia, setReferencia, captura, setCaptura, infoImagen, setInfoImagen, horarioIA, setHorarioIA, generado, setGenerado } = asistente
+  const copias = usePerfilCopias()
+  const { creando, setCreando, aviso, setAviso, error, setError, copiaCargada, setCopiaCargada, huellaBase, setHuellaBase, versionBase, setVersionBase, preguntaSalir, setPreguntaSalir, cambiosExtra, setCambiosExtra, setVersionExtra } = copias
   // En tablet vertical (768 a 1023 px) Ficha queda bloqueada en el selector de Producto
   const [tabletVertical, setTabletVertical] = useState(() => window.matchMedia('(min-width: 768px) and (max-width: 1023px)').matches)
   useEffect(() => {
@@ -173,52 +177,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
     return () => clearTimeout(t)
   }, [nombre])
   // Marca de prueba en la dirección: la vista previa enseña el nombre, los colores y la tipografía al momento
-  const marca = [
-    // Con el nombre vacío, la vista previa enseña "Prueba" (y no el de la demo, Chalaquita, Almendra...)
-    `nombre=${encodeURIComponent(nombreVista || 'Prueba')}`,
-    esCarta && lema !== null && `lema=${encodeURIComponent(lema)}`,
-    principal && `principal=${principal.slice(1)}`,
-    acento && `acento=${acento.slice(1)}`,
-    colorTexto && `texto=${colorTexto.slice(1)}`,
-    fondo && `fondo=${fondo.slice(1)}`,
-    letra && `letra=${letra}`,
-    ...(producto === 'miniweb' && textosEditados ? [`tg1=${encodeURIComponent(textoGrande)}`, `tp=${encodeURIComponent(textoPequeno)}`] : []),
-    producto === 'miniweb' && conTextoExtra && `ti=${encodeURIComponent(textoExtra)}`,
-    producto === 'miniweb' && Object.keys(coloresMini).length > 0 && `col=${Object.entries(coloresMini).map(([clave, valor]) => `${clave}-${valor.slice(1)}`).join(',')}`,
-    !esCarta && tamanoNombre !== 'md' && `tamano=${tamanoNombre}`,
-    esCarta && tamanoNombre !== 'md' && `tnombre=${tamanoNombre}`,
-    !esCarta && hero === 'diagonal' && corte !== 'diagonal' && `corte=${corte}`,
-    !esCarta && hero === 'editorial' && formato !== 'clasica' && `formato=${formato}`,
-    !esCarta && hero === 'fullbleed' && disposicion !== 'clasica' && `disposicion=${disposicion}`,
-    !esCarta && hero === 'mosaico' && composicion !== 'clasica' && `composicion=${composicion}`,
-    !esCarta && hero === 'retrato' && distribucion !== 'clasica' && `distribucion=${distribucion}`,
-    !esCarta && hero === 'galeria' && pase !== 'clasica' && `pase=${pase}`,
-    !esCarta && hero === 'polaroid' && montaje !== 'clasica' && `montaje=${montaje}`,
-    producto === 'miniweb' && cartaMini && `carta=${cartaMini}`,
-    producto === 'miniweb' && horarioMini && `horario=${horarioMini}`,
-    producto === 'miniweb' && horarioVar !== 'clasica' && `horariovar=${horarioVar}`,
-    esCarta && estilo === 'inmersiva' && subCarta === 'columna' && 'sub=columna',
-    esCarta && 'derivar=1',
-    esCarta && colorPrecio && `precio=${colorPrecio.slice(1)}`,
-    esCarta && colorPrecioTexto && `ptxt=${colorPrecioTexto.slice(1)}`,
-    esCarta && fondo2 && `f2=${fondo2.slice(1)}`,
-    esCarta && textoSuave && `ts=${textoSuave.slice(1)}`,
-    esCarta && Object.keys(coloresCarta).length > 0 && `colcarta=${Object.entries(coloresCarta).map(([clave, valor]) => `${clave}-${valor.slice(1)}`).join(',')}`,
-    esCarta && tamanoPrecio !== 'md' && `tprecio=${tamanoPrecio}`,
-    esCarta && `enlace=${enlaceNegocio}`,
-    esCarta && estilo === 'inmersiva' && filtroCarta !== 100 && `filtro=${filtroCarta}`,
-    esCarta && estilo === 'inmersiva' && colorFiltroCarta && `cfiltro=${colorFiltroCarta.slice(1)}`,
-    esCarta && detallePrecio !== 'raya' && `dprecio=${detallePrecio}`,
-    producto === 'miniweb' && filtroFoto !== 100 && `filtro=${filtroFoto}`,
-    ...(producto === 'miniweb' ? lugares.map(([clave, valor]) => `${clave.toLowerCase()}=${valor}`) : []),
-    producto === 'miniweb' && barra && `barra=${barra}`,
-    conCabecera && cabecera && `cabecera=${cabecera.slice(1)}`,
-    logoElegido && `logo=${encodeURIComponent(logoElegido)}`,
-    (cambiosIA || Object.keys(cambiosExtra).length > 0 || Object.keys(textosPrevia).length > 0) && `ia=${versionIA}-${versionExtra}`,
-  ]
-    .filter(Boolean)
-    .map(p => `&${p}`)
-    .join('')
+  const marca = marcaVista({ ...negocio, ...diseno, ...copias, ...asistente, ...carta, conCabecera, conTextoExtra, esCarta, logoElegido, lugares, textoExtra, textoGrande, textoPequeno, textosEditados, textosPrevia })
 
   const vista =
     producto === 'ficha'
@@ -333,54 +292,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
   }, [redactando]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Cómo está todo ahora (lo elegido en cada selector, los textos y lo que ha hecho el asistente), para poder reabrir la copia tal cual
-  const instantanea = () => ({
-    producto,
-    tema,
-    tipoCarta,
-    subCarta,
-    colorPrecio,
-    colorPrecioTexto,
-    fondo2,
-    textoSuave,
-    coloresCarta,
-    tamanoPrecio,
-    enlaceNegocio,
-    filtroCarta,
-    colorFiltroCarta,
-    detallePrecio,
-    hero,
-    barra,
-    estilo,
-    nombre,
-    etiqueta,
-    lema,
-    logo,
-    principal,
-    acento,
-    colorTexto,
-    fondo,
-    letra,
-    cabecera,
-    coloresMini,
-    textosMini,
-    estructura,
-    corte,
-    formato,
-    disposicion,
-    composicion,
-    distribucion,
-    pase,
-    montaje,
-    tamanoNombre,
-    cartaMini,
-    horarioMini,
-    horarioVar,
-    filtroFoto,
-    cuento,
-    cambiosExtra,
-    cambiosIA,
-    resumenDiseno,
-  })
+  const instantanea = () => instantaneaPerfil({ ...negocio, ...diseno, ...copias, ...asistente, ...carta })
 
   // Cambios sin guardar: la huella de todo lo elegido ahora comparada con la de la última vez que se abrió el editor, se cargó una copia o se guardó.
   // marcarBase pide que la próxima huella pase a ser la de partida (versionBase hace que se compruebe aunque la huella no cambie)
