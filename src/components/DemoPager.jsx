@@ -3,12 +3,13 @@ import { useNavigate } from 'react-router-dom'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { secuenciaDemos, tematicaDe, getTematica } from '../lib/tematicas'
 import useAutoHide from '../lib/useAutoHide'
+import { NOMBRE_MARCO } from './MarcoDemoTablet'
 
 /* Flechas para pasar de una demo a otra, solo en móvil (por debajo de lg). Adaptado de platform.
    - Atrás bloqueado en la primera demo y adelante en la última.
    - Al cambiar de temática sale una pantalla corta de transición.
    - Se desvanecen solas (useAutoHide) para no estorbar a la demo.
-   No se muestra dentro de un iframe (los móviles del catálogo).
+   No se muestra dentro de un iframe (las vistas previas del panel), salvo en el marco de las demos en tablet (MarcoDemoTablet).
    Por defecto recorre las miniwebs de demo; con `secuencia` y `rutaDe` recorre otra lista (las cartas),
    y sin `conTransicion` no hay pantalla de cambio de temática. */
 // enEscritorio: las flechas también en pantallas grandes (el Vistazo de un grupo, para enseñarlo desde una tablet o un ordenador)
@@ -17,7 +18,7 @@ export default function DemoPager({ negocio, secuencia = secuenciaDemos, rutaDe 
   const [transicion, setTransicion] = useState(null)
   const visible = useAutoHide(negocio.slug)
 
-  const enMarco = typeof window !== 'undefined' && window.self !== window.top
+  const enMarco = typeof window !== 'undefined' && window.self !== window.top && window.name !== NOMBRE_MARCO
   if (enMarco) return null
 
   const i = secuencia.findIndex(n => n.slug === negocio.slug)
