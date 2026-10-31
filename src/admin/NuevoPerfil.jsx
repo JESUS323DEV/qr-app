@@ -1714,6 +1714,8 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
           {/* Personalizar: el producto y, debajo, desplegables independientes (todos cerrados al entrar) */}
           {pestana === 'personalizar' && (
           <div className={`grid gap-[1rem] ${hoja ? `fixed inset-x-0 top-[4rem] z-30 max-h-[60svh] overflow-y-auto rounded-b-[1.25rem] bg-white px-[1rem] pb-[1.5rem] pt-[1rem] shadow-[0_0.5rem_1.5rem_rgb(0_0_0/0.4)] ring-1 ring-zinc-300 [&>*]:[zoom:0.85] transition-opacity duration-500 ${flechasVisibles ? '' : 'pointer-events-none opacity-0'}` : 'max-md:hidden'}`}>
+          {/* En la hoja de ajustes del móvil, el nombre del grupo abierto como título, para saber dónde estás */}
+          {hoja && <p className="text-[1.1rem] font-bold">{gruposAjustes.find(([clave]) => clave === pestanaAjustes)?.[1]}</p>}
           {/* 1. Temática: pone el contenido de ejemplo */}
           {/* 1. Producto */}
           <div className={`grid gap-[0.4rem] ${hoja ? 'hidden' : ''}`}>
