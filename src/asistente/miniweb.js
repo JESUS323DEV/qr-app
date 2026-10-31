@@ -83,7 +83,6 @@ const TEXTO_HORARIO = {
   lista: 'foto arriba y las líneas de días y horas debajo; sobrio y neutro',
   sangre: 'la foto ocupa todo el fondo y el horario va encima en blanco; muy visual, pide una buena foto',
   solapada: 'foto arriba y una tarjeta con el horario que se monta sobre ella; limpio y moderno',
-  cartel: 'una banda baja de foto y el horario centrado con las horas en grande, como el cartel de una puerta; bares, cafeterías y comercios',
   columnas: 'la foto en una tira a un lado y el horario al otro, como una página de revista',
   portada: 'la foto toma el recorte y la letra de la portada elegida; muy coherente con ella',
   'sangre.clasica': 'el horario abajo sobre un degradado oscuro',

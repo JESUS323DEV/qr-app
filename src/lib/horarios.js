@@ -30,12 +30,6 @@ export const HORARIOS = [
     ],
   },
   {
-    clave: 'cartel',
-    nombre: 'Cartel de puerta',
-    dibujo: '<rect x="3" y="3" width="18" height="2.2" rx="0.8"/><path d="M9 9.5h6M7 13h10M9 16.5h6" stroke-width="1.4"/>',
-    variantes: [],
-  },
-  {
     clave: 'columnas',
     nombre: 'Foto a un lado',
     dibujo: '<rect x="3" y="3" width="7" height="18" rx="1.2"/><path d="M13 7h8M13 11h6M13 15h8M13 19h5"/>',

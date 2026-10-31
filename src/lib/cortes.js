@@ -29,6 +29,17 @@ export const puntosDeCorte = clave =>
     .map(par => par.replace(/%/g, '').replace(' ', ','))
     .join(' ')
 
+// El mismo corte pero volteado de arriba abajo: la forma pasa a ser el borde de ARRIBA de la foto (para las fotos que van debajo del texto)
+export const clipDeCorteInvertido = clave =>
+  clipDeCorte(clave)
+    .slice('polygon('.length, -1)
+    .split(', ')
+    .map(par => {
+      const [x, y] = par.split(' ')
+      return `${x} ${(100 - parseFloat(y)).toFixed(1)}%`
+    })
+    .reduce((a, p, i) => (i === 0 ? `polygon(${p}` : `${a}, ${p}`), '') + ')'
+
 // El clip-path de un corte (si no existe, el de siempre)
 export const clipDeCorte = clave => (CORTES.find(c => c.clave === clave) ?? CORTES[0]).clip
 export const CLAVES_CORTES = CORTES.map(c => c.clave)

@@ -86,6 +86,7 @@ const ETIQUETAS = {
   titulo: 'Titular', titular: 'Titular', destacado: 'Segunda línea del titular', brillo: 'Segunda línea del titular',
   texto: 'Texto', boton: 'Texto del botón', url: 'Enlace del botón', href: 'Enlace', mapa: 'Dirección para el mapa',
   direccion: 'Dirección que se ve', telefono: 'Teléfono', texto_telefono: 'Texto antes del teléfono', texto_encargo: 'Texto',
+  titulo_hacemos: 'Título de lo que hacemos', texto_hacemos: 'Texto de lo que hacemos', titulo_quienes: 'Título de quiénes somos', texto_quienes: 'Texto de quiénes somos',
   etiqueta: 'Nombre', plato: 'Nombre', frase: 'Frase', alt: 'Descripción de la foto (para buscadores)',
   dias: 'Días', horas: 'Horas', nombre: 'Nombre', descripcion: 'Descripción', precio: 'Precio', foto: 'Foto', src: 'Foto',
   lema: 'Lema', profesion: 'Profesión', franja: 'Franja de arriba',

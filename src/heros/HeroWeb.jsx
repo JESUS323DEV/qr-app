@@ -13,6 +13,7 @@ import { HEROS } from './index'
 import HeroRetratoWeb from './HeroRetratoWeb'
 import Ofertas from '../components/carta/Ofertas'
 import PaginaHorario from './PaginaHorario'
+import PaginaCita from './PaginaCita'
 import { ColoresMiniweb, esClaroHex, useRol } from '../components/ColoresPortada'
 
 /* Web (plan premium). Parece una web de verdad dentro del móvil: arriba una barra de navegación del color de la marca,
@@ -843,6 +844,8 @@ const paginaDe = (tipo, portada, contactoEn) => {
   const modo = contactoEn === 'formulario' ? (tipo === 'reservar' ? 'reserva' : 'cita') : contactoEn
   if (tipo === 'reservar') return modo === 'boton' ? PaginaReservarComoBoton : modo === 'cita' ? PaginaCitaFormulario : PaginaReservar
   if (PAGINAS[tipo]) return PAGINAS[tipo]
+  // Pedir cita con el botón de WhatsApp: la pantalla con el texto de lo que hacen y la barra de foto (Encargos y Pedido siguen con la de siempre)
+  if (tipo === 'cita' && (!modo || modo === 'boton')) return PaginaCita
   const comun = tipoComun(tipo)
   if (comun === 'fotos') return portada ? PaginaPortada : PaginaVacia
   if (comun === 'horario') return PaginaHorario

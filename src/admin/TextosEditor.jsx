@@ -157,8 +157,10 @@ export function ImagenesPorPestana({ original, cambios, cambiar, tipos, soloOtra
     const pestanas = datos.hero?.pestanas ?? []
     // Las páginas de contacto (con el botón de WhatsApp) y de precios llevan una foto en franja aunque la pestaña aún no tenga el dato foto: se enseña su fila igualmente, para poder cambiarla
     const contactoEn = datos.hero?.contactoEn
+    // Pedir cita con el botón de WhatsApp (PaginaCita) ya no lleva foto: no se enseña su fila
+    const sinFotoPropia = i => pestanas[i]?.tipo === 'cita' && (contactoEn === undefined || contactoEn === 'boton')
     const sinFoto = pestanas.flatMap((p, i) => {
-      if (!p || typeof p !== 'object' || 'foto' in p) return []
+      if (!p || typeof p !== 'object' || 'foto' in p || sinFotoPropia(i)) return []
       const comun = tipoComun(p.tipo)
       const llevaFoto = p.tipo === 'horario' || (p.tipo === 'reservar' ? contactoEn === 'boton' : comun === 'contacto' ? contactoEn === undefined || contactoEn === 'boton' : comun === 'precios')
       // Sin foto guardada, la pestaña enseña la primera de Inicio: esa es la que se ve en su fila hasta que se cambie
@@ -166,7 +168,14 @@ export function ImagenesPorPestana({ original, cambios, cambiar, tipos, soloOtra
       const porDefecto = inicio?.fotos?.[0]?.src ?? inicio?.foto ?? ''
       return llevaFoto ? [{ ruta: `hero.pestanas.${i}.foto`, clase: 'foto', grupo: 'Hero y pestañas', etiqueta: `Pestaña ${nombreElemento(pestanas, i)} · Foto`, porDefecto }] : []
     })
-    const fotos = [...camposDe(datos).filter(c => c.clase === 'foto'), ...sinFoto]
+    const fotos = [
+      ...camposDe(datos).filter(c => {
+        if (c.clase !== 'foto') return false
+        const m = c.ruta.match(/^hero\.pestanas\.(\d+)\./)
+        return !(m && sinFotoPropia(Number(m[1])))
+      }),
+      ...sinFoto,
+    ]
     const porPestana = new Map()
     const otras = []
     // Una carta (con secciones): sus fotos por zonas, la portada, el menú del día, las ofertas y cada sección con sus platos

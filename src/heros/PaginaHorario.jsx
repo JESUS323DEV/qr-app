@@ -10,7 +10,6 @@ import { useRol } from '../components/ColoresPortada'
    - lista: las líneas de siempre
    - sangre: la foto a sangre hasta el mapa y el horario encima (clasica, centrado, cristal)
    - solapada: la foto arriba y el horario en una tarjeta que se monta sobre su borde (clasica, banda, borde)
-   - cartel: una banda baja de foto y el horario centrado, con las horas en grande
    - columnas: la foto en una tira y el horario al lado (clasica, derecha, ancha)
    - portada: la foto con el recorte y la letra de la portada elegida (diagonal, polaroid, retrato, mosaico...) */
 
@@ -169,27 +168,6 @@ export default function PaginaHorario({ pestana, cargarMapa, heroBase, respaldo 
             </dl>
             <Nota nota={pestana.nota} className="text-demo-muted" />
           </div>
-        </div>
-        {mapa}
-      </div>
-    )
-  }
-
-  // Una banda baja de foto y el horario centrado, con las horas en grande, como el cartel de la puerta de un local (sin variantes)
-  if (diseno === 'cartel') {
-    const horas = lineas.map((l, i) => (
-      <div key={l.dias} className={i ? 'border-t border-demo-text/15 pt-[0.5rem]' : ''}>
-        <dt style={rolDias} className="text-[0.78rem] text-demo-muted">{l.dias}</dt>
-        <dd style={rolHoras} className={`font-demo-heading text-[1.05rem] font-bold leading-tight ${cerrado(l) ? 'text-demo-muted' : ''}`}><Turnos horas={l.horas} /></dd>
-      </div>
-    ))
-    return (
-      <div className="flex h-full flex-col">
-        <Foto foto={foto} className="h-[2.6rem] shrink-0" />
-        <div className="flex flex-1 flex-col items-center justify-center px-[1.25rem] py-[0.7rem] text-center">
-          <h2 style={rolTitulo} className="escala-pagina font-demo-heading text-[1.6rem] font-extrabold leading-none">{pestana.titulo}</h2>
-          <dl className="escala-pagina mt-[0.6rem] grid w-full max-w-[18rem] gap-[0.5rem]">{horas}</dl>
-          <Nota nota={pestana.nota} className="text-demo-muted" />
         </div>
         {mapa}
       </div>
