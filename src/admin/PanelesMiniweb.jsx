@@ -3,7 +3,7 @@ import { FilaIconos, HojaCtx } from './FilaIconos'
 import CampoColor from '../components/CampoColor'
 import { Armchair, Beer, BookImage, Camera, ChevronDown, CircleUser, Coffee, Croissant, Fish, GalleryHorizontal, IdCard, LayoutGrid, Maximize, Minus, Newspaper, PanelTop, Pizza, Plus, RotateCcw, Scissors, Slice, Smartphone, Sparkles, UtensilsCrossed } from 'lucide-react'
 import { cartas, marcaDe } from '../cartas'
-import { CAMPO, Etiqueta } from '../components/panel'
+import { CAMPO, Etiqueta, claseIcono } from '../components/panel'
 import { DIBUJOS_MENU, GRUPOS_MENU } from '../lib/estilosMenu'
 import { ICONOS_ESTRUCTURA } from '../lib/iconosEstructura'
 import { HORARIOS } from '../lib/horarios'
@@ -151,7 +151,6 @@ export function FilaEstiloMenu({ valor, cambiar }) {
   const [abierta, setAbierta] = useState(true)
   const nombres = { '': 'La rayita (la de siempre)', ...Object.fromEntries(Object.entries(BARRAS).map(([clave, b]) => [clave, b.nombre])) }
   const grupo = GRUPOS_MENU.find(g => g.claves.includes(valor)) ?? GRUPOS_MENU[0]
-  const icono = 'flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 bg-white transition-transform duration-300'
   const dibujar = trazos => (
     <svg viewBox="0 0 24 24" className="h-[1.4rem] w-[1.4rem]" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: trazos }} />
   )
@@ -174,7 +173,7 @@ export function FilaEstiloMenu({ valor, cambiar }) {
                 setAbierta(true)
               }
             }}
-            className={`${icono} ${grupo.clave === g.clave ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
+            className={claseIcono(grupo.clave === g.clave)}
           >
             {dibujar(g.dibujo)}
           </button>
@@ -192,7 +191,7 @@ export function FilaEstiloMenu({ valor, cambiar }) {
                 aria-label={`Estilo ${nombres[clave]}`}
                 aria-pressed={valor === clave}
                 onClick={() => cambiar(clave)}
-                className={`${icono} ${valor === clave ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
+                className={claseIcono(valor === clave)}
               >
                 {dibujar(DIBUJOS_MENU[clave])}
               </button>
@@ -235,7 +234,7 @@ export function FilaHorario({ valor, cambiar, variante, cambiarVariante }) {
                 setAbierta(true)
               }
             }}
-            className={`${i >= 5 && !mas && !enHoja ? 'hidden md:flex' : 'flex'} h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 bg-white transition-transform duration-300 ${actual === h.clave ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
+            className={claseIcono(actual === h.clave, { display: i >= 5 && !mas && !enHoja ? 'hidden md:flex' : 'flex' })}
           >
             <svg viewBox="0 0 24 24" className="h-[1.4rem] w-[1.4rem]" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: h.dibujo }} />
           </button>
@@ -266,7 +265,7 @@ export function FilaHorario({ valor, cambiar, variante, cambiarVariante }) {
                 aria-label={`Variante ${v.nombre}`}
                 aria-pressed={variante === v.clave}
                 onClick={() => cambiarVariante(v.clave)}
-                className={`flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 bg-white transition-transform duration-300 ${variante === v.clave ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
+                className={claseIcono(variante === v.clave)}
               >
                 <svg viewBox="0 0 24 24" className="h-[1.4rem] w-[1.4rem]" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: v.dibujo }} />
               </button>
@@ -327,7 +326,7 @@ export function EstructuraMiniweb({ valores, cambiar, sinTitulo = false, contact
                   aria-pressed={actual === valor}
                   disabled={bloqueada}
                   onClick={() => cambiar(clave, valor)}
-                  className={`flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 bg-white transition-transform duration-300 disabled:cursor-not-allowed ${actual === valor ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
+                  className={claseIcono(actual === valor, { extra: 'disabled:cursor-not-allowed' })}
                 >
                   <svg viewBox="0 0 24 24" className="h-[1.5rem] w-[1.5rem]" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: ICONOS_ESTRUCTURA[clave]?.[valor] ?? '' }} />
                 </button>

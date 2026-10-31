@@ -6,7 +6,7 @@ import { supabase } from '../lib/supabase'
 import { aplicar, conEdicion } from '../lib/ediciones'
 import { getNegocio, negocios } from '../negocios'
 import { ALERGENOS, cartas, getCarta, marcaDe } from '../cartas'
-import { BOTON, CAMPO, Confirmar, Etiqueta } from '../components/panel'
+import { BOTON, CAMPO, Confirmar, Etiqueta, claseIcono, opcion } from '../components/panel'
 import { TIPOGRAFIAS, GRUPOS_EXTRA, TODAS_LAS_TIPOGRAFIAS } from '../asistente/tipografias'
 import { GRUPOS_PLANTILLAS, PLANTILLAS } from '../plantillas'
 import { catalogoMiniweb, validarDiseno } from '../asistente/miniweb'
@@ -881,7 +881,6 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
   }
 
   const titulo = 'text-[0.8rem] font-semibold text-zinc-500'
-  const opcion = activa => `rounded-[0.6rem] px-[0.75rem] py-[0.45rem] text-[0.9rem] font-medium ring-1 ${activa ? 'bg-zinc-900 text-white ring-zinc-900' : 'bg-white ring-zinc-300'}`
 
   // El nombre del negocio (obligatorio), el icono del logo (abre el campo para subirlo) y el tamaño del nombre
   const bloqueNombre = (
@@ -1051,7 +1050,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                       aria-label={`Tipo ${t.texto}`}
                       aria-pressed={tipoCarta === t.clave}
                       onClick={() => setTipoCarta(t.clave)}
-                      className={`flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 bg-white transition-transform duration-300 ${tipoCarta === t.clave ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
+                      className={claseIcono(tipoCarta === t.clave)}
                     >
                       <Icono className="h-[1.3rem] w-[1.3rem]" strokeWidth={2} aria-hidden="true" />
                     </button>
@@ -1082,7 +1081,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                         setSubTemas(true)
                       }
                     }}
-                    className={`flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 bg-white transition-transform duration-300 ${grupoTema.clave === g.clave ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
+                    className={claseIcono(grupoTema.clave === g.clave)}
                   >
                     <Icono className="h-[1.3rem] w-[1.3rem]" strokeWidth={2} aria-hidden="true" />
                   </button>
@@ -1104,7 +1103,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                         aria-label={`Temática ${p.nombre}`}
                         aria-pressed={tema === clave}
                         onClick={() => setTema(clave)}
-                        className={`flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 bg-white transition-transform duration-300 ${tema === clave ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
+                        className={claseIcono(tema === clave)}
                       >
                         <Icono className="h-[1.3rem] w-[1.3rem]" strokeWidth={2} aria-hidden="true" />
                       </button>
@@ -1146,7 +1145,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                           setSubAbierta(true)
                         }
                       }}
-                      className={`${i >= 5 && !masDisenos && !hoja ? 'hidden md:flex' : 'flex'} h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 bg-white transition-transform duration-300 ${hero === clave ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
+                      className={claseIcono(hero === clave, { display: i >= 5 && !masDisenos && !hoja ? 'hidden md:flex' : 'flex' })}
                     >
                       <Icono className="h-[1.3rem] w-[1.3rem]" strokeWidth={2} aria-hidden="true" />
                     </button>
@@ -1178,7 +1177,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                         aria-label={`Formato ${f.nombre}`}
                         aria-pressed={formato === f.clave}
                         onClick={() => setFormato(f.clave)}
-                        className={`flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 bg-white transition-transform duration-300 ${formato === f.clave ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
+                        className={claseIcono(formato === f.clave)}
                       >
                         <svg viewBox="0 0 24 24" className="h-[1.4rem] w-[1.4rem]" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: f.dibujo }} />
                       </button>
@@ -1199,7 +1198,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                         aria-label={`Montaje ${m.nombre}`}
                         aria-pressed={montaje === m.clave}
                         onClick={() => setMontaje(m.clave)}
-                        className={`flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 bg-white transition-transform duration-300 ${montaje === m.clave ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
+                        className={claseIcono(montaje === m.clave)}
                       >
                         <svg viewBox="0 0 24 24" className="h-[1.4rem] w-[1.4rem]" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: m.dibujo }} />
                       </button>
@@ -1220,7 +1219,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                         aria-label={`Estilo ${g.nombre}`}
                         aria-pressed={pase === g.clave}
                         onClick={() => setPase(g.clave)}
-                        className={`flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 bg-white transition-transform duration-300 ${pase === g.clave ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
+                        className={claseIcono(pase === g.clave)}
                       >
                         <svg viewBox="0 0 24 24" className="h-[1.4rem] w-[1.4rem]" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: g.dibujo }} />
                       </button>
@@ -1241,7 +1240,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                         aria-label={`Distribución ${d.nombre}`}
                         aria-pressed={distribucion === d.clave}
                         onClick={() => setDistribucion(d.clave)}
-                        className={`flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 bg-white transition-transform duration-300 ${distribucion === d.clave ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
+                        className={claseIcono(distribucion === d.clave)}
                       >
                         <svg viewBox="0 0 24 24" className="h-[1.4rem] w-[1.4rem]" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: d.dibujo }} />
                       </button>
@@ -1262,7 +1261,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                         aria-label={`Composición ${c.nombre}`}
                         aria-pressed={composicion === c.clave}
                         onClick={() => setComposicion(c.clave)}
-                        className={`flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 bg-white transition-transform duration-300 ${composicion === c.clave ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
+                        className={claseIcono(composicion === c.clave)}
                       >
                         <svg viewBox="0 0 24 24" className="h-[1.4rem] w-[1.4rem]" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: c.dibujo }} />
                       </button>
@@ -1283,7 +1282,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                         aria-label={`Disposición ${d.nombre}`}
                         aria-pressed={disposicion === d.clave}
                         onClick={() => setDisposicion(d.clave)}
-                        className={`flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 bg-white transition-transform duration-300 ${disposicion === d.clave ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
+                        className={claseIcono(disposicion === d.clave)}
                       >
                         <svg viewBox="0 0 24 24" className="h-[1.4rem] w-[1.4rem]" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: d.dibujo }} />
                       </button>
@@ -1304,7 +1303,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                         aria-label={`Corte ${c.nombre}`}
                         aria-pressed={corte === c.clave}
                         onClick={() => setCorte(c.clave)}
-                        className={`flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 bg-white transition-transform duration-300 ${corte === c.clave ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
+                        className={claseIcono(corte === c.clave)}
                       >
                         {/* La foto con la forma de su corte abajo */}
                         <svg viewBox="0 0 100 100" className="h-[1.4rem] w-[1.4rem]" aria-hidden="true">
@@ -1331,7 +1330,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                       aria-label={`Estilo ${f.nombre}`}
                       aria-pressed={estilo === f.carta}
                       onClick={() => setEstilo(f.carta)}
-                      className={`flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 bg-white transition-transform duration-300 ${estilo === f.carta ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
+                      className={claseIcono(estilo === f.carta)}
                     >
                       <Icono className="h-[1.3rem] w-[1.3rem]" strokeWidth={2} aria-hidden="true" />
                     </button>
@@ -1354,7 +1353,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                         aria-label={nombreSub}
                         aria-pressed={subCarta === clave}
                         onClick={() => setSubCarta(clave)}
-                        className={`flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 bg-white transition-transform duration-300 ${subCarta === clave ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
+                        className={claseIcono(subCarta === clave)}
                       >
                         <svg viewBox="0 0 24 24" className="h-[1.4rem] w-[1.4rem]" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: dibujo }} />
                       </button>
@@ -1830,7 +1829,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                       aria-label={nombreBoton}
                       aria-pressed={activo}
                       onClick={alTocar}
-                      className={`flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 bg-white transition-transform duration-300 ${activo ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
+                      className={claseIcono(activo)}
                     >
                       <svg viewBox="0 0 24 24" className="h-[1.5rem] w-[1.5rem]" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: TEXTO + dibujo }} />
                     </button>
@@ -1940,7 +1939,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                       aria-label={`Enlace al negocio: ${nombreLado}`}
                       aria-pressed={enlaceNegocio === clave}
                       onClick={() => setEnlaceNegocio(clave)}
-                      className={`flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 bg-white transition-transform duration-300 ${enlaceNegocio === clave ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
+                      className={claseIcono(enlaceNegocio === clave)}
                     >
                       <svg viewBox="0 0 24 24" className="h-[1.5rem] w-[1.5rem]" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: '<rect x="5.5" y="2" width="13" height="20" rx="2.5"/>' + dibujo }} />
                     </button>

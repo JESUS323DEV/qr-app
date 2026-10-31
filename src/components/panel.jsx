@@ -4,6 +4,13 @@ import { supabase } from '../lib/supabase'
 /* Piezas comunes del panel del dueño (/mi-carta) y del panel de Jesús (/admin) */
 
 export const CAMPO = 'w-full min-w-0 rounded-[0.6rem] border border-zinc-300 bg-white px-[0.75rem] py-[0.6rem] text-[1rem] focus:border-zinc-900 focus:outline-none'
+// Un botón de opción de texto: el elegido, relleno; los demás, con borde (el panel de Nuevo perfil y el generador de QR)
+export const opcion = activa => `rounded-[0.6rem] px-[0.75rem] py-[0.45rem] text-[0.9rem] font-medium ring-1 ${activa ? 'bg-zinc-900 text-white ring-zinc-900' : 'bg-white ring-zinc-300'}`
+
+// Un botón de opción con icono (un cuadradito con su dibujo): el elegido crece y se marca. display: 'flex' o, para esconderlo en móvil, 'hidden md:flex'; extra: más clases
+export const claseIcono = (activa, { display = 'flex', extra = '' } = {}) =>
+  `${display} h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 bg-white transition-transform duration-300 ${extra} ${activa ? 'scale-110 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`.replace(/\s+/g, ' ')
+
 export const BOTON = 'rounded-[0.6rem] bg-zinc-900 px-[1rem] py-[0.75rem] text-[1rem] font-semibold text-white disabled:opacity-40'
 
 export function Etiqueta({ texto, children }) {

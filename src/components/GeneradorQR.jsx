@@ -1,5 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import QRCodeStyling from 'qr-code-styling'
+import { opcion } from './panel'
 import qrcode from 'qrcode-generator'
 import { DISENOS, SILUETAS, mascaraSilueta } from '../lib/siluetas'
 import { ArrowDown, ArrowUp, ChevronDown, ChevronLeft, ChevronRight, ImageUp, Layers, Lock, Minus, Plus, QrCode, Sparkles, X } from 'lucide-react'
@@ -1330,7 +1331,6 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
   // Los desplegables y su pista (Abrir, Cerrar y la flecha): oscuros y en amarillo en el editor del cliente; claros en el panel
   const desplegable = modo === 'cliente' ? 'rounded-[0.1rem] bg-[#242422] ring-1 ring-[#3a3935]' : 'rounded-[0.6rem] bg-white ring-1 ring-zinc-200'
   const pista = modo === 'cliente' ? 'text-acento' : 'text-zinc-900'
-  const opcion = activa => `rounded-[0.6rem] px-[0.75rem] py-[0.45rem] text-[0.9rem] font-medium ring-1 ${activa ? 'bg-zinc-900 text-white ring-zinc-900' : 'bg-white ring-zinc-300'}`
   const campo = 'block min-h-[2.75rem] w-full min-w-0 rounded-[0.6rem] border border-zinc-300 bg-white px-[0.75rem] text-[0.95rem]'
   const casilla = (texto, marcada, poner) => (
     <label className="flex items-center gap-[0.5rem] text-[0.9rem]">
