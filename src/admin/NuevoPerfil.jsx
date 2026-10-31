@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { BotonMasDisenos, FilaIconos, HojaCtx } from './FilaIconos'
 import usePantallaMovil from './usePantallaMovil'
+import usePerfilDiseno from './perfil/usePerfilDiseno'
+import usePerfilCarta from './perfil/usePerfilCarta'
+import usePerfilNegocio from './perfil/usePerfilNegocio'
+import usePerfilAsistente from './perfil/usePerfilAsistente'
+import usePerfilCopias from './perfil/usePerfilCopias'
 import { BarraAsistenteMovil, BarraIconosMovil, FlechaVolver, InicioMovil } from './EditorMovil'
 import CampoColor from '../components/CampoColor'
 import { BadgePercent, List, Camera, ChevronDown, ChevronsDownUp, Frame, GalleryHorizontal, ImagePlus, Maximize, Newspaper, RotateCcw, Store, UtensilsCrossed } from 'lucide-react'
@@ -48,9 +53,14 @@ const ICONOS_ESTILO_CARTA = { polaroid: Camera, galeria: GalleryHorizontal, revi
 const ICONOS_TIPO_CARTA = { carta: UtensilsCrossed, promociones: BadgePercent }
 
 export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
-  const [tema, setTema] = useState(PLANTILLAS[0].clave)
   // La pestaña abierta: el asistente o el diseño (la vista previa se ve siempre)
   const [pestana, setPestana] = useState('personalizar')
+  // El resto del estado, agrupado por temas (src/admin/perfil/)
+  const { tema, setTema, subTemas, setSubTemas, producto, setProducto, hero, setHero, barra, setBarra, corte, setCorte, subAbierta, setSubAbierta, formato, setFormato, disposicion, setDisposicion, composicion, setComposicion, distribucion, setDistribucion, pase, setPase, montaje, setMontaje, horarioMini, setHorarioMini, horarioVar, setHorarioVar, filtroFoto, setFiltroFoto, tamanoNombre, setTamanoNombre, cabecera, setCabecera, estructura, setEstructura, cartaMini, setCartaMini, masDisenos, setMasDisenos, coloresMini, setColoresMini } = usePerfilDiseno()
+  const { tipoCarta, setTipoCarta, subCarta, setSubCarta, estilo, setEstilo, colorPrecio, setColorPrecio, colorPrecioTexto, setColorPrecioTexto, fondo2, setFondo2, textoSuave, setTextoSuave, coloresCarta, setColoresCarta, tamanoPrecio, setTamanoPrecio, enlaceNegocio, setEnlaceNegocio, filtroCarta, setFiltroCarta, colorFiltroCarta, setColorFiltroCarta, detallePrecio, setDetallePrecio } = usePerfilCarta()
+  const { nombre, setNombre, etiqueta, setEtiqueta, lema, setLema, logoAbierto, setLogoAbierto, logo, setLogo, principal, setPrincipal, acento, setAcento, colorTexto, setColorTexto, fondo, setFondo, letra, setLetra, textosMini, setTextosMini, nombreVista, setNombreVista } = usePerfilNegocio()
+  const { cuento, setCuento, disenando, setDisenando, resumenDiseno, setResumenDiseno, cambiosIA, setCambiosIA, versionIA, setVersionIA, redactando, setRedactando, referencia, setReferencia, captura, setCaptura, infoImagen, setInfoImagen, horarioIA, setHorarioIA, generado, setGenerado } = usePerfilAsistente()
+  const { creando, setCreando, aviso, setAviso, error, setError, copiaCargada, setCopiaCargada, huellaBase, setHuellaBase, versionBase, setVersionBase, preguntaSalir, setPreguntaSalir, cambiosExtra, setCambiosExtra, versionExtra, setVersionExtra } = usePerfilCopias()
   // En tablet vertical (768 a 1023 px) Ficha queda bloqueada en el selector de Producto
   const [tabletVertical, setTabletVertical] = useState(() => window.matchMedia('(min-width: 768px) and (max-width: 1023px)').matches)
   useEffect(() => {
@@ -79,114 +89,13 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
       // Sin almacenamiento, vale solo hasta recargar
     }
   }
-  // Qué temáticas se ven en la fila de iconos: 5, o todas con el +
-  // Si la lista de temáticas del grupo elegido (Restauración, Belleza...) está abierta
-  const [subTemas, setSubTemas] = useState(true)
-  const [producto, setProducto] = useState('miniweb')
-  // En el modo Carta, el tipo de carta (en lugar de la temática): 'carta' (menú del día y platos) o 'promociones' (ofertas y servicios)
-  const [tipoCarta, setTipoCarta] = useState('carta')
-  // El subdiseño del estilo de carta (Inmersiva): 'fila' (la base) o 'columna'
-  const [subCarta, setSubCarta] = useState('fila')
-  // El color del detalle del precio del menú de la carta ('' : el de acento)
-  const [colorPrecio, setColorPrecio] = useState('')
-  // El color del número del precio del menú ('' : el de cada estilo)
-  const [colorPrecioTexto, setColorPrecioTexto] = useState('')
-  // Más colores de Menú y ofertas: fondo secundario (las tarjetas), texto suave y los colores propios (nombre, títulos, activo, alérgenos...)
-  const [fondo2, setFondo2] = useState('')
-  const [textoSuave, setTextoSuave] = useState('')
-  const [coloresCarta, setColoresCarta] = useState({})
-  // El tamaño del precio del menú de la carta: 'xs', 'md' (el de cada estilo) o 'xl'
-  const [tamanoPrecio, setTamanoPrecio] = useState('md')
-  // Dónde va el enlace "Conoce [negocio]" de la carta: 'ninguno' (no sale), 'derecha' o 'izquierda'
-  const [enlaceNegocio, setEnlaceNegocio] = useState('ninguno')
-  // El velo de la foto de Inmersiva: intensidad (de 0 a 100; 100 es el de siempre) y color ('' : negro)
-  const [filtroCarta, setFiltroCarta] = useState(100)
-  const [colorFiltroCarta, setColorFiltroCarta] = useState('')
-  // El diseño del detalle del precio del menú: 'raya' (el de siempre), 'ondulada', 'pincelada' o 'doble' (líneas); 'ovalo', 'repasado', 'arco', 'sello' o 'estrella' (círculos); o 'ninguno'
-  const [detallePrecio, setDetallePrecio] = useState('raya')
-  const [hero, setHero] = useState('polaroid')
-  const [barra, setBarra] = useState('')
-  const [estilo, setEstilo] = useState('revista')
-  const [nombre, setNombre] = useState('')
-  // Un nombre solo para ti ("Claudia 1", "Claudia 2"...): sale en las listas y no en la miniweb. Se guarda en la instantánea de la copia
-  const [etiqueta, setEtiqueta] = useState('')
-  // La frase bajo el nombre de una carta (el lema de la marca): null, la de la plantilla; si se escribe (también vacía, para quitarla), la elegida
-  const [lema, setLema] = useState(null)
-  // Cómo sale el nombre arriba (fichas y miniwebs): escrito ('texto', lo de siempre) o con su logo ('logo')
-  // Si el campo para subir el logo está abierto (el logo se sube junto al nombre; con uno subido, se usa)
-  const [logoAbierto, setLogoAbierto] = useState(false)
-  const [logo, setLogo] = useState('')
-  const [principal, setPrincipal] = useState('')
-  const [acento, setAcento] = useState('')
-  const [colorTexto, setColorTexto] = useState('')
-  const [fondo, setFondo] = useState('')
-  const [letra, setLetra] = useState('')
-  // Solo en miniwebs: los colores uno por uno (clave del catálogo → color); los que no están, en automático
-  const [coloresMini, setColoresMini] = useState({})
-  // Solo en miniwebs: los textos de la portada que se han escrito (titular1, titular2 y descripcion); los que no están, los de la demo
-  const [textosMini, setTextosMini] = useState({})
   const cambiarColorMini = (clave, valor) =>
     setColoresMini(actual => {
       const nuevo = { ...actual, [clave]: valor }
       if (valor === undefined) delete nuevo[clave]
       return nuevo
     })
-  // Solo en miniwebs: dónde van las redes, el menú y compartir (lo no tocado, como siempre)
-  const [estructura, setEstructura] = useState({})
-  // El corte de la foto de Diagonal ('diagonal' es el de siempre)
-  const [corte, setCorte] = useState('diagonal')
-  // Si la lista de subpestañas (cortes o formatos) está abierta bajo el diseño elegido
-  const [subAbierta, setSubAbierta] = useState(true)
-  // El formato de Editorial ('clasica' es el de siempre)
-  const [formato, setFormato] = useState('clasica')
-  // La disposición del texto de Fullbleed ('clasica' es la de siempre)
-  const [disposicion, setDisposicion] = useState('clasica')
-  // La composición de Mosaico ('clasica' es la de siempre)
-  const [composicion, setComposicion] = useState('clasica')
-  // La distribución de las fotos de Retrato ('clasica' es la de siempre)
-  const [distribucion, setDistribucion] = useState('clasica')
-  // El estilo de Galería ('clasica' es el de siempre)
-  const [pase, setPase] = useState('clasica')
-  // El montaje de Polaroid ('clasica' es el de siempre)
-  const [montaje, setMontaje] = useState('clasica')
-  // La carta que pinta el menú de la miniweb ('' : el menú de la propia miniweb)
-  const [cartaMini, setCartaMini] = useState('')
-  // El diseño del horario ('' : la lista de siempre)
-  const [horarioMini, setHorarioMini] = useState('')
-  // La variante del diseño del horario ('clasica' : la primera de cada diseño)
-  const [horarioVar, setHorarioVar] = useState('clasica')
-  // La intensidad del filtro que oscurece la foto de la portada, de 0 a 100 (100: el de cada diseño)
-  const [filtroFoto, setFiltroFoto] = useState(100)
-  // El tamaño del nombre del negocio arriba: 'xxs', 'xs', 'md' (el de cada diseño) o 'xl'
-  const [tamanoNombre, setTamanoNombre] = useState('md')
   const lugares = Object.entries(estructura).filter(([clave, valor]) => valor !== ESTRUCTURA_DEFECTO[clave])
-  // Fondo de cabecera: solo en los diseños que la tienen (sin elegir, el principal, como siempre)
-  const [cabecera, setCabecera] = useState('')
-  // Lo que se le cuenta al asistente del negocio: con esto se inventa el copy y busca las fotos al crear
-  const [cuento, setCuento] = useState('')
-  // Qué está haciendo al crear (null: nada)
-  const [creando, setCreando] = useState(null)
-  // El aviso de que el diseño se ha exportado a las muestras
-  const [aviso, setAviso] = useState('')
-  // El asistente montando el diseño de la miniweb (texto de lo que hace; null: nada) y lo que cuenta de lo que ha elegido
-  const [disenando, setDisenando] = useState(null)
-  const [resumenDiseno, setResumenDiseno] = useState('')
-  // Los textos y fotos que ha hecho el asistente (cambios e historial), su versión (para recargar la vista previa) y el aviso de que toca hacerlos
-  const [cambiosIA, setCambiosIA] = useState(null)
-  const [versionIA, setVersionIA] = useState(0)
-  const [redactando, setRedactando] = useState(false)
-  // La imagen de referencia de la marca para el asistente (solo se lee; no se coloca): { imagen, tipo, miniatura, colores }
-  const [referencia, setReferencia] = useState(null)
-  // Una captura con información del negocio (la bio de Instagram, una carta...): el asistente solo lee su texto, sin sacar colores: { imagen, tipo, miniatura }
-  const [captura, setCaptura] = useState(null)
-  // Los datos que el asistente ha leído en esa imagen (nombre, teléfonos, dirección...): van con lo que se le cuenta al escribir los textos
-  const [infoImagen, setInfoImagen] = useState('')
-  // Las líneas del horario que ha sacado el asistente de lo que se le ha contado (días y horas)
-  const [horarioIA, setHorarioIA] = useState([])
-  // Si el asistente ya ha generado algo alguna vez: hasta entonces, en su pestaña el móvil sale vacío
-  const [generado, setGenerado] = useState(false)
-  // La copia que se ha cargado para retocarla ({ tipo, slug }) o null si se está montando una nueva, y si todo Nuevo perfil está abierto
-  const [copiaCargada, setCopiaCargada] = useState(null)
   const [abierto, setAbierto] = useState(false)
   // Abierto, el Editor ocupa toda la pantalla desde arriba, en cualquier dispositivo (tapa el título del panel y el menú); la página de debajo no se mueve
   useEffect(() => {
@@ -199,10 +108,6 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
   }, [abierto])
   // Las pantallas del Editor en móvil (inicio, Asistente, editor, hoja de ajustes) y su temporizador
   const { vistaMovil, setVistaMovil, pasoMovil, setPasoMovil, popover, setPopover, hojaAbierta, setHojaAbierta, esMovil, flechasVisibles, hoja, enInicio, enAsistenteMovil } = usePantallaMovil({ abierto, pestanaAjustes })
-  // Los cambios hechos a mano en los datos en bruto (ruta → valor) y su versión (para recargar la vista previa, con un pequeño retraso al escribir)
-  const [cambiosExtra, setCambiosExtra] = useState({})
-  const [versionExtra, setVersionExtra] = useState(0)
-  const [error, setError] = useState('')
 
   const plantilla = PLANTILLAS.find(p => p.clave === tema)
   // El grupo de la temática elegida
@@ -254,11 +159,8 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
   // Los 5 primeros de la fila de iconos (el resto, detrás del +), en este orden y después los demás
   const primerosDisenos = ['editorial', 'banner', 'diagonal', 'fullbleed', 'portada']
   const herosEnOrden = [...primerosDisenos.map(c => heros.find(([k]) => k === c)).filter(Boolean), ...heros.filter(([k]) => !primerosDisenos.includes(k))].filter(([k]) => producto !== 'miniweb' || !SIN_PORTADA_MINIWEB.includes(k))
-  const [masDisenos, setMasDisenos] = useState(false)
   const estilos = Object.values(FAMILIAS).filter(f => f.carta)
 
-  // El nombre llega a la vista previa medio segundo después de dejar de escribir (si no, se recargaría a cada letra)
-  const [nombreVista, setNombreVista] = useState('')
   useEffect(() => {
     const t = setTimeout(() => setNombreVista(nombre.trim()), 500)
     return () => clearTimeout(t)
@@ -597,8 +499,6 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
   // Cambios sin guardar: la huella de todo lo elegido ahora comparada con la de la última vez que se abrió el editor, se cargó una copia o se guardó.
   // marcarBase pide que la próxima huella pase a ser la de partida (versionBase hace que se compruebe aunque la huella no cambie)
   const huella = JSON.stringify(instantanea())
-  const [huellaBase, setHuellaBase] = useState(null)
-  const [versionBase, setVersionBase] = useState(0)
   const marcarBase = useRef(true)
   useEffect(() => {
     if (!marcarBase.current) return
@@ -608,8 +508,6 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
   const sinGuardar = huellaBase !== null && huella !== huellaBase
   /* Cada producto (miniweb, carta, ficha) guarda lo suyo: la copia cargada es de un solo producto. Al cambiar de producto se suelta, y
      Guardar cambios no puede escribir una carta encima de una miniweb (ni al revés); lo que se guarda después es una copia nueva */
-  // Aviso propio (no el del navegador) antes de perder cambios sin guardar
-  const [preguntaSalir, setPreguntaSalir] = useState(null)
   const cerrarPreguntaSalir = useCallback(() => setPreguntaSalir(null), [])
   const cambiarProducto = clave => {
     if (clave === producto) return
