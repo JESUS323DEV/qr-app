@@ -10,6 +10,7 @@ Proyecto de Jesús (desarrollador autodidacta, marca JesúsDev, Barcelona). Es i
 - No pedir permiso a cada paso ni dar listas de opciones (A, B, C) cuando ya está decidido qué hacer: hacerlo y avisar en una frase. Si hay que recomendar, dar una recomendación.
 - No apuntar nada en la memoria ni en archivos de notas que Jesús no haya dictado.
 - Todo 100 % responsive y pensado primero para móvil. Usar medidas relativas, no porcentajes de pantalla mezclados con píxeles fijos. Pensar el diseño para móvil bajo (360×640), normal (360×780), alto (440×956), tableta y escritorio.
+- `flex-1` se puede usar, pero avisar a Jesús cada vez que se use (dónde y por qué): a veces estira fotos y bloques en móviles altos y tabletas, y da problemas de diseño (las páginas de Horario y Reservar salían con la foto enorme en M y L). Preferir alturas o proporciones con tope.
 - No hacer capturas de pantalla ni comprobaciones visuales por cuenta propia: gastan muchos tokens y Jesús es quien confirma el diseño. Solo hacerlas cuando él lo pida.
 - Diseño que no parezca hecho por una IA: nada de badges o etiquetas en mayúsculas con letra espaciada, titulares partidos en dos colores, tarjetas con icono ni frases de relleno típicas del sector.
 - Copy en español correcto (tildes, eñes, ¿ y ¡) y sin guiones largos (—).
