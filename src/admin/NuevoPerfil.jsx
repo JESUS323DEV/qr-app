@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { FilaIconos, HojaCtx } from './FilaIconos'
+import { BotonMasDisenos, FilaIconos, HojaCtx } from './FilaIconos'
 import CampoColor from '../components/CampoColor'
-import { BadgePercent, List, Camera, ChevronDown, ChevronLeft, ChevronRight, ChevronsDownUp, Copy, Save, CalendarCheck, Clock, Image as ImageIcon, LayoutTemplate, Share2, SlidersHorizontal, Star, Frame, GalleryHorizontal, ImagePlus, Maximize, Minus, Newspaper, Plus, RotateCcw, Store, UtensilsCrossed } from 'lucide-react'
+import { BadgePercent, List, Camera, ChevronDown, ChevronLeft, ChevronRight, ChevronsDownUp, Copy, Save, CalendarCheck, Clock, Image as ImageIcon, LayoutTemplate, Share2, SlidersHorizontal, Star, Frame, GalleryHorizontal, ImagePlus, Maximize, Newspaper, RotateCcw, Store, UtensilsCrossed } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { aplicar, conEdicion } from '../lib/ediciones'
 import { getNegocio, negocios } from '../negocios'
@@ -1151,18 +1151,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                     </button>
                   )
                 })}
-                {!hoja && (
-                  <button
-                    type="button"
-                    aria-label={masDisenos ? 'Ver menos diseños' : 'Ver más diseños'}
-                    aria-expanded={masDisenos}
-                    onClick={() => setMasDisenos(v => !v)}
-                    className="flex h-[2.5rem] md:hidden w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 border-zinc-300 transition-transform duration-300 hover:scale-105"
-                    style={{ background: 'conic-gradient(#E5484D, #F5A524, #F2D33B, #46A758, #2E9FD9, #5B5BD6, #B04BC4, #E5484D)', color: '#141414' }}
-                  >
-                    {masDisenos ? <Minus className="h-[1.1rem] w-[1.1rem]" strokeWidth={3} aria-hidden="true" /> : <Plus className="h-[1.1rem] w-[1.1rem]" strokeWidth={3} aria-hidden="true" />}
-                  </button>
-                )}
+                {!hoja && <BotonMasDisenos abierto={masDisenos} alternar={() => setMasDisenos(v => !v)} />}
               </FilaIconos>
               <p className="text-[0.85rem] font-semibold">{nombreDeDiseno(hero)}</p>
               {/* Con Formatos (Editorial) elegido, sus formatos con icono: la Clásica de siempre primero */}

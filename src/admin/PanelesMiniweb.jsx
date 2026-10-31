@@ -1,7 +1,7 @@
 import { useContext, useState } from 'react'
-import { FilaIconos, HojaCtx } from './FilaIconos'
+import { BotonMasDisenos, FilaIconos, HojaCtx } from './FilaIconos'
 import CampoColor from '../components/CampoColor'
-import { Armchair, Beer, BookImage, Camera, ChevronDown, CircleUser, Coffee, Croissant, Fish, GalleryHorizontal, IdCard, LayoutGrid, Maximize, Minus, Newspaper, PanelTop, Pizza, Plus, RotateCcw, Scissors, Slice, Smartphone, Sparkles, UtensilsCrossed } from 'lucide-react'
+import { Armchair, Beer, BookImage, Camera, ChevronDown, CircleUser, Coffee, Croissant, Fish, GalleryHorizontal, IdCard, LayoutGrid, Maximize, Newspaper, PanelTop, Pizza, RotateCcw, Scissors, Slice, Smartphone, Sparkles, UtensilsCrossed } from 'lucide-react'
 import { cartas, marcaDe } from '../cartas'
 import { CAMPO, Etiqueta, claseIcono } from '../components/panel'
 import { DIBUJOS_MENU, GRUPOS_MENU } from '../lib/estilosMenu'
@@ -239,18 +239,7 @@ export function FilaHorario({ valor, cambiar, variante, cambiarVariante }) {
             <svg viewBox="0 0 24 24" className="h-[1.4rem] w-[1.4rem]" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: h.dibujo }} />
           </button>
         ))}
-        {!enHoja && (
-          <button
-            type="button"
-            aria-label={mas ? 'Ver menos diseños' : 'Ver más diseños'}
-            aria-expanded={mas}
-            onClick={() => setMas(v => !v)}
-            className="flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 border-zinc-300 transition-transform duration-300 hover:scale-105 md:hidden"
-            style={{ background: 'conic-gradient(#E5484D, #F5A524, #F2D33B, #46A758, #2E9FD9, #5B5BD6, #B04BC4, #E5484D)', color: '#141414' }}
-          >
-            {mas ? <Minus className="h-[1.1rem] w-[1.1rem]" strokeWidth={3} aria-hidden="true" /> : <Plus className="h-[1.1rem] w-[1.1rem]" strokeWidth={3} aria-hidden="true" />}
-          </button>
-        )}
+        {!enHoja && <BotonMasDisenos abierto={mas} alternar={() => setMas(v => !v)} />}
       </FilaIconos>
       <p className="text-[0.85rem] font-semibold">{diseno?.nombre}</p>
       {/* Las variantes del diseño elegido, como subpestañas con su icono */}

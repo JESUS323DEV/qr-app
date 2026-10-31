@@ -31,3 +31,19 @@ export function FilaIconos({ className, children }) {
     </div>
   )
 }
+
+// El "+" de colores del final de la fila de diseños (Portada y Horario), solo en móvil: abre o cierra los diseños que no caben. abierto: si están todos a la vista
+export function BotonMasDisenos({ abierto, alternar }) {
+  return (
+    <button
+      type="button"
+      aria-label={abierto ? 'Ver menos diseños' : 'Ver más diseños'}
+      aria-expanded={abierto}
+      onClick={alternar}
+      className="flex h-[2.5rem] w-[2.5rem] items-center justify-center rounded-[0.5rem] border-2 border-zinc-300 transition-transform duration-300 hover:scale-105 md:hidden"
+      style={{ background: 'conic-gradient(#E5484D, #F5A524, #F2D33B, #46A758, #2E9FD9, #5B5BD6, #B04BC4, #E5484D)', color: '#141414' }}
+    >
+      {abierto ? <Minus className="h-[1.1rem] w-[1.1rem]" strokeWidth={3} aria-hidden="true" /> : <Plus className="h-[1.1rem] w-[1.1rem]" strokeWidth={3} aria-hidden="true" />}
+    </button>
+  )
+}
