@@ -6,7 +6,7 @@ import { cartas, getCarta, marcaDe, rutaCarta } from '../cartas'
 /* Lo que comparten varias partes del panel de administración: direcciones reservadas, nombre a dirección, llamada a las funciones de Supabase y las páginas con QR. */
 
 // Direcciones que no puede usar una copia: las de las páginas de la web
-export const RESERVADAS = new Set(['demo', 'tematicas', 'gestion', 'catalogo', 'planes', 'panel', 'mi-carta', 'admin', 'miniweb', 'pomodoro', 'disenos', 'aviso-legal', 'privacidad', 'mi-qr', 'crear-qr', 'generador-qr'])
+export const RESERVADAS = new Set(['demo', 'tematicas', 'gestion', 'catalogo', 'planes', 'panel', 'mi-carta', 'admin', 'miniweb', 'disenos', 'aviso-legal', 'privacidad', 'mi-qr', 'crear-qr', 'generador-qr'])
 
 // "Peluquería Ranita" → "peluqueria-ranita"
 export const aSlug = texto =>

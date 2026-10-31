@@ -21,8 +21,6 @@ const DisenosPage = lazy(() => import('./pages/DisenosPage'))
 const MiQrPage = lazy(() => import('./pages/MiQrPage'))
 // El editor de QR gratis y abierto (sin PIN): aparte también, lleva el generador de QR
 const GeneradorPublicoPage = lazy(() => import('./pages/GeneradorPublicoPage'))
-// Maqueta visual de Lofi Pomodoro (un rediseño para enseñar): página fija, fuera del catálogo y sin indexar
-const PomodoroPage = lazy(() => import('./pages/PomodoroPage'))
 
 // Gestión interna: solo con el servidor de desarrollo. En el build de Netlify import.meta.env.DEV es false,
 // así que ni la página ni su código se publican
@@ -31,7 +29,7 @@ const GestionPage = import.meta.env.DEV ? lazy(() => import('./pages/GestionPage
 // El SEO de cada ruta, que se pone al cambiar de página (todas salen del mismo HTML): la dirección canónica en mostraq.es (sin parámetros, así
 // Google se queda con ella aunque la web se abra por la dirección de Netlify o con ?utm_... de Instagram), si se indexa o no y la descripción.
 // Los paneles, las demos y las copias para enseñar no se indexan.
-const NO_INDEXAR = ['/planes', '/demo', '/admin', '/mi-panel', '/mi-carta', '/mi-qr', '/panel', '/disenos', '/gestion', '/pomodoro']
+const NO_INDEXAR = ['/planes', '/demo', '/admin', '/mi-panel', '/mi-carta', '/mi-qr', '/panel', '/disenos', '/gestion']
 const DESCRIPCIONES = {
   '/catalogo': 'Ejemplos de miniwebs, menús del día y ofertas con QR para negocios locales: restaurantes, belleza, salud y tiendas. Míralos en tu móvil.',
   '/crear-qr': 'Diseño de QR personalizado para tu negocio: tus colores, tu logo y tus redes, impreso en una placa de calidad.',
@@ -97,8 +95,6 @@ export default function App() {
         <Route path="/mi-carta" element={<Navigate to="/mi-panel" replace />} />
         {/* Dirección antigua del panel del dueño: lleva a la nueva */}
         <Route path="/panel" element={<Navigate to="/mi-panel" replace />} />
-        {/* Maqueta de Lofi Pomodoro: antes de /:slug para que no se tome por un negocio */}
-        <Route path="/pomodoro" element={<Suspense fallback={null}><PomodoroPage /></Suspense>} />
         {/* Escaparate de diseños: probar y enseñar las fichas por piezas (diseño de arriba y estilo de pestañas) */}
         <Route path="/disenos" element={<Suspense fallback={null}><DisenosPage /></Suspense>} />
         {/* Panel de Jesús: textos, fotos y colores de cualquier página, y copias de demos (Supabase) */}

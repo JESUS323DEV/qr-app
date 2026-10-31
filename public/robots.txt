@@ -7,7 +7,6 @@ Disallow: /mi-panel
 Disallow: /mi-qr/
 Disallow: /panel
 Disallow: /disenos
-Disallow: /pomodoro
 Disallow: /gestion
 # Las demos y las copias para enseñar a un negocio no se indexan
 Disallow: /demo/
