@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { HojaCtx } from './FilaIconos'
 import usePantallaMovil from './usePantallaMovil'
+import usePerfilAcciones from './perfil/usePerfilAcciones'
 import instantaneaPerfil from './perfil/instantaneaPerfil'
 import marcaVista from './perfil/marcaVista'
 import PanelAsistente from './perfil/paneles/PanelAsistente'
@@ -29,14 +30,11 @@ import usePerfilAsistente from './perfil/usePerfilAsistente'
 import usePerfilCopias from './perfil/usePerfilCopias'
 import { BarraIconosMovil, FlechaVolver, InicioMovil } from './EditorMovil'
 import { ChevronDown, ChevronsDownUp } from 'lucide-react'
-import { supabase } from '../lib/supabase'
 import { aplicar, conEdicion } from '../lib/ediciones'
 import { getNegocio } from '../negocios'
 import { getCarta, marcaDe } from '../cartas'
 import { BOTON, CAMPO, Confirmar } from '../components/panel'
 import { GRUPOS_PLANTILLAS, PLANTILLAS } from '../plantillas'
-import { catalogoMiniweb, validarDiseno } from '../asistente/miniweb'
-import { catalogoCarta, validarDisenoCarta } from '../asistente/carta'
 import { derivadosDeFondoYTexto } from '../lib/mezclarColores'
 import { COLORES_CARTA } from '../lib/coloresCarta'
 import Movil from '../components/Movil'
@@ -45,9 +43,8 @@ import { pestanasDeMiniweb } from '../lib/miniweb'
 import { tipoDe } from '../lib/tematicas'
 import { HEROS } from '../heros'
 import { FAMILIAS } from '../familias'
-import { llamar, nombreInterno } from './comun'
 import { leerRuta, maxDe } from './datos'
-import { crearCartaConDueno, fusionar, menuDelPanel } from './ia'
+import { fusionar } from './ia'
 import { ESTRUCTURA_DEFECTO, PanelColoresMiniweb, Plegable, SIN_PORTADA_MINIWEB } from './PanelesMiniweb'
 import { TEXTO_EXTRA_EJEMPLO, TextosHorario } from './TextosEditor'
 
@@ -57,21 +54,20 @@ import { TEXTO_EXTRA_EJEMPLO, TextosHorario } from './TextosEditor'
 // Promociones, la de Laca, con ofertas (con su precio anterior tachado) y servicios por secciones
 const CARTA_DE_TIPO = { carta: 'almendra', promociones: 'laca' }
 
-
 export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
   // La pestaña abierta: el asistente o el diseño (la vista previa se ve siempre)
   const [pestana, setPestana] = useState('personalizar')
   // El resto del estado, agrupado por temas (src/admin/perfil/)
   const diseno = usePerfilDiseno()
-  const { tema, setTema, producto, setProducto, hero, setHero, barra, setBarra, setCorte, setFormato, setDisposicion, setComposicion, setDistribucion, setPase, setMontaje, setHorarioMini, setHorarioVar, setFiltroFoto, setTamanoNombre, cabecera, setCabecera, estructura, setEstructura, setCartaMini, coloresMini, setColoresMini } = diseno
+  const { tema, producto, hero, barra, cabecera, estructura, coloresMini, setColoresMini } = diseno
   const carta = usePerfilCarta()
-  const { tipoCarta, setTipoCarta, setSubCarta, estilo, setEstilo, colorPrecio, setColorPrecio, colorPrecioTexto, setColorPrecioTexto, fondo2, setFondo2, textoSuave, setTextoSuave, coloresCarta, setColoresCarta, setTamanoPrecio, setEnlaceNegocio, setFiltroCarta, setColorFiltroCarta, setDetallePrecio } = carta
+  const { tipoCarta, estilo, colorPrecio, setColorPrecio, colorPrecioTexto, setColorPrecioTexto, fondo2, setFondo2, textoSuave, setTextoSuave, coloresCarta, setColoresCarta } = carta
   const negocio = usePerfilNegocio()
-  const { nombre, setNombre, etiqueta, setEtiqueta, setLema, logo, setLogo, principal, setPrincipal, acento, setAcento, colorTexto, setColorTexto, fondo, setFondo, setLetra, textosMini, setTextosMini, setNombreVista } = negocio
+  const { nombre, logo, principal, acento, colorTexto, setColorTexto, fondo, setFondo, textosMini, setTextosMini, setNombreVista } = negocio
   const asistente = usePerfilAsistente()
-  const { cuento, setCuento, disenando, setDisenando, resumenDiseno, setResumenDiseno, cambiosIA, setCambiosIA, setVersionIA, redactando, setRedactando, referencia, setReferencia, captura, setCaptura, infoImagen, setInfoImagen, horarioIA, setHorarioIA, generado, setGenerado } = asistente
+  const { cuento, setCuento, disenando, setDisenando, resumenDiseno, cambiosIA, setCambiosIA, setVersionIA, redactando, setRedactando, referencia, setReferencia, captura, setCaptura, infoImagen, horarioIA, generado } = asistente
   const copias = usePerfilCopias()
-  const { creando, setCreando, aviso, setAviso, error, setError, copiaCargada, setCopiaCargada, huellaBase, setHuellaBase, versionBase, setVersionBase, preguntaSalir, setPreguntaSalir, cambiosExtra, setCambiosExtra, setVersionExtra } = copias
+  const { creando, aviso, error, setError, copiaCargada, huellaBase, setHuellaBase, versionBase, preguntaSalir, setPreguntaSalir, cambiosExtra, setCambiosExtra, setVersionExtra } = copias
   // En tablet vertical (768 a 1023 px) Ficha queda bloqueada en el selector de Producto
   const [tabletVertical, setTabletVertical] = useState(() => window.matchMedia('(min-width: 768px) and (max-width: 1023px)').matches)
   useEffect(() => {
@@ -197,72 +193,6 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
   // El asistente escribe los textos y busca las fotos sobre el diseño armado: devuelve los cambios (sin tocar nombre, diseño ni portada)
   const redactar = (base, cambios, nombreCrear, avisar) => redactarPerfil({ cartaBase, cuento, esCarta, infoImagen, producto }, base, cambios, nombreCrear, avisar)
 
-  // El botón del asistente, en dos tiempos: 1) elige el diseño (y el nombre, si falta) y lo pone en los selectores; 2) con esos
-  // selectores ya puestos (efecto de más abajo), escribe los textos y busca las fotos. La vista previa lo enseña todo
-  const montar = async () => {
-    if (!(nombre.trim() || cuento.trim() || referencia || captura) || disenando) return
-    setDisenando('Montando el diseño...')
-    setError('')
-    setResumenDiseno('')
-    setCambiosIA(null)
-    setCambiosExtra({})
-    try {
-      // Con Carta elegida, solo el diseño: tipo, estilo (y subdiseño), tipografía, colores y nombre. El contenido es de /mi-carta
-      if (producto === 'carta') {
-        const { resultado: res } = await llamar('asistente', { paso: 'diseno-carta', tipo: tipoCarta, peticion: cuento.trim() || 'Sin más indicaciones: decide tú el estilo.', nombre: nombre.trim(), catalogo: catalogoCarta(), ...(referencia ? { referencia: { imagen: referencia.imagen, tipo: referencia.tipo, colores: referencia.colores } } : {}), ...(captura ? { captura: { imagen: captura.imagen, tipo: captura.tipo } } : {}) })
-        const c = validarDisenoCarta(res)
-        if (c.estilo) setEstilo(c.estilo)
-        setSubCarta(c.subdiseno ?? 'fila')
-        if (c.tipografia) setLetra(c.tipografia)
-        if (c.colores.principal) setPrincipal(c.colores.principal)
-        if (c.colores.acento) setAcento(c.colores.acento)
-        if (c.colores.texto) setColorTexto(c.colores.texto)
-        if (c.colores.fondo) setFondo(c.colores.fondo)
-        if (c.nombre && !nombre.trim()) setNombre(c.nombre)
-        setFiltroCarta(c.filtro)
-        setColorFiltroCarta(c.colorFiltro ?? '')
-        setDetallePrecio(c.detallePrecio)
-        setColorPrecio(c.colorDetallePrecio ?? '')
-        setColorPrecioTexto(c.colorPrecio ?? '')
-        setTamanoPrecio(c.tamanoPrecio)
-        setGenerado(true)
-        setResumenDiseno(c.resumen)
-        setDisenando(null)
-        return
-      }
-      const { resultado } = await llamar('asistente', { paso: 'diseno-miniweb', peticion: cuento.trim() || 'Sin más indicaciones: decide tú el estilo.', nombre: nombre.trim(), catalogo: catalogoMiniweb(), ...(referencia ? { referencia: { imagen: referencia.imagen, tipo: referencia.tipo, colores: referencia.colores } } : {}), ...(captura ? { captura: { imagen: captura.imagen, tipo: captura.tipo } } : {}) })
-      const d = validarDiseno(resultado)
-      if (producto !== 'miniweb') setCopiaCargada(null)
-      setProducto('miniweb')
-      if (d.tema) setTema(d.tema)
-      if (d.portada) setHero(d.portada)
-      if (d.subdiseno) ({ corte: setCorte, formato: setFormato, disposicion: setDisposicion, composicion: setComposicion, distribucion: setDistribucion, pase: setPase, montaje: setMontaje })[d.subdiseno.campo]?.(d.subdiseno.valor)
-      setEstructura(d.estructura)
-      if (d.estiloMenu !== null) setBarra(d.estiloMenu)
-      if (d.textoExtra) setTextosMini(t => ({ ...t, info: d.textoExtra }))
-      if (d.tamanoNombre) setTamanoNombre(d.tamanoNombre)
-      if (d.tipografia) setLetra(d.tipografia)
-      if (d.colores.principal) setPrincipal(d.colores.principal)
-      if (d.colores.acento) setAcento(d.colores.acento)
-      if (d.colores.texto) setColorTexto(d.colores.texto)
-      if (d.colores.fondo) setFondo(d.colores.fondo)
-      setColoresMini(d.roles)
-      if (d.nombre && !nombre.trim()) setNombre(d.nombre)
-      setCartaMini(d.carta ?? '')
-      if (d.horario !== null) {
-        setHorarioMini(d.horario)
-        setHorarioVar(d.horarioVariante)
-      }
-      setHorarioIA(d.horarioLineas)
-      setInfoImagen(d.infoImagen)
-      setGenerado(true)
-      setResumenDiseno(d.resumen)
-      setRedactando(true)
-    } catch (e) {
-      setError(e.message)
-      setDisenando(null)
-    }
-  }
   useEffect(() => {
     if (!redactando) return
     setRedactando(false)
@@ -307,32 +237,6 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
   /* Cada producto (miniweb, carta, ficha) guarda lo suyo: la copia cargada es de un solo producto. Al cambiar de producto se suelta, y
      Guardar cambios no puede escribir una carta encima de una miniweb (ni al revés); lo que se guarda después es una copia nueva */
   const cerrarPreguntaSalir = useCallback(() => setPreguntaSalir(null), [])
-  const cambiarProducto = clave => {
-    if (clave === producto) return
-    if (copiaCargada && sinGuardar) {
-      setPreguntaSalir({
-        titulo: '¿Cambiar de producto?',
-        texto: 'Tienes cambios sin guardar en esta copia. Si cambias de producto, dejas de editarla y no se guardan en ella.',
-        boton: 'Cambiar',
-        peligro: true,
-        accion: () => pasarAProducto(clave),
-      })
-      return
-    }
-    pasarAProducto(clave)
-  }
-  const pasarAProducto = clave => {
-    if (copiaCargada) setCopiaCargada(null)
-    setProducto(clave)
-    // Banner y Ficha no valen de portada de una miniweb: si estaba uno elegido, pasa a Editorial
-    if (clave === 'miniweb' && SIN_PORTADA_MINIWEB.includes(hero)) setHero('editorial')
-    // Cambiar de producto no es un cambio sin guardar: lo de partida pasa a ser el del producto nuevo (si no, salía el aviso al elegir una copia sin haber tocado nada)
-    empezarDeNuevo()
-  }
-  const empezarDeNuevo = () => {
-    marcarBase.current = true
-    setVersionBase(v => v + 1)
-  }
   // Al cerrar o recargar la pestaña con cambios sin guardar, el navegador pregunta
   useEffect(() => {
     if (!sinGuardar) return
@@ -340,74 +244,6 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
     window.addEventListener('beforeunload', avisar)
     return () => window.removeEventListener('beforeunload', avisar)
   }, [sinGuardar])
-
-  // Carga una copia en Nuevo perfil a partir de su instantánea. Las copias antiguas (de antes de Nuevo perfil) no la tienen y no se pueden abrir aquí
-  const cargarCopia = fila => {
-    const i = fila?.cambios?._nuevoPerfil
-    if (!i) {
-      setError('Esta copia es antigua (se creó antes del editor) y no se puede abrir aquí.')
-      return
-    }
-    setError('')
-    setAviso('')
-    setPestana('personalizar')
-    setProducto(i.producto ?? 'miniweb')
-    setTema(i.tema ?? PLANTILLAS[0].clave)
-    // Las copias de antes de este selector: la carta de la temática que tenían decide el tipo (Laca, promociones; el resto, carta)
-    setSubCarta(i.subCarta ?? 'fila')
-    setColorPrecio(i.colorPrecio ?? '')
-    setColorPrecioTexto(i.colorPrecioTexto ?? '')
-    setFondo2(i.fondo2 ?? '')
-    setTextoSuave(i.textoSuave ?? '')
-    setColoresCarta(i.coloresCarta ?? {})
-    setTamanoPrecio(i.tamanoPrecio ?? 'md')
-    setEnlaceNegocio(i.enlaceNegocio ?? 'ninguno')
-    setFiltroCarta(i.filtroCarta ?? 100)
-    setColorFiltroCarta(i.colorFiltroCarta ?? '')
-    setDetallePrecio(i.detallePrecio ?? 'raya')
-    setTipoCarta(i.tipoCarta ?? (PLANTILLAS.find(p => p.clave === i.tema)?.carta === 'laca' ? 'promociones' : 'carta'))
-    setHero(i.hero ?? 'polaroid')
-    setBarra(i.barra ?? '')
-    setEstilo(i.estilo ?? 'revista')
-    setNombre(i.nombre ?? '')
-    setEtiqueta(i.etiqueta ?? '')
-    setLema(i.lema ?? null)
-    setLogo(i.logo ?? '')
-    setPrincipal(i.principal ?? '')
-    setAcento(i.acento ?? '')
-    setColorTexto(i.colorTexto ?? '')
-    setFondo(i.fondo ?? '')
-    setLetra(i.letra ?? '')
-    setCabecera(i.cabecera ?? '')
-    setColoresMini(i.coloresMini ?? {})
-    setTextosMini(i.textosMini ?? {})
-    setEstructura(i.estructura ?? {})
-    setCorte(i.corte ?? 'diagonal')
-    setFormato(i.formato ?? 'clasica')
-    setDisposicion(i.disposicion ?? 'clasica')
-    setComposicion(i.composicion ?? 'clasica')
-    setDistribucion(i.distribucion ?? 'clasica')
-    setPase(i.pase ?? 'clasica')
-    setMontaje(i.montaje ?? 'clasica')
-    setTamanoNombre(i.tamanoNombre ?? 'md')
-    setCartaMini(i.cartaMini ?? '')
-    setHorarioMini(i.horarioMini ?? '')
-    setHorarioVar(i.horarioVar ?? 'clasica')
-    setFiltroFoto(i.filtroFoto ?? 100)
-    setCuento(i.cuento ?? '')
-    setCambiosExtra(i.cambiosExtra ?? {})
-    setCambiosIA(i.cambiosIA ?? null)
-    setResumenDiseno(i.resumenDiseno ?? '')
-    setGenerado(true)
-    setVersionIA(v => v + 1)
-    try {
-      localStorage.setItem('mostraq-vista-ia', JSON.stringify({ ...(i.cambiosIA?.cambios ?? {}), ...(i.cambiosExtra ?? {}) }))
-    } catch {
-      // Sin almacenamiento, la vista previa no enseña lo del asistente, pero al guardar sí se conserva
-    }
-    setCopiaCargada({ tipo: fila.tipo, slug: fila.slug })
-    empezarDeNuevo()
-  }
 
   // Si se llega con ?copia=tipo:slug (botón Editar de la pantalla de información), se abre Nuevo perfil con esa copia
   useEffect(() => {
@@ -419,105 +255,6 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
     cargarCopia(fila)
     abrir(null)
   }, [cargar, filas]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Guardar cambios: actualiza la copia cargada (misma dirección) con lo que hay ahora
-  const guardarCopia = async () => {
-    if (!copiaCargada || creando) return
-    setAviso('')
-    setError('')
-    setCreando('Guardando...')
-    let guardado = false
-    try {
-      const nombreGuardar = nombre.trim() || 'Prueba'
-      const { base, cambios: cambiosBase } = armar(nombreGuardar)
-      let cambios = cambiosBase
-      let historial = []
-      if (cambiosIA) {
-        cambios = fusionar(cambios, cambiosIA.cambios)
-        historial = cambiosIA.historial
-      }
-      // Los textos escritos de la portada mandan sobre los del asistente (como en la vista previa), y lo cambiado a mano en los datos en bruto va el último
-      if (Object.keys(textosPrevia).length) cambios = fusionar(cambios, textosPrevia)
-      if (Object.keys(cambiosExtra).length) cambios = fusionar(cambios, cambiosExtra)
-      cambios = { ...cambios, _nuevoPerfil: instantanea() }
-      // La marca de cliente (Exportar para cliente) se conserva
-      const previa = (filas ?? []).find(f => f.tipo === copiaCargada.tipo && f.slug === copiaCargada.slug)?.cambios
-      if (previa?._cliente) cambios._cliente = true
-      // Y su grupo
-      if (previa?._grupo) cambios._grupo = previa._grupo
-      // El menú del día de una carta vive en su panel (tabla cartas) y manda sobre el de la copia: se cambia también allí, para que lo que se
-      // guarda sea lo que se ve en su dirección (y en su QR)
-      if (copiaCargada.tipo === 'carta') {
-        const { error: errorMenu } = await supabase.from('cartas').update({ menu_dia: menuDelPanel(aplicar(cartaBase, cambios).menuDia) }).eq('slug', copiaCargada.slug)
-        if (errorMenu) throw new Error('No se ha podido cambiar el menú del día de la carta.')
-      }
-      const { error } = await supabase
-        .from('ediciones')
-        .update({ base, cambios, ...(historial.length ? { historial } : {}) })
-        .eq('tipo', copiaCargada.tipo)
-        .eq('slug', copiaCargada.slug)
-      if (error) throw new Error('No se han podido guardar los cambios.')
-      await recargar()
-      empezarDeNuevo()
-      setAviso(`Cambios guardados en «${nombreGuardar}».`)
-      guardado = true
-    } catch (e) {
-      setError(e.message)
-    }
-    setCreando(null)
-    return guardado
-  }
-
-  // muestra (true): exporta el diseño a las muestras, en la lista de Miniwebs (con el nombre escrito o, sin él, «Muestra») en lugar de crear un perfil
-  const crear = async muestra => {
-    const esMuestra = muestra === true
-    const nombreCrear = nombre.trim() || (esMuestra ? 'Muestra' : '')
-    if (!nombreCrear || creando) return
-    setAviso('')
-    setCreando('Creando...')
-    setError('')
-    try {
-      const { tipoFila, slug, base, cambios: cambiosBase } = armar(nombreCrear)
-      let cambios = cambiosBase
-
-      // Una muestra va marcada: /miniweb la enseña junto a las demás miniwebs de ejemplo
-      if (esMuestra) cambios = { ...cambios, muestra: true }
-
-      // Si el asistente ya ha montado la miniweb (botón Montar), sus textos y fotos ya están hechos y se guardan tal cual. Si no, con
-      // lo que se le ha contado del negocio se inventa el copy y busca las fotos sobre el diseño ya montado (colores, solo si se piden)
-      // Lo cambiado a mano en los datos en bruto va el último, para que mande sobre lo del asistente
-      let historial = []
-      if (cambiosIA) {
-        cambios = fusionar(cambios, cambiosIA.cambios)
-        historial = cambiosIA.historial
-      } else if (cuento.trim()) {
-        const hecho = await redactar(base, cambios, nombreCrear, setCreando)
-        cambios = fusionar(cambios, hecho.deIA)
-        historial = hecho.historial
-        setCreando('Creando...')
-      }
-
-      // Los textos escritos de la portada mandan sobre los del asistente (como en la vista previa), y lo cambiado a mano en los datos en bruto va el último
-      if (Object.keys(textosPrevia).length) cambios = fusionar(cambios, textosPrevia)
-      if (Object.keys(cambiosExtra).length) cambios = fusionar(cambios, cambiosExtra)
-      // La instantánea de Nuevo perfil, para poder reabrir la copia y retocarla. Si se parte de una copia abierta y se deja su nombre interno,
-      // la nueva toma el siguiente número ("Claudia 1" pasa a "Claudia 2")
-      const etiquetaAbierta = copiaCargada ? (filas ?? []).find(x => x.tipo === copiaCargada.tipo && x.slug === copiaCargada.slug)?.cambios?._nuevoPerfil?.etiqueta?.trim() : null
-      const etiquetaNueva = etiquetaAbierta && etiquetaAbierta === etiqueta.trim() ? siguienteEtiqueta(etiquetaAbierta, (filas ?? []).map(nombreInterno).filter(Boolean)) : etiqueta.trim()
-      cambios = { ...cambios, _nuevoPerfil: { ...instantanea(), etiqueta: etiquetaNueva } }
-      const { error } = await supabase.from('ediciones').insert({ tipo: tipoFila, slug, base, cambios, ...(historial.length ? { historial } : {}) })
-      if (error) throw new Error('No se ha podido crear.')
-      if (esCarta) await crearCartaConDueno(slug, aplicar(cartaBase, cambios).menuDia)
-      await recargar()
-      if (esMuestra) {
-        setCreando(null)
-        setAviso(`Exportada a las muestras como «${nombreCrear}»: ya sale en Miniwebs`)
-      } else abrir(`${tipoFila}:${slug}`)
-    } catch (e) {
-      setError(e.message)
-      setCreando(null)
-    }
-  }
 
   const titulo = 'text-[0.8rem] font-semibold text-zinc-500'
 
@@ -693,18 +430,8 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
   )
   const autosColores = coloresAutomaticos({ colors: { ...marcaBase?.theme?.colors, bg: colorFondo, primary: colorPrincipal, accent: colorAcento, text: colorDelTexto, header: colorCabecera } }, { barra, portada: hero }, coloresMini)
 
-  // Elegir una copia para cargarla aquí (valor "tipo:slug"; vacío, una nueva)
-  const elegirCopia = valor => {
-    if (!valor) return setCopiaCargada(null)
-    const [t, sl] = valor.split(':')
-    const abrirCopia = () => cargarCopia((filas ?? []).find(f => f.tipo === t && f.slug === sl))
-    // Con cambios sin guardar, cargar otra copia los perdería: se pregunta antes (si se cancela, se queda como estaba)
-    if (sinGuardar) {
-      setPreguntaSalir({ titulo: '¿Cambiar de copia?', texto: 'Tienes cambios sin guardar. Si cambias de copia, se pierden.', boton: 'Cambiar', peligro: true, accion: abrirCopia })
-      return
-    }
-    abrirCopia()
-  }
+  // Las acciones del Editor (src/admin/perfil/usePerfilAcciones.js)
+  const { montar, cambiarProducto, cargarCopia, guardarCopia, crear, elegirCopia } = usePerfilAcciones({ ...copias, ...asistente, ...negocio, ...diseno, ...carta, abrir, armar, cartaBase, esCarta, filas, instantanea, marcarBase, recargar, redactar, setPestana, sinGuardar, textosPrevia })
   // Las copias para enseñar del producto elegido (las antiguas no se abren aquí)
   const copiasDisponibles = (filas ?? [])
     .filter(f => f.base && (f.tipo === 'carta' ? producto === 'carta' : producto !== 'carta' && (f.cambios?._nuevoPerfil?.producto ?? tipoDe(conEdicion('negocio', f.slug, f) ?? {})) === producto))
@@ -993,13 +720,3 @@ const TAMANOS_MOVIL = [
   { clave: 'alto', nombre: 'L', ancho: 440, alto: 956, ayuda: 'L: móvil largo y grande (como un iPhone Pro Max), 440 × 956' },
 ]
 
-// El número siguiente de un nombre interno que acaba en número ("Claudia 1" pasa a "Claudia 2"), saltando los que ya existen; sin número, igual
-const siguienteEtiqueta = (etiqueta, usadas) => {
-  const m = etiqueta.match(/^(.*?)(\d+)\s*$/)
-  if (!m) return etiqueta
-  const ocupadas = new Set(usadas)
-  let n = Number(m[2])
-  do n++
-  while (ocupadas.has(`${m[1]}${n}`))
-  return `${m[1]}${n}`
-}
