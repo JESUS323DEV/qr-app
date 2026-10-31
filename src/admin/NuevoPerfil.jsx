@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { FilaIconos, HojaCtx } from './FilaIconos'
 import usePantallaMovil from './usePantallaMovil'
+import BloqueTextoInicio from './perfil/BloqueTextoInicio'
+import BloqueTematica from './perfil/BloqueTematica'
+import PaletaMarca from './perfil/PaletaMarca'
+import BloqueNombre from './perfil/BloqueNombre'
+import CampoTipografia from './perfil/CampoTipografia'
 import BloquePortada from './perfil/BloquePortada'
 import armarPerfil from './perfil/armarPerfil'
 import redactarPerfil from './perfil/redactarPerfil'
@@ -10,14 +15,12 @@ import usePerfilNegocio from './perfil/usePerfilNegocio'
 import usePerfilAsistente from './perfil/usePerfilAsistente'
 import usePerfilCopias from './perfil/usePerfilCopias'
 import { BarraAsistenteMovil, BarraIconosMovil, FlechaVolver, InicioMovil } from './EditorMovil'
-import CampoColor from '../components/CampoColor'
-import { BadgePercent, ChevronDown, ChevronsDownUp, ImagePlus, RotateCcw, Store, UtensilsCrossed } from 'lucide-react'
+import { ChevronDown, ChevronsDownUp } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { aplicar, conEdicion } from '../lib/ediciones'
 import { getNegocio } from '../negocios'
 import { getCarta, marcaDe } from '../cartas'
 import { BOTON, CAMPO, Confirmar, Etiqueta, claseIcono, opcion } from '../components/panel'
-import { TIPOGRAFIAS, GRUPOS_EXTRA } from '../asistente/tipografias'
 import { GRUPOS_PLANTILLAS, PLANTILLAS } from '../plantillas'
 import { catalogoMiniweb, validarDiseno } from '../asistente/miniweb'
 import { TIPOS_CARTA, catalogoCarta, validarDisenoCarta } from '../asistente/carta'
@@ -31,10 +34,9 @@ import { HEROS } from '../heros'
 import { BARRAS } from '../fichas/barras'
 import { FAMILIAS } from '../familias'
 import { llamar, nombreInterno } from './comun'
-import { CampoLogo } from './Campos'
 import { bloquesDePestana, leerRuta, maxDe } from './datos'
 import { crearCartaConDueno, fusionar, menuDelPanel } from './ia'
-import { ESTRUCTURA_DEFECTO, EstructuraMiniweb, FilaEstiloMenu, FilaHorario, ICONOS_TEMA, PanelColoresMiniweb, Plegable, SIN_PORTADA_MINIWEB, SelectorCartaMiniweb } from './PanelesMiniweb'
+import { ESTRUCTURA_DEFECTO, EstructuraMiniweb, FilaEstiloMenu, FilaHorario, PanelColoresMiniweb, Plegable, SIN_PORTADA_MINIWEB, SelectorCartaMiniweb } from './PanelesMiniweb'
 import { CampoImagenAsistente, EditorEnBruto, ImagenesPorPestana, TEXTO_EXTRA_EJEMPLO, TextosHorario, TextosPestanas } from './TextosEditor'
 
 /* Nuevo perfil: crear una miniweb o una carta desde cero, con el asistente, la vista previa en vivo y todos los ajustes. */
@@ -43,20 +45,17 @@ import { CampoImagenAsistente, EditorEnBruto, ImagenesPorPestana, TEXTO_EXTRA_EJ
 // Promociones, la de Laca, con ofertas (con su precio anterior tachado) y servicios por secciones
 const CARTA_DE_TIPO = { carta: 'almendra', promociones: 'laca' }
 
-// Un icono por tipo de carta, como en la fila de portadas de las miniwebs (el de cada estilo está en perfil/BloquePortada.jsx)
-
-const ICONOS_TIPO_CARTA = { carta: UtensilsCrossed, promociones: BadgePercent }
 
 export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
   // La pestaña abierta: el asistente o el diseño (la vista previa se ve siempre)
   const [pestana, setPestana] = useState('personalizar')
   // El resto del estado, agrupado por temas (src/admin/perfil/)
   const diseno = usePerfilDiseno()
-  const { tema, setTema, subTemas, setSubTemas, producto, setProducto, hero, setHero, barra, setBarra, corte, setCorte, formato, setFormato, disposicion, setDisposicion, composicion, setComposicion, distribucion, setDistribucion, pase, setPase, montaje, setMontaje, horarioMini, setHorarioMini, horarioVar, setHorarioVar, filtroFoto, setFiltroFoto, tamanoNombre, setTamanoNombre, cabecera, setCabecera, estructura, setEstructura, cartaMini, setCartaMini, coloresMini, setColoresMini } = diseno
+  const { tema, setTema, producto, setProducto, hero, setHero, barra, setBarra, corte, setCorte, formato, setFormato, disposicion, setDisposicion, composicion, setComposicion, distribucion, setDistribucion, pase, setPase, montaje, setMontaje, horarioMini, setHorarioMini, horarioVar, setHorarioVar, filtroFoto, setFiltroFoto, tamanoNombre, setTamanoNombre, cabecera, setCabecera, estructura, setEstructura, cartaMini, setCartaMini, coloresMini, setColoresMini } = diseno
   const carta = usePerfilCarta()
   const { tipoCarta, setTipoCarta, subCarta, setSubCarta, estilo, setEstilo, colorPrecio, setColorPrecio, colorPrecioTexto, setColorPrecioTexto, fondo2, setFondo2, textoSuave, setTextoSuave, coloresCarta, setColoresCarta, tamanoPrecio, setTamanoPrecio, enlaceNegocio, setEnlaceNegocio, filtroCarta, setFiltroCarta, colorFiltroCarta, setColorFiltroCarta, detallePrecio, setDetallePrecio } = carta
   const negocio = usePerfilNegocio()
-  const { nombre, setNombre, etiqueta, setEtiqueta, lema, setLema, logoAbierto, setLogoAbierto, logo, setLogo, principal, setPrincipal, acento, setAcento, colorTexto, setColorTexto, fondo, setFondo, letra, setLetra, textosMini, setTextosMini, nombreVista, setNombreVista } = negocio
+  const { nombre, setNombre, etiqueta, setEtiqueta, lema, setLema, logo, setLogo, principal, setPrincipal, acento, setAcento, colorTexto, setColorTexto, fondo, setFondo, letra, setLetra, textosMini, setTextosMini, nombreVista, setNombreVista } = negocio
   const { cuento, setCuento, disenando, setDisenando, resumenDiseno, setResumenDiseno, cambiosIA, setCambiosIA, versionIA, setVersionIA, redactando, setRedactando, referencia, setReferencia, captura, setCaptura, infoImagen, setInfoImagen, horarioIA, setHorarioIA, generado, setGenerado } = usePerfilAsistente()
   const { creando, setCreando, aviso, setAviso, error, setError, copiaCargada, setCopiaCargada, huellaBase, setHuellaBase, versionBase, setVersionBase, preguntaSalir, setPreguntaSalir, cambiosExtra, setCambiosExtra, versionExtra, setVersionExtra } = usePerfilCopias()
   // En tablet vertical (768 a 1023 px) Ficha queda bloqueada en el selector de Producto
@@ -602,54 +601,12 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
 
   // El nombre del negocio (obligatorio), el icono del logo (abre el campo para subirlo) y el tamaño del nombre
   const bloqueNombre = (
-          <div className="grid gap-[0.75rem]">
-            <Etiqueta texto="Nombre del negocio">
-              <div className="flex items-center gap-[0.5rem]">
-                <input value={nombre} onChange={e => setNombre(e.target.value)} className={CAMPO} placeholder="Peluquería Ranita" />
-                {!esCarta && (
-                  <button
-                    type="button"
-                    title="Logo"
-                    aria-label="Logo del negocio"
-                    aria-expanded={logoAbierto}
-                    onClick={() => setLogoAbierto(v => !v)}
-                    className={`flex h-[2.75rem] w-[2.75rem] shrink-0 items-center justify-center overflow-hidden rounded-[0.5rem] border-2 bg-white p-[0.2rem] transition-transform duration-300 ${logoAbierto ? 'scale-105 border-zinc-900' : 'border-zinc-300 hover:scale-105'}`}
-                  >
-                    {logo ? <img src={logo} alt="" className="max-h-full max-w-full object-contain" /> : <ImagePlus className="h-[1.3rem] w-[1.3rem]" strokeWidth={2} aria-hidden="true" />}
-                  </button>
-                )}
-              </div>
-            </Etiqueta>
-            {!esCarta && logoAbierto && <CampoLogo valor={logo} cambiar={setLogo} />}
-            {/* El tamaño del nombre arriba (XXS, XS, MD o XL): cápsulas pequeñas bajo el campo; en las miniwebs y en las cartas */}
-            {(
-              <div className="grid justify-items-start gap-[0.25rem]">
-                <div className="flex gap-[0.4rem]">
-                  {['xxs', 'xs', 'md', 'xl'].map(t => (
-                    <button
-                      key={t}
-                      type="button"
-                      aria-pressed={tamanoNombre === t}
-                      onClick={() => setTamanoNombre(t)}
-                      className={`rounded-full px-[0.8rem] py-[0.25rem] text-[0.78rem] font-semibold uppercase ring-1 transition-colors ${tamanoNombre === t ? 'bg-zinc-900 text-white ring-zinc-900' : 'bg-white text-zinc-600 ring-zinc-300 hover:ring-zinc-500'}`}
-                    >
-                      {t}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-            {/* Solo en las cartas: la frase que sale bajo el nombre (viene de la plantilla, p. ej. "Estudio de uñas"); vacía, no sale ninguna */}
-            {esCarta && (
-              <Etiqueta texto="Frase bajo el nombre">
-                <input value={lema ?? marcaDe(cartaBase)?.lema ?? ''} onChange={e => setLema(e.target.value)} maxLength={40} className={CAMPO} placeholder="Peluquería de barrio" />
-              </Etiqueta>
-            )}
-            {/* El nombre interno: solo se ve en tus listas (copias, selector), nunca en la miniweb */}
-            <Etiqueta texto="Nombre interno (solo lo ves tú)">
-              <input value={etiqueta} onChange={e => setEtiqueta(e.target.value)} maxLength={40} className={CAMPO} placeholder="Demo 1" />
-            </Etiqueta>
-          </div>
+    <BloqueNombre
+      diseno={diseno}
+      negocio={negocio}
+      cartaBase={cartaBase}
+      esCarta={esCarta}
+    />
   )
 
   // Los datos de la página tal como están ahora (la base con el diseño elegido y, si lo hay, lo que ha hecho el asistente), sin los cambios a mano
@@ -683,157 +640,37 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
 
   // La tipografía (la pareja de fuentes de la marca)
   const campoTipografia = (
-          <Etiqueta texto="Tipografía">
-            <select value={letra} onChange={e => setLetra(e.target.value)} className={CAMPO}>
-              <option value="">La de la plantilla</option>
-              <optgroup label="Predefinidas">
-                {TIPOGRAFIAS.map(t => (
-                  <option key={t.id} value={t.id}>
-                    {t.nombre}
-                  </option>
-                ))}
-              </optgroup>
-              {GRUPOS_EXTRA.map(g => (
-                <optgroup key={g.titulo} label={g.titulo}>
-                  {g.lista.map(t => (
-                    <option key={t.id} value={t.id}>
-                      {t.nombre}
-                    </option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
-          </Etiqueta>
+    <CampoTipografia
+      negocio={negocio}
+    />
   )
 
   // La paleta base de la marca (principal, acento, fondo y texto)
   const paletaMarca = (
-          <Plegable
-            titulo={producto === 'miniweb' ? 'Personalizado' : 'Colores'}
-            elegido={
-              <span className="flex justify-end gap-[0.25rem]">
-                {[colorPrincipal, ...(conCabecera ? [colorCabecera] : []), colorAcento, colorFondo, colorDelTexto].map((c, i) => (
-                  <span key={i} className="h-[1.1rem] w-[1.1rem] rounded-full ring-1 ring-zinc-300" style={{ background: c }} />
-                ))}
-              </span>
-            }
-          >
-          <div className="grid gap-[0.9rem]">
-            {[
-              ['Color principal', 'Botones, precios y lo que tiene que destacar.', colorPrincipal, setPrincipal],
-              // Solo en los diseños con cabecera de color
-              ...(conCabecera
-                ? [['Fondo de cabecera', producto === 'miniweb' ? 'La barra del menú de arriba y, con las portadas Polaroid y Banner, el fondo de toda la portada.' : 'La parte de arriba, detrás de las fotos y el titular.', colorCabecera, setCabecera]]
-                : []),
-              ['Color de acento', 'Precios, subrayados de las pestañas y detalles.', colorAcento, setAcento],
-              ['Color de fondo', 'El fondo de la página: claro u oscuro.', colorFondo, setFondo],
-              // En Menú y ofertas con el estilo Inmersiva el texto va en blanco fijo sobre la foto: este color no se usa (el 6.º dato lo marca)
-              ['Color del texto', 'Las letras sobre el fondo.', colorDelTexto, setColorTexto, undefined, esCarta && estilo === 'inmersiva'],
-            ].map(([nombreColor, ayuda, valor, poner, elegido, sinUso]) => (
-              <div key={nombreColor} className="grid gap-[0.3rem]">
-                <div>
-                  <p className="text-[0.8rem] font-semibold text-zinc-500">{nombreColor}</p>
-                  <p className="text-[0.8rem] text-zinc-400">{sinUso ? 'En este estilo (Inmersiva) el texto va en blanco sobre la foto, así que este color no lo cambia. Puedes seguir tocándolo.' : ayuda}</p>
-                </div>
-                <div className="flex items-center gap-[0.5rem]">
-                  <div className="min-w-0 flex-1">
-                    <CampoColor valor={valor} cambiar={poner} />
-                  </div>
-                  {elegido && (
-                    <button type="button" title="Volver al del estilo" aria-label={`Volver al color de cada estilo: ${nombreColor}`} onClick={() => poner('')} className="shrink-0 rounded-full p-[0.4rem] text-zinc-500 hover:text-zinc-900">
-                      <RotateCcw className="h-[0.95rem] w-[0.95rem]" strokeWidth={2.2} aria-hidden="true" />
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-          </Plegable>
+    <PaletaMarca
+      diseno={diseno}
+      carta={carta}
+      negocio={negocio}
+      colorAcento={colorAcento}
+      colorCabecera={colorCabecera}
+      colorDelTexto={colorDelTexto}
+      colorFondo={colorFondo}
+      colorPrincipal={colorPrincipal}
+      conCabecera={conCabecera}
+      esCarta={esCarta}
+    />
   )
 
   // Tipo (menú y ofertas) o temática del negocio: se usa en Diseño y estilos y en la pestaña Negocio
   const bloqueTematica = (
-    <>
-          {esCarta ? (
-            <div className="grid gap-[0.45rem]">
-              <span className={titulo}>Tipo</span>
-              <FilaIconos className="flex flex-wrap items-center gap-[0.4rem]">
-                {TIPOS_CARTA.map(t => {
-                  const Icono = ICONOS_TIPO_CARTA[t.clave] ?? Store
-                  return (
-                    <button
-                      key={t.clave}
-                      type="button"
-                      title={t.texto}
-                      aria-label={`Tipo ${t.texto}`}
-                      aria-pressed={tipoCarta === t.clave}
-                      onClick={() => setTipoCarta(t.clave)}
-                      className={claseIcono(tipoCarta === t.clave)}
-                    >
-                      <Icono className="h-[1.3rem] w-[1.3rem]" strokeWidth={2} aria-hidden="true" />
-                    </button>
-                  )
-                })}
-              </FilaIconos>
-              <p className="text-[0.85rem] font-semibold">{TIPOS_CARTA.find(t => t.clave === tipoCarta)?.texto}</p>
-              <p className="text-[0.8rem] text-zinc-500">{TIPOS_CARTA.find(t => t.clave === tipoCarta)?.descripcion}</p>
-            </div>
-          ) : (
-          <div className="grid gap-[0.45rem]">
-            <span className={titulo}>Temática del negocio</span>
-            {/* Los grupos (Restauración, Belleza...): al tocar uno, sus temáticas salen debajo como subpestañas; tocarlo otra vez las cierra */}
-            <FilaIconos className="flex flex-wrap items-center gap-[0.4rem]">
-              {GRUPOS_PLANTILLAS.map(g => {
-                const Icono = ICONOS_TEMA[g.claves[0]] ?? Store
-                return (
-                  <button
-                    key={g.clave}
-                    type="button"
-                    title={g.nombre}
-                    aria-label={`Grupo ${g.nombre}`}
-                    aria-pressed={grupoTema.clave === g.clave}
-                    onClick={() => {
-                      if (grupoTema.clave === g.clave) setSubTemas(v => !v)
-                      else {
-                        setTema(g.claves[0])
-                        setSubTemas(true)
-                      }
-                    }}
-                    className={claseIcono(grupoTema.clave === g.clave)}
-                  >
-                    <Icono className="h-[1.3rem] w-[1.3rem]" strokeWidth={2} aria-hidden="true" />
-                  </button>
-                )
-              })}
-            </FilaIconos>
-            <p className="text-[0.85rem] font-semibold">{grupoTema.nombre}</p>
-            {subTemas && (
-              <div className="grid gap-[0.4rem]">
-                <FilaIconos className="flex flex-wrap gap-[0.4rem]">
-                  {grupoTema.claves.map(clave => {
-                    const p = PLANTILLAS.find(x => x.clave === clave)
-                    const Icono = ICONOS_TEMA[clave] ?? Store
-                    return (
-                      <button
-                        key={clave}
-                        type="button"
-                        title={p.nombre}
-                        aria-label={`Temática ${p.nombre}`}
-                        aria-pressed={tema === clave}
-                        onClick={() => setTema(clave)}
-                        className={claseIcono(tema === clave)}
-                      >
-                        <Icono className="h-[1.3rem] w-[1.3rem]" strokeWidth={2} aria-hidden="true" />
-                      </button>
-                    )
-                  })}
-                </FilaIconos>
-                <p className="text-[0.8rem] text-zinc-500">{plantilla.nombre}</p>
-              </div>
-            )}
-          </div>
-          )}
-    </>
+    <BloqueTematica
+      diseno={diseno}
+      carta={carta}
+      esCarta={esCarta}
+      grupoTema={grupoTema}
+      plantilla={plantilla}
+      titulo={titulo}
+    />
   )
 
   // Lo que se enseña en dos sitios (los desplegables de siempre y las pestañas de ajustes por grupo)
@@ -867,61 +704,18 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
     </div>
   ) : null
   const bloqueTextoInicio = (
-            <Plegable titulo="Texto inicio" elegido={textosEditados ? 'Cambiados' : 'Los de la plantilla'}>
-              <div className="grid gap-[0.9rem]">
-                {/* La tipografía de la miniweb, aquí arriba (en Menú y ofertas y Ficha sigue en Negocio) */}
-                {campoTipografia}
-                <div className="grid gap-[0.3rem]">
-                  <div>
-                    <p className="text-[0.8rem] font-semibold text-zinc-500">Texto grande</p>
-                    <p className="text-[0.8rem] text-zinc-400">El titular de la portada. Si no cabe en una línea, baja solo a la siguiente.</p>
-                  </div>
-                  <input value={textoGrande} maxLength={maxGrande} onChange={e => setTextosMini(t => ({ ...t, titular: e.target.value }))} className={CAMPO} />
-                  <span className="justify-self-end text-[0.75rem] text-zinc-500">
-                    {textoGrande.length}/{maxGrande}
-                  </span>
-                </div>
-                <div className="grid gap-[0.3rem]">
-                  <div>
-                    <p className="text-[0.8rem] font-semibold text-zinc-500">Texto pequeño</p>
-                    <p className="text-[0.8rem] text-zinc-400">La descripción de debajo del titular.</p>
-                  </div>
-                  <textarea
-                    value={textoPequeno}
-                    maxLength={maxDe(inicioBase?.descripcion ?? 'Descripción de la portada del negocio, en pocas palabras')}
-                    onChange={e => setTextosMini(t => ({ ...t, descripcion: e.target.value }))}
-                    rows={3}
-                    className={`${CAMPO} resize-y`}
-                  />
-                  <span className="justify-self-end text-[0.75rem] text-zinc-500">
-                    {textoPequeno.length}/{maxDe(inicioBase?.descripcion ?? 'Descripción de la portada del negocio, en pocas palabras')}
-                  </span>
-                </div>
-                {conTextoExtra && (
-                  <div className="grid gap-[0.3rem]">
-                    <div>
-                      <p className="text-[0.8rem] font-semibold text-zinc-500">Texto extra</p>
-                      <p className="text-[0.8rem] text-zinc-400">Un horario o lo que quieras, debajo del botón. Solo lo pintan Editorial, Cortes y Fullbleed.</p>
-                    </div>
-                    <input
-                      value={textoExtra}
-                      maxLength={MAX_TEXTO_EXTRA}
-                      onChange={e => setTextosMini(t => ({ ...t, info: e.target.value }))}
-                      placeholder="De martes a domingo, de 13:00 a 23:00"
-                      className={CAMPO}
-                    />
-                    <span className="justify-self-end text-[0.75rem] text-zinc-500">
-                      {textoExtra.length}/{MAX_TEXTO_EXTRA}
-                    </span>
-                  </div>
-                )}
-                {textosEditados && (
-                  <button type="button" onClick={() => setTextosMini({})} className="justify-self-start text-[0.8rem] font-semibold text-zinc-500 underline underline-offset-[0.2em]">
-                    Volver a los textos de la plantilla
-                  </button>
-                )}
-              </div>
-            </Plegable>
+    <BloqueTextoInicio
+      negocio={negocio}
+      MAX_TEXTO_EXTRA={MAX_TEXTO_EXTRA}
+      campoTipografia={campoTipografia}
+      conTextoExtra={conTextoExtra}
+      inicioBase={inicioBase}
+      maxGrande={maxGrande}
+      textoExtra={textoExtra}
+      textoGrande={textoGrande}
+      textoPequeno={textoPequeno}
+      textosEditados={textosEditados}
+    />
   )
   const bloqueTextoHorarios = datosEnBruto && (
               <Plegable titulo="Texto horarios">
