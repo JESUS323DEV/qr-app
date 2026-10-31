@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { BotonMasDisenos, FilaIconos, HojaCtx } from './FilaIconos'
 import usePantallaMovil from './usePantallaMovil'
+import armarPerfil from './perfil/armarPerfil'
+import redactarPerfil from './perfil/redactarPerfil'
 import usePerfilDiseno from './perfil/usePerfilDiseno'
 import usePerfilCarta from './perfil/usePerfilCarta'
 import usePerfilNegocio from './perfil/usePerfilNegocio'
@@ -11,10 +13,10 @@ import CampoColor from '../components/CampoColor'
 import { BadgePercent, List, Camera, ChevronDown, ChevronsDownUp, Frame, GalleryHorizontal, ImagePlus, Maximize, Newspaper, RotateCcw, Store, UtensilsCrossed } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { aplicar, conEdicion } from '../lib/ediciones'
-import { getNegocio, negocios } from '../negocios'
-import { ALERGENOS, cartas, getCarta, marcaDe } from '../cartas'
+import { getNegocio } from '../negocios'
+import { getCarta, marcaDe } from '../cartas'
 import { BOTON, CAMPO, Confirmar, Etiqueta, claseIcono, opcion } from '../components/panel'
-import { TIPOGRAFIAS, GRUPOS_EXTRA, TODAS_LAS_TIPOGRAFIAS } from '../asistente/tipografias'
+import { TIPOGRAFIAS, GRUPOS_EXTRA } from '../asistente/tipografias'
 import { GRUPOS_PLANTILLAS, PLANTILLAS } from '../plantillas'
 import { catalogoMiniweb, validarDiseno } from '../asistente/miniweb'
 import { TIPOS_CARTA, catalogoCarta, validarDisenoCarta } from '../asistente/carta'
@@ -34,12 +36,12 @@ import { tipoDe } from '../lib/tematicas'
 import { HEROS } from '../heros'
 import { BARRAS } from '../fichas/barras'
 import { FAMILIAS } from '../familias'
-import { RESERVADAS, aSlug, llamar, nombreInterno } from './comun'
+import { llamar, nombreInterno } from './comun'
 import { CampoLogo } from './Campos'
-import { LIMPIAR_FICHA, bloquesDePestana, leerRuta, maxDe } from './datos'
-import { cambiosDeIA, camposParaIA, crearCartaConDueno, estructuraCarta, fusionar, inicioCopiaCarta, menuDelPanel, sinGuionLargo } from './ia'
+import { bloquesDePestana, leerRuta, maxDe } from './datos'
+import { crearCartaConDueno, fusionar, menuDelPanel } from './ia'
 import { ESTRUCTURA_DEFECTO, EstructuraMiniweb, FilaEstiloMenu, FilaHorario, ICONOS_DISENO, ICONOS_TEMA, PanelColoresMiniweb, Plegable, SIN_PORTADA_MINIWEB, SelectorCartaMiniweb, nombreDeDiseno } from './PanelesMiniweb'
-import { CampoImagenAsistente, EditorEnBruto, FOTOS_PORTADA, ImagenesPorPestana, TEXTO_EXTRA_EJEMPLO, TextosHorario, TextosPestanas, conFotosDePortada } from './TextosEditor'
+import { CampoImagenAsistente, EditorEnBruto, ImagenesPorPestana, TEXTO_EXTRA_EJEMPLO, TextosHorario, TextosPestanas } from './TextosEditor'
 
 /* Nuevo perfil: crear una miniweb o una carta desde cero, con el asistente, la vista previa en vivo y todos los ajustes. */
 
@@ -56,9 +58,12 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
   // La pestaña abierta: el asistente o el diseño (la vista previa se ve siempre)
   const [pestana, setPestana] = useState('personalizar')
   // El resto del estado, agrupado por temas (src/admin/perfil/)
-  const { tema, setTema, subTemas, setSubTemas, producto, setProducto, hero, setHero, barra, setBarra, corte, setCorte, subAbierta, setSubAbierta, formato, setFormato, disposicion, setDisposicion, composicion, setComposicion, distribucion, setDistribucion, pase, setPase, montaje, setMontaje, horarioMini, setHorarioMini, horarioVar, setHorarioVar, filtroFoto, setFiltroFoto, tamanoNombre, setTamanoNombre, cabecera, setCabecera, estructura, setEstructura, cartaMini, setCartaMini, masDisenos, setMasDisenos, coloresMini, setColoresMini } = usePerfilDiseno()
-  const { tipoCarta, setTipoCarta, subCarta, setSubCarta, estilo, setEstilo, colorPrecio, setColorPrecio, colorPrecioTexto, setColorPrecioTexto, fondo2, setFondo2, textoSuave, setTextoSuave, coloresCarta, setColoresCarta, tamanoPrecio, setTamanoPrecio, enlaceNegocio, setEnlaceNegocio, filtroCarta, setFiltroCarta, colorFiltroCarta, setColorFiltroCarta, detallePrecio, setDetallePrecio } = usePerfilCarta()
-  const { nombre, setNombre, etiqueta, setEtiqueta, lema, setLema, logoAbierto, setLogoAbierto, logo, setLogo, principal, setPrincipal, acento, setAcento, colorTexto, setColorTexto, fondo, setFondo, letra, setLetra, textosMini, setTextosMini, nombreVista, setNombreVista } = usePerfilNegocio()
+  const diseno = usePerfilDiseno()
+  const { tema, setTema, subTemas, setSubTemas, producto, setProducto, hero, setHero, barra, setBarra, corte, setCorte, subAbierta, setSubAbierta, formato, setFormato, disposicion, setDisposicion, composicion, setComposicion, distribucion, setDistribucion, pase, setPase, montaje, setMontaje, horarioMini, setHorarioMini, horarioVar, setHorarioVar, filtroFoto, setFiltroFoto, tamanoNombre, setTamanoNombre, cabecera, setCabecera, estructura, setEstructura, cartaMini, setCartaMini, masDisenos, setMasDisenos, coloresMini, setColoresMini } = diseno
+  const carta = usePerfilCarta()
+  const { tipoCarta, setTipoCarta, subCarta, setSubCarta, estilo, setEstilo, colorPrecio, setColorPrecio, colorPrecioTexto, setColorPrecioTexto, fondo2, setFondo2, textoSuave, setTextoSuave, coloresCarta, setColoresCarta, tamanoPrecio, setTamanoPrecio, enlaceNegocio, setEnlaceNegocio, filtroCarta, setFiltroCarta, colorFiltroCarta, setColorFiltroCarta, detallePrecio, setDetallePrecio } = carta
+  const negocio = usePerfilNegocio()
+  const { nombre, setNombre, etiqueta, setEtiqueta, lema, setLema, logoAbierto, setLogoAbierto, logo, setLogo, principal, setPrincipal, acento, setAcento, colorTexto, setColorTexto, fondo, setFondo, letra, setLetra, textosMini, setTextosMini, nombreVista, setNombreVista } = negocio
   const { cuento, setCuento, disenando, setDisenando, resumenDiseno, setResumenDiseno, cambiosIA, setCambiosIA, versionIA, setVersionIA, redactando, setRedactando, referencia, setReferencia, captura, setCaptura, infoImagen, setInfoImagen, horarioIA, setHorarioIA, generado, setGenerado } = usePerfilAsistente()
   const { creando, setCreando, aviso, setAviso, error, setError, copiaCargada, setCopiaCargada, huellaBase, setHuellaBase, versionBase, setVersionBase, preguntaSalir, setPreguntaSalir, cambiosExtra, setCambiosExtra, versionExtra, setVersionExtra } = usePerfilCopias()
   // En tablet vertical (768 a 1023 px) Ficha queda bloqueada en el selector de Producto
@@ -226,131 +231,10 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
           : null
 
   // Arma lo que se guarda al crear (el perfil de partida, su dirección y los cambios del diseño elegido), sin tocar Supabase
-  const armar = nombreCrear => {
-    const tipoFila = esCarta ? 'carta' : 'negocio'
-    const ocupadas = new Set([
-      ...(filas ?? []).filter(f => f.tipo === tipoFila).map(f => f.slug),
-      ...(esCarta ? cartas : negocios).map(n => n.slug),
-      ...RESERVADAS,
-    ])
-    const raiz = aSlug(nombreCrear) || 'nuevo'
-    let slug = raiz
-    for (let n = 2; ocupadas.has(slug); n++) slug = `${raiz}-${n}`
-
-    const tipografia = TODAS_LAS_TIPOGRAFIAS.find(t => t.id === letra)
-    // Los textos de la portada que se han escrito: en la copia de Chalaquita, sobre su primera pestaña; en las demás, sobre la
-    // primera pestaña de su miniweb (más abajo)
-    const textosEscritos = {
-      ...(textosMini.titular !== undefined ? { titular: [textoGrande.trim()].filter(Boolean) } : {}),
-      ...(textosMini.descripcion !== undefined ? { descripcion: textoPequeno.trim() } : {}),
-      ...(conTextoExtra ? { info: textoExtra.trim() } : {}),
-      ...(textosMini.boton !== undefined ? { boton: textoBoton.trim() } : {}),
-    }
-    const inicioCambio = {
-      ...(producto === 'miniweb' && barra ? { 'hero.barra': barra } : {}),
-      ...(!esCarta && tamanoNombre !== 'md' ? { 'hero.tamanoNombre': tamanoNombre } : {}),
-      ...(!esCarta && hero === 'diagonal' && corte !== 'diagonal' ? { 'hero.corte': corte } : {}),
-      ...(!esCarta && hero === 'editorial' && formato !== 'clasica' ? { 'hero.formato': formato } : {}),
-      ...(!esCarta && hero === 'fullbleed' && disposicion !== 'clasica' ? { 'hero.disposicion': disposicion } : {}),
-      ...(!esCarta && hero === 'mosaico' && composicion !== 'clasica' ? { 'hero.composicion': composicion } : {}),
-      ...(!esCarta && hero === 'retrato' && distribucion !== 'clasica' ? { 'hero.distribucion': distribucion } : {}),
-      ...(!esCarta && hero === 'galeria' && pase !== 'clasica' ? { 'hero.pase': pase } : {}),
-      ...(!esCarta && hero === 'polaroid' && montaje !== 'clasica' ? { 'hero.montaje': montaje } : {}),
-      ...(producto === 'miniweb' && cartaMini ? { 'hero.carta': cartaMini } : {}),
-      ...(producto === 'miniweb' && horarioMini ? { 'hero.horario': horarioMini } : {}),
-      ...(producto === 'miniweb' && horarioVar !== 'clasica' ? { 'hero.horarioVariante': horarioVar } : {}),
-      ...(producto === 'miniweb' && filtroFoto !== 100 ? { 'hero.filtro': filtroFoto } : {}),
-      // Los colores uno por uno que se han elegido (los demás, en automático)
-      ...(producto === 'miniweb' && Object.keys(coloresMini).length ? { 'hero.colores': coloresMini } : {}),
-      ...(producto === 'miniweb' ? Object.fromEntries(lugares.map(([clave, valor]) => [`hero.${clave}`, valor])) : {}),
-    }
-    let cambios
-    let base
-    if (esCarta) {
-      base = cartaSlug
-      const inicio = inicioCopiaCarta(cartaBase)
-      cambios = fusionar(inicio, {
-        'marca.nombre': nombreCrear,
-        ...(lema !== null ? { 'marca.lema': lema.trim() } : {}),
-        diseno: estilo,
-        ...(estilo === 'inmersiva' && subCarta === 'columna' ? { subdiseno: 'columna' } : {}),
-        ...(principal ? { 'marca.theme.colors.primary': principal } : {}),
-        ...(acento ? { 'marca.theme.colors.accent': acento } : {}),
-        ...(colorTexto ? { 'marca.theme.colors.text': colorTexto } : {}),
-        ...(fondo ? { 'marca.theme.colors.bg': fondo } : {}),
-        ...(colorPrecio ? { 'marca.theme.colors.precio': colorPrecio } : {}),
-        ...(colorPrecioTexto ? { 'marca.theme.colors.precioTexto': colorPrecioTexto } : {}),
-        ...(tamanoPrecio !== 'md' ? { tamanoPrecio } : {}),
-        ...(tamanoNombre !== 'md' ? { tamanoNombre } : {}),
-        // Una copia no enlaza a la miniweb de la demo de la que sale: sin enlace salvo que se elija
-        enlaceNegocio,
-        ...(estilo === 'inmersiva' && filtroCarta !== 100 ? { filtroFoto: filtroCarta } : {}),
-        ...(estilo === 'inmersiva' && colorFiltroCarta ? { colorFiltro: colorFiltroCarta } : {}),
-        ...(detallePrecio !== 'raya' ? { detallePrecio } : {}),
-        // La superficie de las tarjetas y el texto suave salen del fondo y del texto elegidos (no se quedan con los de la plantilla)
-        ...(fondo || colorTexto ? { 'marca.theme.colors.surface': derivadosDeFondoYTexto(colorFondo, colorDelTexto).surface, 'marca.theme.colors.muted': derivadosDeFondoYTexto(colorFondo, colorDelTexto).muted } : {}),
-        // Fondo secundario y texto suave elegidos (mandan sobre los que salen del fondo y del texto) y los colores propios de la carta
-        ...(fondo2 ? { 'marca.theme.colors.surface': fondo2 } : {}),
-        ...(textoSuave ? { 'marca.theme.colors.muted': textoSuave } : {}),
-        ...Object.fromEntries(Object.entries(coloresCarta).map(([clave, valor]) => [`marca.theme.colors.${clave}`, valor])),
-        ...(tipografia ? { 'marca.theme.fonts': tipografia.fonts } : {}),
-      })
-    } else {
-      // Miniweb de comida: copia de Chalaquita con la portada elegida. El resto: su ficha como miniweb
-      const deChalaquita = producto === 'miniweb' && plantilla.miniweb
-      base = deChalaquita ? plantilla.miniweb : plantilla.ficha
-      cambios = {
-        nombre: nombreCrear,
-        ...(logoElegido ? { logo: logoElegido } : {}),
-        // El enlace de "escribir reseña" del Google del negocio: vacío al principio, para que salga el campo en Reseña de Google y se pueda pegar
-        ...(getNegocio(base)?.resena?.url ? {} : { 'resena.url': '' }),
-        ...(principal ? { 'theme.colors.primary': principal } : {}),
-        ...(acento ? { 'theme.colors.accent': acento } : {}),
-        ...(colorTexto ? { 'theme.colors.text': colorTexto } : {}),
-        ...(fondo ? { 'theme.colors.bg': fondo } : {}),
-        // Con cabecera, se guarda siempre (aunque sea el principal), para que salga en el editor y se pueda cambiar
-        ...(conCabecera ? { 'theme.colors.header': colorCabecera } : {}),
-        ...(tipografia ? { 'theme.fonts': tipografia.fonts } : {}),
-        ...(producto === 'ficha'
-          ? { 'hero.diseno': hero, ...(barra ? { 'hero.barra': barra } : {}), ...(hero === 'diagonal' && corte !== 'diagonal' ? { 'hero.corte': corte } : {}), ...(hero === 'editorial' && formato !== 'clasica' ? { 'hero.formato': formato } : {}), ...(hero === 'fullbleed' && disposicion !== 'clasica' ? { 'hero.disposicion': disposicion } : {}), ...(hero === 'mosaico' && composicion !== 'clasica' ? { 'hero.composicion': composicion } : {}), ...(hero === 'retrato' && distribucion !== 'clasica' ? { 'hero.distribucion': distribucion } : {}), ...(hero === 'galeria' && pase !== 'clasica' ? { 'hero.pase': pase } : {}), ...(hero === 'polaroid' && montaje !== 'clasica' ? { 'hero.montaje': montaje } : {}) }
-          : deChalaquita
-            ? { 'hero.portada': hero, ...inicioCambio, ...Object.fromEntries(Object.entries(textosEscritos).map(([clave, valor]) => [`hero.pestanas.0.${clave}`, valor])), ...(conFotosDePortada(getNegocio(plantilla.miniweb)?.hero?.pestanas?.[0], FOTOS_PORTADA[hero])?.fotos ? { 'hero.pestanas.0.fotos': conFotosDePortada(getNegocio(plantilla.miniweb).hero.pestanas[0], FOTOS_PORTADA[hero]).fotos } : {}) }
-            : {
-                'hero.diseno': 'web',
-                'hero.portada': hero,
-                'hero.redesArriba': true,
-                // El titular propio de la ficha (el que iba sobre la foto) sobra en una miniweb: ya está el Texto inicio
-                ...LIMPIAR_FICHA,
-                ...inicioCambio,
-                'hero.pestanas': pestanasDeMiniweb(negocioBase).map((p, i) => (i === 0 ? conFotosDePortada({ ...p, ...textosEscritos }, FOTOS_PORTADA[hero]) : p)),
-                tipo: 'miniweb',
-              }),
-      }
-    }
-
-    return { tipoFila, slug, base, cambios }
-  }
+  const armar = nombreCrear => armarPerfil({ ...diseno, ...carta, ...negocio, cartaBase, cartaSlug, colorCabecera, colorDelTexto, colorFondo, conCabecera, conTextoExtra, esCarta, filas, logoElegido, lugares, negocioBase, plantilla, textoBoton, textoExtra, textoGrande, textoPequeno }, nombreCrear)
 
   // El asistente escribe los textos y busca las fotos sobre el diseño armado: devuelve los cambios (sin tocar nombre, diseño ni portada)
-  const redactar = async (base, cambios, nombreCrear, avisar) => {
-    const datosBase = esCarta ? cartaBase : getNegocio(base)
-    const preparada = aplicar(datosBase, cambios)
-    const campos = camposParaIA(preparada)
-    avisar('Escribiendo los textos...')
-    const { resultado } = await llamar('asistente', {
-      paso: 'copy',
-      peticion: infoImagen ? `${cuento.trim()}\n\nDatos leídos de la imagen de referencia de la marca (úsalos tal cual):\n${infoImagen}`.trim() : cuento.trim() || 'Sin más indicaciones.',
-      perfil: producto,
-      nombre: nombreCrear,
-      campos,
-      carta: estructuraCarta(preparada),
-      alergenos: Object.keys(ALERGENOS),
-    })
-    avisar('Buscando fotos...')
-    const deIA = await cambiosDeIA({ ...resultado, tipografia: '' }, campos, preparada)
-    for (const ruta of ['nombre', 'marca.nombre', 'hero.diseno', 'hero.barra', 'hero.portada']) delete deIA[ruta]
-    return { deIA, historial: [{ peticion: cuento.trim(), resumen: sinGuionLargo(resultado.resumen ?? '') }] }
-  }
+  const redactar = (base, cambios, nombreCrear, avisar) => redactarPerfil({ cartaBase, cuento, esCarta, infoImagen, producto }, base, cambios, nombreCrear, avisar)
 
   // El botón del asistente, en dos tiempos: 1) elige el diseño (y el nombre, si falta) y lo pone en los selectores; 2) con esos
   // selectores ya puestos (efecto de más abajo), escribe los textos y busca las fotos. La vista previa lo enseña todo
