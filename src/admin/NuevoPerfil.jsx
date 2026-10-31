@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { BotonMasDisenos, FilaIconos, HojaCtx } from './FilaIconos'
+import usePantallaMovil from './usePantallaMovil'
 import CampoColor from '../components/CampoColor'
 import { BadgePercent, List, Camera, ChevronDown, ChevronLeft, ChevronRight, ChevronsDownUp, Copy, Save, CalendarCheck, Clock, Image as ImageIcon, LayoutTemplate, Share2, SlidersHorizontal, Star, Frame, GalleryHorizontal, ImagePlus, Maximize, Newspaper, RotateCcw, Store, UtensilsCrossed } from 'lucide-react'
 import { supabase } from '../lib/supabase'
@@ -63,21 +64,6 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
   const [tema, setTema] = useState(PLANTILLAS[0].clave)
   // La pestaña abierta: el asistente o el diseño (la vista previa se ve siempre)
   const [pestana, setPestana] = useState('personalizar')
-  // En móvil, la vista previa es una pantalla aparte, a la derecha de los ajustes: se abre con la flecha de la derecha y se vuelve con la de la izquierda
-  const [vistaMovil, setVistaMovil] = useState(false)
-  // Móvil, antes del editor: 'inicio' (Personalizar o Asistente, Producto y Continuar) o 'asistente' (el cuadro del Asistente, con su botón Editar)
-  const [pasoMovil, setPasoMovil] = useState('inicio')
-  // El panelito abierto en la pantalla de la vista previa del móvil: 'copia', 'tamano' o ninguno
-  const [popover, setPopover] = useState(null)
-  // La hoja de ajustes del móvil (sube desde abajo sobre la vista previa) y si la pantalla es de móvil (menos de 768 px)
-  const [hojaAbierta, setHojaAbierta] = useState(false)
-  const [esMovil, setEsMovil] = useState(() => window.matchMedia('(max-width: 767px)').matches)
-  useEffect(() => {
-    const medida = window.matchMedia('(max-width: 767px)')
-    const alCambiar = () => setEsMovil(medida.matches)
-    medida.addEventListener('change', alCambiar)
-    return () => medida.removeEventListener('change', alCambiar)
-  }, [])
   // En tablet vertical (768 a 1023 px) Ficha queda bloqueada en el selector de Producto
   const [tabletVertical, setTabletVertical] = useState(() => window.matchMedia('(min-width: 768px) and (max-width: 1023px)').matches)
   useEffect(() => {
@@ -97,11 +83,6 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
   })
   // Pestañas de ajustes por grupo (en prueba, encima de los desplegables de siempre): cada una junta todo lo de un grupo
   const [pestanaAjustes, setPestanaAjustes] = useState(null)
-  // La hoja de ajustes del móvil está abierta: sube desde arriba con el panel del grupo elegido, encima de la vista previa
-  const hoja = esMovil && vistaMovil && hojaAbierta && pestanaAjustes != null
-  // En móvil, qué pantalla de antes del editor se ve
-  const enInicio = esMovil && !vistaMovil && pasoMovil === 'inicio'
-  const enAsistenteMovil = esMovil && !vistaMovil && pasoMovil === 'asistente'
   const medidaMovil = TAMANOS_MOVIL.find(t => t.clave === tamanoMovil) ?? TAMANOS_MOVIL[1]
   const elegirTamanoMovil = clave => {
     setTamanoMovil(clave)
@@ -229,33 +210,8 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
       document.body.style.overflow = antes
     }
   }, [abierto])
-  // Las flechas de la vista previa en móvil y el contenido de la hoja de ajustes abierta: se ven al abrir el Editor y cada vez que se toca la pantalla, y a los 3 s se vuelven
-  // invisibles (las flechas siguen ahí para tocarlas; la hoja deja pasar los toques hasta que reaparece). No se esconde mientras se escribe en un campo
-  const [flechasVisibles, setFlechasVisibles] = useState(true)
-  useEffect(() => {
-    if (!abierto) return
-    let id
-    const ocultar = () => {
-      const activo = document.activeElement
-      if (activo && /^(INPUT|TEXTAREA|SELECT)$/.test(activo.tagName)) {
-        id = setTimeout(ocultar, 3000)
-        return
-      }
-      setFlechasVisibles(false)
-    }
-    const mostrar = () => {
-      setFlechasVisibles(true)
-      clearTimeout(id)
-      id = setTimeout(ocultar, 3000)
-    }
-    mostrar()
-    const eventos = ['pointerdown', 'keydown', 'input', 'scroll', 'wheel']
-    eventos.forEach(e => document.addEventListener(e, mostrar, true))
-    return () => {
-      clearTimeout(id)
-      eventos.forEach(e => document.removeEventListener(e, mostrar, true))
-    }
-  }, [abierto, vistaMovil])
+  // Las pantallas del Editor en móvil (inicio, Asistente, editor, hoja de ajustes) y su temporizador
+  const { vistaMovil, setVistaMovil, pasoMovil, setPasoMovil, popover, setPopover, hojaAbierta, setHojaAbierta, esMovil, flechasVisibles, hoja, enInicio, enAsistenteMovil } = usePantallaMovil({ abierto, pestanaAjustes })
   // Los cambios hechos a mano en los datos en bruto (ruta → valor) y su versión (para recargar la vista previa, con un pequeño retraso al escribir)
   const [cambiosExtra, setCambiosExtra] = useState({})
   const [versionExtra, setVersionExtra] = useState(0)
