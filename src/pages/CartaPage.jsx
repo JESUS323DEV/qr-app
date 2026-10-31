@@ -7,12 +7,11 @@ import { marcaDePrueba } from '../lib/prueba'
 
 // Estilos de carta que existen (los que se pueden probar con ?diseno=)
 const ESTILOS_CARTA = new Set(Object.values(FAMILIAS).map(f => f.carta).filter(Boolean))
-import { ArrowUpRight, ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { cartas, fotoDe, rutaCarta, ALERGENOS } from '../cartas'
 import DemoPager from '../components/DemoPager'
 import EnlaceNegocio, { ladoEnlace } from '../components/carta/EnlaceNegocio'
 import DemoHomeButton from '../components/DemoHomeButton'
-import { rutaNegocio } from '../negocios'
 import { applyTheme, resetTheme } from '../lib/applyTheme'
 import Img from '../components/Img'
 import { supabase } from '../lib/supabase'

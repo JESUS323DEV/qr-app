@@ -6,7 +6,7 @@ import { SocialIcon } from '../components/SocialIcons'
 import { COLORES_REDES } from '../lib/coloresRedes'
 import { cartas, marcaDe, rutaCarta } from '../cartas'
 import { enlaceWhatsapp } from '../lib/whatsapp'
-import { marca, hero, porque, pasos, comoFunciona, ventajas, seo, planes, planesDetalle, precio, preguntas, cierre, contactoForm, webCompleta, cartasMiniwebs, escaparate, menu, generadorQr } from '../landing/contenido'
+import { marca, hero, porque, pasos, comoFunciona, ventajas, seo, planes, planesDetalle, preguntas, cierre, contactoForm, webCompleta, cartasMiniwebs, escaparate, menu, generadorQr } from '../landing/contenido'
 import useVueltaPestanas from '../lib/useVueltaPestanas'
 import { ESCALA_LANDING } from '../lib/escalaTexto'
 import { DOMINIO } from '../lib/dominio'
@@ -408,15 +408,10 @@ function HeroMiniweb() {
   const ponerPestana = useCallback(i => setPestana(ORDEN_PESTANAS[i].key), [])
   const { enVuelta, parar } = useVueltaPestanas(ORDEN_PESTANAS, ponerPestana, 'landing-vuelta-vista', abreContacto)
   // Subpestaña de la pestaña Planes: Planes, Ventajas, Pasos o SEO
-  const [subComo, setSubComo] = useState(comoFunciona.subpestanas[0].key)
+  const [, setSubComo] = useState(comoFunciona.subpestanas[0].key)
   // Igual que la placa de Tu QR: al tocar la pestaña Ventajas (no en la vuelta inicial), las subpestañas
   // van cambiando solas cada 4 s, hasta que el usuario toca algo dentro. Si ya eligió una, no vuelven a moverse.
-  const [subSola, setSubSola] = useState(false)
-  const [subElegida, setSubElegida] = useState(false)
-  const pararSub = () => {
-    setSubSola(false)
-    setSubElegida(true)
-  }
+  const [subSola] = useState(false)
 
   useEffect(() => {
     if (pestana !== 'como' || !subSola) return

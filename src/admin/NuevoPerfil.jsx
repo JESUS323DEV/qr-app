@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { FilaIconos, HojaCtx } from './FilaIconos'
 import CampoColor from '../components/CampoColor'
-import { BadgePercent, List, Camera, ChevronDown, ChevronLeft, ChevronRight, ChevronsDownUp, Copy, Save, CalendarCheck, Clock, Image as ImageIcon, LayoutTemplate, Share2, SlidersHorizontal, Star, X as IconoX, Frame, GalleryHorizontal, ImagePlus, Maximize, Minus, Newspaper, Plus, RotateCcw, Store, UtensilsCrossed } from 'lucide-react'
+import { BadgePercent, List, Camera, ChevronDown, ChevronLeft, ChevronRight, ChevronsDownUp, Copy, Save, CalendarCheck, Clock, Image as ImageIcon, LayoutTemplate, Share2, SlidersHorizontal, Star, Frame, GalleryHorizontal, ImagePlus, Maximize, Minus, Newspaper, Plus, RotateCcw, Store, UtensilsCrossed } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { aplicar, conEdicion } from '../lib/ediciones'
 import { getNegocio, negocios } from '../negocios'
@@ -1129,7 +1129,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
               <span className={titulo}>{producto === 'miniweb' ? 'Portada' : 'Diseño de arriba'}</span>
               <FilaIconos className="flex flex-wrap items-center gap-[0.4rem]">
                 {/* En el móvil, 5 a la vista y un + que abre el resto; en pantalla grande, la lista completa y sin el + */}
-                {herosEnOrden.map(([clave, h], i) => {
+                {herosEnOrden.map(([clave], i) => {
                   const Icono = ICONOS_DISENO[clave] ?? Frame
                   return (
                     <button

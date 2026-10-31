@@ -465,7 +465,7 @@ export function Editor({ tipo, slug, fila, filas, volver, recargar, abrir, irANu
   const [pregunta, setPregunta] = useState(null)
   const [duplicando, setDuplicando] = useState(null)
   // Una copia se abre con su información; el editor entero se ve al pulsar Editar
-  const [editando, setEditando] = useState(false)
+  const [editando] = useState(false)
   const [historial, setHistorial] = useState(fila?.historial ?? [])
   // Sube cada vez que se guarda: la vista previa se recarga con lo nuevo
   const [version, setVersion] = useState(0)

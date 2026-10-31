@@ -718,11 +718,6 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
     setDegCentroElegido(e.degradado ?? null)
   }
   // Elegido a mano (en Diseño → Centro): liso, sin degradado
-  const ponerColorCentroAMano = c => {
-    setMuestraCentro(null)
-    setColorCentro(c)
-    setDegCentroElegido(null)
-  }
   /* Esquinas del fondo del QR, en proporción al lado: las elegidas o, sin elegir, en proporción a las de la placa
      (placa recta, fondo recto; placa redondeada, fondo redondeado). Como mucho 0,12: más, y la curva se comería las
      esquinas del QR */
@@ -1439,18 +1434,6 @@ export default function GeneradorQR({ url: urlInicial, nombre, colores, fuentes:
   // Lo elegido, para el título de cada apartado plegado
   // Campo del texto del centro (de 1 a 3 letras), el mismo dentro de "Diseño" y fuera en el editor del cliente
   // En columna: el campo arriba y, debajo, una etiqueta corta
-  const campoTextoCentro = (
-    <label className="flex flex-col items-center gap-[0.2rem]">
-      <input
-        value={textoCentro}
-        onChange={e => setTextoCentro(e.target.value.toUpperCase().slice(0, 3))}
-        maxLength={3}
-        placeholder={inicial || 'A'}
-        className="block min-h-[2.2rem] w-[3.4rem] rounded-[0.5rem] border border-zinc-300 bg-white px-[0.2rem] text-center text-[0.88rem] font-bold tracking-[0.05em]"
-      />
-      <span className="text-[0.72rem] text-zinc-500">Letras (máx. 3)</span>
-    </label>
-  )
 
   const esCliente = modo === 'cliente'
   // Vista previa: la misma placa que se descarga

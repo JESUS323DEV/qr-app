@@ -255,7 +255,6 @@ export function Lista({ filas, abrir, recargar, copia }) {
     .sort(([a], [b]) => a.localeCompare(b, 'es'))
     .map(([titulo, filas]) => ({ titulo, filas }))
   // Una copia exportada a muestras (botón de Nuevo perfil): sale en Miniwebs y no en Copias para enseñar
-  const esMuestra = f => f.tipo === 'negocio' && f.cambios?.muestra === true
 
   return (
     <div className="grid gap-[1.75rem]">

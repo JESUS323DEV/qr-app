@@ -18,7 +18,6 @@ const fecha = iso => {
   return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })
 }
 
-const GIROS = ['-rotate-[3deg]', 'rotate-[2deg]', '-rotate-[1.5deg]']
 const SOMBRA = 'shadow-[0_0.4rem_1rem_-0.3rem_rgb(0_0_0/0.45)]'
 
 // La foto tocada, grande y recta, en su polaroid; se cierra tocando fuera, con la X o con Escape
