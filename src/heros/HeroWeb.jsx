@@ -2,7 +2,7 @@ import { useContext, useEffect, useRef, useState } from 'react'
 import NombreMarca from '../components/NombreMarca'
 import { ArrowUpRight, CalendarDays, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
 import Img from '../components/Img'
-import { SocialIcon } from '../components/SocialIcons'
+import { SocialIcon, SocialIconMarca } from '../components/SocialIcons'
 import BotonCompartir, { LugarCompartir } from '../components/BotonCompartir'
 import { enlaceWhatsapp } from '../lib/whatsapp'
 import { ALERGENOS, getCarta, rutaCarta } from '../cartas'
@@ -705,7 +705,7 @@ function PaginaPortada({ pestana, cuerpo, negocio, lema, portada, heroBase, inic
   const iconos = (clase, color) =>
     redes.map(r => (
       <a key={r.platform} href={r.href} target="_blank" rel="noreferrer" aria-label={r.platform} className="transition-opacity hover:opacity-75" style={{ color }}>
-        <SocialIcon platform={r.platform} className={clase} />
+        {heroBase.redesColores === 'originales' ? <SocialIconMarca platform={r.platform} className={clase} /> : <SocialIcon platform={r.platform} className={clase} />}
       </a>
     ))
   return (
@@ -891,7 +891,7 @@ function BarraRedes({ hero, redes, redesTexto, nombre, className = '' }) {
       <div className="flex items-center gap-[0.9rem]" style={{ color: iconos }}>
         {redes.map(r => (
           <a key={r.platform} href={r.href} target="_blank" rel="noreferrer" aria-label={r.platform} className="transition-opacity hover:opacity-75">
-            <SocialIcon platform={r.platform} className="h-[1.05rem] w-[1.05rem]" />
+            {hero.redesColores === 'originales' ? <SocialIconMarca platform={r.platform} className="h-[1.05rem] w-[1.05rem]" /> : <SocialIcon platform={r.platform} className="h-[1.05rem] w-[1.05rem]" />}
           </a>
         ))}
         {/* Compartir 'en las redes': un icono más al final */}

@@ -36,8 +36,9 @@ export default function usePerfilDiseno() {
   const [tamanoNombre, setTamanoNombre] = useState('md')
   // Fondo de cabecera: solo en los diseños que la tienen (sin elegir, el principal, como siempre)
   const [cabecera, setCabecera] = useState('')
-  // Solo en miniwebs: dónde van las redes, el menú y compartir (lo no tocado, como siempre)
-  const [estructura, setEstructura] = useState({})
+  // Solo en miniwebs: dónde van las redes, el menú y compartir (lo no tocado, como siempre). Un perfil nuevo empieza con los iconos de las redes a su
+  // color de marca; al abrir una copia, su estructura manda (las anteriores, sin ese dato, siguen con los iconos planos)
+  const [estructura, setEstructura] = useState({ redesColores: 'originales' })
   // La carta que pinta el menú de la miniweb ('' : el menú de la propia miniweb)
   const [cartaMini, setCartaMini] = useState('')
   const [masDisenos, setMasDisenos] = useState(false)

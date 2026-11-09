@@ -112,6 +112,7 @@ export function marcaDePrueba(marca, params) {
     ...(['lateral', 'medio', 'abajo'].includes(params.get('redesen')) ? { redesEn: params.get('redesen') } : {}),
     ...(params.get('menuen') === 'abajo' ? { menuEn: 'abajo' } : {}),
     ...(params.get('redesvinculadas') === 'true' ? { redesVinculadas: true } : {}),
+    ...(params.get('redescolores') === 'originales' ? { redesColores: 'originales' } : {}),
     ...(['abajo', 'redes'].includes(params.get('compartiren')) ? { compartirEn: params.get('compartiren') } : {}),
     ...(['boton', 'reserva', 'cita', 'formulario'].includes(params.get('contactoen')) ? { contactoEn: params.get('contactoen') } : {}),
   }

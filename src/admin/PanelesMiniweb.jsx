@@ -143,7 +143,8 @@ const ESTRUCTURA_MINIWEB = [
   ['contactoEn', 'Contacto (Reservar, Cita, Encargos...)', [['boton', 'Botón de WhatsApp'], ['reserva', 'Formulario de reserva (restauración)'], ['cita', 'Formulario de cita (estética)']]],
 ]
 
-export const ESTRUCTURA_DEFECTO = { redesVinculadas: false, redesEn: 'arriba', menuEn: 'arriba', compartirEn: 'diseno' }
+// redesColores: los iconos de las redes, planos (los de siempre, lo anterior a "Colores originales") o a su color de marca
+export const ESTRUCTURA_DEFECTO = { redesVinculadas: false, redesEn: 'arriba', menuEn: 'arriba', compartirEn: 'diseno', redesColores: 'planos' }
 
 // Esas piezas, cada una con sus opciones. valores: lo elegido (sin elegir, lo de siempre); cambiar(clave, valor)
 // El estilo del menú de navegación de una miniweb, con subpestañas como Portada: un icono por grupo (De texto, Con forma) y, al tocarlo,
