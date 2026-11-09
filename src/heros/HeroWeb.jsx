@@ -887,7 +887,7 @@ function BarraRedes({ hero, redes, redesTexto, nombre, className = '' }) {
       className={`flex items-center justify-between gap-[1rem] px-[1.25rem] py-[0.45rem] ${fondo ? '' : 'bg-demo-header'} ${clara ? 'text-[#141414]' : 'text-white'} ${hero.bordes ? 'border-b border-[#D9D9D4]' : ''} ${className}`}
       style={fondo ? { background: fondo } : undefined}
     >
-      <p className={`text-[0.78rem] ${hero.bordes ? 'text-[#9A9A94]' : clara ? 'text-[#141414]/75' : 'text-white/75'}`}>{redesTexto ?? 'Síguenos en redes'}</p>
+      <p style={hero.colores?.redesTexto ? { color: hero.colores.redesTexto } : undefined} className={`text-[0.78rem] ${hero.bordes ? 'text-[#9A9A94]' : clara ? 'text-[#141414]/75' : 'text-white/75'}`}>{redesTexto ?? 'Síguenos en redes'}</p>
       <div className="flex items-center gap-[0.9rem]" style={{ color: iconos }}>
         {redes.map(r => (
           <a key={r.platform} href={r.href} target="_blank" rel="noreferrer" aria-label={r.platform} className="transition-opacity hover:opacity-75">

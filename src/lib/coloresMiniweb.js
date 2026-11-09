@@ -17,7 +17,8 @@ export const COLORES_MINIWEB = [
     grupo: 'Barra de redes',
     campos: [
       { clave: 'redesFondo', nombre: 'Fondo de las redes', corto: 'Fondo', ayuda: 'La barra de redes (y la columna lateral o la fila bajo el botón, si las eliges).' },
-      { clave: 'redesIconos', nombre: 'Iconos de las redes', corto: 'Texto', ayuda: 'El color de los iconos. Sin elegir, blanco u oscuro solos según el fondo.' },
+      { clave: 'redesIconos', nombre: 'Iconos de las redes', corto: 'Iconos', ayuda: 'El color de los iconos. Sin elegir, blanco u oscuro solos según el fondo.' },
+      { clave: 'redesTexto', nombre: 'Texto de las redes', corto: 'Texto', ayuda: 'La frase «Síguenos en redes» de la barra. Sin elegir, blanco u oscuro solo según el fondo.' },
     ],
   },
   {
@@ -104,6 +105,7 @@ export function coloresAutomaticos(theme, hero = {}, elegidos = {}) {
     menuInactivo: oscuroOBlanco(menuFondo) === '#FFFFFF' ? '#FFFFFF' : hex6(c.muted, texto),
     redesFondo,
     redesIconos: oscuroOBlanco(redesFondo),
+    redesTexto: oscuroOBlanco(redesFondo),
     fondoPortada: hero.portada === 'polaroid' ? cabecera : bg,
     fondoResena: surface,
     filtroFoto: hero.portada === 'diagonal' ? bg : texto,
