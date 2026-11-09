@@ -29,12 +29,12 @@ const GIROS = ['-rotate-[2.5deg]', 'rotate-[2deg]', 'rotate-[1.5deg]', '-rotate-
 const PUESTOS_MONTON = [1, -6, 6]
 const SOMBRA ='shadow-[0_0.5rem_1.2rem_-0.3rem_rgb(0_0_0/0.45)]'
 
-function Polaroid({ foto, giro, abrir }) {
+function Polaroid({ foto, giro, abrir, extra = '' }) {
   return (
     <button
       type="button"
       onClick={abrir}
-      className={`flex h-full min-h-0 w-full flex-col bg-white p-[0.35rem] pb-0 text-left text-[#2A211C] transition-transform duration-200 hover:rotate-0 hover:scale-[1.03] ${SOMBRA} ${giro}`}
+      className={`flex h-full min-h-0 w-full flex-col bg-white p-[0.35rem] pb-0 text-left text-[#2A211C] transition-transform duration-200 hover:rotate-0 hover:scale-[1.03] ${SOMBRA} ${giro} ${extra}`}
     >
       <div className="relative min-h-0 w-full flex-1 overflow-hidden bg-black/5">
         <Img src={foto.src} alt={foto.alt} className="absolute inset-0 h-full w-full object-cover" />
@@ -201,13 +201,25 @@ export default function HeroPolaroid({ hero, nombre, lema, sinBarra = false, ini
                   )}
                 </div>
               ) : fotos ? (
-                // Polaroids de dos en dos (con una sola, sola y centrada)
+                // Polaroids de dos en dos (con una sola, sola y centrada). En una miniweb, en móviles bajos (menos de 45rem de alto, XS y S) solo salen
+                // las dos primeras, en una fila, para que sean más altas; desde M, la cuadrícula de 2 × 2
                 <div
-                  className={`grid h-full gap-x-[0.7rem] gap-y-[0.7rem] p-[0.25rem] ${fotos.length === 1 ? 'grid-cols-1 px-[12%]' : 'grid-cols-2'}`}
-                  style={{ gridTemplateRows: `repeat(${Math.ceil(fotos.length / 2) || 1}, minmax(0, 1fr))` }}
+                  className={`grid h-full gap-x-[0.7rem] gap-y-[0.7rem] p-[0.25rem] ${fotos.length === 1 ? 'grid-cols-1 px-[12%]' : 'grid-cols-2'} ${
+                    fotos.length > 2
+                      ? sinBarra
+                        ? 'grid-rows-[repeat(2,minmax(0,1fr))] [@media(max-height:45rem)]:grid-rows-[minmax(0,1fr)]'
+                        : 'grid-rows-[repeat(2,minmax(0,1fr))]'
+                      : 'grid-rows-[minmax(0,1fr)]'
+                  }`}
                 >
                   {fotos.map((f, k) => (
-                    <Polaroid key={k} foto={f} giro={(sinBarra && montaje.giros ? montaje.giros : GIROS)[k % GIROS.length]} abrir={() => setAbierta(f)} />
+                    <Polaroid
+                      key={k}
+                      foto={f}
+                      giro={(sinBarra && montaje.giros ? montaje.giros : GIROS)[k % GIROS.length]}
+                      abrir={() => setAbierta(f)}
+                      extra={sinBarra && k >= 2 ? '[@media(max-height:45rem)]:hidden' : ''}
+                    />
                   ))}
                 </div>
               ) : (

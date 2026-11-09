@@ -2,7 +2,7 @@ import { useContext, useEffect, useState } from 'react'
 import { X } from 'lucide-react'
 import Img from '../components/Img'
 import BotonCompartir from '../components/BotonCompartir'
-import { LogoNegocio, useFactorNombre } from '../components/NombreMarca'
+import NombreMarca, { LogoNegocio } from '../components/NombreMarca'
 import { fotosDe } from '../fichas/escenas'
 import { useFiltro, useFondoBoton, useRol } from '../components/ColoresPortada'
 import { distribucionDe } from '../lib/distribuciones'
@@ -17,22 +17,19 @@ const PIES_EJEMPLO = [
 
 /* Retrato para miniwebs (la portada de su página de Inicio). Aparte del Retrato de las fichas, que se queda como está.
    Un bloque oscuro sobre una foto con velo:
-   - Arriba, el círculo y el nombre. El círculo lleva la foto de la persona (hero.retrato); sin ella, el logo; sin
-     ninguno, las iniciales (el logo, sin fondo ni aro añadidos: tal cual es). Al lado, el logo solo si el círculo ya lleva la foto de la persona; si no, el nombre
-     escrito (así el logo nunca sale dos veces).
+   - Arriba, el nombre (con el logo al lado solo si el negocio lo tiene, como en los demás diseños). Si hay foto de la persona
+     (hero.retrato), va a su izquierda en un círculo y, con logo, el logo sustituye al nombre escrito (así el logo nunca sale dos veces).
    - En el centro, lo que cuenta el negocio: titular, qué hace y un botón a otra página (los de su Inicio: titular,
      descripcion, boton y botonA). Sin titular propio, su lema.
    - Abajo, siempre tres fotos en fila (de todas sus páginas; la del fondo, la última que se usa). Al tocar una, se abre
      en grande con su título y una línea de información debajo.
    inicio: la pestaña de Inicio de la miniweb, con sus textos. irA: lleva a otra página de la miniweb */
 export default function HeroRetratoWeb({ hero, nombre, lema, inicio, irA }) {
-  const rolTitulo = useRol('titulo')
   const rolTitular = useRol('titular')
   const rolDescripcion = useRol('descripcion')
   const rolBoton = useRol('boton')
   const fondoBoton = useFondoBoton()
   const logo = useContext(LogoNegocio)
-  const factorNombre = useFactorNombre()
   // El velo oscuro de la foto de fondo: su intensidad se regula desde el editor (hero.filtro)
   const filtro = useFiltro()
   const fotosDeLaPestana = fotosDe(hero.pestanas?.[0])
@@ -55,9 +52,7 @@ export default function HeroRetratoWeb({ hero, nombre, lema, inicio, irA }) {
     const ejemplo = PIES_EJEMPLO[i % PIES_EJEMPLO.length]
     return { titulo: propia ?? ejemplo.titulo, linea: ejemplo.linea }
   }
-  const iniciales = (nombre ?? '').split(/\s+/).filter(Boolean).slice(0, 2).map(x => x[0]).join('').toUpperCase()
   const titular = inicio?.titular ?? (lema ? [lema] : [])
-  const circulo = hero.retrato ?? logo
   // La distribución de las tres fotos (hero.distribucion): al final (siempre tres, tocando una se abre en grande) o bajo el nombre
   const distribucion = distribucionDe(hero.distribucion)
   const filaFotos = fila.length > 0 && (
@@ -79,24 +74,16 @@ export default function HeroRetratoWeb({ hero, nombre, lema, inicio, irA }) {
         <div style={{ opacity: filtro.intensidad }} className="absolute inset-0 bg-black/70" />
       </div>
 
-      {/* Círculo (foto de la persona, logo o iniciales) y, al lado, el nombre o el logo */}
+      {/* El nombre (con el logo al lado si el negocio lo tiene, como en los demás diseños) y, solo si hay foto de la persona, su círculo */}
       <div className="relative flex items-center gap-[0.8rem] px-[1.25rem] pt-[1rem]">
-        {circulo ? (
-          <Img
-            src={circulo}
-            alt={hero.retrato ? '' : nombre}
-            className={`h-[3.4rem] w-[3.4rem] shrink-0 rounded-full ${hero.retrato ? 'object-cover ring-2 ring-demo-primary' : 'object-contain'}`}
-          />
-        ) : (
-          <span className="flex h-[3.4rem] w-[3.4rem] shrink-0 items-center justify-center rounded-full font-demo-heading text-[1.2rem] font-bold ring-2 ring-demo-primary">
-            {iniciales}
-          </span>
-        )}
+        {hero.retrato && <Img src={hero.retrato} alt="" className="h-[3.4rem] w-[3.4rem] shrink-0 rounded-full object-cover ring-2 ring-demo-primary" />}
         <div className="min-w-0 leading-tight">
           {hero.retrato && logo ? (
             <img src={logo} alt={nombre} className="max-h-[2.4rem] max-w-[9rem] object-contain" />
           ) : (
-            <p className="font-demo-heading font-bold leading-none" style={{ fontSize: `${1.9 * factorNombre}rem`, ...rolTitulo }}>{nombre}</p>
+            <p className="font-demo-heading text-[1.9rem] font-bold leading-none">
+              <NombreMarca nombre={nombre} />
+            </p>
           )}
           {hero.profesion && <p className="text-[0.85rem] text-white/75">{hero.profesion}</p>}
         </div>
