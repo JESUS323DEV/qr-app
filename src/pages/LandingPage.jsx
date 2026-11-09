@@ -481,12 +481,51 @@ function HeroMiniweb() {
     fijar(cerca)
   }
 
+  // Pestañas: dos filas, la de abajo centrada. En Inicio van entre el texto y el móvil (clase vacía: ya está dentro del margen de la
+  // pantalla); en las demás pantallas, abajo del todo
+  const navPestanas = (clase) => (
+      <nav role="tablist" aria-label="Apartados" className={clase}>
+        {[PESTANAS, PESTANAS_ABAJO].map((fila, f) => (
+          <div key={f} role="presentation" className={`flex justify-center gap-[0.35rem] ${f > 0 ? 'mt-[0.35rem]' : ''}`}>
+            {fila.map(p => (
+              <button
+                key={p.key}
+                id={`tab-${p.key}`}
+                type="button"
+                role="tab"
+                aria-selected={pestana === p.key}
+                aria-controls={`panel-${p.key}`}
+                onClick={() => {
+                  setPestana(p.key)
+                  // Al tocar Tu QR (también en mitad de la vuelta inicial), la placa empieza a probarse diseños sola,
+                  // salvo que el usuario ya haya elegido uno
+                  setPlacaSola(p.key === 'qr' && !placaElegida)
+                  if (p.key === 'cartas') { setActualCarta(0); setTocadoCarta(false) }
+                }}
+                className={`rounded-[0.7rem] py-[0.65rem] text-[0.82rem] font-semibold transition-colors ${
+                  f > 0 ? 'w-[calc((100%-0.7rem)/3*1.3)]' : 'w-[calc((100%-0.7rem)/3)]'
+                } ${pestana === p.key ? 'bg-acento text-papel' : 'bg-crema text-tinta hover:bg-linea'}`}
+              >
+                {p.texto}
+              </button>
+            ))}
+            {/* Planes ya no es una pantalla de la landing: lleva a la página con todo explicado y con scroll (/planes) */}
+            {f > 0 && (
+              <Link to="/planes" className="w-[calc((100%-0.7rem)/3*1.3)] rounded-[0.7rem] bg-crema py-[0.65rem] text-center text-[0.82rem] font-semibold text-tinta transition-colors hover:bg-linea">
+                {comoFunciona.pestana}
+              </Link>
+            )}
+          </div>
+        ))}
+      </nav>
+  )
+
   return (
     // min-h-0: sin él, el contenido largo de una pestaña estira el hero por encima del alto de la pantalla
     // y empuja las pestañas de abajo fuera de la vista
     <div className="mx-auto flex min-h-0 w-full max-w-[30rem] flex-1 flex-col" onPointerDown={parar}>
       {/* Escenario: fondo liso de la marca; ocupa el alto que sobra */}
-      <div className="relative flex min-h-[20rem] flex-1 flex-col overflow-hidden bg-crema">
+      <div className="relative flex min-h-[20rem] flex-1 flex-col overflow-hidden">
         {/* Marca arriba */}
         <div className="flex items-center justify-between px-[1.25rem] pt-[1rem]">
           <p className="font-titulo text-[1.3rem] font-black tracking-tight">{marca.nombre}</p>
@@ -674,6 +713,7 @@ function HeroMiniweb() {
             <p className="mt-[0.5rem] max-w-[26rem] text-[clamp(0.92rem,0.85rem+0.3vw,1.02rem)] leading-[1.5] text-suave">
               {hero.texto}
             </p>
+            {pestana === 'ejemplos' && navPestanas('mt-[1rem]')}
             </div>
             <MockupMiniweb activo={pestana === 'ejemplos'} />
           </div>
@@ -681,41 +721,7 @@ function HeroMiniweb() {
         {pestana === 'ejemplos' && <SelectorTema />}
       </div>
 
-      {/* Pestañas: dos filas, la de abajo centrada */}
-      <nav role="tablist" aria-label="Apartados" className="px-[1.25rem] pt-[0.9rem]">
-        {[PESTANAS, PESTANAS_ABAJO].map((fila, f) => (
-          <div key={f} role="presentation" className={`flex justify-center gap-[0.35rem] ${f > 0 ? 'mt-[0.35rem]' : ''}`}>
-            {fila.map(p => (
-              <button
-                key={p.key}
-                id={`tab-${p.key}`}
-                type="button"
-                role="tab"
-                aria-selected={pestana === p.key}
-                aria-controls={`panel-${p.key}`}
-                onClick={() => {
-                  setPestana(p.key)
-                  // Al tocar Tu QR (también en mitad de la vuelta inicial), la placa empieza a probarse diseños sola,
-                  // salvo que el usuario ya haya elegido uno
-                  setPlacaSola(p.key === 'qr' && !placaElegida)
-                  if (p.key === 'cartas') { setActualCarta(0); setTocadoCarta(false) }
-                }}
-                className={`rounded-[0.7rem] py-[0.65rem] text-[0.82rem] font-semibold transition-colors ${
-                  f > 0 ? 'w-[calc((100%-0.7rem)/3*1.3)]' : 'w-[calc((100%-0.7rem)/3)]'
-                } ${pestana === p.key ? 'bg-acento text-papel' : 'bg-crema text-tinta hover:bg-linea'}`}
-              >
-                {p.texto}
-              </button>
-            ))}
-            {/* Planes ya no es una pantalla de la landing: lleva a la página con todo explicado y con scroll (/planes) */}
-            {f > 0 && (
-              <Link to="/planes" className="w-[calc((100%-0.7rem)/3*1.3)] rounded-[0.7rem] bg-crema py-[0.65rem] text-center text-[0.82rem] font-semibold text-tinta transition-colors hover:bg-linea">
-                {comoFunciona.pestana}
-              </Link>
-            )}
-          </div>
-        ))}
-      </nav>
+      {pestana !== 'ejemplos' && navPestanas('px-[1.25rem] pt-[0.9rem]')}
 
       <div className="pb-[1.25rem]" />
     </div>
