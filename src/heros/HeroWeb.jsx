@@ -884,10 +884,10 @@ function BarraRedes({ hero, redes, redesTexto, nombre, className = '' }) {
   const { fondo, clara, iconos } = coloresRedes(hero)
   return (
     <div
-      className={`flex items-center justify-between gap-[1rem] px-[1.25rem] py-[0.45rem] ${fondo ? '' : 'bg-demo-header'} ${clara ? 'text-[#141414]' : 'text-white'} ${className}`}
+      className={`flex items-center justify-between gap-[1rem] px-[1.25rem] py-[0.45rem] ${fondo ? '' : 'bg-demo-header'} ${clara ? 'text-[#141414]' : 'text-white'} ${hero.bordes ? 'border-b border-[#D9D9D4]' : ''} ${className}`}
       style={fondo ? { background: fondo } : undefined}
     >
-      <p className={`text-[0.78rem] ${clara ? 'text-[#141414]/75' : 'text-white/75'}`}>{redesTexto ?? 'Síguenos en redes'}</p>
+      <p className={`text-[0.78rem] ${hero.bordes ? 'text-[#9A9A94]' : clara ? 'text-[#141414]/75' : 'text-white/75'}`}>{redesTexto ?? 'Síguenos en redes'}</p>
       <div className="flex items-center gap-[0.9rem]" style={{ color: iconos }}>
         {redes.map(r => (
           <a key={r.platform} href={r.href} target="_blank" rel="noreferrer" aria-label={r.platform} className="transition-opacity hover:opacity-75">
@@ -955,12 +955,12 @@ export default function HeroWeb({ hero, nombre, lema, cuerpo, redes, redesTexto 
     <div className="flex flex-1 flex-col" onPointerDown={parar}>
       {/* Menú con un estilo de pestañas de las fichas (hero.barra), sobre el fondo de la marca */}
       {hero.barra ? (
-        <header style={estiloMenu} className={`${menuAbajo ? 'order-3' : 'order-1'} bg-demo-header ${hero.barra === 'app' ? '' : 'px-[1.25rem] pb-[0.5rem] pt-[0.7rem]'}`}>
+        <header style={estiloMenu} className={`${menuAbajo ? 'order-3' : 'order-1'} bg-demo-header ${hero.barra === 'app' ? '' : 'px-[1.25rem] pb-[0.5rem] pt-[0.7rem]'} ${hero.bordes ? 'border-b border-[#D9D9D4]' : ''}`}>
           <BarraPestanas estilo={hero.barra} pestanas={pestanas} activa={activa} tocar={tocar} sobre={menuSobre} />
         </header>
       ) : (
       /* Barra de navegación, como la de una web */
-      <header style={estiloMenu} className={`${menuAbajo ? 'order-3' : 'order-1'} bg-demo-header px-[1.25rem] pt-[0.7rem] ${coloresMenu.menuTexto ? '' : menuClaro ? 'text-[#141414]' : 'text-white'}`}>
+      <header style={estiloMenu} className={`${menuAbajo ? 'order-3' : 'order-1'} bg-demo-header px-[1.25rem] pt-[0.7rem] ${coloresMenu.menuTexto ? '' : menuClaro ? 'text-[#141414]' : 'text-white'} ${hero.bordes ? 'border-b border-[#D9D9D4]' : ''}`}>
         <nav className="flex justify-between">
           {pestanas.map((p, i) => (
             <button

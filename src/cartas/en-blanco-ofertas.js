@@ -1,4 +1,4 @@
-import { TEMA_NEUTRO, cajaFoto } from '../lib/enBlanco'
+import { TEMA_NEUTRO } from '../lib/enBlanco'
 
 // Carta de ofertas en blanco (temática "Desde cero" de Nuevo perfil, tipo Promociones): ofertas y servicios con textos genéricos, colores
 // neutros y fotos de relleno. No sale en el catálogo ni en el asistente: solo se abre desde Nuevo perfil.
@@ -21,8 +21,6 @@ export default {
     texto: 'Ofertas',
     titulo: 'Ofertas',
     cuando: 'Pídelas al reservar tu cita',
-    foto: cajaFoto(1000, 800),
-    fotos: [cajaFoto(700, 700), cajaFoto(700, 700)],
     lista: [
       { nombre: 'Oferta uno', descripcion: 'Descripción corta de la oferta.', precio: '00 €', antes: '00 €' },
       { nombre: 'Oferta dos', descripcion: 'Descripción corta de la oferta.', precio: '00 €', antes: '00 €' },
@@ -33,7 +31,6 @@ export default {
   secciones: [
     {
       nombre: 'Sección uno',
-      foto: cajaFoto(1000, 800),
       platos: [
         { nombre: 'Servicio 1', descripcion: 'Descripción corta del servicio.', precio: '00 €' },
         { nombre: 'Servicio 2', descripcion: 'Descripción corta del servicio.', precio: '00 €' },
@@ -42,7 +39,6 @@ export default {
     },
     {
       nombre: 'Sección dos',
-      foto: cajaFoto(1000, 800),
       platos: [
         { nombre: 'Servicio 1', descripcion: 'Descripción corta del servicio.', precio: '00 €' },
         { nombre: 'Servicio 2', descripcion: 'Descripción corta del servicio.', precio: '00 €' },

@@ -1,4 +1,4 @@
-import { TEMA_NEUTRO, cajaFoto } from '../lib/enBlanco'
+import { TEMA_NEUTRO } from '../lib/enBlanco'
 
 // Miniweb en blanco (temática "Desde cero" de Nuevo perfil): textos genéricos, colores neutros y fotos de relleno, para empezar un diseño
 // sin arrastrar el de ninguna demo. No sale en el catálogo ni en el asistente: solo se abre desde Nuevo perfil.
@@ -15,15 +15,16 @@ export default {
   hero: {
     diseno: 'web',
     redesArriba: true,
-    // La barra del menú (Inicio, Menú, Horario, Reservar) en blanco, con las letras oscuras (con un fondo claro pasan solas a oscuro)
-    colores: { menuFondo: '#FFFFFF' },
+    // Esqueleto: las barras del menú y de las redes en blanco, con el texto y los iconos apagados (gris claro) y solo su borde de abajo marcado
+    bordes: true,
+    colores: { menuFondo: '#FFFFFF', menuTexto: '#9A9A94', menuSubrayado: '#D9D9D4', redesFondo: '#FFFFFF', redesIconos: '#9A9A94' },
     pestanas: [
       {
         tipo: 'inicio',
         texto: 'Inicio',
         titular: ['Titular de tu', 'negocio'],
         descripcion: 'Una frase corta que cuenta qué hace tu negocio y por qué venir.',
-        foto: cajaFoto(1000, 900),
+        foto: '',
         boton: 'Ver menú',
         botonA: 'menu',
       },
@@ -65,7 +66,6 @@ export default {
         tipo: 'horario',
         texto: 'Horario',
         titulo: 'Horario',
-        foto: cajaFoto(1000, 600),
         lineas: [
           { dias: 'Lunes a viernes', horas: '10:00 a 20:00' },
           { dias: 'Sábado', horas: '10:00 a 14:00' },
