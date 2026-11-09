@@ -10,6 +10,7 @@ export const COLORES_MINIWEB = [
       { clave: 'menuFondo', nombre: 'Fondo del menú', corto: 'Fondo', ayuda: 'La barra de pestañas (Inicio, Menú, Horario, Reservar).' },
       { clave: 'menuTexto', nombre: 'Texto del menú', corto: 'Texto', ayuda: 'Las letras de las pestañas. Sin elegir, blanco u oscuro solas según el fondo.' },
       { clave: 'menuSubrayado', nombre: 'Subrayado del menú', corto: 'Subrayado', ayuda: 'La raya, el bloque o la pastilla de la pestaña activa, según el estilo del menú.' },
+      { clave: 'menuInactivo', nombre: 'Texto de las pestañas sin elegir', corto: 'Sin elegir', ayuda: 'Las letras de las pestañas que no están abiertas. Sin elegir, el color de siempre según el estilo y el fondo del menú.' },
     ],
   },
   {
@@ -99,6 +100,8 @@ export function coloresAutomaticos(theme, hero = {}, elegidos = {}) {
     menuFondo,
     menuTexto: oscuroOBlanco(menuFondo),
     menuSubrayado: acento,
+    // Aproximación: con el menú oscuro, letras claras; con el menú claro, el texto suave de la marca (cada estilo lo pinta a su manera)
+    menuInactivo: oscuroOBlanco(menuFondo) === '#FFFFFF' ? '#FFFFFF' : hex6(c.muted, texto),
     redesFondo,
     redesIconos: oscuroOBlanco(redesFondo),
     fondoPortada: hero.portada === 'polaroid' ? cabecera : bg,

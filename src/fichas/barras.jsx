@@ -40,7 +40,8 @@ function Onda({ visible }) {
 // Iconos de la barra tipo app, por tipo de pestaña
 const ICONOS = { fotos: Images, inicio: House, horario: Clock, contacto: MessageCircle, ubicacion: MapPin, precios: ListChecks, servicios: ListChecks, sobremi: UserRound, menu: UtensilsCrossed }
 
-export default function BarraPestanas({ estilo = 'subrayado', pestanas, activa, tocar, sobre = 'claro' }) {
+// colorInactiva (opcional): el color de las letras de las pestañas que no están abiertas; sin él, el de cada estilo
+export default function BarraPestanas({ estilo = 'subrayado', pestanas, activa, tocar, sobre = 'claro', colorInactiva }) {
   // 'primario' (el bloque del color principal) se trata como oscuro, salvo en los bloques, que tienen su versión
   const oscuro = sobre === 'oscuro' || sobre === 'primario'
   // En las barras de botones iguales (pastillas, segmentada, carpetas), las palabras largas ("Ubicación",
@@ -48,7 +49,7 @@ export default function BarraPestanas({ estilo = 'subrayado', pestanas, activa, 
   const largas = pestanas.some(p => (p.texto ?? '').length > 7)
   const letraAjustada = largas ? 'min-w-0 px-[0.1rem] text-[clamp(0.68rem,0.42rem+1.1vw,0.8rem)]' : 'text-[0.8rem]'
   const boton = (p, i, clase, contenido = p.texto) => (
-    <button key={`${p.tipo}-${i}`} type="button" aria-pressed={i === activa} onClick={() => tocar(i)} className={clase}>
+    <button key={`${p.tipo}-${i}`} type="button" aria-pressed={i === activa} onClick={() => tocar(i)} className={clase} style={i !== activa && colorInactiva ? { color: colorInactiva } : undefined}>
       {contenido}
     </button>
   )

@@ -9,7 +9,7 @@ export default function PanelMenu({ diseno, autosColores, cambiarColorMini, camb
     <div role="tabpanel" className="grid gap-[1rem] rounded-[0.75rem] p-[0.85rem] ring-1 ring-zinc-200">
       <EstructuraMiniweb sinTitulo claves={['menuEn']} contactoPorDefecto={plantilla.miniweb ? 'reserva' : 'boton'} valores={estructura} cambiar={(clave, valor) => setEstructura(e => ({ ...e, [clave]: valor }))} />
       <FilaEstiloMenu valor={barra} cambiar={setBarra} />
-      <PanelColoresMiniweb sinTitulo detalle claves={['menuFondo', 'menuTexto', 'menuSubrayado']} valores={coloresMini} cambiar={cambiarColorMini} autos={autosColores} />
+      <PanelColoresMiniweb sinTitulo detalle claves={['menuFondo', 'menuTexto', 'menuSubrayado', 'menuInactivo']} valores={coloresMini} cambiar={cambiarColorMini} autos={autosColores} />
       {datosEnBruto && <ImagenesPorPestana original={datosEnBruto} cambios={cambiosExtra} cambiar={cambiarExtra} tipos={['menu']} />}
       {datosEnBruto && (
         <Plegable titulo="Texto pestañas">

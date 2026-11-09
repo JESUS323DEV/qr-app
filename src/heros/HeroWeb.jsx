@@ -956,7 +956,7 @@ export default function HeroWeb({ hero, nombre, lema, cuerpo, redes, redesTexto 
       {/* Menú con un estilo de pestañas de las fichas (hero.barra), sobre el fondo de la marca */}
       {hero.barra ? (
         <header style={estiloMenu} className={`${menuAbajo ? 'order-3' : 'order-1'} bg-demo-header ${hero.barra === 'app' ? '' : 'px-[1.25rem] pb-[0.5rem] pt-[0.7rem]'} ${hero.bordes ? 'border-b border-[#D9D9D4]' : ''}`}>
-          <BarraPestanas estilo={hero.barra} pestanas={pestanas} activa={activa} tocar={tocar} sobre={menuSobre} />
+          <BarraPestanas estilo={hero.barra} pestanas={pestanas} activa={activa} tocar={tocar} sobre={menuSobre} colorInactiva={coloresMenu.menuInactivo} />
         </header>
       ) : (
       /* Barra de navegación, como la de una web */
@@ -968,6 +968,7 @@ export default function HeroWeb({ hero, nombre, lema, cuerpo, redes, redesTexto 
               type="button"
               aria-pressed={i === activa}
               onClick={() => tocar(i)}
+              style={i !== activa && coloresMenu.menuInactivo ? { color: coloresMenu.menuInactivo, opacity: 1 } : undefined}
               className={`relative pb-[0.6rem] pt-[0.2rem] text-[0.88rem] font-semibold transition-colors duration-300 ${
                 coloresMenu.menuTexto
                   ? i === activa ? 'opacity-100' : 'opacity-65 hover:opacity-100'
