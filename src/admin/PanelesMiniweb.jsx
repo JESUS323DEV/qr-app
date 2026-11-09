@@ -1,7 +1,7 @@
 import { useContext, useState } from 'react'
 import { BotonMasDisenos, FilaIconos, HojaCtx } from './FilaIconos'
 import CampoColor from '../components/CampoColor'
-import { Armchair, Beer, BookImage, Camera, ChevronDown, CircleUser, Coffee, Croissant, Fish, GalleryHorizontal, IdCard, LayoutGrid, Maximize, Newspaper, PanelTop, Pizza, RotateCcw, Scissors, Slice, Smartphone, Sparkles, UtensilsCrossed } from 'lucide-react'
+import { Armchair, Beer, BookImage, Camera, ChevronDown, CircleUser, Coffee, Croissant, FilePlus, Fish, GalleryHorizontal, IdCard, LayoutGrid, Maximize, Newspaper, PanelTop, Pizza, RotateCcw, Scissors, Slice, Smartphone, Sparkles, UtensilsCrossed } from 'lucide-react'
 import { cartas, marcaDe } from '../cartas'
 import { CAMPO, Etiqueta, claseIcono } from '../components/panel'
 import { DIBUJOS_MENU, GRUPOS_MENU } from '../lib/estilosMenu'
@@ -45,6 +45,7 @@ export const ICONOS_TEMA = {
   peluqueria: Scissors,
   unas: Sparkles,
   barberia: Armchair,
+  'en-blanco': FilePlus,
 }
 
 /* El editor de colores de una miniweb (catálogo en lib/coloresMiniweb.js), por grupos: menú, redes, fondos, textos y botón. Cada color es

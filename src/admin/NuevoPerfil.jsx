@@ -54,6 +54,8 @@ import { TEXTO_EXTRA_EJEMPLO, TextosHorario } from './TextosEditor'
 // Las cartas de ejemplo de cada tipo de carta (el diseño ya no depende de la temática): Carta, la de un restaurante con menú del día;
 // Promociones, la de Laca, con ofertas (con su precio anterior tachado) y servicios por secciones
 const CARTA_DE_TIPO = { carta: 'almendra', promociones: 'laca' }
+// Con la temática Desde cero (en-blanco), las cartas en blanco de cada tipo
+const CARTA_EN_BLANCO = { carta: 'en-blanco', promociones: 'en-blanco-ofertas' }
 
 export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
   // La pestaña abierta: el asistente o el diseño (la vista previa se ve siempre)
@@ -122,7 +124,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
   // El grupo de la temática elegida
   const grupoTema = GRUPOS_PLANTILLAS.find(g => g.claves.includes(tema)) ?? GRUPOS_PLANTILLAS[0]
   const negocioBase = getNegocio(plantilla.ficha)
-  const cartaSlug = CARTA_DE_TIPO[tipoCarta]
+  const cartaSlug = (tema === 'en-blanco' ? CARTA_EN_BLANCO : CARTA_DE_TIPO)[tipoCarta]
   const cartaBase = getCarta(cartaSlug)
   const esCarta = producto === 'carta'
   // Colores de partida: los de la demo de la temática
@@ -588,7 +590,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
 
         {/* Vista previa: el contenido de la temática con el diseño elegido. A 360 px de ancho por dentro, como el móvil bajo:
             se ve lo mismo que verá el cliente. En pantalla grande, a la derecha y fija al bajar */}
-        <VistaPrevia negocio={negocio} pantalla={pantalla} asistente={asistente} copias={copias} copiasDisponibles={copiasDisponibles} crear={crear} elegirCopia={elegirCopia} elegirTamanoMovil={elegirTamanoMovil} gruposAjustes={gruposAjustes} guardarCopia={guardarCopia} medidaMovil={medidaMovil} pestana={pestana} pestanaAjustes={pestanaAjustes} setPestanaAjustes={setPestanaAjustes} tamanoMovil={tamanoMovil} vista={vista} />
+        <VistaPrevia enBlanco={tema === 'en-blanco'} negocio={negocio} pantalla={pantalla} asistente={asistente} copias={copias} copiasDisponibles={copiasDisponibles} crear={crear} elegirCopia={elegirCopia} elegirTamanoMovil={elegirTamanoMovil} gruposAjustes={gruposAjustes} guardarCopia={guardarCopia} medidaMovil={medidaMovil} pestana={pestana} pestanaAjustes={pestanaAjustes} setPestanaAjustes={setPestanaAjustes} tamanoMovil={tamanoMovil} vista={vista} />
       </div>
       <Confirmar pregunta={preguntaSalir} alCerrar={cerrarPreguntaSalir} />
     </details>

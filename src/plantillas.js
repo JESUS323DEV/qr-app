@@ -10,6 +10,8 @@ export const GRUPOS_PLANTILLAS = [
   { clave: 'restauracion', nombre: 'Bares y restaurantes', claves: ['restaurante', 'bar', 'pizzeria', 'cocina-visual'] },
   { clave: 'pastelerias', nombre: 'Pastelerías y cafeterías', claves: ['pasteleria', 'cafeteria'] },
   { clave: 'belleza', nombre: 'Belleza', claves: ['peluqueria', 'unas', 'barberia'] },
+  // Un perfil en blanco: textos genéricos, colores neutros y fotos de relleno (negocios/en-blanco.js y cartas/en-blanco*.js)
+  { clave: 'desde-cero', nombre: 'Desde cero', claves: ['en-blanco'] },
 ]
 
 export const PLANTILLAS = [
@@ -22,4 +24,5 @@ export const PLANTILLAS = [
   { clave: 'peluqueria', nombre: 'Peluquería y estética', ficha: 'ladysalon', carta: 'laca' },
   { clave: 'unas', nombre: 'Uñas', ficha: 'laca', carta: 'laca' },
   { clave: 'barberia', nombre: 'Barbería', ficha: 'navaja-y-tijera', carta: null },
+  { clave: 'en-blanco', nombre: 'Desde cero', ficha: 'en-blanco', carta: 'en-blanco', miniweb: 'en-blanco' },
 ]

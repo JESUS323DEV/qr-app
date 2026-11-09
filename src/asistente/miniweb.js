@@ -103,7 +103,8 @@ export const ROLES_COLOR_IA = COLORES_MINIWEB.flatMap(g => g.campos).map(c => ({
 
 // Todo lo que se le manda a la IA: las listas con sus claves y para qué sirve cada una
 export const catalogoMiniweb = () => ({
-  temas: PLANTILLAS.map(p => ({ clave: p.clave, nombre: p.nombre })),
+  // Sin "Desde cero" (en-blanco): es un perfil vacío para que Jesús empiece a mano, no una temática de negocio
+  temas: PLANTILLAS.filter(p => p.clave !== 'en-blanco').map(p => ({ clave: p.clave, nombre: p.nombre })),
   portadas: PORTADAS_IA.map(p => ({ clave: p.clave, texto: p.texto, campo: p.campo, subdisenos: p.lista.map(s => ({ clave: s.clave, nombre: s.nombre, texto: TEXTO_SUBDISENO[`${p.campo}.${s.clave}`] ?? '' })) })),
   estructura: ESTRUCTURA_IA.map(e => ({ campo: e.campo, texto: e.texto, opciones: e.lista.map(([clave, texto]) => ({ clave, texto })) })),
   estilosMenu: ESTILOS_MENU_IA,

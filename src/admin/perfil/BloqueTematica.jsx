@@ -1,7 +1,7 @@
 import { FilaIconos } from '../FilaIconos'
 import { GRUPOS_PLANTILLAS, PLANTILLAS } from '../../plantillas'
 import { ICONOS_TEMA } from '../PanelesMiniweb'
-import { BadgePercent, Store, UtensilsCrossed } from 'lucide-react'
+import { BadgePercent, FilePlus, FileText, Store, UtensilsCrossed } from 'lucide-react'
 import { TIPOS_CARTA } from '../../asistente/carta'
 import { claseIcono } from '../../components/panel'
 
@@ -37,6 +37,19 @@ export default function BloqueTematica({ diseno, carta, esCarta, grupoTema, plan
               </FilaIconos>
               <p className="text-[0.85rem] font-semibold">{TIPOS_CARTA.find(t => t.clave === tipoCarta)?.texto}</p>
               <p className="text-[0.8rem] text-zinc-500">{TIPOS_CARTA.find(t => t.clave === tipoCarta)?.descripcion}</p>
+              {/* El contenido de partida: el de ejemplo, o una carta en blanco (la temática Desde cero, la misma que en las miniwebs) */}
+              <span className={`${titulo} mt-[0.4rem]`}>Contenido</span>
+              <FilaIconos className="flex flex-wrap items-center gap-[0.4rem]">
+                {[
+                  { clave: 'ejemplo', Icono: FileText, texto: 'De ejemplo', activo: tema !== 'en-blanco', elegir: () => tema === 'en-blanco' && setTema(PLANTILLAS[0].clave) },
+                  { clave: 'en-blanco', Icono: FilePlus, texto: 'Desde cero', activo: tema === 'en-blanco', elegir: () => setTema('en-blanco') },
+                ].map(({ clave, Icono, texto, activo, elegir }) => (
+                  <button key={clave} type="button" title={texto} aria-label={`Contenido ${texto}`} aria-pressed={activo} onClick={elegir} className={claseIcono(activo)}>
+                    <Icono className="h-[1.3rem] w-[1.3rem]" strokeWidth={2} aria-hidden="true" />
+                  </button>
+                ))}
+              </FilaIconos>
+              <p className="text-[0.85rem] font-semibold">{tema === 'en-blanco' ? 'Desde cero' : 'De ejemplo'}</p>
             </div>
           ) : (
           <div className="grid gap-[0.45rem]">

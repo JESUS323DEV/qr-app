@@ -4,6 +4,8 @@ import ajiLimon from './aji-limon'
 import fornoNonna from './forno-nonna'
 import tumi from './tumi'
 import laca from './laca'
+import enBlanco from './en-blanco'
+import enBlancoOfertas from './en-blanco-ofertas'
 import { getNegocio } from '../negocios'
 
 // Cartas digitales (QR de la mesa). Cada carta va con la marca de su negocio (negocios/<slug>.js) o con la suya
@@ -12,8 +14,12 @@ import { getNegocio } from '../negocios'
 // o 'galeria' (mosaico de fotos a sangre que se abren a pantalla completa).
 export const cartas = [almendra, pollastreDhorta, ajiLimon, fornoNonna, tumi, laca]
 
+// Las que solo se abren desde Nuevo perfil (la temática Desde cero): se encuentran con getCarta, pero no están en la lista de arriba,
+// así que no salen en el catálogo, ni en las flechas entre cartas, ni en el asistente
+const ocultas = [enBlanco, enBlancoOfertas]
+
 export function getCarta(slug) {
-  return cartas.find(c => c.slug === slug) ?? null
+  return cartas.find(c => c.slug === slug) ?? ocultas.find(c => c.slug === slug) ?? null
 }
 
 // Marca de la carta: la de su miniweb (negocio) o, si el negocio no tiene miniweb, la suya propia (marca)
