@@ -532,6 +532,9 @@ function HeroMiniweb() {
           <MenuHamburguesa alContacto={() => { setMotivo('presupuesto'); setPestana('contacto') }} />
         </div>
 
+        {/* Pestañas: siempre en el mismo sitio, bajo el logo y el menú, en todas las pantallas */}
+        {navPestanas('px-[1.25rem] pt-[0.9rem]')}
+
         {/* Las pestañas: todas están en el HTML (para Google y los lectores de pantalla) y solo se ve la elegida.
             Cada una es un panel (Panel) con su titular, si lo tiene, arriba */}
 
@@ -713,7 +716,6 @@ function HeroMiniweb() {
             <p className="mt-[0.5rem] max-w-[26rem] text-[clamp(0.92rem,0.85rem+0.3vw,1.02rem)] leading-[1.5] text-suave">
               {hero.texto}
             </p>
-            {pestana === 'ejemplos' && navPestanas('mt-[1rem]')}
             </div>
             <MockupMiniweb activo={pestana === 'ejemplos'} />
           </div>
@@ -721,7 +723,6 @@ function HeroMiniweb() {
         {pestana === 'ejemplos' && <SelectorTema />}
       </div>
 
-      {pestana !== 'ejemplos' && navPestanas('px-[1.25rem] pt-[0.9rem]')}
 
       <div className="pb-[1.25rem]" />
     </div>
