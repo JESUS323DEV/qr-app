@@ -3,8 +3,13 @@ import { Plegable } from '../PanelesMiniweb'
 import { maxDe } from '../datos'
 
 // BloqueTextoInicio: sacado de NuevoPerfil.jsx. Recibe los objetos de los hooks (diseno, carta, negocio) y lo demás que se calcula en NuevoPerfil
-export default function BloqueTextoInicio({ negocio, MAX_TEXTO_EXTRA, campoTipografia, conTextoExtra, inicioBase, maxGrande, textoExtra, textoGrande, textoPequeno, textosEditados }) {
+export default function BloqueTextoInicio({ negocio, MAX_TEXTO_EXTRA, campoTipografia, conTextoExtra, inicioBase, maxGrande, soltarExtra, textoExtra, textoGrande, textoPequeno, textosEditados }) {
   const { setTextosMini } = negocio
+  // Escribe un texto de Inicio y suelta el cambio de ese mismo texto hecho en los datos en bruto, para que lo escrito se vea
+  const escribir = (clave, valor) => {
+    soltarExtra?.(clave)
+    setTextosMini(t => ({ ...t, [clave]: valor }))
+  }
   // Lo recomendado (el largo del ejemplo de la plantilla, algo más): avisa con el contador, pero no impide escribir más
   const maxPequeno = maxDe(inicioBase?.descripcion ?? 'Descripción de la portada del negocio, en pocas palabras')
   const claseContador = (largo, max) => `justify-self-end text-[0.75rem] ${largo > max ? 'font-semibold text-amber-500' : 'text-zinc-500'}`
@@ -18,7 +23,7 @@ export default function BloqueTextoInicio({ negocio, MAX_TEXTO_EXTRA, campoTipog
             <p className="text-[0.8rem] font-semibold text-zinc-500">Texto grande</p>
             <p className="text-[0.8rem] text-zinc-400">El titular de la portada. Si no cabe en una línea, baja solo a la siguiente.</p>
           </div>
-          <input value={textoGrande} onChange={e => setTextosMini(t => ({ ...t, titular: e.target.value }))} className={CAMPO} />
+          <input value={textoGrande} onChange={e => escribir('titular', e.target.value)} className={CAMPO} />
           <span className={claseContador(textoGrande.length, maxGrande)}>
             {textoGrande.length}/{maxGrande}
           </span>
@@ -30,7 +35,7 @@ export default function BloqueTextoInicio({ negocio, MAX_TEXTO_EXTRA, campoTipog
           </div>
           <textarea
             value={textoPequeno}
-            onChange={e => setTextosMini(t => ({ ...t, descripcion: e.target.value }))}
+            onChange={e => escribir('descripcion', e.target.value)}
             rows={3}
             className={`${CAMPO} resize-y`}
           />
@@ -46,7 +51,7 @@ export default function BloqueTextoInicio({ negocio, MAX_TEXTO_EXTRA, campoTipog
             </div>
             <input
               value={textoExtra}
-              onChange={e => setTextosMini(t => ({ ...t, info: e.target.value }))}
+              onChange={e => escribir('info', e.target.value)}
               placeholder="De martes a domingo, de 13:00 a 23:00"
               className={CAMPO}
             />

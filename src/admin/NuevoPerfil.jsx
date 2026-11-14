@@ -138,15 +138,18 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
   // textos: el titular en dos líneas y la descripción. Los máximos de caracteres, los de ahora con un margen
   const inicioBase = producto === 'miniweb' ? (plantilla.miniweb ? getNegocio(plantilla.miniweb)?.hero?.pestanas?.[0] : pestanasDeMiniweb(negocioBase)?.[0]) : null
   const titularBase = inicioBase?.titular ?? []
-  const textoGrande = textosMini.titular ?? titularBase.join(' ')
+  // Lo que dice ahora la portada de Inicio: la de la plantilla con lo que ha escrito el asistente y lo cambiado en los datos en bruto. Los cuadros de Texto inicio parten
+  // de aquí (y no de la plantilla sola), para enseñar lo mismo que el móvil; el máximo recomendado sigue saliendo de la plantilla
+  const inicioActual = inicioBase ? aplicar({ hero: { pestanas: [inicioBase] } }, { ...(cambiosIA?.cambios ?? {}), ...cambiosExtra }).hero.pestanas[0] : inicioBase
+  const textoGrande = textosMini.titular ?? (inicioActual?.titular ?? []).join(' ')
   const maxGrande = maxDe(titularBase.join(' ') || 'Texto grande de la portada')
-  const textoPequeno = textosMini.descripcion ?? inicioBase?.descripcion ?? ''
+  const textoPequeno = textosMini.descripcion ?? inicioActual?.descripcion ?? ''
   // El texto extra (un horario o lo que se quiera): solo lo pintan Editorial, Cortes (Diagonal) y Fullbleed
   // Con esas tres portadas, el texto extra empieza con uno de ejemplo (se ve y se guarda aunque no lo toques)
-  const textoExtra = textosMini.info ?? inicioBase?.info ?? TEXTO_EXTRA_EJEMPLO
+  const textoExtra = textosMini.info ?? inicioActual?.info ?? TEXTO_EXTRA_EJEMPLO
   // El texto del botón de la portada ("Ver menú", "Ver servicios"...): solo si la portada de partida lleva botón
   const hayBotonPortada = Boolean(inicioBase?.boton && inicioBase?.botonA)
-  const textoBoton = textosMini.boton ?? inicioBase?.boton ?? ''
+  const textoBoton = textosMini.boton ?? inicioActual?.boton ?? ''
   const conTextoExtra = ['editorial', 'diagonal', 'fullbleed'].includes(hero)
   const MAX_TEXTO_EXTRA = 60
   const textosEditados = Object.keys(textosMini).length > 0
@@ -312,6 +315,19 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
       else nuevo[ruta] = valor
       return nuevo
     })
+  // Al escribir en un cuadro de Texto inicio, se sueltan los cambios de ese mismo texto hechos en los datos en bruto (van los últimos y taparían lo escrito)
+  const RUTAS_TEXTO_INICIO = { titular: 'hero.pestanas.0.titular', descripcion: 'hero.pestanas.0.descripcion', info: 'hero.pestanas.0.info', boton: 'hero.pestanas.0.boton' }
+  const soltarExtraInicio = clave => {
+    const ruta = RUTAS_TEXTO_INICIO[clave]
+    if (!ruta) return
+    setCambiosExtra(c => {
+      const claves = Object.keys(c).filter(k => k === ruta || k.startsWith(`${ruta}.`))
+      if (!claves.length) return c
+      const nuevo = { ...c }
+      for (const k of claves) delete nuevo[k]
+      return nuevo
+    })
+  }
   // Los cambios a mano pasan a la vista previa (junto a lo del asistente) medio segundo después de dejar de escribir
   useEffect(() => {
     const t = setTimeout(() => {
@@ -386,7 +402,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
         <p className="text-[0.8rem] font-semibold text-zinc-500">Texto del botón</p>
         <p className="text-[0.8rem] text-zinc-400">Lo que pone el botón de la portada (por ejemplo, Ver menú o Ver servicios).</p>
       </div>
-      <input value={textoBoton} maxLength={24} onChange={e => setTextosMini(t => ({ ...t, boton: e.target.value }))} className={CAMPO} />
+      <input value={textoBoton} maxLength={24} onChange={e => { soltarExtraInicio('boton'); setTextosMini(t => ({ ...t, boton: e.target.value })) }} className={CAMPO} />
       <span className="justify-self-end text-[0.75rem] text-zinc-500">{textoBoton.length}/24</span>
     </div>
   ) : null
@@ -398,6 +414,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
       conTextoExtra={conTextoExtra}
       inicioBase={inicioBase}
       maxGrande={maxGrande}
+      soltarExtra={soltarExtraInicio}
       textoExtra={textoExtra}
       textoGrande={textoGrande}
       textoPequeno={textoPequeno}
