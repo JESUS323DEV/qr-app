@@ -55,6 +55,8 @@ const RANGO_FOTOS = { galeria: [1, 8], fullbleed: [2, 8], editorial: [2, 8], pol
 // Sin ninguna foto, no hay con qué rellenar y se deja como está
 export function conFotosDePortada(pestana, cuantas) {
   const base = pestana?.fotos?.length ? pestana.fotos : pestana?.foto ? [{ src: pestana.foto, alt: '' }] : []
+  // Un Inicio sin ninguna foto (el esqueleto "Desde cero"): tantos huecos vacíos como pide la portada, para ponerlas desde Imágenes (las vacías no se pintan)
+  if (cuantas && !base.length && pestana && 'foto' in pestana) return { ...pestana, fotos: Array.from({ length: cuantas }, () => ({ src: '', alt: '' })) }
   if (!cuantas || !base.length || base.length >= cuantas) return pestana
   const fotos = [...base]
   for (let i = 0; fotos.length < cuantas; i++) fotos.push({ ...base[i % base.length] })
@@ -168,9 +170,13 @@ export function ImagenesPorPestana({ original, cambios, cambiar, tipos, soloOtra
       const porDefecto = inicio?.fotos?.[0]?.src ?? inicio?.foto ?? ''
       return llevaFoto ? [{ ruta: `hero.pestanas.${i}.foto`, clase: 'foto', grupo: 'Hero y pestañas', etiqueta: `Pestaña ${nombreElemento(pestanas, i)} · Foto`, porDefecto }] : []
     })
+    // Con una lista de huecos de foto en Inicio (los que crea Nuevo perfil según el diseño) y la foto suelta vacía, la suelta no se enseña: sería un hueco de más
+    const inicio0 = pestanas[0]
+    const sueltaSobra = Array.isArray(inicio0?.fotos) && inicio0.fotos.length > 0 && inicio0.foto === ''
     const fotos = [
       ...camposDe(datos).filter(c => {
         if (c.clase !== 'foto') return false
+        if (sueltaSobra && c.ruta === 'hero.pestanas.0.foto') return false
         const m = c.ruta.match(/^hero\.pestanas\.(\d+)\./)
         return !(m && sinFotoPropia(Number(m[1])))
       }),

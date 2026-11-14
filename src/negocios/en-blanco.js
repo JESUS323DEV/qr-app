@@ -1,4 +1,5 @@
 import { TEMA_NEUTRO } from '../lib/enBlanco'
+import { enlaceWhatsapp } from '../lib/whatsapp'
 
 // Miniweb en blanco (temática "Desde cero" de Nuevo perfil): textos genéricos, colores neutros y fotos de relleno, para empezar un diseño
 // sin arrastrar el de ninguna demo. No sale en el catálogo ni en el asistente: solo se abre desde Nuevo perfil.
@@ -24,6 +25,7 @@ export default {
         texto: 'Inicio',
         titular: ['Titular de tu', 'negocio'],
         descripcion: 'Una frase corta que cuenta qué hace tu negocio y por qué venir.',
+        // Sin foto: Nuevo perfil crea tantos huecos de foto vacíos como pide el diseño elegido (conFotosDePortada); los diseños de una sola foto usan este
         foto: '',
         boton: 'Ver menú',
         botonA: 'menu',
@@ -77,19 +79,18 @@ export default {
         zona: 'Barrio o referencia',
       },
       {
-        tipo: 'reservar',
-        texto: 'Reservar',
-        titulo: 'Reserva tu mesa',
-        texto_reserva: 'Te confirmamos por WhatsApp en unos minutos.',
-        boton: 'Reservar por WhatsApp',
-        whatsapp: '34600000000',
+        // Pedir cita con el botón de WhatsApp (PaginaCita): el botón y el teléfono arriba y, debajo, dos grupos de texto que se editan desde el Editor
+        tipo: 'cita',
+        texto: 'Pedir cita',
+        titulo: 'Pide tu cita',
+        titulo_hacemos: 'Lo que hacemos',
+        texto_hacemos: 'Una o dos frases que cuentan qué hace tu negocio.',
+        titulo_quienes: 'Quiénes somos',
+        texto_quienes: 'Una o dos frases que cuentan quién está detrás del negocio.',
+        boton: 'Pedir cita por WhatsApp',
+        url: enlaceWhatsapp('34600000000', 'Hola, quiero pedir cita.'),
         telefono: '600 000 000',
-        turnos: [
-          { nombre: 'Mediodía', horas: ['13:00', '13:30', '14:00', '14:30', '15:00'] },
-          { nombre: 'Noche', horas: ['20:00', '20:30', '21:00', '21:30', '22:00'] },
-        ],
-        cerrado: [0],
-        zonas: ['Interior', 'Terraza'],
+        texto_telefono: 'o por teléfono',
       },
     ],
   },

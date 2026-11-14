@@ -7,6 +7,7 @@ import { fusionar, menuDelPanel, crearCartaConDueno } from '../ia'
 import { supabase } from '../../lib/supabase'
 import { aplicar } from '../../lib/ediciones'
 import siguienteEtiqueta from '../perfil/siguienteEtiqueta'
+import { DISENO_IA_ACTIVO } from './modoAsistente'
 
 // usePerfilAcciones: sacado de NuevoPerfil.jsx. Las acciones del Editor (abrir una copia, guardar, crear, cambiar de producto...). Recibe en "datos" el estado de los hooks y lo que
 // se deduce de él, y devuelve las funciones.
@@ -17,6 +18,24 @@ export default function usePerfilAcciones(datos) {
   // selectores ya puestos (efecto de más abajo), escribe los textos y busca las fotos. La vista previa lo enseña todo
   const montar = async () => {
     if (!(nombre.trim() || cuento.trim() || referencia || captura) || disenando) return
+    // Miniweb con el diseño ya montado (DISENO_IA_ACTIVO apagado): no se elige diseño; el asistente rellena Inicio, Horario y Reservar y pinta los colores
+    // sobre lo que hay cargado. El nombre es obligatorio porque lo usa tal cual (sin el paso de diseño nadie se lo inventa)
+    if (!DISENO_IA_ACTIVO && producto === 'miniweb') {
+      if (!nombre.trim()) {
+        setError('Escribe el nombre del negocio: el asistente lo usa tal cual.')
+        return
+      }
+      setError('')
+      setResumenDiseno('')
+      setCambiosIA(null)
+      setCambiosExtra({})
+      setHorarioIA([])
+      setInfoImagen('')
+      setGenerado(true)
+      setDisenando('Preparando...')
+      setRedactando(true)
+      return
+    }
     setDisenando('Montando el diseño...')
     setError('')
     setResumenDiseno('')

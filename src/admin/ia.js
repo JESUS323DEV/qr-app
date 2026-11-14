@@ -34,6 +34,12 @@ const primeraFoto = (busqueda, orientacion) =>
     })
     .catch(() => null)
 
+// Las fotos de Unsplash para una búsqueda (hasta 24; vacío si falla). No se avisa a Unsplash: eso se hace al elegir una
+const fotosDe = (busqueda, orientacion) =>
+  llamar('buscar-fotos', { texto: busqueda, orientacion })
+    .then(d => d.fotos ?? [])
+    .catch(() => [])
+
 /* Junta cambios nuevos con los que ya había. Si un cambio nuevo sustituye un bloque entero (las secciones de la
    carta, el menú del día, la marca), los cambios sueltos de dentro de ese bloque ya no valen y se quitan.
    Cada cambio nuevo va al final, para que se aplique después de los anteriores. */
@@ -122,9 +128,16 @@ export async function cambiosDeIA(resultado, campos, actual) {
   const fotos = (resultado.fotos ?? []).filter(
     f => porRuta.get(f.ruta)?.clase === 'foto' && f.busqueda?.trim() && !(secciones && f.ruta.startsWith('secciones.')),
   )
-  const encontradas = await Promise.all(fotos.map(f => primeraFoto(f.busqueda, orientacion)))
+  // Cada hueco, la primera foto de su búsqueda que no se haya puesto ya en otro hueco (aunque la IA repita la búsqueda, no sale la misma foto dos veces);
+  // si todas las de esa búsqueda ya están usadas, la primera
+  const listas = await Promise.all(fotos.map(f => fotosDe(f.busqueda, orientacion)))
+  const usadas = new Set()
   fotos.forEach((f, i) => {
-    if (encontradas[i]) cambios[f.ruta] = encontradas[i]
+    const elegida = listas[i].find(x => !usadas.has(x.url)) ?? listas[i][0]
+    if (!elegida) return
+    usadas.add(elegida.url)
+    avisarElegida(elegida)
+    cambios[f.ruta] = elegida.url
   })
   return cambios
 }

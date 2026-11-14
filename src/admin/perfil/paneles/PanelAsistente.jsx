@@ -2,6 +2,7 @@ import { BOTON, CAMPO, Etiqueta } from '../../../components/panel'
 import { BarraAsistenteMovil } from '../../EditorMovil'
 import { CampoImagenAsistente } from '../../TextosEditor'
 import { TIPOS_CARTA } from '../../../asistente/carta'
+import { DISENO_IA_ACTIVO } from '../modoAsistente'
 
 // PanelAsistente: sacado de NuevoPerfil.jsx (el panel de un grupo de ajustes). Recibe los objetos de los hooks y lo demás que se calcula en NuevoPerfil
 export default function PanelAsistente({ diseno, carta, negocio, cambiarProducto, captura, creando, cuento, disenando, esMovil, montar, pasoMovil, referencia, resumenDiseno, setCaptura, setCuento, setError, setPasoMovil, setReferencia, setVistaMovil }) {
@@ -67,7 +68,7 @@ export default function PanelAsistente({ diseno, carta, negocio, cambiarProducto
         <CampoImagenAsistente titulo="Añadir captura con información" valor={captura} cambiar={setCaptura} bloqueado={Boolean(disenando) || Boolean(creando)} avisar={setError} />
       </div>
       <button type="button" onClick={montar} disabled={!(nombre.trim() || cuento.trim() || referencia || captura) || Boolean(disenando) || Boolean(creando)} className={BOTON}>
-        {disenando ?? 'Montar el diseño con el asistente'}
+        {disenando ?? (producto === 'miniweb' && !DISENO_IA_ACTIVO ? 'Terminar con el asistente (textos, fotos y colores)' : 'Montar el diseño con el asistente')}
       </button>
       {resumenDiseno && <p className="text-[0.85rem] font-semibold text-zinc-800">{resumenDiseno}</p>}
     </div>

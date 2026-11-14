@@ -31,7 +31,8 @@ export const tipoComun = tipo => COMUN[tipo] ?? null
    fotos[{ src, etiqueta? | plato? | alt? }] (la mayoría) u opciones[{ plato, foto }] (Almendra).
    La etiqueta es lo que se escribe encima de la foto: su etiqueta o el nombre del plato */
 export const fotosDe = pestana => {
-  if (pestana?.fotos?.length) return pestana.fotos.map(f => ({ src: f.src, etiqueta: f.etiqueta ?? f.plato ?? null, alt: f.alt ?? f.etiqueta ?? f.plato ?? '' }))
+  // Los huecos de foto vacíos (el esqueleto "Desde cero" los trae para poder rellenarlos desde el Editor) no cuentan
+  if (pestana?.fotos?.length) return pestana.fotos.filter(f => f.src).map(f => ({ src: f.src, etiqueta: f.etiqueta ?? f.plato ?? null, alt: f.alt ?? f.etiqueta ?? f.plato ?? '' }))
   if (pestana?.opciones?.length) return pestana.opciones.filter(o => o.foto).map(o => ({ src: o.foto, etiqueta: o.plato ?? null, alt: o.plato ?? '' }))
   return []
 }

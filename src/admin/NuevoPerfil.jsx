@@ -25,6 +25,8 @@ import CampoTipografia from './perfil/CampoTipografia'
 import BloquePortada from './perfil/BloquePortada'
 import armarPerfil from './perfil/armarPerfil'
 import redactarPerfil from './perfil/redactarPerfil'
+import { repartirColores } from './perfil/repartirColores'
+import { DISENO_IA_ACTIVO } from './perfil/modoAsistente'
 import usePerfilDiseno from './perfil/usePerfilDiseno'
 import usePerfilCarta from './perfil/usePerfilCarta'
 import usePerfilNegocio from './perfil/usePerfilNegocio'
@@ -66,9 +68,9 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
   const carta = usePerfilCarta()
   const { tipoCarta, estilo, colorPrecio, setColorPrecio, colorPrecioTexto, setColorPrecioTexto, fondo2, setFondo2, textoSuave, setTextoSuave, coloresCarta, setColoresCarta } = carta
   const negocio = usePerfilNegocio()
-  const { nombre, logo, principal, acento, colorTexto, setColorTexto, fondo, setFondo, textosMini, setTextosMini, setNombreVista } = negocio
+  const { nombre, logo, principal, setPrincipal, acento, setAcento, colorTexto, setColorTexto, fondo, setFondo, textosMini, setTextosMini, setNombreVista } = negocio
   const asistente = usePerfilAsistente()
-  const { cuento, setCuento, disenando, setDisenando, resumenDiseno, cambiosIA, setCambiosIA, setVersionIA, redactando, setRedactando, referencia, setReferencia, captura, setCaptura, infoImagen, horarioIA } = asistente
+  const { cuento, setCuento, disenando, setDisenando, resumenDiseno, setResumenDiseno, cambiosIA, setCambiosIA, setVersionIA, redactando, setRedactando, referencia, setReferencia, captura, setCaptura, infoImagen, horarioIA } = asistente
   const copias = usePerfilCopias()
   const { creando, setError, huellaBase, setHuellaBase, versionBase, preguntaSalir, setPreguntaSalir, cambiosExtra, setCambiosExtra, setVersionExtra } = copias
   // En tablet vertical (768 a 1023 px) Ficha queda bloqueada en el selector de Producto
@@ -195,7 +197,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
   const armar = nombreCrear => armarPerfil({ ...diseno, ...carta, ...negocio, cartaBase, cartaSlug, colorCabecera, colorDelTexto, colorFondo, conCabecera, conTextoExtra, esCarta, filas, logoElegido, lugares, negocioBase, plantilla, textoBoton, textoExtra, textoGrande, textoPequeno }, nombreCrear)
 
   // El asistente escribe los textos y busca las fotos sobre el diseño armado: devuelve los cambios (sin tocar nombre, diseño ni portada)
-  const redactar = (base, cambios, nombreCrear, avisar) => redactarPerfil({ cartaBase, cuento, esCarta, infoImagen, producto }, base, cambios, nombreCrear, avisar)
+  const redactar = (base, cambios, nombreCrear, avisar, opciones) => redactarPerfil({ cartaBase, cuento, esCarta, infoImagen, producto, referencia }, base, cambios, nombreCrear, avisar, opciones)
 
   useEffect(() => {
     if (!redactando) return
@@ -204,14 +206,28 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
       try {
         const nombreHecho = nombre.trim() || 'Prueba'
         const { base, cambios } = armar(nombreHecho)
-        const hecho = await redactar(base, cambios, nombreHecho, setDisenando)
+        // Miniweb con el diseño ya montado por Jesús: el asistente rellena Inicio, Horario y Reservar y pinta también los colores
+        const terminar = !DISENO_IA_ACTIVO && producto === 'miniweb'
+        const hecho = await redactar(base, cambios, nombreHecho, setDisenando, { conColores: terminar })
+        let deIA = hecho.deIA
+        if (terminar) {
+          // Los colores que ha pintado van a los selectores del Editor (paleta de la marca y colores sueltos), no a los cambios del asistente
+          const { paleta, sueltos, resto } = repartirColores(deIA)
+          deIA = resto
+          if (paleta.principal) setPrincipal(paleta.principal)
+          if (paleta.acento) setAcento(paleta.acento)
+          if (paleta.fondo) setFondo(paleta.fondo)
+          if (paleta.texto) setColorTexto(paleta.texto)
+          if (Object.keys(sueltos).length) setColoresMini(m => ({ ...m, ...sueltos }))
+          setResumenDiseno(hecho.historial[0]?.resumen ?? '')
+        }
         // La vista previa los lee de aquí (la misma pestaña del navegador, el mismo origen)
         try {
-          localStorage.setItem('mostraq-vista-ia', JSON.stringify(hecho.deIA))
+          localStorage.setItem('mostraq-vista-ia', JSON.stringify(deIA))
         } catch {
           // Sin almacenamiento: la vista previa se queda sin textos ni fotos nuevos, pero al crear sí se guardan
         }
-        setCambiosIA({ cambios: hecho.deIA, historial: hecho.historial })
+        setCambiosIA({ cambios: deIA, historial: hecho.historial })
         // Las líneas del horario, sobre la pestaña del horario de la miniweb (como un cambio a mano, para poder retocarlas)
         if (horarioIA.length) {
           const idx = (aplicar(getNegocio(base), cambios).hero?.pestanas ?? []).findIndex(p => p.tipo === 'horario')
