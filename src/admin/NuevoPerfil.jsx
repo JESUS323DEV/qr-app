@@ -196,6 +196,14 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
   // Arma lo que se guarda al crear (el perfil de partida, su dirección y los cambios del diseño elegido), sin tocar Supabase
   const armar = nombreCrear => armarPerfil({ ...diseno, ...carta, ...negocio, cartaBase, cartaSlug, colorCabecera, colorDelTexto, colorFondo, conCabecera, conTextoExtra, esCarta, filas, logoElegido, lugares, negocioBase, plantilla, textoBoton, textoExtra, textoGrande, textoPequeno }, nombreCrear)
 
+  // La lista de huecos de foto de Inicio que arma el diseño elegido (la que se guarda al crear). La vista previa aplica los cambios del asistente sobre la demo base y
+  // se salta los que no tienen su ruta (hero.pestanas.0.fotos.N.src): con esta lista por delante, las fotos del asistente sí se ven en el móvil del Editor
+  const listaFotosVista = () => {
+    const { cambios } = armar(nombre.trim() || 'Prueba')
+    const lista = cambios['hero.pestanas.0.fotos'] ?? cambios['hero.pestanas']?.[0]?.fotos
+    return lista ? { 'hero.pestanas.0.fotos': lista } : {}
+  }
+
   // El asistente escribe los textos y busca las fotos sobre el diseño armado: devuelve los cambios (sin tocar nombre, diseño ni portada)
   const redactar = (base, cambios, nombreCrear, avisar, opciones) => redactarPerfil({ cartaBase, cuento, esCarta, infoImagen, producto, referencia }, base, cambios, nombreCrear, avisar, opciones)
 
@@ -223,7 +231,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
         }
         // La vista previa los lee de aquí (la misma pestaña del navegador, el mismo origen)
         try {
-          localStorage.setItem('mostraq-vista-ia', JSON.stringify(deIA))
+          localStorage.setItem('mostraq-vista-ia', JSON.stringify({ ...listaFotosVista(), ...deIA }))
         } catch {
           // Sin almacenamiento: la vista previa se queda sin textos ni fotos nuevos, pero al crear sí se guardan
         }
@@ -308,14 +316,14 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
   useEffect(() => {
     const t = setTimeout(() => {
       try {
-        localStorage.setItem('mostraq-vista-ia', JSON.stringify({ ...(cambiosIA?.cambios ?? {}), ...textosPrevia, ...cambiosExtra }))
+        localStorage.setItem('mostraq-vista-ia', JSON.stringify({ ...listaFotosVista(), ...(cambiosIA?.cambios ?? {}), ...textosPrevia, ...cambiosExtra }))
       } catch {
         // Sin almacenamiento, la vista previa no enseña estos cambios, pero al crear sí se guardan
       }
       setVersionExtra(v => v + 1)
     }, 600)
     return () => clearTimeout(t)
-  }, [cambiosExtra, textosMini]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [cambiosExtra, textosMini, hero]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // La tipografía (la pareja de fuentes de la marca)
   const campoTipografia = (
@@ -518,7 +526,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
 
         {/* El asistente: un cuadro donde pedirle lo que sea y un solo botón que lo monta todo (diseño, nombre, textos y fotos) */}
         {pestana === 'asistente' && (
-        <PanelAsistente diseno={diseno} carta={carta} negocio={negocio} cambiarProducto={cambiarProducto} captura={captura} creando={creando} cuento={cuento} disenando={disenando} esMovil={esMovil} montar={montar} pasoMovil={pasoMovil} referencia={referencia} resumenDiseno={resumenDiseno} setCaptura={setCaptura} setCuento={setCuento} setError={setError} setPasoMovil={setPasoMovil} setReferencia={setReferencia} setVistaMovil={setVistaMovil} />
+        <PanelAsistente diseno={diseno} carta={carta} negocio={negocio} cambiarProducto={cambiarProducto} captura={captura} creando={creando} cuento={cuento} disenando={disenando} esMovil={esMovil} montar={montar} pasoMovil={pasoMovil} referencia={referencia} resumenDiseno={resumenDiseno} setCaptura={setCaptura} setCuento={setCuento} setError={setError} setPasoMovil={setPasoMovil} setReferencia={setReferencia} setResumenDiseno={setResumenDiseno} setVistaMovil={setVistaMovil} />
         )}
 
         <div className="order-3 grid gap-[1rem] md:order-none md:max-lg:col-start-1 md:max-lg:row-start-2 md:max-lg:min-w-0">

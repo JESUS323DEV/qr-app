@@ -1,14 +1,27 @@
+import { useState } from 'react'
 import { BOTON, CAMPO, Etiqueta } from '../../../components/panel'
 import { BarraAsistenteMovil } from '../../EditorMovil'
 import { CampoImagenAsistente } from '../../TextosEditor'
 import { TIPOS_CARTA } from '../../../asistente/carta'
 import { DISENO_IA_ACTIVO } from '../modoAsistente'
+import FormularioTexto from '../FormularioTexto'
 
 // PanelAsistente: sacado de NuevoPerfil.jsx (el panel de un grupo de ajustes). Recibe los objetos de los hooks y lo demás que se calcula en NuevoPerfil
-export default function PanelAsistente({ diseno, carta, negocio, cambiarProducto, captura, creando, cuento, disenando, esMovil, montar, pasoMovil, referencia, resumenDiseno, setCaptura, setCuento, setError, setPasoMovil, setReferencia, setVistaMovil }) {
+export default function PanelAsistente({ diseno, carta, negocio, cambiarProducto, captura, creando, cuento, disenando, esMovil, montar, pasoMovil, referencia, resumenDiseno, setCaptura, setCuento, setError, setPasoMovil, setReferencia, setResumenDiseno, setVistaMovil }) {
   const { producto } = diseno
   const { setTipoCarta, tipoCarta } = carta
   const { nombre, setNombre } = negocio
+  // Copia el texto del cuadro al portapapeles (si el navegador no lo permite, no pasa nada: se puede seleccionar y copiar a mano)
+  const [copiado, setCopiado] = useState(false)
+  const copiar = async () => {
+    try {
+      await navigator.clipboard.writeText(cuento)
+      setCopiado(true)
+      setTimeout(() => setCopiado(false), 1800)
+    } catch {
+      setCopiado(false)
+    }
+  }
   return (
     <div className={`order-3 grid gap-[0.6rem] lg:order-none ${esMovil && pasoMovil !== 'asistente' ? 'hidden' : ''}`}>
       {esMovil && <BarraAsistenteMovil alInicio={() => setPasoMovil('inicio')} alEditar={() => setVistaMovil(true)} />}
@@ -52,6 +65,8 @@ export default function PanelAsistente({ diseno, carta, negocio, cambiarProducto
       <Etiqueta texto="Nombre del negocio">
         <input value={nombre} onChange={e => setNombre(e.target.value)} disabled={Boolean(disenando) || Boolean(creando)} className={CAMPO} placeholder="Peluquería Ranita" />
       </Etiqueta>
+      {/* Solo en miniwebs: un formulario corto que escribe el texto en el cuadro de abajo */}
+      {producto === 'miniweb' && <FormularioTexto alGenerar={setCuento} hayTexto={Boolean(cuento.trim())} bloqueado={Boolean(disenando) || Boolean(creando)} />}
       <textarea
         value={cuento}
         onChange={e => setCuento(e.target.value)}
@@ -67,6 +82,30 @@ export default function PanelAsistente({ diseno, carta, negocio, cambiarProducto
         <CampoImagenAsistente titulo="Añadir logo de referencia" valor={referencia} cambiar={setReferencia} conColores bloqueado={Boolean(disenando) || Boolean(creando)} avisar={setError} />
         <CampoImagenAsistente titulo="Añadir captura con información" valor={captura} cambiar={setCaptura} bloqueado={Boolean(disenando) || Boolean(creando)} avisar={setError} />
       </div>
+      {/* Vacía lo que se le ha dado al asistente (el texto, el logo y la captura) y lo que contó la última vez. No toca el nombre, la copia cargada ni la vista previa */}
+      {(cuento || referencia || captura || resumenDiseno) && (
+        <div className="flex flex-wrap items-center gap-x-[1.2rem] gap-y-[0.4rem]">
+          {cuento && (
+            <button type="button" onClick={copiar} className="text-[0.85rem] font-semibold text-zinc-500 underline underline-offset-[0.2em]">
+              {copiado ? 'Copiado' : 'Copiar texto'}
+            </button>
+          )}
+          <button
+            type="button"
+            disabled={Boolean(disenando) || Boolean(creando)}
+            onClick={() => {
+              setCuento('')
+              setReferencia(null)
+              setCaptura(null)
+              setResumenDiseno('')
+              setError('')
+            }}
+            className="text-[0.85rem] font-semibold text-zinc-500 underline underline-offset-[0.2em] disabled:opacity-40"
+          >
+            Limpiar texto
+          </button>
+        </div>
+      )}
       <button type="button" onClick={montar} disabled={!(nombre.trim() || cuento.trim() || referencia || captura) || Boolean(disenando) || Boolean(creando)} className={BOTON}>
         {disenando ?? (producto === 'miniweb' && !DISENO_IA_ACTIVO ? 'Terminar con el asistente (textos, fotos y colores)' : 'Montar el diseño con el asistente')}
       </button>
