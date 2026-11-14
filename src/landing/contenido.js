@@ -363,11 +363,11 @@ export const planesDetalle = {
 
 // Catálogo completo (/catalogo): todas las demos, separadas por tipo y filtrables por temática
 export const catalogo = {
-  titulo: 'Así quedaría tu negocio.',
-  texto: 'Diseños cuidados y todo a un escaneo: reseñas, WhatsApp, carta y redes. Ábrelas en tu móvil y pruébalas como lo haría tu cliente; la tuya, con tu marca y tus fotos.',
+  titulo: 'Explora lo que podemos crear para tu negocio',
+  texto: 'Descubre diferentes diseños de miniwebs para restaurantes, peluquerías, centros de estética y otros negocios. Abre los ejemplos desde tu móvil, navega por sus secciones y descubre cómo podría ser la tuya, adaptada a tu marca.',
   tipos: [
-    { key: 'miniweb', texto: 'Miniwebs', descripcion: 'Como una web en el móvil: varias páginas, menú y reservas.' },
-    { key: 'carta', texto: 'Menú y ofertas', descripcion: 'Tu menú del día y tus ofertas, con QR para las mesas.' },
+    { key: 'miniweb', texto: 'Miniwebs', descripcion: 'Una web pensada para el móvil con todo lo que tu cliente busca: reseñas, reservas, horario y redes, a un escaneo.' },
+    { key: 'carta', texto: 'Menú y ofertas', descripcion: 'Tu menú del día y tus ofertas siempre al día, y tus clientes los consultan desde el móvil con solo escanear el QR.' },
   ],
   todas: 'Todas',
   volver: 'Volver al inicio',

@@ -575,9 +575,8 @@ function HeroMiniweb() {
               >
                 {listaEj.map((d, i) => (
                   <li key={d.ruta} className="h-full shrink-0 snap-center py-[0.2rem]">
-                    <Link
-                      to={d.ruta}
-                      aria-label={`Abrir el ejemplo de ${d.nombre}`}
+                    {/* El mockup solo se desliza (un toque suelto al hacer scroll no abre nada); la demo se abre con "Ver ejemplo" */}
+                    <div
                       className={`relative block ${d.foto ? '' : 'aspect-[390/844]'} h-full rounded-[1.2rem] border border-white/15 bg-[#1d1d1b] p-[0.3rem] shadow-[0_1rem_2rem_-0.8rem_rgb(0_0_0/0.7)] transition-[opacity,transform] duration-500 ${
                         i === actualCarta ? 'opacity-100' : 'scale-[0.92] opacity-55'
                       }`}
@@ -592,15 +591,18 @@ function HeroMiniweb() {
                           <span className="mt-[0.4rem] text-[0.78rem] text-suave">{d.nombre}</span>
                         </span>
                       )}
-                      <span
-                        className={`pointer-events-none absolute bottom-[0.7rem] left-1/2 flex -translate-x-1/2 items-center gap-[0.3rem] whitespace-nowrap rounded-full bg-black/75 px-[0.75rem] py-[0.3rem] text-[0.72rem] font-semibold text-white backdrop-blur-sm transition-opacity duration-500 ${
-                          i === actualCarta ? 'opacity-100' : 'opacity-0'
+                      <Link
+                        to={d.ruta}
+                        aria-label={`Abrir el ejemplo de ${d.nombre}`}
+                        tabIndex={i === actualCarta ? 0 : -1}
+                        className={`absolute bottom-[0.7rem] left-1/2 flex -translate-x-1/2 items-center gap-[0.3rem] whitespace-nowrap rounded-full bg-black/75 px-[0.75rem] py-[0.3rem] text-[0.72rem] font-semibold text-white backdrop-blur-sm transition-opacity duration-500 ${
+                          i === actualCarta ? 'opacity-100' : 'pointer-events-none opacity-0'
                         }`}
                       >
                         {hero.pista}
                         <ArrowUpRight className="h-[0.8rem] w-[0.8rem]" aria-hidden="true" />
-                      </span>
-                    </Link>
+                      </Link>
+                    </div>
                   </li>
                 ))}
               </ul>

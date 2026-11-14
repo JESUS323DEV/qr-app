@@ -90,7 +90,7 @@ export default function CatalogoPage() {
             </Filtro>
           ))}
         </nav>
-        <p className="mt-[0.8rem] text-[0.92rem] text-suave">{infoTipo.descripcion}</p>
+        {infoTipo.descripcion && <p className="mt-[0.8rem] text-[0.92rem] text-suave">{infoTipo.descripcion}</p>}
 
         {/* Temática, solo si hay más de una */}
         {tematicas.length > 1 && (
@@ -103,7 +103,8 @@ export default function CatalogoPage() {
           </div>
         )}
 
-        <CarruselMoviles lista={lista} />
+        {/* La pastilla "Ver ejemplo" en móvil, de momento solo en Miniwebs (Menú y ofertas sigue con "Abrir") */}
+        <CarruselMoviles lista={lista} pastilla={tipo === 'miniweb'} />
       </main>
     </div>
   )
