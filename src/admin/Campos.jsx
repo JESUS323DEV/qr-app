@@ -1,12 +1,40 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Camera, Search, X } from 'lucide-react'
 import { supabase } from '../lib/supabase'
-import { BOTON, CAMPO } from '../components/panel'
+import { BOTON, CAMPO, opcion } from '../components/panel'
 import { loadFont } from '../lib/applyTheme'
 import { TIPOGRAFIAS, GRUPOS_EXTRA, TODAS_LAS_TIPOGRAFIAS, parejaDe } from '../asistente/tipografias'
 import { TIPOS_LOGO, avisarElegida, reducirFoto } from './comun'
 
 /* Los campos de foto, logo y tipografía del editor, y el buscador de fotos. */
+
+// Los badges del buscador, en dos grupos que se combinan: [lo que se ve, lo que se busca]. Unsplash funciona mejor en inglés, así que lo que se escribe va en inglés.
+// Negocio: uno solo. Qué se ve: los que se quiera (interior, escaparate, luz cálida...). Tocar un badge solo escribe en el cuadro; no busca hasta pulsar Buscar
+const NEGOCIOS_FOTO = [
+  ['Barbería', 'barbershop'],
+  ['Peluquería', 'hair salon'],
+  ['Uñas', 'nail salon manicure'],
+  ['Estética', 'beauty salon spa'],
+  ['Pastelería', 'pastry shop'],
+  ['Panadería', 'bakery bread'],
+  ['Cafetería', 'coffee shop'],
+  ['Restaurante', 'restaurant'],
+  ['Bar', 'bar counter drinks'],
+  ['Tienda', 'small shop'],
+  ['Flores', 'flower shop'],
+]
+const MATICES_FOTO = [
+  ['Espacio cerrado', 'interior'],
+  ['Exterior', 'storefront exterior'],
+  ['Escaparate', 'display window'],
+  ['Mostrador', 'counter'],
+  ['Primer plano', 'close up'],
+  ['Producto', 'products'],
+  ['Personas trabajando', 'working hands'],
+  ['Luz cálida', 'warm light'],
+  ['Luminoso', 'bright'],
+  ['Oscuro y elegante', 'dark moody'],
+]
 
 // Hoja para buscar fotos en Unsplash (función buscar-fotos de Supabase) y elegir una tocándola
 function BuscarFoto({ sugerencia, orientacion, elegir, cerrar }) {
@@ -22,6 +50,25 @@ function BuscarFoto({ sugerencia, orientacion, elegir, cerrar }) {
     window.addEventListener('keydown', conEscape)
     return () => window.removeEventListener('keydown', conEscape)
   }, [cerrar])
+
+  // Los badges tocados: el negocio (uno) y los matices (varios). Lo que se escribe en el cuadro es el negocio y los matices juntos, en inglés
+  const [pestanaBadges, setPestanaBadges] = useState('negocio')
+  const [negocioElegido, setNegocioElegido] = useState('')
+  const [maticesElegidos, setMaticesElegidos] = useState([])
+  const escribir = (negocio, matices) => {
+    const consultaDe = (lista, nombre) => lista.find(([n]) => n === nombre)?.[1]
+    setTexto([consultaDe(NEGOCIOS_FOTO, negocio), ...matices.map(m => consultaDe(MATICES_FOTO, m))].filter(Boolean).join(' '))
+  }
+  const elegirNegocio = nombre => {
+    const nuevo = negocioElegido === nombre ? '' : nombre
+    setNegocioElegido(nuevo)
+    escribir(nuevo, maticesElegidos)
+  }
+  const alternarMatiz = nombre => {
+    const nuevos = maticesElegidos.includes(nombre) ? maticesElegidos.filter(m => m !== nombre) : [...maticesElegidos, nombre]
+    setMaticesElegidos(nuevos)
+    escribir(negocioElegido, nuevos)
+  }
 
   const buscar = async (numero = 1) => {
     if (!texto.trim()) return
@@ -51,7 +98,7 @@ function BuscarFoto({ sugerencia, orientacion, elegir, cerrar }) {
         aria-modal="true"
         aria-label="Buscar foto"
         onClick={e => e.stopPropagation()}
-        className="flex max-h-[90svh] w-full max-w-[32rem] flex-col rounded-t-[1.25rem] bg-white sm:rounded-[1.25rem]"
+        className="flex max-h-[90svh] w-full max-w-[32rem] flex-col rounded-t-[1.25rem] bg-white sm:rounded-[1.25rem] lg:max-xl:h-[94svh] lg:max-xl:max-h-[94svh] lg:max-xl:max-w-[40rem]"
       >
         <form
           onSubmit={e => {
@@ -64,13 +111,49 @@ function BuscarFoto({ sugerencia, orientacion, elegir, cerrar }) {
           <button type="submit" disabled={buscando || !texto.trim()} className={`${BOTON} shrink-0`}>Buscar</button>
         </form>
 
+        {/* Badges en español que escriben en inglés (que es como mejor funciona Unsplash) y se combinan: un negocio y las palabras de la escena que se quieran. No buscan:
+            solo escriben en el cuadro, que se puede retocar, y la búsqueda se hace al pulsar Buscar. Dos pestañas (Negocio y Escena) para enseñar solo un grupo cada vez;
+            lo elegido en la que no se ve se mantiene, y la pestaña Escena enseña cuántas hay elegidas */}
+        <div className="grid gap-[0.6rem] border-b border-zinc-200 px-[1rem] py-[0.7rem]">
+          <div role="tablist" aria-label="Tipo de palabras" className="grid grid-cols-2 gap-[0.3rem] rounded-[0.75rem] bg-zinc-200 p-[0.25rem]">
+            {[
+              ['negocio', negocioElegido ? `Negocio: ${negocioElegido}` : 'Negocio'],
+              ['escena', maticesElegidos.length ? `Escena (${maticesElegidos.length})` : 'Escena'],
+            ].map(([clave, texto]) => (
+              <button
+                key={clave}
+                type="button"
+                role="tab"
+                aria-selected={pestanaBadges === clave}
+                onClick={() => setPestanaBadges(clave)}
+                className={`truncate rounded-[0.55rem] px-[0.4rem] py-[0.45rem] text-[0.92rem] font-semibold ${pestanaBadges === clave ? 'bg-white shadow-[0_0.05rem_0.2rem_rgb(0_0_0/0.15)]' : 'text-zinc-600'}`}
+              >
+                {texto}
+              </button>
+            ))}
+          </div>
+          <div role="tabpanel" className="flex flex-wrap gap-[0.4rem]">
+            {pestanaBadges === 'negocio'
+              ? NEGOCIOS_FOTO.map(([nombre]) => (
+                  <button key={nombre} type="button" aria-pressed={negocioElegido === nombre} onClick={() => elegirNegocio(nombre)} className={opcion(negocioElegido === nombre)}>
+                    {nombre}
+                  </button>
+                ))
+              : MATICES_FOTO.map(([nombre]) => (
+                  <button key={nombre} type="button" aria-pressed={maticesElegidos.includes(nombre)} onClick={() => alternarMatiz(nombre)} className={opcion(maticesElegidos.includes(nombre))}>
+                    {nombre}
+                  </button>
+                ))}
+          </div>
+        </div>
+
         <div className="min-h-[12rem] overflow-y-auto overscroll-contain p-[1rem]">
           {error && <p className="mb-[0.75rem] text-[0.88rem] font-semibold text-red-600">{error}</p>}
           {fotos.length === 0 ? (
             <p className="text-[0.92rem] text-zinc-500">{buscando ? 'Buscando...' : 'Escribe qué quieres y pulsa Buscar. Mejor en pocas palabras: "barbería", "uñas rosa", "pan de masa madre".'}</p>
           ) : (
             <>
-              <ul className="grid grid-cols-3 gap-[0.4rem]">
+              <ul className="grid grid-cols-3 gap-[0.4rem] lg:max-xl:grid-cols-4">
                 {fotos.map(f => (
                   <li key={f.id}>
                     <button

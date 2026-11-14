@@ -9,6 +9,7 @@ import marcaVista from './perfil/marcaVista'
 import PanelAsistente from './perfil/paneles/PanelAsistente'
 import PanelPortada from './perfil/paneles/PanelPortada'
 import PanelAjustes from './perfil/paneles/PanelAjustes'
+import PanelPaletas from './perfil/paneles/PanelPaletas'
 import PanelEstructura from './perfil/paneles/PanelEstructura'
 import PanelImagenes from './perfil/paneles/PanelImagenes'
 import PanelResena from './perfil/paneles/PanelResena'
@@ -73,6 +74,12 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
   const { cuento, setCuento, disenando, setDisenando, resumenDiseno, setResumenDiseno, cambiosIA, setCambiosIA, setVersionIA, redactando, setRedactando, referencia, setReferencia, captura, setCaptura, infoImagen, horarioIA } = asistente
   const copias = usePerfilCopias()
   const { creando, setError, huellaBase, setHuellaBase, versionBase, preguntaSalir, setPreguntaSalir, cambiosExtra, setCambiosExtra, setVersionExtra } = copias
+  // Los colores justo antes de aplicar la primera paleta sugerida (grupo Paletas), para poder volver a ellos. Se borran al cargar otra copia (o ninguna)
+  const [coloresOriginales, setColoresOriginales] = useState(null)
+  const claveCopia = copias.copiaCargada ? `${copias.copiaCargada.tipo}:${copias.copiaCargada.slug}` : ''
+  useEffect(() => {
+    setColoresOriginales(null)
+  }, [claveCopia])
   // En tablet vertical (768 a 1023 px) Ficha queda bloqueada en el selector de Producto
   const [tabletVertical, setTabletVertical] = useState(() => window.matchMedia('(min-width: 768px) and (max-width: 1023px)').matches)
   useEffect(() => {
@@ -488,10 +495,10 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
 
   // Los grupos de ajustes de cada producto (las pestañas de ajustes y los iconos de la vista previa del móvil)
   const gruposAjustes = (producto === 'miniweb'
-                ? [['negocio', 'Negocio'], ['portada', 'Portada'], ['menu', 'Menú'], ['redes', 'Redes'], ['horario', 'Horario'], ['reserva', 'Reserva'], ['resena', 'Reseña'], ['ajustes', 'Ajustes personalizados']]
+                ? [['negocio', 'Negocio'], ['portada', 'Portada'], ['menu', 'Menú'], ['redes', 'Redes'], ['horario', 'Horario'], ['reserva', 'Reserva'], ['resena', 'Reseña'], ['paletas', 'Paletas'], ['ajustes', 'Ajustes personalizados']]
                 : esCarta
-                  ? [['negocio', 'Negocio'], ['portada', 'Estilo'], ['imagenes', 'Imágenes'], ['estructura', 'Estructura'], ['ajustes', 'Ajustes personalizados']]
-                  : [['negocio', 'Negocio'], ['portada', 'Diseño'], ['ajustes', 'Ajustes personalizados']]
+                  ? [['negocio', 'Negocio'], ['portada', 'Estilo'], ['imagenes', 'Imágenes'], ['estructura', 'Estructura'], ['paletas', 'Paletas'], ['ajustes', 'Ajustes personalizados']]
+                  : [['negocio', 'Negocio'], ['portada', 'Diseño'], ['paletas', 'Paletas'], ['ajustes', 'Ajustes personalizados']]
               )
 
   return (
@@ -618,6 +625,10 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
           )}
           {pestanaAjustes === 'estructura' && esCarta && (
             <PanelEstructura carta={carta} esCarta={esCarta} />
+          )}
+          {pestanaAjustes === 'paletas' && (
+            // key: al cargar otra copia (o ninguna), el panel empieza de cero (sin sugerencias de la anterior y con la casilla marcada otra vez)
+            <PanelPaletas key={claveCopia || 'sin-copia'} diseno={diseno} negocio={negocio} colorPrincipal={colorPrincipal} hayCopia={Boolean(copias.copiaCargada)} original={coloresOriginales} guardarOriginal={setColoresOriginales} />
           )}
           {pestanaAjustes === 'ajustes' && (
             <PanelAjustes diseno={diseno} cambiarExtra={cambiarExtra} cambiosExtra={cambiosExtra} datosEnBruto={datosEnBruto} esCarta={esCarta} filas={filas} paletaMarca={paletaMarca} />

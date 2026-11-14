@@ -1,4 +1,4 @@
-import { CalendarCheck, Camera, ChevronLeft, ChevronRight, Clock, Copy, Image as ImageIcon, LayoutTemplate, List, Save, Share2, SlidersHorizontal, Star, Store } from 'lucide-react'
+import { CalendarCheck, Camera, ChevronLeft, ChevronRight, Clock, Copy, Image as ImageIcon, LayoutTemplate, List, Palette, Save, Share2, SlidersHorizontal, Star, Store } from 'lucide-react'
 import { BOTON } from '../components/panel'
 
 /* Las piezas del editor nuevo de móvil (Nuevo perfil, menos de 768 px): la pantalla de inicio, la fila de arriba de la pantalla del Asistente, la fila de iconos
@@ -13,6 +13,7 @@ const ICONO_GRUPO = {
   horario: Clock,
   reserva: CalendarCheck,
   resena: Star,
+  paletas: Palette,
   ajustes: SlidersHorizontal,
   imagenes: Camera,
   estructura: LayoutTemplate,
