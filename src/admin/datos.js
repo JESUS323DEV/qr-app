@@ -7,7 +7,7 @@ export const LIMPIAR_FICHA = { 'hero.titulo': '', 'hero.destacado': '', 'hero.br
 
 // Datos que no se tocan desde aquí: estructura, diseño, direcciones internas, tipografías...
 // (barra es el estilo de pestañas: se elige en el bloque Diseño, con su selector)
-const SALTAR = new Set(['slug', 'demo', 'copia', 'diseno', 'barra', 'portada', 'perfil', 'tipo', 'platform', 'tematica', 'sector', 'negocio', 'google', 'family', 'idiomas', 'alergenos', 'alt', 'botonA'])
+const SALTAR = new Set(['slug', 'demo', 'copia', 'diseno', 'barra', 'portada', 'perfil', 'tipo', 'platform', 'tematica', 'tematicaNegocio', 'sector', 'negocio', 'google', 'family', 'idiomas', 'alergenos', 'alt', 'botonA'])
 
 const CLAVES_FOTO = new Set(['src', 'foto', 'fotos', 'imagen', 'img', 'logo', 'poster', 'captura'])
 

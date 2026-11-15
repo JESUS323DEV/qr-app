@@ -3,12 +3,12 @@ import { aplicar } from '../../lib/ediciones'
 import { cambiosDeIA, camposParaIA, estructuraCarta, sinGuionLargo } from '../ia'
 import { getNegocio } from '../../negocios'
 import { llamar } from '../comun'
-import { ajustarMaximos, camposQueRellena, ordenDeColores, ordenDeFotos, ordenDeTextos } from './repartirColores'
+import { ajustarMaximos, camposQueRellena, ordenDeCarta, ordenDeColores, ordenDeFotos, ordenDeTextos } from './repartirColores'
 
 // El asistente escribe los textos y busca las fotos sobre el diseño armado: devuelve los cambios (sin tocar nombre, diseño ni portada). Solo lee los datos que se le pasan.
 // conColores (modo "terminar" de una miniweb): solo rellena Inicio, Horario y Reservar (el menú y los servicios no se tocan) y pinta también los colores
 export default async function redactarPerfil(datos, base, cambios, nombreCrear, avisar, { conColores = false } = {}) {
-  const { cartaBase, cuento, esCarta, infoImagen, producto, referencia } = datos
+  const { cartaBase, cuento, esCarta, infoImagen, producto, referencia, tipoCarta } = datos
   const datosBase = esCarta ? cartaBase : getNegocio(base)
   const preparada = aplicar(datosBase, cambios)
   const todos = camposParaIA(preparada)
@@ -18,7 +18,7 @@ export default async function redactarPerfil(datos, base, cambios, nombreCrear, 
     paso: 'copy',
     peticion:
       (infoImagen ? `${cuento.trim()}\n\nDatos leídos de la imagen de referencia de la marca (úsalos tal cual):\n${infoImagen}`.trim() : cuento.trim() || 'Sin más indicaciones.') +
-      (conColores ? ordenDeTextos(campos) + ordenDeFotos(campos) + ordenDeColores(referencia) : ''),
+      (conColores ? (esCarta ? ordenDeCarta(tipoCarta) : ordenDeTextos(campos)) + ordenDeFotos(campos) + ordenDeColores(referencia, esCarta) : ''),
     perfil: producto,
     nombre: nombreCrear,
     campos,

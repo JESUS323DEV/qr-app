@@ -55,7 +55,17 @@ export function ordenDeFotos(campos) {
 }
 
 // La paleta de la marca va a los selectores del Editor (principal, acento, fondo y texto)
-const PALETA = { 'theme.colors.primary': 'principal', 'theme.colors.accent': 'acento', 'theme.colors.bg': 'fondo', 'theme.colors.text': 'texto' }
+const PALETA = {
+  'theme.colors.primary': 'principal',
+  'theme.colors.accent': 'acento',
+  'theme.colors.bg': 'fondo',
+  'theme.colors.text': 'texto',
+  // En una carta, los colores de la marca están en marca.theme.colors
+  'marca.theme.colors.primary': 'principal',
+  'marca.theme.colors.accent': 'acento',
+  'marca.theme.colors.bg': 'fondo',
+  'marca.theme.colors.text': 'texto',
+}
 
 // Reparte los colores que ha pintado la IA: la paleta, los colores sueltos de la miniweb (menú, redes...) con la clave del catálogo, y el resto de cambios tal cual
 export function repartirColores(cambios) {
@@ -71,12 +81,20 @@ export function repartirColores(cambios) {
 }
 
 // Lo que se le pide a la IA cuando también pinta los colores: la orden y, si hay logo, sus colores exactos
-export function ordenDeColores(referencia) {
+export function ordenDeColores(referencia, esCarta = false) {
   const deLogo = (referencia?.colores ?? [])
     .slice(0, 6)
     .filter(c => /^#[0-9A-Fa-f]{6}$/.test(c?.hex))
     .map(c => `${c.hex} (${Number(c.porcentaje) || 0} %)`)
     .join(', ')
+  // En una carta, solo los cuatro colores de la marca (principal, acento, fondo y texto)
+  if (esCarta) {
+    return (
+      '\n\nPinta también los colores: la carta viene en blanco y gris neutro. Cambia solo los cuatro colores de la marca (marca.theme.colors): primary (botones y precios), accent (detalles y nombres de grupo), bg (fondo) y text (texto), ' +
+      'con una paleta coherente con el negocio y de buen contraste: el texto tiene que leerse sobre el fondo y el acento también.' +
+      (deLogo ? ` Colores exactos del logo, úsalos para la paleta en vez de inventar otros parecidos: ${deLogo}.` : '')
+    )
+  }
   return (
     '\n\nPinta también los colores: esta miniweb viene sin colores de marca. Cambia solo los campos de color de la lista (la paleta de la marca y los colores del menú y de las redes), ' +
     'con una paleta coherente con el negocio y de buen contraste: el texto tiene que leerse bien sobre su fondo y los iconos y las letras de las barras sobre el color de su barra.' +
@@ -87,4 +105,13 @@ export function ordenDeColores(referencia) {
     'Letras e iconos de cada barra tienen que contrastar con el fondo de esa barra; el fondo puede ser el color de la marca, uno muy claro de ella o uno oscuro. ' +
     'Los demás colores que ya encajen, déjalos.'
   )
+}
+
+// Lo que se le pide al asistente de una carta: inventarse el contenido (platos u ofertas) con sus precios y las fotos. tipoCarta: 'carta' (menú del día y platos) o 'promociones' (ofertas)
+export function ordenDeCarta(tipoCarta) {
+  const contenido =
+    tipoCarta === 'promociones'
+      ? 'Inventa las ofertas y los servicios de este negocio: rellena las ofertas que hay (nombre, descripción corta, precio y, si tiene sentido, un precio de antes más alto) y tres secciones de servicios con cuatro o cinco servicios cada una, con su nombre, una descripción de una línea y un precio creíble en euros (por ejemplo, «25 €»).'
+      : 'Inventa la carta entera de este negocio: tres secciones (por ejemplo, entrantes, principales y postres, o las que le encajen) con cuatro o cinco platos cada una, cada plato con su nombre, una descripción corta de una línea y un precio creíble en euros (por ejemplo, «8,50 €»); y el menú del día, con su título, cuándo, precio, qué incluye y los platos de cada grupo. Los alérgenos, solo los que sean seguros por los ingredientes.'
+  return `\n\n${contenido} Si el estilo lleva foto por sección o por plato, una búsqueda distinta para cada una, con el tipo de negocio en inglés. No toques el diseño ni la tipografía.`
 }

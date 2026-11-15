@@ -5,6 +5,7 @@ import Img from '../components/Img'
 import { SocialIcon, SocialIconMarca } from '../components/SocialIcons'
 import BotonCompartir, { LugarCompartir } from '../components/BotonCompartir'
 import { enlaceWhatsapp } from '../lib/whatsapp'
+import { tonoDistinto } from '../lib/colorMath'
 import { ALERGENOS, getCarta, rutaCarta } from '../cartas'
 import useVueltaPestanas from '../lib/useVueltaPestanas'
 import { fotoDeRespaldo, fotosDe, tipoComun } from '../fichas/escenas'
@@ -698,7 +699,8 @@ function PaginaPortada({ pestana, cuerpo, negocio, lema, portada, heroBase, inic
   // Con las redes bajo el botón, la fila es una barra con el color de la barra de redes (hero.colorRedes o, sin él, el del
   // texto), con los iconos en blanco u oscuro según ese color, como la barra de arriba
   const conBarra = redesEn === 'medio' && hayRedes
-  const { fondo: fondoRedes, iconos: colorIconos } = coloresRedes(heroBase)
+  const { cabecera } = useContext(ColoresMiniweb)
+  const { fondo: fondoRedes, iconos: colorIconos } = coloresRedes(heroBase, cabecera)
   // El fondo de toda la portada (hero.colores.fondoPortada; el antiguo fondoInicio): en Polaroid pinta todo, en Galería y
   // Mosaico el fondo de alrededor, y en Editorial y Diagonal el bloque del texto, porque la foto tapa el resto
   const fondoPortada = heroBase.colores?.fondoPortada ?? heroBase.fondoInicio
@@ -868,10 +870,13 @@ const esClaro = color => {
 // encima de él si está abajo, sea cual sea el sitio elegido
 const lugarRedes = hero => (hero.redesVinculadas ? 'vinculada' : ({ barra: 'arriba', boton: 'medio' })[hero.redesEn] ?? hero.redesEn ?? 'arriba')
 
-// Los colores de la barra de redes: el fondo elegido (hero.colores.redesFondo o el antiguo hero.colorRedes) o, sin él, el
-// de la cabecera; y los iconos, el elegido (hero.colores.redesIconos) o blanco u oscuro solos según ese fondo
-function coloresRedes(hero) {
-  const fondo = hero.colores?.redesFondo ?? hero.colorRedes ?? null
+// Los colores de la barra de redes: el fondo elegido (hero.colores.redesFondo o el antiguo hero.colorRedes) o, sin él, un tono distinto del de la barra del
+// menú (el elegido o el de la cabecera): la barra de redes nunca es igual que el menú de navegación. Los iconos, el elegido (hero.colores.redesIconos) o
+// blanco u oscuro solos según ese fondo. cabecera: el color de la cabecera de la marca (theme.colors.header o, sin él, el principal)
+function coloresRedes(hero, cabecera) {
+  const elegido = hero.colores?.redesFondo ?? hero.colorRedes ?? null
+  const menu = hero.colores?.menuFondo ?? cabecera
+  const fondo = elegido ?? (menu ? tonoDistinto(menu) : null)
   const clara = esClaro(fondo)
   const iconos = hero.colores?.redesIconos ?? (clara ? 'rgba(20, 20, 20, 0.85)' : 'rgba(255, 255, 255, 0.85)')
   return { fondo, clara, iconos }
@@ -880,8 +885,9 @@ function coloresRedes(hero) {
 // La barra de redes, debajo del menú: hero.redesArriba
 function BarraRedes({ hero, redes, redesTexto, nombre, className = '' }) {
   // Con las redes en lateral o en medio, no hay barra aquí (la pintan la portada)
+  const { cabecera } = useContext(ColoresMiniweb)
   if (!hero.redesArriba || !redes?.length || ['lateral', 'medio'].includes(lugarRedes(hero))) return null
-  const { fondo, clara, iconos } = coloresRedes(hero)
+  const { fondo, clara, iconos } = coloresRedes(hero, cabecera)
   return (
     <div
       className={`flex items-center justify-between gap-[1rem] px-[1.25rem] py-[0.45rem] ${fondo ? '' : 'bg-demo-header'} ${clara ? 'text-[#141414]' : 'text-white'} ${hero.bordes ? 'border-b border-[#D9D9D4]' : ''} ${className}`}

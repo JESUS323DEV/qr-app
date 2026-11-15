@@ -187,9 +187,15 @@ export function ImagenesPorPestana({ original, cambios, cambiar, tipos, soloOtra
     // Una carta (con secciones): sus fotos por zonas, la portada, el menú del día, las ofertas y cada sección con sus platos
     const deCarta = Array.isArray(datos.secciones)
     const zonas = new Map()
+    // Qué fotos pinta cada estilo de carta: Inmersiva la de fondo y Base la de arriba (la misma `foto`); Revista una por sección; Polaroid y Galería una por plato;
+    // el menú del día y las ofertas, en todos. Solo se enseñan los huecos que el estilo elegido pinta (como en la miniweb, con las fotos de cada diseño)
+    const estiloCarta = datos.diseno
+    const usaFotoGeneral = !['galeria', 'polaroid', 'revista'].includes(estiloCarta)
+    const usaFotoSecciones = estiloCarta === 'revista'
+    const usaFotoPlatos = ['galeria', 'polaroid'].includes(estiloCarta)
     const zonaDe = ruta => {
       const [primero, indice] = ruta.split('.')
-      if (primero === 'foto') return ['0', 'Foto de fondo']
+      if (primero === 'foto') return ['0', estiloCarta === 'inmersiva' ? 'Foto de fondo' : 'Foto de arriba']
       if (primero === 'menuDia') return ['1', 'Menú del día']
       if (primero === 'ofertas') return ['2', 'Ofertas']
       if (primero === 'secciones') return [`3-${indice}`, datos.secciones[Number(indice)]?.nombre ?? `Sección ${Number(indice) + 1}`]
@@ -199,6 +205,9 @@ export function ImagenesPorPestana({ original, cambios, cambiar, tipos, soloOtra
     const hayListaOfertas = Array.isArray(datos.ofertas?.fotos) && datos.ofertas.fotos.length > 0
     for (const c of fotos) {
       if (hayListaOfertas && c.ruta === 'ofertas.foto') continue
+      // En una carta, la foto de cada sección solo la pinta Revista y la de cada plato, Polaroid y Galería
+      if (deCarta && /^secciones\.\d+\.foto$/.test(c.ruta) && !usaFotoSecciones) continue
+      if (deCarta && /^secciones\.\d+\.platos\.\d+\.foto$/.test(c.ruta) && !usaFotoPlatos) continue
       const m = c.ruta.match(/^hero\.pestanas\.(\d+)\./)
       if (m) porPestana.set(Number(m[1]), [...(porPestana.get(Number(m[1])) ?? []), c])
       else if (deCarta) {
@@ -206,8 +215,8 @@ export function ImagenesPorPestana({ original, cambios, cambiar, tipos, soloOtra
         zonas.set(clave, { clave, titulo, campos: [...(zonas.get(clave)?.campos ?? []), c] })
       } else otras.push(c)
     }
-    // En Menú y ofertas solo se cambian las fotos del menú del día y de las ofertas, y la del fondo cuando el estilo es Inmersiva (la única que la pinta); no las secciones de la carta de platos (zonas '3-...')
-    if (deCarta) return [...zonas.values()].filter(z => (z.clave !== '0' || datos.diseno === 'inmersiva') && !z.clave.startsWith('3-')).sort((x, y) => x.clave.localeCompare(y.clave, 'es', { numeric: true }))
+    // En Menú y ofertas, los huecos de foto del estilo elegido: la de arriba o de fondo (Base e Inmersiva), la del menú del día, la de las ofertas, la de cada sección (Revista) y la de cada plato (Polaroid y Galería)
+    if (deCarta) return [...zonas.values()].filter(z => z.clave !== '0' || usaFotoGeneral).sort((x, y) => x.clave.localeCompare(y.clave, 'es', { numeric: true }))
     const todos = [
       ...[...porPestana.entries()].sort((a, b) => a[0] - b[0]).map(([i, campos]) => ({ clave: `p${i}`, titulo: pestanas[i]?.texto ?? `Pestaña ${i + 1}`, campos })),
       ...(otras.length ? [{ clave: 'otras', titulo: 'Otras imágenes', campos: otras }] : []),

@@ -1,12 +1,13 @@
 import { useState } from 'react'
-import { PLANTILLAS } from '../../plantillas'
 
 // El diseño de la miniweb (y el producto y la temática elegidos): portada, formato, montaje, corte, barra, horario, colores y estructura. Cada dato con su función para cambiarlo, tal como los usa NuevoPerfil
 export default function usePerfilDiseno() {
-  const [tema, setTema] = useState(PLANTILLAS[0].clave)
-  // Qué temáticas se ven en la fila de iconos: 5, o todas con el +
-  // Si la lista de temáticas del grupo elegido (Restauración, Belleza...) está abierta
-  const [subTemas, setSubTemas] = useState(true)
+  // La base de contenido es siempre el esqueleto en blanco ('en-blanco'): todo se crea desde cero, sin ninguna demo de partida
+  const [tema, setTema] = useState('en-blanco')
+  // La temática del negocio: solo una etiqueta para organizar las webs ('' mientras no se elige; no carga contenido)
+  const [tematica, setTematica] = useState('')
+  // Si la lista de temáticas está abierta (cerrada hasta que se toca el botón Desde 0)
+  const [subTemas, setSubTemas] = useState(false)
   const [producto, setProducto] = useState('miniweb')
   const [hero, setHero] = useState('polaroid')
   const [barra, setBarra] = useState('')
@@ -44,5 +45,5 @@ export default function usePerfilDiseno() {
   const [masDisenos, setMasDisenos] = useState(false)
   // Solo en miniwebs: los colores uno por uno (clave del catálogo → color); los que no están, en automático
   const [coloresMini, setColoresMini] = useState({})
-  return { tema, setTema, subTemas, setSubTemas, producto, setProducto, hero, setHero, barra, setBarra, corte, setCorte, subAbierta, setSubAbierta, formato, setFormato, disposicion, setDisposicion, composicion, setComposicion, distribucion, setDistribucion, pase, setPase, montaje, setMontaje, horarioMini, setHorarioMini, horarioVar, setHorarioVar, filtroFoto, setFiltroFoto, tamanoNombre, setTamanoNombre, cabecera, setCabecera, estructura, setEstructura, cartaMini, setCartaMini, masDisenos, setMasDisenos, coloresMini, setColoresMini }
+  return { tema, setTema, tematica, setTematica, subTemas, setSubTemas, producto, setProducto, hero, setHero, barra, setBarra, corte, setCorte, subAbierta, setSubAbierta, formato, setFormato, disposicion, setDisposicion, composicion, setComposicion, distribucion, setDistribucion, pase, setPase, montaje, setMontaje, horarioMini, setHorarioMini, horarioVar, setHorarioVar, filtroFoto, setFiltroFoto, tamanoNombre, setTamanoNombre, cabecera, setCabecera, estructura, setEstructura, cartaMini, setCartaMini, masDisenos, setMasDisenos, coloresMini, setColoresMini }
 }

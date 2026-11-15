@@ -1,3 +1,5 @@
+import { tonoDistinto } from './colorMath'
+
 /* Catálogo de los colores de una miniweb que se eligen uno por uno (se guardan en hero.colores, por su clave). Lo leen el
    panel (el editor de colores de Nuevo perfil y del editor de un perfil) y el asistente de IA: cada color hace una sola cosa,
    se llama por lo que pinta y, sin elegir, la pieza se queda con el suyo del diseño (el texto del menú y el del botón, en
@@ -93,7 +95,8 @@ export function coloresAutomaticos(theme, hero = {}, elegidos = {}) {
   const cabecera = hex6(c.header, principal)
   const surface = hex6(c.surface, bg)
   const menuFondo = hex6(elegidos.menuFondo, cabecera)
-  const redesFondo = hex6(elegidos.redesFondo, hero.colorRedes ? hex6(hero.colorRedes, cabecera) : cabecera)
+  // La barra de redes, sin color elegido, es un tono distinto del menú (nunca igual que él), como la pinta la miniweb
+  const redesFondo = hex6(elegidos.redesFondo, hero.colorRedes ? hex6(hero.colorRedes, cabecera) : tonoDistinto(menuFondo))
   const botonFondo = hex6(elegidos.botonFondo, acento)
   // En Polaroid los textos van en blanco u oscuro según el fondo de la portada (el elegido o la cabecera); en los demás, el color del texto
   const textoPortada = hero.portada === 'polaroid' ? oscuroOBlanco(hex6(elegidos.fondoPortada, cabecera)) : texto

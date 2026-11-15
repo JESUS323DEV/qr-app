@@ -417,7 +417,7 @@ function Carta({ carta, negocio, demo = false, incrustada = false, grupoQr = nul
   if (carta.diseno === 'inmersiva') {
     return (
       <>
-        <CartaInmersiva carta={carta} negocio={negocio} foto={carta.foto ?? fotoDe(negocio)} />
+        <CartaInmersiva carta={carta} negocio={negocio} foto={carta.foto || fotoDe(negocio)} />
         {navegacion}
       </>
     )
@@ -463,7 +463,7 @@ function Carta({ carta, negocio, demo = false, incrustada = false, grupoQr = nul
         {/* Foto protagonista, con el idioma arriba y el título ("Carta" y el nombre) abajo */}
         {/* La franja de la foto ocupa el alto que sobra después del menú (entre 7 y 18 rem): así el menú siempre cabe y la foto se queda con el resto */}
         <div className="relative min-h-[7rem] max-h-[18rem] flex-[1_1_0%] overflow-hidden">
-          <Img src={carta.foto ?? fotoDe(negocio)} alt="" className="absolute inset-0 h-full w-full object-cover" />
+          <Img src={carta.foto || fotoDe(negocio)} alt="" className="absolute inset-0 h-full w-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/25" />
 
           {/* El enlace a la miniweb, si va a la izquierda: arriba a la izquierda de la foto */}

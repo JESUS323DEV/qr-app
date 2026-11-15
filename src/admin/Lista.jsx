@@ -46,7 +46,7 @@ export function Lista({ filas, abrir, recargar, copia }) {
     const b = i.acento || colores?.accent
     const producto = esCarta ? (i.tipoCarta === 'promociones' ? 'Ofertas' : 'Menú del día') : 'Miniweb'
     const diseno = esCarta ? Object.values(FAMILIAS).find(x => x.carta === i.estilo)?.nombre : HEROS[i.hero]?.nombre
-    const tematica = PLANTILLAS.find(p => p.clave === i.tema)?.nombre
+    const tematica = i.tematica === 'promociones' ? 'Promociones' : PLANTILLAS.find(p => p.clave === (i.tematica || i.tema))?.nombre
     // La carta que pinta el menú de una miniweb: una de las hechas, una exportada o, sin elegir, el menú propio de la miniweb
     const cartaDelMenu = !esCarta
       ? i.cartaMini

@@ -12,15 +12,16 @@ import { DISENO_IA_ACTIVO } from './modoAsistente'
 // usePerfilAcciones: sacado de NuevoPerfil.jsx. Las acciones del Editor (abrir una copia, guardar, crear, cambiar de producto...). Recibe en "datos" el estado de los hooks y lo que
 // se deduce de él, y devuelve las funciones.
 export default function usePerfilAcciones(datos) {
-  const { abrir, armar, cambiosExtra, cambiosIA, captura, cartaBase, copiaCargada, creando, cuento, disenando, esCarta, etiqueta, filas, hero, instantanea, marcarBase, nombre, producto, recargar, redactar, referencia, setAcento, setAviso, setBarra, setCabecera, setCambiosExtra, setCambiosIA, setCartaMini, setColorFiltroCarta, setColorPrecio, setColorPrecioTexto, setColorTexto, setColoresCarta, setColoresMini, setComposicion, setCopiaCargada, setCorte, setCreando, setCuento, setDetallePrecio, setDisenando, setDisposicion, setDistribucion, setEnlaceNegocio, setError, setEstilo, setEstructura, setEtiqueta, setFiltroCarta, setFiltroFoto, setFondo, setFondo2, setFormato, setGenerado, setHero, setHorarioIA, setHorarioMini, setHorarioVar, setInfoImagen, setLema, setLetra, setLogo, setMontaje, setNombre, setPase, setPestana, setPreguntaSalir, setPrincipal, setProducto, setRedactando, setResumenDiseno, setSubCarta, setTamanoNombre, setTamanoPrecio, setTema, setTextoSuave, setTextosMini, setTipoCarta, setVersionBase, setVersionIA, sinGuardar, textosPrevia, tipoCarta } = datos
+  const { tematica, setTematica, abrir, armar, cambiosExtra, cambiosIA, captura, cartaBase, copiaCargada, creando, cuento, disenando, esCarta, etiqueta, filas, hero, instantanea, marcarBase, nombre, producto, recargar, redactar, referencia, setAcento, setAviso, setBarra, setCabecera, setCambiosExtra, setCambiosIA, setCartaMini, setColorFiltroCarta, setColorPrecio, setColorPrecioTexto, setColorTexto, setColoresCarta, setColoresMini, setComposicion, setCopiaCargada, setCorte, setCreando, setCuento, setDetallePrecio, setDisenando, setDisposicion, setDistribucion, setEnlaceNegocio, setError, setEstilo, setEstructura, setEtiqueta, setFiltroCarta, setFiltroFoto, setFondo, setFondo2, setFormato, setGenerado, setHero, setHorarioIA, setHorarioMini, setHorarioVar, setInfoImagen, setLema, setLetra, setLogo, setMontaje, setNombre, setPase, setPestana, setPreguntaSalir, setPrincipal, setProducto, setRedactando, setResumenDiseno, setSubCarta, setTamanoNombre, setTamanoPrecio, setTema, setTextoSuave, setTextosMini, setTipoCarta, setVersionBase, setVersionIA, sinGuardar, textosPrevia, tipoCarta } = datos
 
   // El botón del asistente, en dos tiempos: 1) elige el diseño (y el nombre, si falta) y lo pone en los selectores; 2) con esos
   // selectores ya puestos (efecto de más abajo), escribe los textos y busca las fotos. La vista previa lo enseña todo
   const montar = async () => {
     if (!(nombre.trim() || cuento.trim() || referencia || captura) || disenando) return
-    // Miniweb con el diseño ya montado (DISENO_IA_ACTIVO apagado): no se elige diseño; el asistente rellena Inicio, Horario y Reservar y pinta los colores
+    // Con el diseño ya montado (DISENO_IA_ACTIVO apagado), en miniweb y en menú y ofertas: no se elige diseño; en una miniweb el asistente rellena Inicio, Horario y Reservar y pinta
+    // los colores; en una carta se inventa los platos (o las ofertas) con sus precios, busca las fotos y pinta los colores
     // sobre lo que hay cargado. El nombre es obligatorio porque lo usa tal cual (sin el paso de diseño nadie se lo inventa)
-    if (!DISENO_IA_ACTIVO && producto === 'miniweb') {
+    if (!DISENO_IA_ACTIVO) {
       if (!nombre.trim()) {
         setError('Escribe el nombre del negocio: el asistente lo usa tal cual.')
         return
@@ -117,6 +118,8 @@ export default function usePerfilAcciones(datos) {
   const pasarAProducto = clave => {
     if (copiaCargada) setCopiaCargada(null)
     setProducto(clave)
+    // La etiqueta de temática de un producto no vale para el otro (miniweb y menú y ofertas tienen listas distintas)
+    setTematica('')
     // Banner y Ficha no valen de portada de una miniweb: si estaba uno elegido, pasa a Editorial
     if (clave === 'miniweb' && SIN_PORTADA_MINIWEB.includes(hero)) setHero('editorial')
     // Cambiar de producto no es un cambio sin guardar: lo de partida pasa a ser el del producto nuevo (si no, salía el aviso al elegir una copia sin haber tocado nada)
@@ -139,7 +142,12 @@ export default function usePerfilAcciones(datos) {
     setAviso('')
     setPestana('personalizar')
     setProducto(i.producto ?? 'miniweb')
-    setTema(i.tema ?? PLANTILLAS[0].clave)
+    setTema(i.tema ?? 'en-blanco')
+    // La etiqueta de temática. Las copias de antes de ella usaban la temática como base: si no era el esqueleto en blanco, esa pasa a ser su etiqueta
+    // En menú y ofertas, las etiquetas son Restaurante y Promociones (según el tipo de carta); en miniweb, la temática del negocio
+    setTematica(
+      i.tematica ?? ((i.producto ?? 'miniweb') === 'carta' ? (i.tipoCarta === 'promociones' ? 'promociones' : 'restaurante') : i.tema && i.tema !== 'en-blanco' ? i.tema : ''),
+    )
     // Las copias de antes de este selector: la carta de la temática que tenían decide el tipo (Laca, promociones; el resto, carta)
     setSubCarta(i.subCarta ?? 'fila')
     setColorPrecio(i.colorPrecio ?? '')
@@ -249,6 +257,11 @@ export default function usePerfilAcciones(datos) {
     const esMuestra = muestra === true
     const nombreCrear = nombre.trim() || (esMuestra ? 'Muestra' : '')
     if (!nombreCrear || creando) return
+    // En Menú y ofertas, sin perfil (temática) no se crea nada: decide el tipo de carta
+    if (esCarta && !tematica) {
+      setError('Elige primero la temática (Desde 0): decide si la carta es de menú del día o de ofertas.')
+      return
+    }
     setAviso('')
     setCreando('Creando...')
     setError('')

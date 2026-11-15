@@ -53,7 +53,11 @@ export default function PanelAsistente({ diseno, carta, negocio, cambiarProducto
               type="button"
               aria-pressed={tipoCarta === t.clave}
               disabled={Boolean(disenando) || Boolean(creando)}
-              onClick={() => setTipoCarta(t.clave)}
+              onClick={() => {
+                setTipoCarta(t.clave)
+                // El tipo y la etiqueta de temática van juntos en Menú y ofertas
+                diseno.setTematica(t.clave === 'promociones' ? 'promociones' : 'restaurante')
+              }}
               className={`rounded-[0.55rem] py-[0.45rem] text-[0.9rem] font-semibold disabled:opacity-40 ${tipoCarta === t.clave ? 'bg-white shadow-[0_0.05rem_0.2rem_rgb(0_0_0/0.15)]' : 'text-zinc-600'}`}
             >
               {t.clave === 'carta' ? 'Menú del día' : 'Ofertas'}
@@ -107,7 +111,7 @@ export default function PanelAsistente({ diseno, carta, negocio, cambiarProducto
         </div>
       )}
       <button type="button" onClick={montar} disabled={!(nombre.trim() || cuento.trim() || referencia || captura) || Boolean(disenando) || Boolean(creando)} className={BOTON}>
-        {disenando ?? (producto === 'miniweb' && !DISENO_IA_ACTIVO ? 'Terminar con el asistente (textos, fotos y colores)' : 'Montar el diseño con el asistente')}
+        {disenando ?? (!DISENO_IA_ACTIVO ? 'Terminar con el asistente (textos, fotos y colores)' : 'Montar el diseño con el asistente')}
       </button>
       {resumenDiseno && <p className="text-[0.85rem] font-semibold text-zinc-800">{resumenDiseno}</p>}
     </div>

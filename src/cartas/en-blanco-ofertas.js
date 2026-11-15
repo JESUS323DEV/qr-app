@@ -9,6 +9,8 @@ export default {
   perfil: 'belleza',
   idiomas: ['ES'],
   textoCarta: 'Servicios',
+  // Huecos de foto vacíos (los pinta el estilo que se elija: arriba o de fondo, la de las ofertas, una por sección o una por servicio); las vacías no se pintan
+  foto: '',
 
   marca: {
     nombre: 'Nombre del negocio',
@@ -21,6 +23,7 @@ export default {
     texto: 'Ofertas',
     titulo: 'Ofertas',
     cuando: 'Pídelas al reservar tu cita',
+    foto: '',
     lista: [
       { nombre: 'Oferta uno', descripcion: 'Descripción corta de la oferta.', precio: '00 €', antes: '00 €' },
       { nombre: 'Oferta dos', descripcion: 'Descripción corta de la oferta.', precio: '00 €', antes: '00 €' },
@@ -31,18 +34,20 @@ export default {
   secciones: [
     {
       nombre: 'Sección uno',
+      foto: '',
       platos: [
-        { nombre: 'Servicio 1', descripcion: 'Descripción corta del servicio.', precio: '00 €' },
-        { nombre: 'Servicio 2', descripcion: 'Descripción corta del servicio.', precio: '00 €' },
-        { nombre: 'Servicio 3', descripcion: 'Descripción corta del servicio.', precio: '00 €' },
+        { nombre: 'Servicio 1', descripcion: 'Descripción corta del servicio.', precio: '00 €', foto: '' },
+        { nombre: 'Servicio 2', descripcion: 'Descripción corta del servicio.', precio: '00 €', foto: '' },
+        { nombre: 'Servicio 3', descripcion: 'Descripción corta del servicio.', precio: '00 €', foto: '' },
       ],
     },
     {
       nombre: 'Sección dos',
+      foto: '',
       platos: [
-        { nombre: 'Servicio 1', descripcion: 'Descripción corta del servicio.', precio: '00 €' },
-        { nombre: 'Servicio 2', descripcion: 'Descripción corta del servicio.', precio: '00 €' },
-        { nombre: 'Servicio 3', descripcion: 'Descripción corta del servicio.', precio: '00 €' },
+        { nombre: 'Servicio 1', descripcion: 'Descripción corta del servicio.', precio: '00 €', foto: '' },
+        { nombre: 'Servicio 2', descripcion: 'Descripción corta del servicio.', precio: '00 €', foto: '' },
+        { nombre: 'Servicio 3', descripcion: 'Descripción corta del servicio.', precio: '00 €', foto: '' },
       ],
     },
   ],

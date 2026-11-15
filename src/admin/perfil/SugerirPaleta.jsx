@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { opcion } from '../../components/panel'
-import { armarPaletaDeModo, esHex6, principalAlAzar, rolesDePaleta } from './paletasSugeridas'
+import { armarPaletaDeModo, coloresDeCarta, esHex6, principalAlAzar, rolesDePaleta } from './paletasSugeridas'
 
 // Sugerir paleta: propone paletas completas (principal, acento, fondo y texto) a partir de un color principal. Los colores relacionados los pide a TheColorAPI
 // (gratis, sin clave), uno por cada modo; el fondo y el texto se calculan aquí con contraste comprobado. Al tocar una paleta se aplican los cuatro colores de golpe.
@@ -12,7 +12,7 @@ const MODOS = [
   ['monochrome', 'Mismo tono'],
 ]
 
-export default function SugerirPaleta({ principal, aplicar, bloqueado = false }) {
+export default function SugerirPaleta({ principal, aplicar, bloqueado = false, modo = 'miniweb' }) {
   const [oscuro, setOscuro] = useState(false)
   // Soltar los colores puestos a mano al aplicar (menú, fondos, botón...): así todo sigue a la paleta nueva. Marcada por defecto
   const [soltar, setSoltar] = useState(true)
@@ -79,24 +79,56 @@ export default function SugerirPaleta({ principal, aplicar, bloqueado = false })
       {armadas.length > 0 && (
         <div className="grid grid-cols-2 gap-[0.6rem]">
           {armadas.map(p => {
+            // Menú y ofertas: una maqueta de carta (nombre, menú del día con su precio, sección, plato y una tarjeta) y los colores que se aplican
+            if (modo === 'carta') {
+              const c = coloresDeCarta(p)
+              return (
+                <button key={p.nombre} type="button" onClick={() => aplicar(p, soltar)} aria-label={`Aplicar la paleta ${p.nombre}`} className="grid gap-[0.45rem] rounded-[0.7rem] p-[0.5rem] text-left ring-1 ring-zinc-300 hover:ring-zinc-500">
+                  <span className="text-[0.78rem] font-semibold text-zinc-500">{p.nombre}</span>
+                  <span className="grid gap-[0.25rem] overflow-hidden rounded-[0.5rem] p-[0.5rem]" style={{ background: p.fondo }}>
+                    <span className="text-[0.95rem] font-bold leading-none" style={{ color: p.titulo }}>Dulce Aroma</span>
+                    <span className="flex items-baseline justify-between gap-[0.3rem]">
+                      <span className="text-[0.7rem] font-semibold" style={{ color: p.titulo }}>Menú del día</span>
+                      <span className="text-[0.8rem] font-bold" style={{ color: p.principal }}>14,90 €</span>
+                    </span>
+                    <span className="text-[0.62rem] font-semibold italic" style={{ color: p.acento }}>Primeros</span>
+                    <span className="rounded-[0.3rem] px-[0.35rem] py-[0.25rem]" style={{ background: c.fondo2 }}>
+                      <span className="block text-[0.62rem]" style={{ color: p.texto }}>Crema de calabaza</span>
+                      <span className="block text-[0.55rem]" style={{ color: c.textoSuave }}>Con picatostes</span>
+                    </span>
+                  </span>
+                  <span className="grid gap-[0.1rem] text-[0.65rem] leading-[1.3] text-zinc-500">
+                    <span>Principal (botones y precios): {p.principal.toUpperCase()}</span>
+                    <span>Acento (secciones): {p.acento.toUpperCase()}</span>
+                    <span>Fondo: {p.fondo.toUpperCase()}, tarjetas {c.fondo2.toUpperCase()}</span>
+                    <span>Texto título: {p.titulo.toUpperCase()}</span>
+                    <span>Texto normal: {p.texto.toUpperCase()}, suave {c.textoSuave.toUpperCase()}</span>
+                  </span>
+                </button>
+              )
+            }
             // El color exacto de cada pieza, tal como se escribirá al aplicar (los mismos que rolesDePaleta)
             const r = rolesDePaleta(p)
             return (
               <button key={p.nombre} type="button" onClick={() => aplicar(p, soltar)} aria-label={`Aplicar la paleta ${p.nombre}`} className="grid gap-[0.45rem] rounded-[0.7rem] p-[0.5rem] text-left ring-1 ring-zinc-300 hover:ring-zinc-500">
                 <span className="text-[0.78rem] font-semibold text-zinc-500">{p.nombre}</span>
-                {/* Maqueta: la barra del menú arriba, el cuerpo con el texto y los botones (el de la portada y Compartir) y la barra de redes abajo */}
+                {/* Maqueta, en el orden de la página: el menú arriba; el cuerpo con el título, el texto normal y los botones; la zona de la reseña con su tarjeta; y la barra de redes */}
                 <span className="grid overflow-hidden rounded-[0.5rem]" style={{ background: p.fondo }}>
                   <span className="flex gap-[0.6rem] px-[0.5rem] py-[0.3rem] text-[0.6rem] font-bold" style={{ background: r.menuFondo }}>
                     <span style={{ color: r.menuTexto, boxShadow: `0 2px 0 ${r.menuSubrayado}` }}>Inicio</span>
                     <span style={{ color: r.menuInactivo }}>Menú</span>
                     <span style={{ color: r.menuInactivo }}>Horario</span>
                   </span>
-                  <span className="grid gap-[0.35rem] p-[0.5rem]">
-                    <span className="text-[0.9rem] font-bold leading-none" style={{ color: r.horarioTitulo }}>Aa texto</span>
-                    <span className="flex items-center gap-[0.3rem]">
+                  <span className="grid gap-[0.25rem] p-[0.5rem]">
+                    <span className="text-[0.9rem] font-bold leading-none" style={{ color: r.titulo }}>Aa título</span>
+                    <span className="text-[0.65rem] leading-[1.3]" style={{ color: r.descripcion }}>Texto normal de la descripción</span>
+                    <span className="mt-[0.1rem] flex items-center gap-[0.3rem]">
                       <span className="rounded-[0.3rem] px-[0.45rem] py-[0.2rem] text-[0.6rem] font-bold" style={{ background: r.botonFondo, color: r.boton }}>Ver carta</span>
                       <span className="rounded-full bg-black/45 px-[0.45rem] py-[0.2rem] text-[0.6rem] font-bold text-white">Compartir</span>
                     </span>
+                  </span>
+                  <span className="px-[0.5rem] py-[0.35rem]" style={{ background: r.fondoResena }}>
+                    <span className="block rounded-[0.35rem] bg-white py-[0.25rem] text-center text-[0.55rem] font-semibold text-zinc-700">Valóranos en Google</span>
                   </span>
                   <span className="flex items-center justify-center gap-[0.35rem] px-[0.5rem] py-[0.3rem]" style={{ background: r.redesFondo }}>
                     {[0, 1, 2].map(i => (
@@ -104,14 +136,16 @@ export default function SugerirPaleta({ principal, aplicar, bloqueado = false })
                     ))}
                   </span>
                 </span>
-                {/* Lo que pinta cada color, con su código */}
+                {/* Los siete colores, con su código */}
                 <span className="grid gap-[0.1rem] text-[0.65rem] leading-[1.3] text-zinc-500">
-                  <span>Menú: barra {r.menuFondo.toUpperCase()}, letras {r.menuTexto.toUpperCase()}, sin elegir {r.menuInactivo.toUpperCase()}</span>
-                  <span>Redes: barra {r.redesFondo.toUpperCase()}, iconos {r.redesIconos.toUpperCase()}</span>
-                  <span>Botón: {r.botonFondo.toUpperCase()}, letras {r.boton.toUpperCase()}</span>
+                  <span>1 Menú: barra {r.menuFondo.toUpperCase()}, letras {r.menuTexto.toUpperCase()}, sin elegir {r.menuInactivo.toUpperCase()}</span>
+                  <span>2 Cuerpo: {p.fondo.toUpperCase()}</span>
+                  <span>3 Redes: barra {r.redesFondo.toUpperCase()}, iconos {r.redesIconos.toUpperCase()}</span>
+                  <span>4 Tarjeta de Google (zona): {r.fondoResena.toUpperCase()}</span>
+                  <span>5 Texto título: {r.titulo.toUpperCase()}</span>
+                  <span>6 Texto normal: {r.descripcion.toUpperCase()}</span>
+                  <span>7 Botón: {r.botonFondo.toUpperCase()}, letras {r.boton.toUpperCase()}</span>
                   <span>Compartir: no cambia (negro translúcido, letras blancas)</span>
-                  <span>Texto: {p.texto.toUpperCase()}</span>
-                  <span>Fondo: {p.fondo.toUpperCase()}</span>
                 </span>
               </button>
             )

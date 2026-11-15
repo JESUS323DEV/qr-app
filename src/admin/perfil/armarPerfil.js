@@ -11,7 +11,7 @@ import { pestanasDeMiniweb } from '../../lib/miniweb'
 /* Arma lo que se guarda al crear (el perfil de partida, su dirección y los cambios del diseño elegido), sin tocar Supabase. Es una función pura: solo lee los datos que
    se le pasan (todo el estado de NuevoPerfil, que sale de sus hooks, y lo que se deduce de él) y devuelve { tipoFila, slug, base, cambios }. */
 export default function armarPerfil(datos, nombreCrear) {
-  const { acento, barra, cartaBase, cartaMini, cartaSlug, colorCabecera, colorDelTexto, colorFiltroCarta, colorFondo, colorPrecio, colorPrecioTexto, colorTexto, coloresCarta, coloresMini, composicion, conCabecera, conTextoExtra, corte, detallePrecio, disposicion, distribucion, enlaceNegocio, esCarta, estilo, filas, filtroCarta, filtroFoto, fondo, fondo2, formato, hero, horarioMini, horarioVar, lema, letra, logoElegido, lugares, montaje, negocioBase, pase, plantilla, principal, producto, subCarta, tamanoNombre, tamanoPrecio, textoBoton, textoExtra, textoGrande, textoPequeno, textoSuave, textosMini } = datos
+  const { tematica, acento, barra, cartaBase, cartaMini, cartaSlug, colorCabecera, colorDelTexto, colorFiltroCarta, colorFondo, colorPrecio, colorPrecioTexto, colorTexto, coloresCarta, coloresMini, composicion, conCabecera, conTextoExtra, corte, detallePrecio, disposicion, distribucion, enlaceNegocio, esCarta, estilo, filas, filtroCarta, filtroFoto, fondo, fondo2, formato, hero, horarioMini, horarioVar, lema, letra, logoElegido, lugares, montaje, negocioBase, pase, plantilla, principal, producto, subCarta, tamanoNombre, tamanoPrecio, textoBoton, textoExtra, textoGrande, textoPequeno, textoSuave, textosMini } = datos
   const tipoFila = esCarta ? 'carta' : 'negocio'
   const ocupadas = new Set([
     ...(filas ?? []).filter(f => f.tipo === tipoFila).map(f => f.slug),
@@ -56,6 +56,8 @@ export default function armarPerfil(datos, nombreCrear) {
     const inicio = inicioCopiaCarta(cartaBase)
     cambios = fusionar(inicio, {
       'marca.nombre': nombreCrear,
+      // La temática del negocio: solo una etiqueta para organizar las webs
+      ...(tematica ? { 'marca.tematicaNegocio': tematica } : {}),
       ...(lema !== null ? { 'marca.lema': lema.trim() } : {}),
       diseno: estilo,
       ...(estilo === 'inmersiva' && subCarta === 'columna' ? { subdiseno: 'columna' } : {}),
@@ -86,6 +88,8 @@ export default function armarPerfil(datos, nombreCrear) {
     base = deChalaquita ? plantilla.miniweb : plantilla.ficha
     cambios = {
       nombre: nombreCrear,
+      // La temática del negocio: solo una etiqueta para organizar las webs
+      ...(tematica ? { tematicaNegocio: tematica } : {}),
       ...(logoElegido ? { logo: logoElegido } : {}),
       // El enlace de "escribir reseña" del Google del negocio: vacío al principio, para que salga el campo en Reseña de Google y se pueda pegar
       ...(getNegocio(base)?.resena?.url ? {} : { 'resena.url': '' }),

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { conFotosDePortada } from '../TextosEditor'
-import { ajustarMaximos, camposQueRellena, ordenDeColores, ordenDeFotos, ordenDeTextos, repartirColores } from './repartirColores'
+import { ajustarMaximos, camposQueRellena, ordenDeCarta, ordenDeColores, ordenDeFotos, ordenDeTextos, repartirColores } from './repartirColores'
 
 describe('huecos de foto del esqueleto', () => {
   it('un Inicio sin fotos se completa con tantos huecos vacíos como pide la portada, y uno con fotos no cambia', () => {
@@ -81,5 +81,39 @@ describe('ordenDeColores', () => {
     expect(ordenDeColores(null)).toContain('menuFondo')
     expect(ordenDeColores(null)).toContain('redesIconos')
     expect(ordenDeColores({ colores: [{ hex: '#C13584', porcentaje: 60 }, { hex: 'mal', porcentaje: 5 }] })).toContain('#C13584 (60 %)')
+  })
+})
+
+describe('asistente de menú y ofertas (modo terminar)', () => {
+  it('repartirColores reconoce la paleta de una carta (marca.theme.colors) y deja el resto', () => {
+    const r = repartirColores({
+      'marca.theme.colors.primary': '#112233',
+      'marca.theme.colors.accent': '#445566',
+      'marca.theme.colors.bg': '#F5F5F5',
+      'marca.theme.colors.text': '#222222',
+      'marca.theme.colors.surface': '#EEEEEE',
+      'marca.nombre': 'Algo',
+    })
+    expect(r.paleta).toEqual({ principal: '#112233', acento: '#445566', fondo: '#F5F5F5', texto: '#222222' })
+    expect(r.resto).toEqual({ 'marca.theme.colors.surface': '#EEEEEE', 'marca.nombre': 'Algo' })
+  })
+
+  it('ordenDeCarta pide platos con precios para el menú y ofertas con servicios para promociones, sin tocar el diseño', () => {
+    expect(ordenDeCarta('carta')).toContain('carta entera')
+    expect(ordenDeCarta('carta')).toContain('menú del día')
+    expect(ordenDeCarta('promociones')).toContain('ofertas')
+    expect(ordenDeCarta('promociones')).toContain('servicios')
+    for (const t of ['carta', 'promociones']) {
+      expect(ordenDeCarta(t)).toContain('No toques el diseño')
+      expect(ordenDeCarta(t)).not.toContain('—')
+    }
+  })
+
+  it('ordenDeColores de una carta habla de los cuatro colores de la marca y no de menú ni redes', () => {
+    const t = ordenDeColores(null, true)
+    expect(t).toContain('marca.theme.colors')
+    expect(t).not.toContain('menuFondo')
+    expect(t).not.toContain('redesFondo')
+    expect(ordenDeColores({ colores: [{ hex: '#C13584', porcentaje: 60 }] }, true)).toContain('#C13584 (60 %)')
   })
 })

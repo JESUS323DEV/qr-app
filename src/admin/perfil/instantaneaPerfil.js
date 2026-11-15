@@ -1,10 +1,11 @@
 // instantaneaPerfil: sacado de NuevoPerfil.jsx. Es una función pura: solo lee los datos que se le pasan (el estado de los hooks y lo que se deduce de él)
 export default function instantaneaPerfil(datos) {
-  const { acento, barra, cabecera, cambiosExtra, cambiosIA, cartaMini, colorFiltroCarta, colorPrecio, colorPrecioTexto, colorTexto, coloresCarta, coloresMini, composicion, corte, cuento, detallePrecio, disposicion, distribucion, enlaceNegocio, estilo, estructura, etiqueta, filtroCarta, filtroFoto, fondo, fondo2, formato, hero, horarioMini, horarioVar, lema, letra, logo, montaje, nombre, pase, principal, producto, resumenDiseno, subCarta, tamanoNombre, tamanoPrecio, tema, textoSuave, textosMini, tipoCarta } = datos
+  const { tematica, acento, barra, cabecera, cambiosExtra, cambiosIA, cartaMini, colorFiltroCarta, colorPrecio, colorPrecioTexto, colorTexto, coloresCarta, coloresMini, composicion, corte, cuento, detallePrecio, disposicion, distribucion, enlaceNegocio, estilo, estructura, etiqueta, filtroCarta, filtroFoto, fondo, fondo2, formato, hero, horarioMini, horarioVar, lema, letra, logo, montaje, nombre, pase, principal, producto, resumenDiseno, subCarta, tamanoNombre, tamanoPrecio, tema, textoSuave, textosMini, tipoCarta } = datos
   return (
     {
     producto,
     tema,
+    tematica,
     tipoCarta,
     subCarta,
     colorPrecio,

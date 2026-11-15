@@ -1,54 +1,9 @@
-/* Paletas completas sugeridas (principal, acento, fondo y texto) a partir de un color principal. Los colores relacionados (para el acento) los da TheColorAPI;
-   el fondo y el texto se calculan aquí a partir del tono del principal, con contraste comprobado, porque la API no mira si el texto se lee. */
+/* Paletas completas sugeridas a partir de un color principal. Los colores relacionados (para el acento) los da TheColorAPI; el resto (fondos, textos,
+   contrastes) se calcula aquí, porque la API no mira si el texto se lee. */
+import { contraste, esHex6, hexAHsl, hslAHex, luminancia, mezclar, tonoDistinto } from '../../lib/colorMath'
 
-const aNumero = hex => [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16))
-const aHex = (r, g, b) => `#${[r, g, b].map(v => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, '0')).join('')}`.toUpperCase()
-
-export const esHex6 = c => /^#[0-9a-f]{6}$/i.test(c ?? '')
-
-// Hex → [h (0 a 360), s (0 a 100), l (0 a 100)]
-export function hexAHsl(hex) {
-  const [r, g, b] = aNumero(hex).map(v => v / 255)
-  const max = Math.max(r, g, b)
-  const min = Math.min(r, g, b)
-  const l = (max + min) / 2
-  const d = max - min
-  if (d === 0) return [0, 0, l * 100]
-  const s = d / (1 - Math.abs(2 * l - 1))
-  const h = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4
-  return [(h * 60 + 360) % 360, s * 100, l * 100]
-}
-
-// [h, s, l] → hex
-export function hslAHex(h, s, l) {
-  const sat = s / 100
-  const lig = l / 100
-  const k = n => (n + h / 30) % 12
-  const a = sat * Math.min(lig, 1 - lig)
-  const f = n => lig - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)))
-  return aHex(f(0) * 255, f(8) * 255, f(4) * 255)
-}
-
-const luminancia = hex => {
-  const [r, g, b] = aNumero(hex).map(v => {
-    const c = v / 255
-    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4
-  })
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b
-}
-
-// Contraste entre dos colores (de 1 a 21)
-export function contraste(a, b) {
-  const [la, lb] = [luminancia(a), luminancia(b)]
-  return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05)
-}
-
-// Mezcla dos colores: t = 0 es el primero y t = 1, el segundo
-export function mezclar(a, b, t) {
-  const [ra, ga, ba] = aNumero(a)
-  const [rb, gb, bb] = aNumero(b)
-  return aHex(ra + (rb - ra) * t, ga + (gb - ga) * t, ba + (bb - ba) * t)
-}
+// Reexportados para quien ya los pedía de aquí
+export { contraste, esHex6, hexAHsl, hslAHex, mezclar, tonoDistinto }
 
 // El color de las letras de las pestañas sin elegir del menú sobre una barra del color dado: un tono de la propia barra empujado hacia blanco (barra oscura) o
 // hacia negro (barra clara), lo justo para que se lean (contraste 4,5 o más) sin igualar del todo a la pestaña elegida. Si no llega, blanco o negro
@@ -61,23 +16,23 @@ export function colorInactivoMenu(fondoBarra) {
   return lado
 }
 
-// Fondo y texto a partir del tono del principal: claro (fondo casi blanco con un toque del tono y texto muy oscuro del mismo tono) u oscuro (al revés)
+/* El fondo y los dos textos (de título y normal) a partir del tono del principal.
+   - Fondo: casi blanco (claro) o casi negro (oscuro) con un toque del tono del principal.
+   - Textos serios: casi grises (saturación de 22 como mucho, nada chillón ni brillante) y de un tono OPUESTO al del principal, para que nunca sean del color de las
+     barras. Se busca la luz que da el contraste pedido sobre el fondo: 10 o más el de título, 7 o más el normal. Si no llega, blanco o negro. */
 export function fondoYTexto(principal, oscuro) {
   const [h, s] = hexAHsl(principal)
   const fondo = oscuro ? hslAHex(h, Math.min(s, 35), 9) : hslAHex(h, Math.min(s, 55) * 0.6, 97)
-  // El texto con carácter: del tono del principal y con color (saturación entre 35 y 70), lo más claro (fondo oscuro) u oscuro (fondo claro) que aún se lea con
-  // contraste 7 o más. Se empieza por una luz alta y se va cerrando hasta que pasa; así se nota el tono (verde, azul, vino...) y no es un casi negro igual en todas
-  const sat = Math.max(35, Math.min(s, 70))
-  let texto = null
-  for (let luz = oscuro ? 84 : 28; oscuro ? luz <= 98 : luz >= 8; luz += oscuro ? 2 : -2) {
-    const c = hslAHex(h, sat, luz)
-    if (contraste(fondo, c) >= 7) {
-      texto = c
-      break
+  const hTexto = (h + 180) % 360
+  const sat = Math.min(22, Math.max(10, s * 0.3))
+  const buscar = minimo => {
+    for (let luz = oscuro ? 62 : 36; oscuro ? luz <= 99 : luz >= 6; luz += oscuro ? 2 : -2) {
+      const c = hslAHex(hTexto, sat, luz)
+      if (contraste(fondo, c) >= minimo) return c
     }
+    return oscuro ? '#FFFFFF' : '#000000'
   }
-  // Si no llega, blanco o negro
-  return { fondo, texto: texto ?? (oscuro ? '#FFFFFF' : '#000000') }
+  return { fondo, texto: buscar(7), titulo: buscar(10) }
 }
 
 // Las letras (blanco u oscuro) que más se leen sobre un fondo, siempre con 4,5 de contraste o más: blanco o el oscuro suave (#141414) y, si con un color medio
@@ -89,36 +44,44 @@ export function letrasSobre(fondo) {
 }
 
 /* Los colores de cada pieza de una miniweb, escritos de forma explícita a partir de una paleta (hero.colores, catálogo en lib/coloresMiniweb.js), para que el
-   resultado no dependa de lo que traiga la demo ni de las reglas del "automático". Cada pieza con su criterio:
-   - Menú y barra de redes: el principal de fondo, letras e iconos con el contraste que más se lee, el subrayado con el acento si se ve sobre la barra, y las pestañas
-     sin elegir con su tono calculado.
-   - Fondo de la portada: el fondo de la paleta (salvo en Polaroid, que es de color de marca por diseño) y detrás de la reseña un tono apenas distinto, para que se vea la tarjeta.
-   - Botones: el acento (portada) y el principal (reservar), con las letras que más se leen.
-   - Horario y Reservar: los textos con el color de texto de la paleta (y el suave en lo secundario).
-   No se tocan: el filtro de la foto, los textos de la portada (van sobre la foto, en blanco por diseño) ni el mapa. */
+   resultado no dependa de lo que traiga la demo ni de las reglas del "automático". Los siete colores de una paleta:
+   1. Menú de navegación: el principal de fondo, con letras que se leen, subrayado con el acento si se ve sobre la barra y pestañas sin elegir con su tono calculado.
+   2. Cuerpo: el fondo de la paleta (la portada, salvo en Polaroid, que es de color de marca por diseño).
+   3. Barra de redes: un tono distinto del menú (más oscuro o más claro, el mismo color), con iconos y texto que se leen.
+   4. Tarjeta de Google: la zona de detrás, con un tono apenas distinto del cuerpo para que se vea la tarjeta.
+   5. Texto de título: el nombre, el texto grande y los títulos del Horario y Reservar.
+   6. Texto normal: el texto pequeño, el lema, el texto extra y el resto de textos del Horario y Reservar.
+   7. Botón principal: el acento, con las letras que más se leen (y el botón de Reservar, el principal).
+   Los textos de la portada que van sobre la foto también llevan estos colores; su base es el blanco del diseño (se vuelve a él quitando el color en el editor).
+   No se tocan: el filtro de la foto ni el mapa. */
 export function rolesDePaleta(p, { polaroid = false } = {}) {
-  const suave = mezclar(p.fondo, p.texto, 0.62)
   const subrayado = contraste(p.acento, p.principal) >= 3 ? p.acento : letrasSobre(p.principal)
+  const redes = tonoDistinto(p.principal)
   return {
     menuFondo: p.principal,
     menuTexto: letrasSobre(p.principal),
     menuSubrayado: subrayado,
     menuInactivo: colorInactivoMenu(p.principal),
-    redesFondo: p.principal,
-    redesIconos: letrasSobre(p.principal),
-    redesTexto: letrasSobre(p.principal),
+    redesFondo: redes,
+    redesIconos: letrasSobre(redes),
+    redesTexto: letrasSobre(redes),
     ...(polaroid ? {} : { fondoPortada: p.fondo }),
     fondoResena: mezclar(p.fondo, p.texto, 0.08),
     botonFondo: p.acento,
     boton: letrasSobre(p.acento),
-    horarioTitulo: p.texto,
-    horarioDias: p.texto,
+    titulo: p.titulo,
+    titular: p.titulo,
+    subtitulo: p.texto,
+    descripcion: p.texto,
+    extra: p.texto,
+    horarioTitulo: p.titulo,
+    horarioDias: p.titulo,
     horarioHoras: p.texto,
-    reservaTitulo: p.texto,
-    reservaTexto: suave,
+    reservaTitulo: p.titulo,
+    reservaTexto: p.texto,
     reservaBoton: p.principal,
     reservaBotonTexto: letrasSobre(p.principal),
-    reservaTelefono: suave,
+    reservaTelefono: p.texto,
   }
 }
 
@@ -138,8 +101,8 @@ export function elegirAcento(principal, candidatos, fondo) {
 
 // Una paleta completa a partir del principal y los colores relacionados que dio la API
 export function armarPaleta(principal, candidatos, oscuro = false) {
-  const { fondo, texto } = fondoYTexto(principal, oscuro)
-  return { principal: principal.toUpperCase(), acento: elegirAcento(principal, candidatos, fondo), fondo, texto }
+  const { fondo, texto, titulo } = fondoYTexto(principal, oscuro)
+  return { principal: principal.toUpperCase(), acento: elegirAcento(principal, candidatos, fondo), fondo, texto, titulo }
 }
 
 // Distancia entre dos tonos, de 0 a 180 grados
@@ -173,9 +136,9 @@ export function principalDeModo(semilla, modo, candidatos) {
    no se pierda) si se ve sobre el fondo; si no, el mejor de los relacionados */
 export function armarPaletaDeModo(semilla, modo, candidatos, oscuro = false) {
   const principal = principalDeModo(semilla, modo, candidatos)
-  const { fondo, texto } = fondoYTexto(principal, oscuro)
+  const { fondo, texto, titulo } = fondoYTexto(principal, oscuro)
   const acento = principal !== semilla.toUpperCase() && contraste(semilla, fondo) >= 3 ? semilla.toUpperCase() : elegirAcento(principal, [...candidatos, semilla], fondo)
-  return { principal, acento, fondo, texto }
+  return { principal, acento, fondo, texto, titulo }
 }
 
 // Un principal al azar con tono, saturación y luz que valgan para botones con letra blanca encima (contraste 4,5 o más)
@@ -185,4 +148,26 @@ export function principalAlAzar(azar = Math.random) {
     if (contraste(c, '#FFFFFF') >= 4.5) return c
   }
   return '#2F5D8A'
+}
+
+/* Los colores de una carta (Menú y ofertas) a partir de una paleta. Las cuatro de la marca (principal: botones y precios; acento: nombres de sección; fondo y texto)
+   se aplican como siempre; aquí se escriben, de forma explícita, los demás de la carta:
+   - fondo2: las tarjetas y bloques sobre el fondo, un tono apenas distinto del fondo.
+   - textoSuave: las líneas secundarias (la frase bajo el nombre, el alérgeno, el «incluye»).
+   - coloresCarta: el nombre del negocio y el título del menú del día con el color de título. En Inmersiva no (va sobre una foto oscura y es blanco por diseño). */
+export function coloresDeCarta(p, { estilo = '' } = {}) {
+  // El texto suave: más cerca del fondo que el texto, pero siempre legible (contraste 4,5 o más sobre el fondo)
+  let textoSuave = mezclar(p.fondo, p.texto, 0.95)
+  for (let t = 0.62; t <= 0.95; t += 0.03) {
+    const c = mezclar(p.fondo, p.texto, t)
+    if (contraste(c, p.fondo) >= 4.5) {
+      textoSuave = c
+      break
+    }
+  }
+  return {
+    fondo2: mezclar(p.fondo, p.texto, 0.06),
+    textoSuave,
+    coloresCarta: estilo === 'inmersiva' ? {} : { cNombre: p.titulo, cMenuTitulo: p.titulo },
+  }
 }

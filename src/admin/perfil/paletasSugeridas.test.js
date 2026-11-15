@@ -1,24 +1,46 @@
 import { describe, expect, it } from 'vitest'
-import { armarPaleta, armarPaletaDeModo, colorInactivoMenu, contraste, elegirAcento, fondoYTexto, hexAHsl, hslAHex, letrasSobre, mezclar, principalAlAzar, rolesDePaleta } from './paletasSugeridas'
+import { armarPaleta, armarPaletaDeModo, coloresDeCarta, colorInactivoMenu, contraste, elegirAcento, fondoYTexto, hexAHsl, hslAHex, letrasSobre, mezclar, principalAlAzar, rolesDePaleta, tonoDistinto } from './paletasSugeridas'
 import { CLAVES_COLORES_MINIWEB } from '../../lib/coloresMiniweb'
 
-describe('texto con carácter', () => {
-  it('el texto conserva el tono del principal (no es un casi negro igual en todas) y se lee', () => {
-    for (const [principal, oscuro] of [['#307B2D', false], ['#292C5F', false], ['#B04A8E', false], ['#307B2D', true], ['#B04A8E', true]]) {
-      const { fondo, texto } = fondoYTexto(principal, oscuro)
-      expect(contraste(fondo, texto)).toBeGreaterThanOrEqual(7)
-      // Del mismo tono (a unos pocos grados) y con color visible, salvo que haya tenido que caer a blanco o negro
-      if (texto !== '#FFFFFF' && texto !== '#000000') {
-        const dif = Math.abs(hexAHsl(texto)[0] - hexAHsl(principal)[0])
-        expect(Math.min(dif, 360 - dif)).toBeLessThan(15)
-        expect(hexAHsl(texto)[1]).toBeGreaterThan(20)
+describe('textos serios (título y normal)', () => {
+  it('se leen: el de título con contraste 10 o más y el normal con 7 o más, en claro y en oscuro, para cualquier tono', () => {
+    for (let h = 0; h < 360; h += 20) {
+      const principal = hslAHex(h, 70, 40)
+      for (const oscuro of [false, true]) {
+        const { fondo, texto, titulo } = fondoYTexto(principal, oscuro)
+        expect(contraste(fondo, titulo)).toBeGreaterThanOrEqual(10)
+        expect(contraste(fondo, texto)).toBeGreaterThanOrEqual(7)
       }
     }
   })
 
-  it('el texto de fondo claro es más claro que el de antes (carácter) pero sigue siendo oscuro', () => {
-    const { texto } = fondoYTexto('#307B2D', false)
-    expect(hexAHsl(texto)[2]).toBeLessThan(30)
+  it('son serios: casi grises (saturación de 22 como mucho), nada chillón ni brillante', () => {
+    for (let h = 0; h < 360; h += 20) {
+      for (const oscuro of [false, true]) {
+        const { texto, titulo } = fondoYTexto(hslAHex(h, 85, 45), oscuro)
+        for (const c of [texto, titulo]) {
+          if (c !== '#FFFFFF' && c !== '#000000') expect(hexAHsl(c)[1]).toBeLessThanOrEqual(23)
+        }
+      }
+    }
+  })
+
+  it('nunca son del tono del principal (el de las barras): su tono es el opuesto', () => {
+    for (const principal of ['#C1BA2D', '#4A992D', '#307B2D', '#1C2778', '#B04A8E']) {
+      for (const oscuro of [false, true]) {
+        const { texto, titulo } = fondoYTexto(principal, oscuro)
+        for (const c of [texto, titulo]) {
+          if (c === '#FFFFFF' || c === '#000000') continue
+          const d = Math.abs(hexAHsl(c)[0] - hexAHsl(principal)[0])
+          expect(Math.min(d, 360 - d)).toBeGreaterThan(120)
+        }
+      }
+    }
+  })
+
+  it('el título es más fuerte que el texto normal (más contraste con el fondo)', () => {
+    const { fondo, texto, titulo } = fondoYTexto('#307B2D', false)
+    expect(contraste(fondo, titulo)).toBeGreaterThanOrEqual(contraste(fondo, texto))
   })
 })
 
@@ -32,7 +54,7 @@ describe('letrasSobre y rolesDePaleta', () => {
     }
   })
 
-  const paleta = { principal: '#B04A8E', acento: '#292C5F', fondo: '#F5F9F5', texto: '#112D10' }
+  const paleta = { principal: '#B04A8E', acento: '#292C5F', fondo: '#F5F9F5', texto: '#3A4A44', titulo: '#1F2A26' }
 
   it('solo escribe claves que existen en el catálogo y todas son colores completos', () => {
     const roles = rolesDePaleta(paleta)
@@ -42,10 +64,12 @@ describe('letrasSobre y rolesDePaleta', () => {
     }
   })
 
-  it('menú y redes con el principal; botones con acento y principal; letras que se leen', () => {
+  it('menú con el principal y redes con un tono distinto; botones con acento y principal; letras que se leen', () => {
     const r = rolesDePaleta(paleta)
     expect(r.menuFondo).toBe('#B04A8E')
-    expect(r.redesFondo).toBe('#B04A8E')
+    expect(r.redesFondo).not.toBe('#B04A8E')
+    expect(contraste(r.redesIconos, r.redesFondo)).toBeGreaterThanOrEqual(4.5)
+    expect(contraste(r.redesTexto, r.redesFondo)).toBeGreaterThanOrEqual(4.5)
     expect(r.botonFondo).toBe('#292C5F')
     expect(r.reservaBoton).toBe('#B04A8E')
     expect(contraste(r.menuTexto, r.menuFondo)).toBeGreaterThanOrEqual(4.5)
@@ -64,12 +88,15 @@ describe('letrasSobre y rolesDePaleta', () => {
     expect(rolesDePaleta(paleta, { polaroid: true })).not.toHaveProperty('fondoPortada')
   })
 
-  it('los textos del Horario y Reservar usan el texto de la paleta, y lo secundario uno más suave', () => {
+  it('el título (nombre, texto grande y títulos) y el texto normal (descripción, lema, extra...) usan sus dos colores, también los de la portada sobre la foto', () => {
     const r = rolesDePaleta(paleta)
-    expect(r.horarioTitulo).toBe('#112D10')
-    expect(r.reservaTitulo).toBe('#112D10')
-    expect(r.reservaTexto).not.toBe('#112D10')
-    expect(r.reservaTelefono).toBe(r.reservaTexto)
+    for (const clave of ['titulo', 'titular', 'horarioTitulo', 'horarioDias', 'reservaTitulo']) expect(r[clave]).toBe('#1F2A26')
+    for (const clave of ['subtitulo', 'descripcion', 'extra', 'horarioHoras', 'reservaTexto', 'reservaTelefono']) expect(r[clave]).toBe('#3A4A44')
+  })
+
+  it('la tarjeta de Google tiene su zona, un tono distinto del cuerpo', () => {
+    const r = rolesDePaleta(paleta)
+    expect(r.fondoResena).not.toBe(paleta.fondo)
   })
 })
 
@@ -140,7 +167,7 @@ describe('elegirAcento y armarPaleta', () => {
   it('sin candidatos válidos, el acento es el principal; la paleta trae los cuatro colores', () => {
     expect(armarPaleta('#307BA9', ['mal']).acento).toBe('#307BA9')
     const p = armarPaleta('#307BA9', ['#792D5D'])
-    expect(Object.keys(p).sort()).toEqual(['acento', 'fondo', 'principal', 'texto'])
+    expect(Object.keys(p).sort()).toEqual(['acento', 'fondo', 'principal', 'texto', 'titulo'])
   })
 })
 
@@ -200,6 +227,56 @@ describe('cada opción con su principal (armarPaletaDeModo)', () => {
   it('sin candidatos usables, el principal es la semilla y la paleta sigue completa', () => {
     const p = armarPaletaDeModo(semilla, 'triad', ['mal', '#FFFFFF', '#000000'])
     expect(p.principal).toBe(semilla.toUpperCase())
-    expect(Object.keys(p).sort()).toEqual(['acento', 'fondo', 'principal', 'texto'])
+    expect(Object.keys(p).sort()).toEqual(['acento', 'fondo', 'principal', 'texto', 'titulo'])
+  })
+})
+
+describe('tonoDistinto (la barra de redes nunca igual que el menú)', () => {
+  it('da siempre un color distinto del de partida, del mismo tono', () => {
+    for (let h = 0; h < 360; h += 15) {
+      for (const [s, l] of [[60, 10], [60, 22], [60, 40], [60, 60], [60, 78], [30, 92], [60, 96]]) {
+        const menu = hslAHex(h, s, l)
+        const redes = tonoDistinto(menu)
+        expect(redes).not.toBe(menu)
+        // Se nota la diferencia (en luz) y se mantiene el color
+        expect(Math.abs(hexAHsl(redes)[2] - hexAHsl(menu)[2])).toBeGreaterThanOrEqual(8)
+        if (hexAHsl(menu)[1] > 20 && hexAHsl(menu)[2] > 12 && hexAHsl(menu)[2] < 90) {
+          const d = Math.abs(hexAHsl(redes)[0] - hexAHsl(menu)[0])
+          expect(Math.min(d, 360 - d)).toBeLessThan(12)
+        }
+      }
+    }
+  })
+
+  it('un color oscuro se aclara y uno claro o medio se oscurece; algo que no es un color se deja igual', () => {
+    expect(hexAHsl(tonoDistinto('#1A1030'))[2]).toBeGreaterThan(hexAHsl('#1A1030')[2])
+    expect(hexAHsl(tonoDistinto('#B04A8E'))[2]).toBeLessThan(hexAHsl('#B04A8E')[2])
+    expect(hexAHsl(tonoDistinto('#F5F9F5'))[2]).toBeLessThan(hexAHsl('#F5F9F5')[2])
+    expect(tonoDistinto('red')).toBe('red')
+  })
+})
+
+describe('coloresDeCarta (paletas en Menú y ofertas)', () => {
+  const p = { principal: '#B04A8E', acento: '#292C5F', fondo: '#F5F9F5', texto: '#3A4A44', titulo: '#1F2A26' }
+
+  it('escribe las tarjetas, el texto suave y el color de título del nombre y del menú del día', () => {
+    const c = coloresDeCarta(p, { estilo: 'revista' })
+    expect(c.fondo2).not.toBe(p.fondo)
+    expect(c.textoSuave).not.toBe(p.texto)
+    expect(c.coloresCarta).toEqual({ cNombre: '#1F2A26', cMenuTitulo: '#1F2A26' })
+    for (const v of [c.fondo2, c.textoSuave]) expect(v).toMatch(/^#[0-9A-F]{6}$/)
+  })
+
+  it('el texto suave se lee sobre el fondo (contraste 4,5 o más) y es más suave que el texto', () => {
+    for (const oscuro of [false, true]) {
+      const { fondo, texto, titulo } = fondoYTexto('#307B2D', oscuro)
+      const c = coloresDeCarta({ principal: '#307B2D', acento: '#C1BA2D', fondo, texto, titulo })
+      expect(contraste(c.textoSuave, fondo)).toBeGreaterThanOrEqual(4.5)
+      expect(contraste(c.textoSuave, fondo)).toBeLessThan(contraste(texto, fondo))
+    }
+  })
+
+  it('en Inmersiva no toca el nombre ni el título (van sobre la foto, en blanco por diseño)', () => {
+    expect(coloresDeCarta(p, { estilo: 'inmersiva' }).coloresCarta).toEqual({})
   })
 })

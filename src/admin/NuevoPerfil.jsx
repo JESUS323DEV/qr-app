@@ -39,7 +39,7 @@ import { aplicar, conEdicion } from '../lib/ediciones'
 import { getNegocio } from '../negocios'
 import { getCarta, marcaDe } from '../cartas'
 import { CAMPO, Confirmar } from '../components/panel'
-import { GRUPOS_PLANTILLAS, PLANTILLAS } from '../plantillas'
+import { PLANTILLAS } from '../plantillas'
 import { derivadosDeFondoYTexto } from '../lib/mezclarColores'
 import { COLORES_CARTA } from '../lib/coloresCarta'
 import { coloresAutomaticos } from '../lib/coloresMiniweb'
@@ -65,7 +65,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
   const [pestana, setPestana] = useState('personalizar')
   // El resto del estado, agrupado por temas (src/admin/perfil/)
   const diseno = usePerfilDiseno()
-  const { tema, producto, hero, barra, cabecera, estructura, coloresMini, setColoresMini } = diseno
+  const { tema, tematica, producto, hero, barra, cabecera, estructura, coloresMini, setColoresMini } = diseno
   const carta = usePerfilCarta()
   const { tipoCarta, estilo, colorPrecio, setColorPrecio, colorPrecioTexto, setColorPrecioTexto, fondo2, setFondo2, textoSuave, setTextoSuave, coloresCarta, setColoresCarta } = carta
   const negocio = usePerfilNegocio()
@@ -130,8 +130,6 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
   const { setVistaMovil, pasoMovil, setPasoMovil, esMovil, flechasVisibles, hoja, enInicio, enAsistenteMovil } = pantalla
 
   const plantilla = PLANTILLAS.find(p => p.clave === tema)
-  // El grupo de la temática elegida
-  const grupoTema = GRUPOS_PLANTILLAS.find(g => g.claves.includes(tema)) ?? GRUPOS_PLANTILLAS[0]
   const negocioBase = getNegocio(plantilla.ficha)
   const cartaSlug = (tema === 'en-blanco' ? CARTA_EN_BLANCO : CARTA_DE_TIPO)[tipoCarta]
   const cartaBase = getCarta(cartaSlug)
@@ -215,7 +213,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
   }
 
   // El asistente escribe los textos y busca las fotos sobre el diseño armado: devuelve los cambios (sin tocar nombre, diseño ni portada)
-  const redactar = (base, cambios, nombreCrear, avisar, opciones) => redactarPerfil({ cartaBase, cuento, esCarta, infoImagen, producto, referencia }, base, cambios, nombreCrear, avisar, opciones)
+  const redactar = (base, cambios, nombreCrear, avisar, opciones) => redactarPerfil({ cartaBase, cuento, esCarta, infoImagen, producto, referencia, tipoCarta }, base, cambios, nombreCrear, avisar, opciones)
 
   useEffect(() => {
     if (!redactando) return
@@ -224,8 +222,8 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
       try {
         const nombreHecho = nombre.trim() || 'Prueba'
         const { base, cambios } = armar(nombreHecho)
-        // Miniweb con el diseño ya montado por Jesús: el asistente rellena Inicio, Horario y Reservar y pinta también los colores
-        const terminar = !DISENO_IA_ACTIVO && producto === 'miniweb'
+        // Con el diseño ya montado por Jesús (miniweb o menú y ofertas): el asistente rellena el contenido y pinta también los colores
+        const terminar = !DISENO_IA_ACTIVO
         const hecho = await redactar(base, cambios, nombreHecho, setDisenando, { conColores: terminar })
         let deIA = hecho.deIA
         if (terminar) {
@@ -377,10 +375,21 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
       diseno={diseno}
       carta={carta}
       esCarta={esCarta}
-      grupoTema={grupoTema}
-      plantilla={plantilla}
+      preguntar={setPreguntaSalir}
       titulo={titulo}
     />
+  )
+
+  // Menú y ofertas sin perfil: en vez de los ajustes y del asistente, este aviso con el botón Desde 0 para elegir la temática (que decide el tipo de carta)
+  const avisoPerfil = (
+    <div className="grid gap-[0.7rem] rounded-[0.75rem] p-[0.85rem] ring-1 ring-zinc-200">
+      <p className="text-[1rem] font-bold">Crea primero el perfil</p>
+      <p className="text-[0.88rem] leading-[1.45] text-zinc-600">
+        En Menú y ofertas hay que elegir la temática antes de editar: pulsa «Desde 0», elige Restaurante (menú del día y carta) o Promociones (ofertas y servicios) y acepta. Hasta
+        entonces no se puede editar ni usar el asistente. También puedes cargar una copia.
+      </p>
+      {bloqueTematica}
+    </div>
   )
 
   // Lo que se enseña en dos sitios (los desplegables de siempre y las pestañas de ajustes por grupo)
@@ -419,7 +428,6 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
       MAX_TEXTO_EXTRA={MAX_TEXTO_EXTRA}
       campoTextoBoton={campoTextoBoton}
       campoTipografia={campoTipografia}
-      conTextoExtra={conTextoExtra}
       inicioBase={inicioBase}
       maxGrande={maxGrande}
       soltarExtra={soltarExtraInicio}
@@ -495,7 +503,10 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
     }))
 
   // Los grupos de ajustes de cada producto (las pestañas de ajustes y los iconos de la vista previa del móvil)
-  const gruposAjustes = (producto === 'miniweb'
+  // En Menú y ofertas hay que crear primero el perfil (elegir la temática): sin una copia cargada y sin temática, no hay ajustes ni asistente, solo el aviso para elegirla
+  const sinPerfilCarta = esCarta && !copias.copiaCargada && !tematica
+  const ajustesAbiertos = sinPerfilCarta ? null : pestanaAjustes
+  const gruposAjustes = sinPerfilCarta ? [] : (producto === 'miniweb'
                 ? [['negocio', 'Negocio'], ['portada', 'Portada'], ['menu', 'Menú'], ['redes', 'Redes'], ['horario', 'Horario'], ['reserva', 'Reserva'], ['resena', 'Reseña'], ['paletas', 'Paletas'], ['ajustes', 'Ajustes personalizados']]
                 : esCarta
                   ? [['negocio', 'Negocio'], ['portada', 'Estilo'], ['imagenes', 'Imágenes'], ['estructura', 'Estructura'], ['paletas', 'Paletas'], ['ajustes', 'Ajustes personalizados']]
@@ -550,7 +561,8 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
         )}
 
         {/* El asistente: un cuadro donde pedirle lo que sea y un solo botón que lo monta todo (diseño, nombre, textos y fotos) */}
-        {pestana === 'asistente' && (
+        {pestana === 'asistente' && sinPerfilCarta && avisoPerfil}
+        {pestana === 'asistente' && !sinPerfilCarta && (
         <PanelAsistente diseno={diseno} carta={carta} negocio={negocio} cambiarProducto={cambiarProducto} captura={captura} creando={creando} cuento={cuento} disenando={disenando} esMovil={esMovil} montar={montar} pasoMovil={pasoMovil} referencia={referencia} resumenDiseno={resumenDiseno} setCaptura={setCaptura} setCuento={setCuento} setError={setError} setPasoMovil={setPasoMovil} setReferencia={setReferencia} setResumenDiseno={setResumenDiseno} setVistaMovil={setVistaMovil} />
         )}
 
@@ -584,6 +596,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
             </div>
           </div>
 
+          {sinPerfilCarta && avisoPerfil}
           {/* Pestañas de ajustes por grupo: cada una junta todo lo de un grupo (diseño, colores y textos). Pulsar la abierta la cierra. Los desplegables de siempre siguen debajo */}
           <div className="grid gap-[0.6rem]">
             <div role="tablist" aria-label="Ajustes por grupo" className={`flex flex-wrap gap-[0.4rem] md:max-lg:grid md:max-lg:grid-cols-2 md:max-lg:[&>*:last-child:nth-child(odd)]:col-span-2 ${hoja ? 'hidden' : ''}`}>
@@ -600,38 +613,38 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
                 </button>
               ))}
             </div>
-            {pestanaAjustes === 'negocio' && (
+            {ajustesAbiertos === 'negocio' && (
               <PanelNegocio diseno={diseno} bloqueNombre={bloqueNombre} bloqueTematica={bloqueTematica} cambiarExtra={cambiarExtra} cambiosExtra={cambiosExtra} campoTipografia={campoTipografia} datosEnBruto={datosEnBruto} esCarta={esCarta} paletaMarca={paletaMarca} panelColoresCarta={panelColoresCarta} />
             )}
-            {pestanaAjustes === 'portada' && (
+            {ajustesAbiertos === 'portada' && (
               <PanelPortada diseno={diseno} carta={carta} autosColores={autosColores} bloquePortada={bloquePortada} bloqueTextoInicio={bloqueTextoInicio} cambiarColorMini={cambiarColorMini} cambiarExtra={cambiarExtra} cambiosExtra={cambiosExtra} datosEnBruto={datosEnBruto} esCarta={esCarta} />
             )}
-            {pestanaAjustes === 'menu' && producto === 'miniweb' && (
+            {ajustesAbiertos === 'menu' && producto === 'miniweb' && (
               <PanelMenu diseno={diseno} autosColores={autosColores} cambiarColorMini={cambiarColorMini} cambiarExtra={cambiarExtra} cambiosExtra={cambiosExtra} datosEnBruto={datosEnBruto} plantilla={plantilla} />
             )}
-            {pestanaAjustes === 'redes' && producto === 'miniweb' && (
+            {ajustesAbiertos === 'redes' && producto === 'miniweb' && (
               <PanelRedes diseno={diseno} autosColores={autosColores} cambiarColorMini={cambiarColorMini} cambiarExtra={cambiarExtra} cambiosExtra={cambiosExtra} datosEnBruto={datosEnBruto} plantilla={plantilla} />
             )}
-            {pestanaAjustes === 'horario' && producto === 'miniweb' && (
+            {ajustesAbiertos === 'horario' && producto === 'miniweb' && (
               <PanelHorario diseno={diseno} autosColores={autosColores} bloqueTextoHorarios={bloqueTextoHorarios} cambiarColorMini={cambiarColorMini} cambiarExtra={cambiarExtra} cambiosExtra={cambiosExtra} datosEnBruto={datosEnBruto} />
             )}
-            {pestanaAjustes === 'reserva' && producto === 'miniweb' && (
+            {ajustesAbiertos === 'reserva' && producto === 'miniweb' && (
               <PanelReserva diseno={diseno} autosColores={autosColores} cambiarColorMini={cambiarColorMini} cambiarExtra={cambiarExtra} cambiosExtra={cambiosExtra} datosEnBruto={datosEnBruto} plantilla={plantilla} />
             )}
-            {pestanaAjustes === 'resena' && producto === 'miniweb' && (
+            {ajustesAbiertos === 'resena' && producto === 'miniweb' && (
               <PanelResena diseno={diseno} autosColores={autosColores} cambiarColorMini={cambiarColorMini} cambiarExtra={cambiarExtra} cambiosExtra={cambiosExtra} datosEnBruto={datosEnBruto} />
             )}
-          {pestanaAjustes === 'imagenes' && esCarta && (
+          {ajustesAbiertos === 'imagenes' && esCarta && (
             <PanelImagenes cambiarExtra={cambiarExtra} cambiosExtra={cambiosExtra} datosEnBruto={datosEnBruto} />
           )}
-          {pestanaAjustes === 'estructura' && esCarta && (
+          {ajustesAbiertos === 'estructura' && esCarta && (
             <PanelEstructura carta={carta} esCarta={esCarta} />
           )}
-          {pestanaAjustes === 'paletas' && (
+          {ajustesAbiertos === 'paletas' && (
             // key: al cargar otra copia (o ninguna), el panel empieza de cero (sin sugerencias de la anterior y con la casilla marcada otra vez)
-            <PanelPaletas key={claveCopia || 'sin-copia'} diseno={diseno} negocio={negocio} colorPrincipal={colorPrincipal} hayCopia={Boolean(copias.copiaCargada)} original={coloresOriginales} guardarOriginal={setColoresOriginales} />
+            <PanelPaletas key={claveCopia || 'sin-copia'} diseno={diseno} carta={carta} negocio={negocio} colorPrincipal={colorPrincipal} hayCopia={Boolean(copias.copiaCargada)} original={coloresOriginales} guardarOriginal={setColoresOriginales} />
           )}
-          {pestanaAjustes === 'ajustes' && (
+          {ajustesAbiertos === 'ajustes' && (
             <PanelAjustes diseno={diseno} cambiarExtra={cambiarExtra} cambiosExtra={cambiosExtra} datosEnBruto={datosEnBruto} esCarta={esCarta} filas={filas} paletaMarca={paletaMarca} />
           )}
           </div>
@@ -643,7 +656,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
 
         {/* Vista previa: el contenido de la temática con el diseño elegido. A 360 px de ancho por dentro, como el móvil bajo:
             se ve lo mismo que verá el cliente. En pantalla grande, a la derecha y fija al bajar */}
-        <VistaPrevia enBlanco={tema === 'en-blanco'} negocio={negocio} pantalla={pantalla} asistente={asistente} copias={copias} copiasDisponibles={copiasDisponibles} crear={crear} elegirCopia={elegirCopia} elegirTamanoMovil={elegirTamanoMovil} gruposAjustes={gruposAjustes} guardarCopia={guardarCopia} medidaMovil={medidaMovil} pestana={pestana} pestanaAjustes={pestanaAjustes} setPestanaAjustes={setPestanaAjustes} tamanoMovil={tamanoMovil} vista={vista} />
+        <VistaPrevia enBlanco={tema === 'en-blanco' && !sinPerfilCarta} negocio={negocio} pantalla={pantalla} asistente={asistente} copias={copias} copiasDisponibles={copiasDisponibles} crear={crear} elegirCopia={elegirCopia} elegirTamanoMovil={elegirTamanoMovil} gruposAjustes={gruposAjustes} guardarCopia={guardarCopia} medidaMovil={medidaMovil} pestana={pestana} pestanaAjustes={pestanaAjustes} setPestanaAjustes={setPestanaAjustes} tamanoMovil={tamanoMovil} vista={vista} />
       </div>
       <Confirmar pregunta={preguntaSalir} alCerrar={cerrarPreguntaSalir} />
     </details>

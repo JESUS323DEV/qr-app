@@ -3,7 +3,7 @@ import { Plegable } from '../PanelesMiniweb'
 import { maxDe } from '../datos'
 
 // BloqueTextoInicio: sacado de NuevoPerfil.jsx. Recibe los objetos de los hooks (diseno, carta, negocio) y lo demás que se calcula en NuevoPerfil
-export default function BloqueTextoInicio({ negocio, MAX_TEXTO_EXTRA, campoTextoBoton, campoTipografia, conTextoExtra, inicioBase, maxGrande, soltarExtra, textoExtra, textoGrande, textoPequeno, textosEditados }) {
+export default function BloqueTextoInicio({ negocio, MAX_TEXTO_EXTRA, campoTextoBoton, campoTipografia,inicioBase, maxGrande, soltarExtra, textoExtra, textoGrande, textoPequeno, textosEditados }) {
   const { setTextosMini } = negocio
   // Escribe un texto de Inicio y suelta el cambio de ese mismo texto hecho en los datos en bruto, para que lo escrito se vea
   const escribir = (clave, valor) => {
