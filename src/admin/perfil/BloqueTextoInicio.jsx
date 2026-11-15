@@ -3,7 +3,7 @@ import { Plegable } from '../PanelesMiniweb'
 import { maxDe } from '../datos'
 
 // BloqueTextoInicio: sacado de NuevoPerfil.jsx. Recibe los objetos de los hooks (diseno, carta, negocio) y lo demás que se calcula en NuevoPerfil
-export default function BloqueTextoInicio({ negocio, MAX_TEXTO_EXTRA, campoTipografia, conTextoExtra, inicioBase, maxGrande, soltarExtra, textoExtra, textoGrande, textoPequeno, textosEditados }) {
+export default function BloqueTextoInicio({ negocio, MAX_TEXTO_EXTRA, campoTextoBoton, campoTipografia, conTextoExtra, inicioBase, maxGrande, soltarExtra, textoExtra, textoGrande, textoPequeno, textosEditados }) {
   const { setTextosMini } = negocio
   // Escribe un texto de Inicio y suelta el cambio de ese mismo texto hecho en los datos en bruto, para que lo escrito se vea
   const escribir = (clave, valor) => {
@@ -61,6 +61,8 @@ export default function BloqueTextoInicio({ negocio, MAX_TEXTO_EXTRA, campoTipog
             </span>
           </div>
         )}
+        {/* El texto del botón de la portada, debajo del texto extra (solo si la portada de partida lleva botón) */}
+        {campoTextoBoton}
         {textosEditados && (
           <button type="button" onClick={() => setTextosMini({})} className="justify-self-start text-[0.8rem] font-semibold text-zinc-500 underline underline-offset-[0.2em]">
             Volver a los textos de la plantilla

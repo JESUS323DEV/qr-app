@@ -402,7 +402,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
       titulo={titulo}
     />
   )
-  // El texto del botón de la portada: va en el grupo del botón (junto a sus colores), no en Texto inicio
+  // El texto del botón de la portada: va en Texto inicio, debajo del texto extra (el grupo del botón solo lleva sus colores)
   const campoTextoBoton = hayBotonPortada ? (
     <div className="grid gap-[0.3rem]">
       <div>
@@ -417,6 +417,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
     <BloqueTextoInicio
       negocio={negocio}
       MAX_TEXTO_EXTRA={MAX_TEXTO_EXTRA}
+      campoTextoBoton={campoTextoBoton}
       campoTipografia={campoTipografia}
       conTextoExtra={conTextoExtra}
       inicioBase={inicioBase}
@@ -603,7 +604,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
               <PanelNegocio diseno={diseno} bloqueNombre={bloqueNombre} bloqueTematica={bloqueTematica} cambiarExtra={cambiarExtra} cambiosExtra={cambiosExtra} campoTipografia={campoTipografia} datosEnBruto={datosEnBruto} esCarta={esCarta} paletaMarca={paletaMarca} panelColoresCarta={panelColoresCarta} />
             )}
             {pestanaAjustes === 'portada' && (
-              <PanelPortada diseno={diseno} carta={carta} autosColores={autosColores} bloquePortada={bloquePortada} bloqueTextoInicio={bloqueTextoInicio} cambiarColorMini={cambiarColorMini} cambiarExtra={cambiarExtra} cambiosExtra={cambiosExtra} campoTextoBoton={campoTextoBoton} datosEnBruto={datosEnBruto} esCarta={esCarta} />
+              <PanelPortada diseno={diseno} carta={carta} autosColores={autosColores} bloquePortada={bloquePortada} bloqueTextoInicio={bloqueTextoInicio} cambiarColorMini={cambiarColorMini} cambiarExtra={cambiarExtra} cambiosExtra={cambiosExtra} datosEnBruto={datosEnBruto} esCarta={esCarta} />
             )}
             {pestanaAjustes === 'menu' && producto === 'miniweb' && (
               <PanelMenu diseno={diseno} autosColores={autosColores} cambiarColorMini={cambiarColorMini} cambiarExtra={cambiarExtra} cambiosExtra={cambiosExtra} datosEnBruto={datosEnBruto} plantilla={plantilla} />

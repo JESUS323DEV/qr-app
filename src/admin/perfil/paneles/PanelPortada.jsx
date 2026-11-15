@@ -6,7 +6,7 @@ import { bloquesDePestana } from '../../datos'
 import { claseIcono } from '../../../components/panel'
 
 // PanelPortada: sacado de NuevoPerfil.jsx (el panel de un grupo de ajustes). Recibe los objetos de los hooks y lo demás que se calcula en NuevoPerfil
-export default function PanelPortada({ diseno, carta, autosColores, bloquePortada, bloqueTextoInicio, cambiarColorMini, cambiarExtra, cambiosExtra, campoTextoBoton, datosEnBruto, esCarta }) {
+export default function PanelPortada({ diseno, carta, autosColores, bloquePortada, bloqueTextoInicio, cambiarColorMini, cambiarExtra, cambiosExtra, datosEnBruto, esCarta }) {
   const { coloresMini, producto } = diseno
   const { detallePrecio, setDetallePrecio, setTamanoPrecio, tamanoPrecio } = carta
   return (
@@ -103,7 +103,7 @@ export default function PanelPortada({ diseno, carta, autosColores, bloquePortad
     )}
           {producto === 'miniweb' && (
             <>
-              <PanelColoresMiniweb sinTitulo detalle claves={['fondoPortada', 'botonFondo', 'boton', 'titulo', 'titular', 'descripcion', 'subtitulo', 'extra']} valores={coloresMini} cambiar={cambiarColorMini} autos={autosColores} extrasPorGrupo={{ 'Botón "Ver menú"': campoTextoBoton }} />
+              <PanelColoresMiniweb sinTitulo detalle claves={['fondoPortada', 'botonFondo', 'boton', 'titulo', 'titular', 'descripcion', 'subtitulo', 'extra']} valores={coloresMini} cambiar={cambiarColorMini} autos={autosColores} />
               {bloqueTextoInicio}
             </>
           )}

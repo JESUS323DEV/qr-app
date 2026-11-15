@@ -5,7 +5,7 @@
    corto: el nombre que lleva en el editor, dentro de su grupo. */
 export const COLORES_MINIWEB = [
   {
-    grupo: 'Menú de navegación',
+    grupo: 'Color menú de navegación',
     campos: [
       { clave: 'menuFondo', nombre: 'Fondo del menú', corto: 'Fondo', ayuda: 'La barra de pestañas (Inicio, Menú, Horario, Reservar).' },
       { clave: 'menuTexto', nombre: 'Texto del menú', corto: 'Texto', ayuda: 'Las letras de las pestañas. Sin elegir, blanco u oscuro solas según el fondo.' },
@@ -14,7 +14,7 @@ export const COLORES_MINIWEB = [
     ],
   },
   {
-    grupo: 'Barra de redes',
+    grupo: 'Color barra de redes',
     campos: [
       { clave: 'redesFondo', nombre: 'Fondo de las redes', corto: 'Fondo', ayuda: 'La barra de redes (y la columna lateral o la fila bajo el botón, si las eliges).' },
       { clave: 'redesIconos', nombre: 'Iconos de las redes', corto: 'Iconos', ayuda: 'El color de los iconos. Sin elegir, blanco u oscuro solos según el fondo.' },
@@ -22,7 +22,7 @@ export const COLORES_MINIWEB = [
     ],
   },
   {
-    grupo: 'Fondos',
+    grupo: 'Color fondos',
     campos: [
       {
         clave: 'fondoPortada',
@@ -35,14 +35,14 @@ export const COLORES_MINIWEB = [
     ],
   },
   {
-    grupo: 'Botón "Ver menú"',
+    grupo: 'Color botón "Ver menú"',
     campos: [
       { clave: 'botonFondo', nombre: 'Fondo del botón', corto: 'Fondo', ayuda: 'El fondo del botón principal de la portada. Sin elegir, el acento de la marca.' },
       { clave: 'boton', nombre: 'Texto del botón', corto: 'Texto', ayuda: 'Solo las letras del botón, no su fondo. Sin elegir, blanco u oscuro solo según el fondo del botón.' },
     ],
   },
   {
-    grupo: 'Pantalla del Horario',
+    grupo: 'Color pantalla del Horario',
     campos: [
       { clave: 'horarioTitulo', nombre: 'Título del Horario', corto: 'Título', ayuda: 'La palabra «Horario» que encabeza la pantalla. Sin elegir, el color del texto.' },
       { clave: 'horarioDias', nombre: 'Días del horario', corto: 'Días', ayuda: 'Lunes a viernes, Sábado, Domingo... Sin elegir, el color del texto.' },
@@ -51,7 +51,7 @@ export const COLORES_MINIWEB = [
     ],
   },
   {
-    grupo: 'Pantalla de Reservar',
+    grupo: 'Color pantalla de Reservar',
     campos: [
       { clave: 'reservaTitulo', nombre: 'Título de Reservar', corto: 'Título', ayuda: 'El título de la pantalla («Reserva tu mesa»). Sin elegir, el color del texto.' },
       { clave: 'reservaTexto', nombre: 'Texto de Reservar', corto: 'Texto', ayuda: 'La frase bajo el título. Sin elegir, el texto suave.' },
@@ -61,7 +61,7 @@ export const COLORES_MINIWEB = [
     ],
   },
   {
-    grupo: 'Textos',
+    grupo: 'Color textos',
     ancho: true, // en el editor, a todo el ancho (con sus cinco colores en una fila)
     campos: [
       { clave: 'titulo', nombre: 'Título', corto: 'Nombre', ayuda: 'El nombre del negocio (y el de su logo, si lo lleva).' },
