@@ -3,6 +3,7 @@ import { X } from 'lucide-react'
 import Img from '../components/Img'
 import BotonCompartir from '../components/BotonCompartir'
 import NombreMarca, { LogoNegocio } from '../components/NombreMarca'
+import TextoExtraBajoNombre from '../components/TextoExtraBajoNombre'
 import { fotosDe } from '../fichas/escenas'
 import { useFiltro, useFondoBoton, useRol } from '../components/ColoresPortada'
 import { distribucionDe } from '../lib/distribuciones'
@@ -79,10 +80,14 @@ export default function HeroRetratoWeb({ hero, nombre, lema, inicio, irA }) {
         {hero.retrato && <Img src={hero.retrato} alt="" className="h-[3.4rem] w-[3.4rem] shrink-0 rounded-full object-cover ring-2 ring-demo-primary" />}
         <div className="min-w-0 leading-tight">
           {hero.retrato && logo ? (
-            <img src={logo} alt={nombre} className="max-h-[2.4rem] max-w-[9rem] object-contain" />
+            <>
+              <img src={logo} alt={nombre} className="max-h-[2.4rem] max-w-[9rem] object-contain" />
+              {/* Aquí el logo hace de nombre (no hay texto del nombre): el texto extra va debajo del logo */}
+              <TextoExtraBajoNombre inicio={inicio} className="text-[0.8rem] text-white/75" />
+            </>
           ) : (
             <p className="font-demo-heading text-[1.9rem] font-bold leading-none">
-              <NombreMarca nombre={nombre} />
+              <NombreMarca nombre={nombre} debajo={<TextoExtraBajoNombre inicio={inicio} className="text-[0.8rem] text-white/75" />} />
             </p>
           )}
           {hero.profesion && <p className="text-[0.85rem] text-white/75">{hero.profesion}</p>}

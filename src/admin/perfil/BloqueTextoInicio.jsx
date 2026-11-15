@@ -43,7 +43,8 @@ export default function BloqueTextoInicio({ negocio, MAX_TEXTO_EXTRA, campoTipog
             {textoPequeno.length}/{maxPequeno}
           </span>
         </div>
-        {conTextoExtra && (
+        {/* El texto extra sale en todos los diseños, igual; en los que no lo pintan, con ** en rojo debajo del campo (se puede escribir igual) */}
+        {(
           <div className="grid gap-[0.3rem]">
             <div>
               <p className="text-[0.8rem] font-semibold text-zinc-500">Texto extra</p>

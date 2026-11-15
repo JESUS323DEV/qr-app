@@ -1,6 +1,7 @@
 import { useContext, useEffect, useMemo, useState } from 'react'
 import { CompartirJuntoAlBoton } from '../components/BotonCompartir'
 import NombreMarca from '../components/NombreMarca'
+import TextoExtraBajoNombre from '../components/TextoExtraBajoNombre'
 import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 import Img from '../components/Img'
 import useVueltaPestanas from '../lib/useVueltaPestanas'
@@ -153,7 +154,7 @@ export default function HeroPolaroid({ hero, nombre, lema, sinBarra = false, ini
       <div className="flex items-start justify-between gap-[1rem] px-[1.25rem] pt-[0.8rem]">
         <div className="min-w-0">
           <h1 className="text-[clamp(2.2rem,1.8rem+2vw,2.8rem)] font-bold leading-[0.85]" style={{ fontFamily: A_MANO }}>
-            <NombreMarca nombre={nombre} tamano="grande" />
+            <NombreMarca nombre={nombre} tamano="grande" debajo={<TextoExtraBajoNombre inicio={inicio} className="text-[0.8rem] opacity-80" />} />
           </h1>
           {lema && <p style={rolSub} className="mt-[0.2rem] text-[0.85rem] opacity-80">{lema}</p>}
         </div>

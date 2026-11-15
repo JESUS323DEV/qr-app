@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { CompartirJuntoAlBoton } from '../components/BotonCompartir'
 import NombreMarca from '../components/NombreMarca'
+import TextoExtraBajoNombre from '../components/TextoExtraBajoNombre'
 import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 import Img from '../components/Img'
 import useVueltaPestanas from '../lib/useVueltaPestanas'
@@ -247,7 +248,7 @@ export default function HeroGaleria({ hero, nombre, lema, sinBarra = false, inic
       {/* Nombre grande y lema; compartir a la derecha */}
       <div className="flex items-start justify-between gap-[1rem] px-[1.25rem] pt-[1rem]">
         <div className="min-w-0">
-          <h1 className="font-demo-heading text-[clamp(2.3rem,1.8rem+2.4vw,2.9rem)] font-bold leading-[0.95] tracking-[-0.02em]"><NombreMarca nombre={nombre} tamano="grande" /></h1>
+          <h1 className="font-demo-heading text-[clamp(2.3rem,1.8rem+2.4vw,2.9rem)] font-bold leading-[0.95] tracking-[-0.02em]"><NombreMarca nombre={nombre} tamano="grande" debajo={<TextoExtraBajoNombre inicio={inicio} className="text-[0.85rem] text-demo-muted" />} /></h1>
           {lema && <p style={rolSub} className="mt-[0.3rem] text-[0.9rem] text-demo-muted">{lema}</p>}
         </div>
         <BotonCompartir titulo={nombre} className="mt-[0.3rem] shrink-0" />

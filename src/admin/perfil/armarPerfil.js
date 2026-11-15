@@ -28,7 +28,7 @@ export default function armarPerfil(datos, nombreCrear) {
   const textosEscritos = {
     ...(textosMini.titular !== undefined ? { titular: [textoGrande.trim()].filter(Boolean) } : {}),
     ...(textosMini.descripcion !== undefined ? { descripcion: textoPequeno.trim() } : {}),
-    ...(conTextoExtra ? { info: textoExtra.trim() } : {}),
+    ...(conTextoExtra || textosMini.info !== undefined ? { info: textoExtra.trim() } : {}),
     ...(textosMini.boton !== undefined ? { boton: textoBoton.trim() } : {}),
   }
   const inicioCambio = {

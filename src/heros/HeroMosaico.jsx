@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { CompartirJuntoAlBoton } from '../components/BotonCompartir'
 import NombreMarca from '../components/NombreMarca'
+import TextoExtraBajoNombre from '../components/TextoExtraBajoNombre'
 import useVueltaPestanas from '../lib/useVueltaPestanas'
 import BotonCompartir from '../components/BotonCompartir'
 import Escena, { fotoDeRespaldo, tipoComun } from '../fichas/escenas'
@@ -70,7 +71,7 @@ export default function HeroMosaico({ hero, nombre, lema, sinBarra = false, inic
     <div className="flex flex-1 flex-col" onPointerDown={parar}>
       <div className="px-[1.25rem] pt-[min(1rem,calc(0.7rem_+_max(0px,100svh_-_640px)_*_0.0775))]">
         <div className="flex items-baseline justify-between gap-[1rem]">
-          <p className={`font-demo-heading font-semibold text-demo-primary ${sinBarra ? 'text-[1.6rem] leading-none' : 'text-[1.05rem]'}`}><NombreMarca nombre={nombre} tamano={sinBarra ? 'normal' : 'pequeno'} /></p>
+          <p className={`font-demo-heading font-semibold text-demo-primary ${sinBarra ? 'text-[1.6rem] leading-none' : 'text-[1.05rem]'}`}><NombreMarca nombre={nombre} tamano={sinBarra ? 'normal' : 'pequeno'} debajo={<TextoExtraBajoNombre inicio={inicio} className="text-[0.8rem] text-demo-muted" />} /></p>
           {lema && <p style={rolSub} className="text-[0.78rem] text-demo-muted">{lema}</p>}
         </div>
         {textoMiniweb ? (

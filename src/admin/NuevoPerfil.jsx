@@ -151,13 +151,13 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
   const textoGrande = textosMini.titular ?? (inicioActual?.titular ?? []).join(' ')
   const maxGrande = maxDe(titularBase.join(' ') || 'Texto grande de la portada')
   const textoPequeno = textosMini.descripcion ?? inicioActual?.descripcion ?? ''
-  // El texto extra (un horario o lo que se quiera): solo lo pintan Editorial, Cortes (Diagonal) y Fullbleed
-  // Con esas tres portadas, el texto extra empieza con uno de ejemplo (se ve y se guarda aunque no lo toques)
-  const textoExtra = textosMini.info ?? inicioActual?.info ?? TEXTO_EXTRA_EJEMPLO
+  // El texto extra (un horario o lo que se quiera): solo lo pintan Editorial, Cortes (Diagonal) y Fullbleed. Con esas tres portadas, empieza con uno de ejemplo (se ve y se
+  // guarda aunque no lo toques). En los demás diseños el campo sale igual pero vacío, con ** en rojo debajo, y lo que se escriba se guarda por si ese diseño lo pinta un día
+  const conTextoExtra = ['editorial', 'diagonal', 'fullbleed'].includes(hero)
+  const textoExtra = textosMini.info ?? inicioActual?.info ?? (conTextoExtra ? TEXTO_EXTRA_EJEMPLO : '')
   // El texto del botón de la portada ("Ver menú", "Ver servicios"...): solo si la portada de partida lleva botón
   const hayBotonPortada = Boolean(inicioBase?.boton && inicioBase?.botonA)
   const textoBoton = textosMini.boton ?? inicioActual?.boton ?? ''
-  const conTextoExtra = ['editorial', 'diagonal', 'fullbleed'].includes(hero)
   const MAX_TEXTO_EXTRA = 60
   const textosEditados = Object.keys(textosMini).length > 0
   // Los textos escritos de la portada, tal como pasan a la vista previa (la primera pestaña, Inicio): igual que al crear, pero al momento

@@ -21,7 +21,7 @@ const TAMANOS = {
 
 /* El nombre del negocio: escrito (lo de siempre) o, si tiene logo, el logo y el nombre juntos (logo, nombre). children:
    cómo se escribe el nombre en ese diseño, si no es tal cual (por ejemplo, con el & en cursiva) */
-export default function NombreMarca({ nombre, tamano = 'normal', children }) {
+export default function NombreMarca({ nombre, tamano = 'normal', children, debajo = null }) {
   const logo = useContext(LogoNegocio)
   const factor = useFactorNombre()
   const rolTitulo = useRol('titulo')
@@ -30,12 +30,13 @@ export default function NombreMarca({ nombre, tamano = 'normal', children }) {
   const escalado = factor === 1 ? contenido : <span style={{ fontSize: `${factor}em` }}>{contenido}</span>
   // Con el color del título elegido, el nombre va de ese color
   const texto = rolTitulo ? <span style={rolTitulo}>{escalado}</span> : escalado
-  if (!logo) return texto
+  // debajo: algo que va justo debajo del texto del nombre (con logo, a la derecha de él y no debajo de todo el conjunto), como el texto extra de Inicio
+  if (!logo) return debajo ? <>{texto}{debajo}</> : texto
   const [alto, ancho] = TAMANOS[tamano]
   return (
     <span className="inline-flex items-center gap-[0.5rem] align-middle">
       <img src={logo} alt="" className="h-auto w-auto shrink-0 object-contain" style={{ maxHeight: `${alto * factor}rem`, maxWidth: `${ancho * factor}rem` }} />
-      <span>{texto}</span>
+      <span>{texto}{debajo}</span>
     </span>
   )
 }
