@@ -1289,26 +1289,34 @@ export default function PanelPage() {
       .then(({ data }) => setEsAdmin(Boolean(data)))
   }, [sesion])
 
-  // Las cartas de este dueño
+  // Las cartas de este dueño; el administrador ve todas, sean de quien sean (la base de datos le deja editar cualquiera: supabase/007_cartas_admin.sql)
   useEffect(() => {
     if (!sesion) {
       setCartasDueno(null)
       return
     }
+    // Primero se sabe quién es (esAdmin cambia después de entrar): si llega otra carga, la anterior se descarta
+    let vigente = true
     const cargar = async () => {
       // Todo: así sirve tenga o no la columna de ofertas (supabase/008_ofertas.sql)
-      const { data } = await supabase.from('cartas').select('*').eq('dueno', sesion.user.id).order('slug')
+      const consulta = supabase.from('cartas').select('*').order('slug')
+      const { data } = await (esAdmin ? consulta : consulta.eq('dueno', sesion.user.id))
+      if (!vigente) return
       const filas = data ?? []
       // Cada carta con sus datos: su archivo o, si se creó desde /admin, su copia (tabla ediciones)
       const { data: ediciones } = filas.length
         ? await supabase.from('ediciones').select('slug, base, cambios').eq('tipo', 'carta').in('slug', filas.map(f => f.slug))
         : { data: [] }
+      if (!vigente) return
       const conCarta = filas.map(f => ({ ...f, carta: conEdicion('carta', f.slug, ediciones?.find(e => e.slug === f.slug) ?? null) }))
       setCartasDueno(conCarta)
       if (conCarta.length === 1) setElegida(conCarta[0].slug)
     }
     cargar()
-  }, [sesion])
+    return () => {
+      vigente = false
+    }
+  }, [sesion, esAdmin])
 
   // Los horarios de la cuenta: el dueño, los suyos; el administrador, todos
   useEffect(() => {
