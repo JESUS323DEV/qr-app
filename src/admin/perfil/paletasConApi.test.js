@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { armarPaleta, armarPaletaDeModo, elegirAcento, fondoYTexto } from './paletasConApi'
+import { armarPaleta, armarPaletaDeModo, casan, elegirAcento, fondoYTexto } from './paletasConApi'
 import { contraste, hexAHsl, hslAHex } from '../../lib/colorMath'
 
 describe('textos serios (título y normal)', () => {
@@ -129,6 +129,38 @@ describe('cada opción con su principal (armarPaletaDeModo)', () => {
   })
 })
 
+
+describe('el acento casa con el principal (casan)', () => {
+  it('vecinos y opuestos casan; a medio camino (azul con verde) no, salvo dorados y casi grises', () => {
+    expect(casan(hslAHex(220, 60, 40), hslAHex(205, 60, 50))).toBe(true) // vecinos
+    expect(casan(hslAHex(220, 60, 40), hslAHex(40, 70, 50))).toBe(true) // opuesto, además dorado
+    expect(casan(hslAHex(220, 60, 40), hslAHex(30, 60, 55))).toBe(true)
+    expect(casan(hslAHex(220, 60, 40), hslAHex(140, 60, 40))).toBe(false) // azul con verde
+    expect(casan(hslAHex(300, 50, 40), hslAHex(165, 50, 40))).toBe(false) // lila con verde
+    expect(casan(hslAHex(220, 60, 40), hslAHex(140, 10, 40))).toBe(true) // el verde es casi gris
+  })
+
+  it('en cualquier opción de cualquier color de partida, el acento casa con el principal y se ve sobre el fondo', () => {
+    const c = (h, s, l) => hslAHex(h, s, l)
+    for (let h = 0; h < 360; h += 30) {
+      const semilla = c(h, 55, 40)
+      // Lo que devolvería la API: los relacionados por cada modo, a distancias de la rueda
+      const respuestas = {
+        complement: [c(h, 55, 40), c(h, 50, 55), c(h + 180, 55, 40), c(h + 180, 50, 50), c(h + 180, 45, 60)],
+        triad: [c(h, 55, 40), c(h + 120, 55, 40), c(h + 240, 55, 40), c(h + 120, 50, 55), c(h + 240, 50, 55)],
+        analogic: [c(h, 55, 40), c(h + 30, 55, 40), c(h + 60, 55, 40), c(h - 30, 55, 40), c(h - 60, 55, 40)],
+        monochrome: [c(h, 55, 10), c(h, 55, 25), c(h, 55, 40), c(h, 55, 55), c(h, 55, 70)],
+      }
+      for (const [modo, colores] of Object.entries(respuestas)) {
+        for (const oscuro of [false, true]) {
+          const p = armarPaletaDeModo(semilla, modo, colores, oscuro)
+          expect(casan(p.principal, p.acento), `${modo} desde ${h}: ${p.principal} con ${p.acento}`).toBe(true)
+          expect(contraste(p.acento, p.fondo)).toBeGreaterThanOrEqual(3)
+        }
+      }
+    }
+  })
+})
 
 describe('con un principal apagado, que dejaba sin candidatos y repetía la semilla', () => {
   // Lo que respondió TheColorAPI para un verde apagado (#376149): sus relacionados tienen la saturación por debajo de 25

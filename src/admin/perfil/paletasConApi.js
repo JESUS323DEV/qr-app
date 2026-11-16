@@ -102,11 +102,41 @@ export function principalDeModo(semilla, modo, candidatos) {
   return semilla.toUpperCase()
 }
 
+// Dos colores casan si están cerca en la rueda (vecinos), enfrentados (opuestos) o alguno de los dos es casi gris. A medio camino (como un azul con un verde, entre
+// 55 y 140 grados) chocan, salvo si uno es dorado, mostaza o naranja (tonos de 30 a 55)
+export function casan(a, b) {
+  const [ha, sa] = hexAHsl(a)
+  const [hb, sb] = hexAHsl(b)
+  if (sa < 15 || sb < 15 || (hb >= 30 && hb <= 55) || (ha >= 30 && ha <= 55)) return true
+  const d = distanciaTono(a, b)
+  return d <= 55 || d >= 140
+}
+
+// Un acento del mismo color que el principal, más claro o más oscuro (el que se vea sobre el fondo), para cuando ninguno de los relacionados casa con él
+function acentoDelMismoColor(principal, fondo, oscuro) {
+  const [h, s, l] = hexAHsl(principal)
+  // Se aleja de la luz del principal hasta que se lee sobre el fondo y se distingue de él: hacia el lado con más margen (un principal oscuro sobre fondo claro, más claro;
+  // uno claro, más oscuro; sobre fondo oscuro, siempre más claro) y, si por ahí no se consigue, hacia el otro
+  const lados = oscuro ? [1] : l < 42 ? [1, -1] : [-1, 1]
+  for (const lado of lados) {
+    for (let paso = 14; paso <= 50; paso += 4) {
+      const luz = Math.max(8, Math.min(92, l + lado * paso))
+      const c = hslAHex(h, Math.min(100, s + 10), luz).toUpperCase()
+      if (contraste(c, fondo) >= 3 && contraste(c, principal) >= 1.4) return c
+    }
+  }
+  return principal.toUpperCase()
+}
+
 /* Una paleta completa de una opción: el principal propio de ese modo, el fondo y el texto a partir del tono de ese principal y, de acento, el color de partida (para que
-   no se pierda) si se ve sobre el fondo; si no, el mejor de los relacionados */
+   no se pierda) o uno de los relacionados, siempre que se vea sobre el fondo y case con el principal (ni vecino a medio camino ni un choque como azul con verde). Si
+   ninguno casa, un tono del mismo color que el principal */
 export function armarPaletaDeModo(semilla, modo, candidatos, oscuro = false) {
   const principal = principalDeModo(semilla, modo, candidatos)
   const { fondo, texto, titulo } = fondoYTexto(principal, oscuro)
-  const acento = principal !== semilla.toUpperCase() && contraste(semilla, fondo) >= 3 ? semilla.toUpperCase() : elegirAcento(principal, [...candidatos, semilla], fondo)
-  return { principal, acento, fondo, texto, titulo }
+  const posibles = [semilla, ...candidatos].filter(esHex6).map(c => c.toUpperCase()).filter(c => c !== principal.toUpperCase() && casan(principal, c))
+  const legibles = posibles.filter(c => contraste(c, fondo) >= 3)
+  const acento = legibles.length ? elegirAcento(principal, legibles, fondo) : acentoDelMismoColor(principal, fondo, oscuro)
+  // El color de partida se conserva si casa y se ve (es el que ya tenía la copia)
+  return { principal, acento: legibles.includes(semilla.toUpperCase()) && principal !== semilla.toUpperCase() ? semilla.toUpperCase() : acento, fondo, texto, titulo }
 }

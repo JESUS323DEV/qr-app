@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { FAMILIAS, LIBRERIA, armarDeLibreria, crearTanda } from './libreriaPaletas'
-import { contraste, esHex6 } from '../../lib/colorMath'
+import { contraste, esHex6, hexAHsl } from '../../lib/colorMath'
 
 // Un azar con semilla (para que las pruebas den siempre lo mismo)
 const azarCon = semilla => {
@@ -30,6 +30,22 @@ describe('la librería', () => {
       const n = LIBRERIA.filter(p => p.familia === f).length
       expect(n).toBeGreaterThanOrEqual(3)
       expect(n).toBeLessThanOrEqual(LIBRERIA.length / 4)
+    }
+  })
+
+  it('el acento no choca con el principal: ni vecino a medio camino (como un azul con un verde) ni igual de color', () => {
+    const dist = (a, b) => {
+      const d = Math.abs(a - b) % 360
+      return Math.min(d, 360 - d)
+    }
+    for (const p of LIBRERIA) {
+      const [hp, sp] = hexAHsl(p.principal)
+      const [ha, sa] = hexAHsl(p.acento)
+      // Casi gris o dorado, mostaza y naranja (tonos de 30 a 55): valen con cualquiera
+      const comodin = sp < 15 || sa < 15 || (ha >= 30 && ha <= 55)
+      if (comodin) continue
+      const d = dist(hp, ha)
+      expect(d < 60 || d > 140, `${p.nombre}: principal y acento a ${Math.round(d)} grados`).toBe(true)
     }
   })
 

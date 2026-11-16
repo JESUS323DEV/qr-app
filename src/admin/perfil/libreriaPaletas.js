@@ -1,6 +1,8 @@
 /* La librería de paletas: combinaciones hechas a mano, no calculadas. Cada una trae su nombre, su familia (el color que domina), el principal, el acento y dos
    fondos (claro y oscuro). El texto sale del fondo, con contraste comprobado. Están repartidas a propósito entre todas las familias, para que no salgan siempre
-   verdes y lilas. Para añadir una, una línea más: [nombre, familia, principal, acento, fondo claro, fondo oscuro]. */
+   verdes y lilas. Para añadir una, una línea más: [nombre, familia, principal, acento, fondo claro, fondo oscuro]. Regla de armonía (la comprueba una prueba): el acento
+   es de otro color que el principal pero no choca con él, es decir, no está a medio camino en la rueda (entre 60 y 140 grados, como un azul con un verde), salvo que
+   sea un dorado, mostaza o naranja, o que alguno de los dos sea casi gris. */
 import { contraste, hexAHsl, hslAHex } from '../../lib/colorMath'
 
 export const FAMILIAS = ['rojo', 'rosa', 'naranja', 'marron', 'amarillo', 'verde', 'turquesa', 'azul', 'violeta', 'neutro']
@@ -26,7 +28,7 @@ const DATOS = [
   // Marrones
   ['Chocolate y rosa', 'marron', '#5C3A2A', '#D98BA0', '#F6EEE8', '#1B120E'],
   ['Café y crema', 'marron', '#6F4E37', '#C8A27A', '#F5EEE4', '#1C1410'],
-  ['Nuez y verde bosque', 'marron', '#7A5230', '#2E5E45', '#F4EDE1', '#18140E'],
+  ['Nuez y miel', 'marron', '#7A5230', '#D4A237', '#F4EDE1', '#18140E'],
   ['Caramelo y azul marino', 'marron', '#A8672A', '#1D3557', '#F8EFE2', '#111B2C'],
   // Amarillos
   ['Mostaza y azul marino', 'amarillo', '#C99A1C', '#1E3A5F', '#FAF3DF', '#14161F'],
@@ -37,7 +39,7 @@ const DATOS = [
   ['Verde botella y latón', 'verde', '#1F4D3A', '#B8902F', '#F1F1E6', '#0F1A15'],
   ['Salvia y terracota', 'verde', '#7C9A7E', '#C0623A', '#F2F2EA', '#141A15'],
   ['Oliva y ladrillo', 'verde', '#6B6F2A', '#8C3B2E', '#F6F3E3', '#181A0D'],
-  ['Manzana y marino', 'verde', '#5E9C2E', '#1F3556', '#F4F8E8', '#111C12'],
+  ['Manzana y tierra', 'verde', '#5E9C2E', '#8C6029', '#F4F8E8', '#111C12'],
   ['Esmeralda y coral', 'verde', '#0E7C5A', '#E8685A', '#EFF7F2', '#0D1C16'],
   // Turquesas
   ['Petróleo y melocotón', 'turquesa', '#1D5C63', '#E9967A', '#EEF5F4', '#0E1D1F'],
@@ -52,7 +54,7 @@ const DATOS = [
   // Violetas
   ['Berenjena y dorado', 'violeta', '#4B1F4A', '#D1A13B', '#F4EEF3', '#170C17'],
   ['Ciruela y rosa', 'violeta', '#6D2F6B', '#E58BAA', '#F7EEF4', '#1D101C'],
-  ['Lavanda y menta', 'violeta', '#8A6FBF', '#4FB39A', '#F4F1FA', '#181426'],
+  ['Lavanda y miel', 'violeta', '#8A6FBF', '#D8A93C', '#F4F1FA', '#181426'],
   // Neutros
   ['Negro, blanco y rojo', 'neutro', '#1C1C1C', '#D7263D', '#F5F5F3', '#0B0B0B'],
   ['Grafito y cobre', 'neutro', '#3A3D44', '#B86B3F', '#F3F1EE', '#141416'],
