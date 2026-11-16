@@ -37,3 +37,7 @@ Actualizado el 16-11-2026. Estados: idea, en curso, hecha, descartada. Una líne
 - **Paletas de siete colores** en miniweb y cartas (14 y 15-11-2026).
 - **Asistente en modo terminar** para miniwebs (14-11-2026).
 - **Partir `src/pages/PanelPage.jsx`** (de 1.419 a 191 líneas): los editores de menú, ofertas y horarios, la elección de perfil y la vista previa están en `src/panel/`, con el código idéntico. El editor táctil de Inmersiva, probado en móvil real (16-11-2026).
+
+## Descartado
+
+- **Paleta sugerida por fórmulas** (pestaña Paletas, con "Sugerir con mi principal" y "Paletas al azar"): descartada el 16-11-2026 y sustituida por una librería de paletas hechas a mano (`libreriaPaletas.js`, 43 paletas de 10 familias de color, sin repetir hasta que se acaben). Solo comprobaba que el texto se leyera, no que los colores combinaran, repetía familias de color (el verde salía en el 98 % de las pulsaciones), con un principal apagado dos opciones salían idénticas y los textos sobre la foto de la portada pasaban a oscuros. Los colores se siguen eligiendo a mano en el Editor.

@@ -5,7 +5,7 @@ import { coloresDeCarta, rolesDePaleta } from '../paletasSugeridas'
 // Recibe los objetos de los hooks y el color principal de ahora.
 // original: los colores de justo antes de aplicar la primera paleta (se guardan en NuevoPerfil para que sigan al cambiar de grupo); con ellos, "Volver al color original" los restaura
 export default function PanelPaletas({ diseno, carta, negocio, colorPrincipal, hayCopia, original, guardarOriginal }) {
-  const { hero, producto, cabecera, coloresMini, setCabecera, setColoresMini } = diseno
+  const { producto, cabecera, coloresMini, setCabecera, setColoresMini } = diseno
   const { estilo, fondo2, textoSuave, coloresCarta, setFondo2, setTextoSuave, setColoresCarta } = carta
   const { principal, acento, fondo, colorTexto, setAcento, setColorTexto, setFondo, setPrincipal } = negocio
   const esCarta = producto === 'carta'
@@ -36,8 +36,8 @@ export default function PanelPaletas({ diseno, carta, negocio, colorPrincipal, h
       )}
       <SugerirPaleta
         bloqueado={!hayCopia}
-        modo={esCarta ? 'carta' : 'miniweb'}
         principal={colorPrincipal}
+        modo={esCarta ? 'carta' : 'miniweb'}
         aplicar={(p, soltar) => {
           // La primera vez, se guardan los colores de antes (tal como están en los selectores, con lo automático vacío); las siguientes paletas no los pisan, así que se vuelve al de partida
           if (!original) guardarOriginal({ principal, acento, fondo, colorTexto, coloresMini, cabecera, fondo2, textoSuave, coloresCarta })
@@ -55,7 +55,7 @@ export default function PanelPaletas({ diseno, carta, negocio, colorPrincipal, h
               setTextoSuave(c.textoSuave)
               setColoresCarta(c.coloresCarta)
             } else {
-              setColoresMini(rolesDePaleta(p, { polaroid: hero === 'polaroid' }))
+              setColoresMini(rolesDePaleta(p))
               setCabecera('')
             }
           }

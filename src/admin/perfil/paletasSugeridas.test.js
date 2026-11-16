@@ -1,48 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { armarPaleta, armarPaletaDeModo, coloresDeCarta, colorInactivoMenu, contraste, elegirAcento, fondoYTexto, hexAHsl, hslAHex, letrasSobre, mezclar, principalAlAzar, rolesDePaleta, tonoDistinto } from './paletasSugeridas'
+import { LIBRERIA, armarDeLibreria } from './libreriaPaletas'
+import { coloresDeCarta, colorInactivoMenu, letrasSobre, rolesDePaleta } from './paletasSugeridas'
+import { contraste, hexAHsl, hslAHex, mezclar, tonoDistinto } from '../../lib/colorMath'
 import { CLAVES_COLORES_MINIWEB } from '../../lib/coloresMiniweb'
-
-describe('textos serios (título y normal)', () => {
-  it('se leen: el de título con contraste 10 o más y el normal con 7 o más, en claro y en oscuro, para cualquier tono', () => {
-    for (let h = 0; h < 360; h += 20) {
-      const principal = hslAHex(h, 70, 40)
-      for (const oscuro of [false, true]) {
-        const { fondo, texto, titulo } = fondoYTexto(principal, oscuro)
-        expect(contraste(fondo, titulo)).toBeGreaterThanOrEqual(10)
-        expect(contraste(fondo, texto)).toBeGreaterThanOrEqual(7)
-      }
-    }
-  })
-
-  it('son serios: casi grises (saturación de 22 como mucho), nada chillón ni brillante', () => {
-    for (let h = 0; h < 360; h += 20) {
-      for (const oscuro of [false, true]) {
-        const { texto, titulo } = fondoYTexto(hslAHex(h, 85, 45), oscuro)
-        for (const c of [texto, titulo]) {
-          if (c !== '#FFFFFF' && c !== '#000000') expect(hexAHsl(c)[1]).toBeLessThanOrEqual(23)
-        }
-      }
-    }
-  })
-
-  it('nunca son del tono del principal (el de las barras): su tono es el opuesto', () => {
-    for (const principal of ['#C1BA2D', '#4A992D', '#307B2D', '#1C2778', '#B04A8E']) {
-      for (const oscuro of [false, true]) {
-        const { texto, titulo } = fondoYTexto(principal, oscuro)
-        for (const c of [texto, titulo]) {
-          if (c === '#FFFFFF' || c === '#000000') continue
-          const d = Math.abs(hexAHsl(c)[0] - hexAHsl(principal)[0])
-          expect(Math.min(d, 360 - d)).toBeGreaterThan(120)
-        }
-      }
-    }
-  })
-
-  it('el título es más fuerte que el texto normal (más contraste con el fondo)', () => {
-    const { fondo, texto, titulo } = fondoYTexto('#307B2D', false)
-    expect(contraste(fondo, titulo)).toBeGreaterThanOrEqual(contraste(fondo, texto))
-  })
-})
 
 describe('letrasSobre y rolesDePaleta', () => {
   it('letrasSobre siempre llega a 4,5 de contraste', () => {
@@ -83,15 +43,15 @@ describe('letrasSobre y rolesDePaleta', () => {
     expect(rolesDePaleta({ ...paleta, principal: '#F2C9CF', acento: '#292C5F' }).menuSubrayado).toBe('#292C5F')
   })
 
-  it('el fondo de la portada es el de la paleta, salvo en Polaroid, que conserva el suyo', () => {
-    expect(rolesDePaleta(paleta).fondoPortada).toBe('#F5F9F5')
-    expect(rolesDePaleta(paleta, { polaroid: true })).not.toHaveProperty('fondoPortada')
+  it('la portada no se toca: ni su fondo ni sus textos, que van sobre la foto y se quedan en el blanco del diseño', () => {
+    const r = rolesDePaleta(paleta)
+    for (const clave of ['fondoPortada', 'titulo', 'titular', 'subtitulo', 'descripcion', 'extra']) expect(r).not.toHaveProperty(clave)
   })
 
-  it('el título (nombre, texto grande y títulos) y el texto normal (descripción, lema, extra...) usan sus dos colores, también los de la portada sobre la foto', () => {
+  it('el título y el texto normal de la paleta van a las páginas de Horario y Reservar', () => {
     const r = rolesDePaleta(paleta)
-    for (const clave of ['titulo', 'titular', 'horarioTitulo', 'horarioDias', 'reservaTitulo']) expect(r[clave]).toBe('#1F2A26')
-    for (const clave of ['subtitulo', 'descripcion', 'extra', 'horarioHoras', 'reservaTexto', 'reservaTelefono']) expect(r[clave]).toBe('#3A4A44')
+    for (const clave of ['horarioTitulo', 'horarioDias', 'reservaTitulo']) expect(r[clave]).toBe('#1F2A26')
+    for (const clave of ['horarioHoras', 'reservaTexto', 'reservaTelefono']) expect(r[clave]).toBe('#3A4A44')
   })
 
   it('la tarjeta de Google tiene su zona, un tono distinto del cuerpo', () => {
@@ -138,99 +98,6 @@ describe('colores', () => {
   })
 })
 
-describe('fondoYTexto', () => {
-  it('el texto se lee (contraste 7 o más) sobre el fondo, claro u oscuro, para cualquier tono', () => {
-    for (let h = 0; h < 360; h += 20) {
-      const principal = hslAHex(h, 60, 40)
-      for (const oscuro of [false, true]) {
-        const { fondo, texto } = fondoYTexto(principal, oscuro)
-        expect(contraste(fondo, texto)).toBeGreaterThanOrEqual(7)
-      }
-    }
-  })
-
-  it('el claro tiene el fondo claro y el oscuro, oscuro', () => {
-    expect(hexAHsl(fondoYTexto('#307BA9', false).fondo)[2]).toBeGreaterThan(90)
-    expect(hexAHsl(fondoYTexto('#307BA9', true).fondo)[2]).toBeLessThan(15)
-  })
-})
-
-describe('elegirAcento y armarPaleta', () => {
-  it('elige el acento más distinto al principal entre los que se ven sobre el fondo', () => {
-    const principal = '#307BA9'
-    const { fondo } = fondoYTexto(principal, false)
-    const acento = elegirAcento(principal, ['#2F739C', '#792D5D', '#62842E', 'mal'], fondo)
-    expect(['#792D5D', '#62842E']).toContain(acento)
-    expect(contraste(acento, fondo)).toBeGreaterThanOrEqual(3)
-  })
-
-  it('sin candidatos válidos, el acento es el principal; la paleta trae los cuatro colores', () => {
-    expect(armarPaleta('#307BA9', ['mal']).acento).toBe('#307BA9')
-    const p = armarPaleta('#307BA9', ['#792D5D'])
-    expect(Object.keys(p).sort()).toEqual(['acento', 'fondo', 'principal', 'texto', 'titulo'])
-  })
-})
-
-describe('principalAlAzar', () => {
-  it('siempre da un color completo en el que se lee la letra blanca', () => {
-    for (let i = 0; i < 50; i++) {
-      const c = principalAlAzar()
-      expect(c).toMatch(/^#[0-9A-F]{6}$/)
-      expect(contraste(c, '#FFFFFF')).toBeGreaterThanOrEqual(4.5)
-    }
-  })
-})
-
-describe('cada opción con su principal (armarPaletaDeModo)', () => {
-  // Lo que respondió TheColorAPI para un rosa de partida (#C13584), uno por modo
-  const semilla = '#C13584'
-  const respuestas = {
-    complement: ['#35A164', '#35AE6A', '#BB3580', '#C83588', '#CF3A8E'],
-    triad: ['#74A135', '#3577AE', '#BB3580', '#C83588', '#CF3A8E'],
-    analogic: ['#B4357D', '#B93558', '#BE3A35', '#C46535', '#C99335'],
-    monochrome: ['#5B1B3F', '#84265B', '#AC3076', '#CC4391', '#D86AA8'],
-  }
-  const paletas = Object.fromEntries(Object.entries(respuestas).map(([modo, colores]) => [modo, armarPaletaDeModo(semilla, modo, colores)]))
-
-  it('las cuatro opciones tienen un principal distinto entre sí y distinto de la semilla', () => {
-    const principales = Object.values(paletas).map(p => p.principal)
-    expect(new Set(principales).size).toBe(4)
-    for (const p of principales) expect(p).not.toBe(semilla.toUpperCase())
-  })
-
-  it('complementaria y tríada se alejan de verdad en tono; vecinos se queda cerca; mismo tono conserva el tono con otra luz', () => {
-    const dist = c => {
-      const d = Math.abs(hexAHsl(c)[0] - hexAHsl(semilla)[0])
-      return Math.min(d, 360 - d)
-    }
-    expect(dist(paletas.complement.principal)).toBeGreaterThan(100)
-    expect(dist(paletas.triad.principal)).toBeGreaterThan(100)
-    expect(dist(paletas.analogic.principal)).toBeLessThan(80)
-    expect(dist(paletas.analogic.principal)).toBeGreaterThanOrEqual(20)
-    expect(dist(paletas.monochrome.principal)).toBeLessThanOrEqual(15)
-    expect(Math.abs(hexAHsl(paletas.monochrome.principal)[2] - hexAHsl(semilla)[2])).toBeGreaterThan(8)
-  })
-
-  it('el fondo y el texto salen del tono de cada principal, así que cambian entre opciones, y el texto se lee', () => {
-    const fondos = Object.values(paletas).map(p => p.fondo)
-    expect(new Set(fondos).size).toBeGreaterThan(2)
-    for (const p of Object.values(paletas)) expect(contraste(p.fondo, p.texto)).toBeGreaterThanOrEqual(7)
-  })
-
-  it('de acento conserva el color de partida cuando se ve sobre el fondo', () => {
-    for (const p of Object.values(paletas)) {
-      expect(contraste(p.acento, p.fondo)).toBeGreaterThanOrEqual(3)
-    }
-    expect(paletas.complement.acento).toBe(semilla.toUpperCase())
-  })
-
-  it('sin candidatos usables, el principal es la semilla y la paleta sigue completa', () => {
-    const p = armarPaletaDeModo(semilla, 'triad', ['mal', '#FFFFFF', '#000000'])
-    expect(p.principal).toBe(semilla.toUpperCase())
-    expect(Object.keys(p).sort()).toEqual(['acento', 'fondo', 'principal', 'texto', 'titulo'])
-  })
-})
-
 describe('tonoDistinto (la barra de redes nunca igual que el menú)', () => {
   it('da siempre un color distinto del de partida, del mismo tono', () => {
     for (let h = 0; h < 360; h += 15) {
@@ -268,11 +135,13 @@ describe('coloresDeCarta (paletas en Menú y ofertas)', () => {
   })
 
   it('el texto suave se lee sobre el fondo (contraste 4,5 o más) y es más suave que el texto', () => {
-    for (const oscuro of [false, true]) {
-      const { fondo, texto, titulo } = fondoYTexto('#307B2D', oscuro)
-      const c = coloresDeCarta({ principal: '#307B2D', acento: '#C1BA2D', fondo, texto, titulo })
-      expect(contraste(c.textoSuave, fondo)).toBeGreaterThanOrEqual(4.5)
-      expect(contraste(c.textoSuave, fondo)).toBeLessThan(contraste(texto, fondo))
+    for (const paleta of LIBRERIA) {
+      for (const oscuro of [false, true]) {
+        const r = armarDeLibreria(paleta, oscuro)
+        const c = coloresDeCarta(r)
+        expect(contraste(c.textoSuave, r.fondo)).toBeGreaterThanOrEqual(4.5)
+        expect(contraste(c.textoSuave, r.fondo)).toBeLessThan(contraste(r.texto, r.fondo))
+      }
     }
   })
 
