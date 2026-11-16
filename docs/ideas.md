@@ -1,6 +1,6 @@
 # Ideas
 
-Actualizado el 15-11-2026. Estados: idea, en curso, hecha, descartada. Una línea por idea; si crece, va a su `plan-*.md`.
+Actualizado el 16-11-2026. Estados: idea, en curso, hecha, descartada. Una línea por idea; si crece, va a su `plan-*.md`.
 
 ## Panel y datos
 
@@ -13,7 +13,6 @@ Actualizado el 15-11-2026. Estados: idea, en curso, hecha, descartada. Una líne
 
 ## Refactor y limpieza
 
-- **Partir `src/pages/PanelPage.jsx`** (1.419 líneas) en editores propios. Estado: idea, primer paso del plan. Extraer el editor táctil de Inmersiva tal cual en lo que hace.
 - **Partir `src/components/GeneradorQR.jsx`** (2.573 líneas). Estado: idea. Jesús dice que de momento no le preocupa.
 - **Partir `LandingPage.jsx` y `HeroWeb.jsx`**. Estado: idea.
 
@@ -37,3 +36,4 @@ Actualizado el 15-11-2026. Estados: idea, en curso, hecha, descartada. Una líne
 - **Temática como etiqueta** y perfil obligatorio en Menú y ofertas (15-11-2026, `ffc4deb`).
 - **Paletas de siete colores** en miniweb y cartas (14 y 15-11-2026).
 - **Asistente en modo terminar** para miniwebs (14-11-2026).
+- **Partir `src/pages/PanelPage.jsx`** (de 1.419 a 191 líneas): los editores de menú, ofertas y horarios, la elección de perfil y la vista previa están en `src/panel/`, con el código idéntico. El editor táctil de Inmersiva, probado en móvil real (16-11-2026).
