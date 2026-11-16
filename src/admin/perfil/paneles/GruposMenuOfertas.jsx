@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { ChevronDown, Plus, Trash2, X } from 'lucide-react'
+import { CampoFoto } from '../../Campos'
 import { Plegable } from '../../PanelesMiniweb'
 import { CAMPO } from '../../../components/panel'
 import { DESCRIPCION_PRUEBA, nombrePlatoPrueba } from '../../../lib/enBlanco'
@@ -21,7 +22,11 @@ function useGuardarLista({ datosEnBruto, cambiosExtra, cambiarExtra }) {
   }
 }
 
-const BOTON_ICONO = 'shrink-0 rounded-[0.6rem] p-[0.6rem] text-zinc-500 ring-1 ring-zinc-300 hover:text-zinc-900 disabled:opacity-40'
+// Cuántas fotos de ofertas enseña cada estilo: Polaroid y Revista, las 4 primeras; Galería, hasta 6 (de dos en dos)
+const MAX_FOTOS_CORTAS = 4
+const MAX_FOTOS = 6
+
+const BOTON_ICONO ='shrink-0 rounded-[0.6rem] p-[0.6rem] text-zinc-500 ring-1 ring-zinc-300 hover:text-zinc-900 disabled:opacity-40'
 const BOTON_ANADIR = 'flex items-center justify-center gap-[0.4rem] rounded-[0.6rem] px-[0.9rem] py-[0.5rem] text-[0.88rem] font-semibold ring-1 ring-zinc-300 disabled:opacity-40'
 
 // Hay nombres vacíos o repetidos (la carta usa el nombre como identificador)
@@ -64,6 +69,17 @@ export function GruposMenuDia({ datos, datosEnBruto, cambiosExtra, cambiarExtra,
   return (
     <Plegable titulo="Grupos del menú del día" elegido={`${grupos.length} ${grupos.length === 1 ? 'grupo' : 'grupos'}`}>
       <div className="grid gap-[0.6rem]">
+        {/* La foto del menú del día, justo arriba */}
+        <div className="grid gap-[0.4rem]">
+          <p className="text-[0.8rem] font-semibold text-zinc-500">Foto del menú del día</p>
+          <CampoFoto
+            valor={datos.menuDia.foto ?? ''}
+            cambiar={v => cambiarExtra('menuDia.foto', v)}
+            carpeta="negocio/nuevo"
+            sugerencia={datos.marca?.sector ?? ''}
+            quitar={datos.menuDia.foto ? () => cambiarExtra('menuDia.foto', '') : undefined}
+          />
+        </div>
         <p className="text-[0.8rem] text-zinc-500">Primeros, Segundos, Postres... con sus platos. El dueño puede tener hasta {MAX_GRUPOS} grupos de {MAX_PLATOS} platos.</p>
         {grupos.map((g, i) => (
           <div key={i} className="grid gap-[0.5rem]">
@@ -122,6 +138,13 @@ export function ListaOfertas({ datos, datosEnBruto, cambiosExtra, cambiarExtra }
   const guardar = useGuardarLista({ datosEnBruto, cambiosExtra, cambiarExtra })
   const lista = datos.ofertas.lista ?? []
   const poner = nueva => guardar('ofertas.lista', nueva)
+  // Las fotos de las ofertas (ofertas.fotos; sin lista, la foto suelta ofertas.foto): pasan solas en la carta. Las nuevas empiezan repitiendo la primera, para cambiarlas con Buscar o Subir
+  const fotos = Array.isArray(datos.ofertas.fotos) ? datos.ofertas.fotos : datos.ofertas.foto ? [datos.ofertas.foto] : []
+  const ponerFotos = nuevas => {
+    guardar('ofertas.fotos', nuevas)
+    // Sin ninguna, tampoco queda la foto suelta de respaldo
+    if (!nuevas.length) cambiarExtra('ofertas.foto', '')
+  }
   const ponerOferta = (i, cambio) => poner(lista.map((o, k) => (k === i ? { ...o, ...cambio } : o)))
   const anadir = () => {
     let n = lista.length + 1
@@ -131,6 +154,25 @@ export function ListaOfertas({ datos, datosEnBruto, cambiosExtra, cambiarExtra }
   return (
     <Plegable titulo="Ofertas" elegido={`${lista.length} ${lista.length === 1 ? 'oferta' : 'ofertas'}`}>
       <div className="grid gap-[0.6rem]">
+        {/* Las fotos de las ofertas, justo arriba */}
+        <div className="grid gap-[0.5rem]">
+          <p className="text-[0.8rem] font-semibold text-zinc-500">Fotos de las ofertas</p>
+          <p className="text-[0.8rem] text-zinc-400">Pasan solas, una tras otra. Polaroid y Revista enseñan las {MAX_FOTOS_CORTAS} primeras; Galería, hasta {MAX_FOTOS}, de dos en dos.</p>
+          {fotos.map((f, i) => (
+            <CampoFoto
+              key={i}
+              valor={f}
+              cambiar={v => ponerFotos(fotos.map((x, k) => (k === i ? v : x)))}
+              carpeta="negocio/nuevo"
+              sugerencia={datos.marca?.sector ?? ''}
+              quitar={() => ponerFotos(fotos.filter((_, k) => k !== i))}
+            />
+          ))}
+          <button type="button" disabled={fotos.length >= MAX_FOTOS} onClick={() => ponerFotos([...fotos, fotos[0] ?? ''])} className={BOTON_ANADIR}>
+            <Plus className="h-[1rem] w-[1rem]" aria-hidden="true" />
+            Añadir foto
+          </button>
+        </div>
         <label className="flex cursor-pointer items-start gap-[0.5rem] text-[0.88rem]">
           <input
             type="checkbox"
