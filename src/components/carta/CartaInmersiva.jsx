@@ -41,28 +41,37 @@ function MenuDia({ menu }) {
   )
 }
 
-// Sección de la carta abierta (Pollastres, Acompanyaments...)
+// Sección de la carta abierta (Entradas, Principales...): los platos en tarjetas de cristal, de dos en dos, sobre la foto fija de fondo.
+// Cada tarjeta lleva su foto arriba (si la tiene), el nombre, el precio, la descripción y los alérgenos; sin foto, solo el texto
 function Seccion({ seccion }) {
   return (
     <div>
       <h2 className="font-demo-heading text-[1.6rem] leading-none">{seccion.nombre}</h2>
-      <ul className="mt-[0.8rem] border-t border-white/15">
+      <ul className="mt-[0.8rem] grid grid-cols-2 items-start gap-[0.7rem] [@media(min-height:50rem)]:gap-[0.9rem]">
         {seccion.platos.map(p => (
-          <li key={p.nombre} className="border-b border-white/15 py-[0.85rem]">
-            <div className="flex items-baseline justify-between gap-[1rem]">
-              <p className="font-semibold">{p.nombre}</p>
-              <p className="shrink-0 font-semibold" style={estiloPrecio('inherit')}>{p.precio}</p>
-            </div>
-            {p.descripcion && <p className="mt-[0.15rem] text-[0.88rem] leading-[1.45] text-white/70">{p.descripcion}</p>}
-            {p.alergenos?.length > 0 && (
-              <ul className="mt-[0.45rem] flex flex-wrap gap-[0.3rem]">
-                {p.alergenos.map(a => (
-                  <li key={a} title={ALERGENOS[a]?.nombre} className="rounded-full border border-white/30 px-[0.45rem] py-[0.05rem] text-[0.68rem] font-semibold text-white/75">
-                    {ALERGENOS[a]?.corto}
-                  </li>
-                ))}
-              </ul>
+          <li key={p.nombre} className="overflow-hidden rounded-[0.9rem] border border-white/20 bg-black/35 backdrop-blur-md">
+            {p.foto && (
+              <div className="relative aspect-[4/3] w-full bg-white/10">
+                <Img src={p.foto} alt={p.nombre} className="absolute inset-0 h-full w-full object-cover" />
+              </div>
             )}
+            <div className="px-[0.7rem] pb-[0.7rem] pt-[0.55rem] [@media(min-height:50rem)]:px-[0.85rem] [@media(min-height:50rem)]:pb-[0.85rem] [@media(min-height:50rem)]:pt-[0.7rem]">
+              <p className="text-[0.95rem] font-semibold leading-tight [@media(min-height:50rem)]:text-[1.05rem]">{p.nombre}</p>
+              <p className="mt-[0.2rem] font-demo-heading text-[1.05rem] font-bold leading-none text-demo-accent [@media(min-height:50rem)]:text-[1.2rem]" style={estiloPrecio('var(--demo-accent)')}>
+                {p.precio}
+                {p.antes && <span className="ml-[0.4rem] text-[0.8rem] font-normal text-white/60 line-through">{p.antes}</span>}
+              </p>
+              {p.descripcion && <p className="mt-[0.3rem] text-[0.8rem] leading-[1.35] text-white/75 [@media(min-height:50rem)]:text-[0.88rem]">{p.descripcion}</p>}
+              {p.alergenos?.length > 0 && (
+                <ul className="mt-[0.4rem] flex flex-wrap gap-[0.25rem]">
+                  {p.alergenos.map(a => (
+                    <li key={a} title={ALERGENOS[a]?.nombre} className="rounded-full border border-white/30 px-[0.4rem] py-[0.02rem] text-[0.65rem] font-semibold text-white/75">
+                      {ALERGENOS[a]?.corto}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </li>
         ))}
       </ul>
@@ -164,35 +173,31 @@ export default function CartaInmersiva({ carta, negocio, foto }) {
           </div>
         </div>
 
-        {/* La base: las pestañas en una fila (Menú del día y Carta) y, con la carta abierta, sus secciones en otra fila (que salta de línea si no caben) */}
+        {/* La base, como en los demás estilos: las pestañas (Menú del día y Carta) en texto, la elegida subrayada, y con la carta abierta sus grupos en una fila que se desplaza de lado */}
         {!columna && (
-          <nav className="px-[1.25rem] pb-[0.5rem]">
-            <div className="flex flex-wrap gap-[0.4rem]">
+          <nav className="px-[1.25rem] pb-[0.5rem] [text-shadow:0_0.1rem_0.6rem_rgb(0_0_0/0.55)]">
+            <div className="flex gap-[1.3rem]">
               {principales.map(p => (
                 <button
                   key={p.key}
                   type="button"
                   aria-pressed={modo === p.key}
                   onClick={() => setModo(p.key)}
-                  className={`rounded-full px-[1rem] py-[0.45rem] text-[0.9rem] font-semibold backdrop-blur-sm transition-colors ${
-                    modo === p.key ? 'bg-white text-[#141414]' : 'bg-black/40 text-white hover:bg-black/55'
-                  }`}
+                  className={`text-[0.98rem] font-semibold [@media(min-height:46rem)]:text-[1.05rem] ${modo === p.key ? 'underline decoration-2 underline-offset-[0.35em]' : 'text-white/65 hover:text-white'}`}
                 >
                   {p.texto}
                 </button>
               ))}
             </div>
             {modo === 'carta' && (
-              <div className="mt-[0.4rem] flex flex-wrap gap-[0.3rem]">
+              <div className="-mx-[1.25rem] mt-[0.5rem] flex gap-[1.1rem] overflow-x-auto px-[1.25rem] [scrollbar-width:none]">
                 {carta.secciones.map(s => (
                   <button
                     key={s.nombre}
                     type="button"
                     aria-pressed={seccionActiva === s.nombre}
                     onClick={() => setSeccionActiva(s.nombre)}
-                    className={`rounded-full border px-[0.85rem] py-[0.3rem] text-[0.8rem] font-semibold backdrop-blur-sm transition-colors ${
-                      seccionActiva === s.nombre ? 'border-white bg-white/15 text-white' : 'border-transparent bg-black/40 text-white/80 hover:text-white'
-                    }`}
+                    className={`shrink-0 font-demo-heading text-[1.45rem] font-bold leading-none [@media(min-height:46rem)]:text-[1.65rem] ${seccionActiva === s.nombre ? 'text-white' : 'text-white/55 hover:text-white'}`}
                   >
                     {s.nombre}
                   </button>

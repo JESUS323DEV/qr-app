@@ -17,6 +17,8 @@ import EnlaceNegocio, { ladoEnlace } from './EnlaceNegocio'
    y de 56rem de alto. Las clases van escritas enteras (no con variables) para que Tailwind las encuentre. */
 
 const DEGRADADO = 'bg-gradient-to-t from-black/80 via-black/25 to-transparent'
+// El de las piezas de los platos: algo más oscuro que el del menú del día, para que el nombre y el precio se lean también sobre fotos claras
+const DEGRADADO_PIEZA = 'bg-gradient-to-t from-black/90 via-black/50 to-black/10'
 
 // Una pieza del mosaico: la foto con el nombre y el precio encima (o el nombre sobre color, si no hay foto)
 function Pieza({ plato, grande, abrir, className = '' }) {
@@ -25,7 +27,7 @@ function Pieza({ plato, grande, abrir, className = '' }) {
       {plato.foto ? (
         <>
           <Img src={plato.foto} alt={plato.nombre} className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
-          <div className={`absolute inset-0 ${DEGRADADO}`} />
+          <div className={`absolute inset-0 ${DEGRADADO_PIEZA}`} />
         </>
       ) : null}
       <div className="absolute inset-x-0 bottom-0 p-[0.6rem] [@media(min-height:46rem)]:p-[0.75rem]">

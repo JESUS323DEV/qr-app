@@ -62,44 +62,45 @@ function MenuDia({ menu }) {
 }
 
 function Seccion({ seccion }) {
-  const [destacado, ...resto] = seccion.platos
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      {/* Plato destacado: la foto de la sección (llena el hueco que queda) y su nombre grande en cursiva */}
-      {seccion.foto && (
-        <div className="relative min-h-[4.5rem] flex-1 overflow-hidden rounded-[0.6rem]">
-          <Img src={seccion.foto} alt={destacado?.nombre ?? ''} className="absolute inset-0 h-full w-full object-cover" />
-        </div>
-      )}
-      {destacado && (
-        <div className="mt-[0.6rem] shrink-0 [@media(min-height:46rem)]:mt-[0.8rem]">
-          <div className="flex items-baseline justify-between gap-[1rem]">
-            <h3 className="font-demo-heading text-[1.4rem] italic leading-tight [@media(min-height:46rem)]:text-[1.6rem] [@media(min-height:56rem)]:text-[1.8rem]">{destacado.nombre}</h3>
-            <p className="shrink-0 font-demo-heading text-[1.2rem] text-demo-primary [@media(min-height:46rem)]:text-[1.35rem]" style={estiloPrecio('var(--demo-primary)')}>{destacado.precio}</p>
-          </div>
-          {(destacado.descripcion || destacado.alergenos?.length > 0) && (
-            <p className="mt-[0.1rem] text-[0.85rem] leading-[1.35] text-demo-muted [@media(min-height:46rem)]:text-[0.92rem]">
-              {destacado.descripcion}
-              {destacado.alergenos?.length > 0 && <span className="whitespace-nowrap text-[0.85em]"> {abreviaturas(destacado.alergenos)}</span>}
-            </p>
-          )}
-        </div>
-      )}
-
-      {/* El resto de platos, en lista con rayas finas */}
-      {resto.length > 0 && (
-        <ul className="mt-[0.5rem] shrink-0 [@media(min-height:46rem)]:mt-[0.7rem]">
-          {resto.map(p => (
+      {/* Todos los platos, en lista con rayas finas: con foto, a la derecha y el precio debajo */}
+      {seccion.platos.length > 0 && (
+        <ul className="shrink-0">
+          {seccion.platos.map(p => (
             <li key={p.nombre} className={`${RAYA} py-[0.38rem] [@media(min-height:46rem)]:py-[0.5rem] [@media(min-height:56rem)]:py-[0.6rem]`}>
-              <div className="flex items-baseline justify-between gap-[1rem]">
-                <p className="text-[0.95rem] font-medium leading-tight [@media(min-height:46rem)]:text-[1rem] [@media(min-height:56rem)]:text-[1.06rem]">{p.nombre}</p>
-                <p className="shrink-0 font-demo-heading text-[1rem] text-demo-primary [@media(min-height:46rem)]:text-[1.08rem]" style={estiloPrecio('var(--demo-primary)')}>{p.precio}</p>
-              </div>
-              {(p.descripcion || p.alergenos?.length > 0) && (
-                <p className="mt-[0.05rem] truncate text-[0.8rem] text-demo-muted [@media(min-height:46rem)]:text-[0.86rem]">
-                  {p.descripcion}
-                  {p.alergenos?.length > 0 && <span className="text-[0.9em]"> {abreviaturas(p.alergenos)}</span>}
-                </p>
+              {p.foto ? (
+                // Con foto: el nombre y la descripción a la izquierda y, a la derecha, la foto y el precio debajo
+                <div className="flex items-start justify-between gap-[1rem]">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[0.95rem] font-medium leading-tight [@media(min-height:46rem)]:text-[1rem] [@media(min-height:56rem)]:text-[1.06rem]">{p.nombre}</p>
+                    {(p.descripcion || p.alergenos?.length > 0) && (
+                      <p className="mt-[0.05rem] text-[0.8rem] text-demo-muted [@media(min-height:46rem)]:text-[0.86rem]">
+                        {p.descripcion}
+                        {p.alergenos?.length > 0 && <span className="text-[0.9em]"> {abreviaturas(p.alergenos)}</span>}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex shrink-0 flex-col items-end gap-[0.25rem]">
+                    <div className="relative h-[3.5rem] w-[3.5rem] overflow-hidden rounded-[0.4rem] bg-demo-text/10 [@media(min-height:46rem)]:h-[4rem] [@media(min-height:46rem)]:w-[4rem] [@media(min-height:56rem)]:h-[4.5rem] [@media(min-height:56rem)]:w-[4.5rem]">
+                      <Img src={p.foto} alt={p.nombre} className="absolute inset-0 h-full w-full object-cover" />
+                    </div>
+                    <p className="font-demo-heading text-[1rem] text-demo-primary [@media(min-height:46rem)]:text-[1.08rem]" style={estiloPrecio('var(--demo-primary)')}>{p.precio}</p>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-baseline justify-between gap-[1rem]">
+                    <p className="text-[0.95rem] font-medium leading-tight [@media(min-height:46rem)]:text-[1rem] [@media(min-height:56rem)]:text-[1.06rem]">{p.nombre}</p>
+                    <p className="shrink-0 font-demo-heading text-[1rem] text-demo-primary [@media(min-height:46rem)]:text-[1.08rem]" style={estiloPrecio('var(--demo-primary)')}>{p.precio}</p>
+                  </div>
+                  {(p.descripcion || p.alergenos?.length > 0) && (
+                    <p className="mt-[0.05rem] truncate text-[0.8rem] text-demo-muted [@media(min-height:46rem)]:text-[0.86rem]">
+                      {p.descripcion}
+                      {p.alergenos?.length > 0 && <span className="text-[0.9em]"> {abreviaturas(p.alergenos)}</span>}
+                    </p>
+                  )}
+                </>
               )}
             </li>
           ))}

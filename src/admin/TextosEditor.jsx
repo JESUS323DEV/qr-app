@@ -187,12 +187,11 @@ export function ImagenesPorPestana({ original, cambios, cambiar, tipos, soloOtra
     // Una carta (con secciones): sus fotos por zonas, la portada, el menú del día, las ofertas y cada sección con sus platos
     const deCarta = Array.isArray(datos.secciones)
     const zonas = new Map()
-    // Qué fotos pinta cada estilo de carta: Inmersiva la de fondo y Base la de arriba (la misma `foto`); Revista una por sección; Polaroid y Galería una por plato;
+    // Qué fotos pinta cada estilo de carta: Inmersiva la de fondo y Base la de arriba (la misma `foto`); Inmersiva, Revista, Polaroid y Galería, además, una por plato;
     // el menú del día y las ofertas, en todos. Solo se enseñan los huecos que el estilo elegido pinta (como en la miniweb, con las fotos de cada diseño)
     const estiloCarta = datos.diseno
     const usaFotoGeneral = !['galeria', 'polaroid', 'revista'].includes(estiloCarta)
-    const usaFotoSecciones = estiloCarta === 'revista'
-    const usaFotoPlatos = ['galeria', 'polaroid'].includes(estiloCarta)
+    const usaFotoPlatos = ['galeria', 'polaroid', 'revista', 'inmersiva'].includes(estiloCarta)
     const zonaDe = ruta => {
       const [primero, indice] = ruta.split('.')
       if (primero === 'foto') return ['0', estiloCarta === 'inmersiva' ? 'Foto de fondo' : 'Foto de arriba']
@@ -205,8 +204,8 @@ export function ImagenesPorPestana({ original, cambios, cambiar, tipos, soloOtra
     const hayListaOfertas = Array.isArray(datos.ofertas?.fotos) && datos.ofertas.fotos.length > 0
     for (const c of fotos) {
       if (hayListaOfertas && c.ruta === 'ofertas.foto') continue
-      // En una carta, la foto de cada sección solo la pinta Revista y la de cada plato, Polaroid y Galería
-      if (deCarta && /^secciones\.\d+\.foto$/.test(c.ruta) && !usaFotoSecciones) continue
+      // En una carta, la foto de cada sección ya no la pinta ningún estilo; la de cada plato, Revista, Polaroid y Galería
+      if (deCarta && /^secciones\.\d+\.foto$/.test(c.ruta)) continue
       if (deCarta && /^secciones\.\d+\.platos\.\d+\.foto$/.test(c.ruta) && !usaFotoPlatos) continue
       const m = c.ruta.match(/^hero\.pestanas\.(\d+)\./)
       if (m) porPestana.set(Number(m[1]), [...(porPestana.get(Number(m[1])) ?? []), c])
