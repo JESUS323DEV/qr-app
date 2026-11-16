@@ -219,7 +219,9 @@ export default function Ofertas({ menu, sobreFoto = false, estilo = 'base', pape
   const raya = sobreFoto ? 'border-white/20' : 'border-demo-text/15'
   // Hasta 4 fotos (el Editor deja añadir hasta ese máximo); al tocar una, se abre grande
   const fotos = (menu.fotos ?? []).slice(0, 4)
-  const [primera, ...resto] = menu.ofertas
+  // Con el precio tachado desactivado en el Editor (ofertas.precioTachado en false), no se enseña el precio de antes de ninguna oferta
+  const ofertas = menu.precioTachado === false ? menu.ofertas.map(({ antes: _antes, ...o }) => o) : menu.ofertas
+  const [primera, ...resto] = ofertas
 
   // sobrePrimario: el título va directamente sobre el color Principal (Polaroid con papelitos), así que cambia a blanco u oscuro según lo claro que sea
   const titulo = (clase = '', sobrePrimario = false) => (
@@ -233,14 +235,15 @@ export default function Ofertas({ menu, sobreFoto = false, estilo = 'base', pape
 
   if (estilo === 'polaroid') {
     // Fila de polaroids con los trabajos y, debajo, cada oferta en un papelito un poco torcido
-    // Una foto grande en marco de polaroid, torcida, que va cambiando sola
+    // Una foto grande en marco de polaroid, torcida, que va cambiando sola; sin lista de fotos, la foto suelta de las ofertas (como en Revista)
+    const listaPolaroid = fotos.length ? fotos : menu.foto ? [menu.foto] : []
     cuerpo = (
       <>
-        {fotos.length > 0 && <PolaroidGrande fotos={fotos} abrir={setAbierta} className="mb-[0.9rem] min-h-[10rem] flex-1 px-[0.4rem] pt-[0.4rem] [@media(min-height:46rem)]:min-h-[13rem]" />}
+        {listaPolaroid.length > 0 && <PolaroidGrande fotos={listaPolaroid} abrir={setAbierta} className="mb-[0.9rem] min-h-[10rem] flex-1 px-[0.4rem] pt-[0.4rem] [@media(min-height:46rem)]:min-h-[13rem]" />}
         <div className="shrink-0">
           {titulo('', papelitos)}
           <ul className={papelitos ? 'mt-[0.6rem] grid gap-[0.5rem] [@media(min-height:46rem)]:gap-[0.7rem]' : 'mt-[0.6rem] [@media(min-height:46rem)]:mt-[0.9rem]'}>
-            {menu.ofertas.map((o, i) => (
+            {ofertas.map((o, i) => (
               <li key={o.nombre} className={papelitos ? `bg-demo-surface px-[0.9rem] py-[0.55rem] [@media(min-height:46rem)]:py-[0.75rem] ${SOMBRA} ${i % 2 ? 'rotate-[0.8deg]' : '-rotate-[0.8deg]'}` : `border-t ${raya} py-[0.5rem] [@media(min-height:46rem)]:py-[0.75rem]`}>
                 <div className="flex items-start justify-between gap-[1rem]">
                   <Datos o={o} suave={suave} />
@@ -289,13 +292,15 @@ export default function Ofertas({ menu, sobreFoto = false, estilo = 'base', pape
     )
   } else if (estilo === 'galeria') {
     // Un mosaico de fotos a sangre (la primera grande y dos pequeñas) y las ofertas en filas grandes
+    // Sin lista de fotos, la foto suelta de las ofertas (como en Revista)
+    const listaGaleria = (menu.fotos ?? []).length ? menu.fotos.slice(0, 6) : menu.foto ? [menu.foto] : []
     cuerpo = (
       <>
-        {(menu.fotos ?? []).length > 0 && <GaleriaPorParejas fotos={(menu.fotos ?? []).slice(0, 6)} abrir={setAbierta} className="mb-[0.8rem] min-h-[10rem] flex-1 [@media(min-height:46rem)]:min-h-[13rem]" />}
+        {listaGaleria.length > 0 && <GaleriaPorParejas fotos={listaGaleria} abrir={setAbierta} className="mb-[0.8rem] min-h-[10rem] flex-1 [@media(min-height:46rem)]:min-h-[13rem]" />}
         <div className="shrink-0">
           {titulo('font-extrabold tracking-[-0.02em] text-[1.9rem] [@media(min-height:46rem)]:text-[2.3rem]')}
           <ul className="mt-[0.5rem]">
-            {menu.ofertas.map(o => (
+            {ofertas.map(o => (
               <li key={o.nombre} className={`border-t ${raya} py-[0.55rem] [@media(min-height:46rem)]:py-[0.75rem]`}>
                 <div className="flex items-center justify-between gap-[1rem]">
                   <Datos o={o} suave={suave} nombre="text-[1.05rem] font-bold leading-tight [@media(min-height:46rem)]:text-[1.15rem]" />
@@ -313,7 +318,7 @@ export default function Ofertas({ menu, sobreFoto = false, estilo = 'base', pape
       <div className="shrink-0">
         {titulo()}
         <ul className="mt-[0.7rem] grid gap-[0.5rem] [@media(min-height:46rem)]:gap-[0.7rem]">
-          {menu.ofertas.map(o => (
+          {ofertas.map(o => (
             <li key={o.nombre} className="rounded-[0.9rem] bg-black/35 px-[0.9rem] py-[0.6rem] backdrop-blur-sm [@media(min-height:46rem)]:py-[0.8rem]">
               <div className="flex items-start justify-between gap-[1rem]">
                 <Datos o={o} suave={suave} />
@@ -330,7 +335,7 @@ export default function Ofertas({ menu, sobreFoto = false, estilo = 'base', pape
       <div className="shrink-0">
         {titulo()}
         <ul className="mt-[0.6rem] [@media(min-height:46rem)]:mt-[0.9rem]">
-          {menu.ofertas.map(o => (
+          {ofertas.map(o => (
             <li key={o.nombre} className={`border-t ${raya} py-[0.5rem] [@media(min-height:46rem)]:py-[0.75rem]`}>
               <div className="flex items-start justify-between gap-[1rem]">
                 <Datos o={o} suave={suave} />

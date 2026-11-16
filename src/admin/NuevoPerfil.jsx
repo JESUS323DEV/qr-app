@@ -510,7 +510,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
   const gruposAjustes = sinPerfilCarta ? [] : (producto === 'miniweb'
                 ? [['negocio', 'Negocio'], ['portada', 'Portada'], ['menu', 'Menú'], ['redes', 'Redes'], ['horario', 'Horario'], ['reserva', 'Reserva'], ['resena', 'Reseña'], ['paletas', 'Paletas'], ['ajustes', 'Ajustes personalizados']]
                 : esCarta
-                  ? [['negocio', 'Negocio'], ['portada', 'Estilo'], ['imagenes', 'Imágenes'], ['estructura', 'Estructura'], ['ajustescarta', 'Ajustes carta'], ['paletas', 'Paletas'], ['ajustes', 'Ajustes personalizados']]
+                  ? [['negocio', 'Negocio'], ['portada', 'Estilo'], ['imagenes', 'Imágenes'], ['estructura', 'Estructura'], ['ajustescarta', 'Grupos'], ['paletas', 'Paletas'], ['ajustes', 'Ajustes personalizados']]
                   : [['negocio', 'Negocio'], ['portada', 'Diseño'], ['paletas', 'Paletas'], ['ajustes', 'Ajustes personalizados']]
               )
 

@@ -233,7 +233,7 @@ const conOfertas = (carta, ahora, todas = false) => {
   const vigentes = todas ? lista : lista.filter(o => (!o.desde || o.desde <= hoy) && (!o.hasta || o.hasta >= hoy))
   if (vigentes.length === 0) return { ...carta, menuDia: null }
   const o = carta.ofertas
-  return { ...carta, menuDia: { texto: o.texto ?? 'Ofertas', titulo: o.titulo ?? 'Ofertas', cuando: o.cuando, foto: o.foto, fotos: o.fotos, ofertas: vigentes } }
+  return { ...carta, menuDia: { texto: o.texto ?? 'Ofertas', titulo: o.titulo ?? 'Ofertas', cuando: o.cuando, foto: o.foto, fotos: o.fotos, precioTachado: o.precioTachado, ofertas: vigentes } }
 }
 
 /* Horario del menú del día: fuera de él, la carta no lo enseña; dentro, el "cuándo se sirve" se escribe solo

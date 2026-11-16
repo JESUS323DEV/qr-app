@@ -6,6 +6,7 @@ import { CAMPO } from '../../../components/panel'
 import { aplicar } from '../../../lib/ediciones'
 import { DESCRIPCION_PRUEBA, nombrePlatoPrueba } from '../../../lib/enBlanco'
 import { leerRuta } from '../../datos'
+import { GruposMenuDia, ListaOfertas } from './GruposMenuOfertas'
 
 // Como mucho, los grupos de la carta que se pueden tener (la fila de nombres de la carta se desplaza de lado, pero más de diez no se lee)
 const MAX_GRUPOS = 10
@@ -62,13 +63,18 @@ export default function PanelAjustesCarta({ datosEnBruto, cambiosExtra, cambiarE
   }
   const nombres = grupos.map(g => g.nombre.trim())
   const hayProblema = new Set(nombres).size !== nombres.length || nombres.some(n => !n)
-  if (!grupos.length) return null
+  if (!datos) return null
   return (
     <div role="tabpanel" className="grid gap-[1rem] rounded-[0.75rem] p-[0.85rem] ring-1 ring-zinc-200">
       {/* Los grupos de la carta: la fila de nombres que sale en la pestaña de la carta, y cada uno con sus platos */}
-      <Plegable titulo="Grupos de la carta" elegido={`${grupos.length} ${grupos.length === 1 ? 'grupo' : 'grupos'}`}>
+      {grupos.length > 0 && (
+      <Plegable titulo={datos.ofertas ? 'Grupos de servicios' : 'Grupos de la carta'} elegido={`${grupos.length} ${grupos.length === 1 ? 'grupo' : 'grupos'}`}>
         <div className="grid gap-[0.6rem]">
-          <p className="text-[0.8rem] text-zinc-500">Son los nombres de la fila que sale en la pestaña de la carta (Principales, Guisos, Sopas...). Abre un grupo para ver y cambiar sus platos.</p>
+          <p className="text-[0.8rem] text-zinc-500">
+            {datos.ofertas
+              ? 'Son los nombres de la fila que sale en la pestaña de servicios (Corte, Color, Peinados...). Abre un grupo para ver y cambiar sus servicios.'
+              : 'Son los nombres de la fila que sale en la pestaña de la carta (Principales, Guisos, Sopas...). Abre un grupo para ver y cambiar sus platos.'}
+          </p>
           {grupos.map((g, i) => (
             <div key={i} className="grid gap-[0.5rem]">
               <div className="flex items-center gap-[0.4rem]">
@@ -138,6 +144,10 @@ export default function PanelAjustesCarta({ datosEnBruto, cambiosExtra, cambiarE
           </button>
         </div>
       </Plegable>
+      )}
+      {/* El menú del día o las ofertas de la carta: sus grupos y platos, o sus ofertas */}
+      {datos.menuDia && <GruposMenuDia datos={datos} datosEnBruto={datosEnBruto} cambiosExtra={cambiosExtra} cambiarExtra={cambiarExtra} preguntar={preguntar} />}
+      {datos.ofertas && <ListaOfertas datos={datos} datosEnBruto={datosEnBruto} cambiosExtra={cambiosExtra} cambiarExtra={cambiarExtra} />}
     </div>
   )
 }
