@@ -6,95 +6,15 @@ import Img from '../Img'
 import Ofertas from './Ofertas'
 import EnlaceNegocio, { ladoEnlace } from './EnlaceNegocio'
 
-/* Diseño de carta "polaroid": cada plato es una polaroid con su foto y, debajo, su nombre y su precio escritos a mano.
-   Las polaroids están pegadas un poco torcidas sobre el color de la marca, de dos en dos. Al tocar una se acerca y
-   se pone recta, con la descripción y los alérgenos. Un plato sin foto sale como una polaroid escrita a mano.
+/* Diseño de carta "polaroid": el menú del día es una polaroid con su foto y la nota de los platos pegada debajo.
+   La pestaña Carta (o Servicios) es una lista: cada plato es una tarjeta de papel con su nombre, precio, descripción y
+   alérgenos, y su foto pequeña a la derecha si la tiene. Salen todos los platos de la sección, con scroll si no caben.
    Colores de la marca: primary es el fondo de la pantalla, surface el papel, text la tinta, accent los precios
-   y muted la tinta suave. heading es la letra a mano (nombre, pies de foto); body, la del resto.
-   Todo en una pantalla, sin scroll: las polaroids se reparten el hueco que queda. Los tamaños crecen a partir de
-   46rem y de 56rem de alto. Las clases van escritas enteras (no con variables) para que Tailwind las encuentre. */
-
-// Inclinación de cada polaroid según su sitio, para que parezcan pegadas a mano
-const GIROS = ['-rotate-[2.5deg]', 'rotate-[2deg]', 'rotate-[1.5deg]', '-rotate-[2deg]', '-rotate-[1deg]', 'rotate-[2.5deg]']
+   y muted la tinta suave. heading es la letra a mano; body, la del resto.
+   Los tamaños del menú del día crecen a partir de 46rem y de 56rem de alto. Las clases van escritas enteras
+   (no con variables) para que Tailwind las encuentre. */
 
 const SOMBRA = 'shadow-[0_0.5rem_1.2rem_-0.3rem_rgb(0_0_0/0.45)]'
-
-// Una polaroid: foto (o el nombre escrito a mano si no hay foto) y el pie con nombre y precio
-function Polaroid({ plato, giro = '', abrir }) {
-  return (
-    <button
-      type="button"
-      onClick={abrir}
-      className={`flex h-full min-h-0 w-full flex-col bg-demo-surface p-[0.35rem] pb-0 text-left text-demo-text transition-transform duration-200 hover:rotate-0 hover:scale-[1.03] [@media(min-height:46rem)]:p-[0.45rem] [@media(min-height:46rem)]:pb-0 ${SOMBRA} ${giro}`}
-    >
-      {plato.foto ? (
-        <div className="relative min-h-0 w-full flex-1 overflow-hidden bg-demo-text/10">
-          <Img src={plato.foto} alt={plato.nombre} className="absolute inset-0 h-full w-full object-cover" />
-        </div>
-      ) : (
-        <div className="flex min-h-0 w-full flex-1 items-center justify-center bg-demo-text/[0.04] px-[0.5rem] text-center">
-          <span className="font-demo-heading text-[1.5rem] leading-none text-demo-muted [@media(min-height:46rem)]:text-[1.8rem]">{plato.nombre}</span>
-        </div>
-      )}
-      <div className="flex shrink-0 items-baseline justify-between gap-[0.4rem] px-[0.15rem] pb-[0.3rem] pt-[0.15rem] [@media(min-height:46rem)]:pb-[0.45rem] [@media(min-height:46rem)]:pt-[0.25rem]">
-        <span className="min-w-0 truncate font-demo-heading text-[1.15rem] font-bold leading-tight [@media(min-height:46rem)]:text-[1.35rem] [@media(min-height:56rem)]:text-[1.5rem]">{plato.nombre}</span>
-        <span className="shrink-0 font-demo-heading text-[1.1rem] font-bold leading-none text-demo-accent [@media(min-height:46rem)]:text-[1.3rem] [@media(min-height:56rem)]:text-[1.45rem]" style={estiloPrecio('var(--demo-accent)')}>{plato.precio}</span>
-      </div>
-    </button>
-  )
-}
-
-// La polaroid tocada, grande y recta, con la descripción y los alérgenos; se cierra tocando fuera o con la X
-function PolaroidAbierta({ plato, cerrar }) {
-  useEffect(() => {
-    const alPulsar = e => e.key === 'Escape' && cerrar()
-    window.addEventListener('keydown', alPulsar)
-    return () => window.removeEventListener('keydown', alPulsar)
-  }, [cerrar])
-
-  return (
-    <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/55 p-[1.5rem]" onClick={cerrar}>
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label={plato.nombre}
-        onClick={e => e.stopPropagation()}
-        className={`relative w-full max-w-[22rem] bg-demo-surface p-[0.6rem] text-demo-text ${SOMBRA}`}
-      >
-        <button type="button" onClick={cerrar} aria-label="Cerrar" className="absolute -right-[0.7rem] -top-[0.7rem] z-10 rounded-full bg-demo-surface p-[0.35rem] text-demo-text shadow-[0_0.2rem_0.6rem_rgb(0_0_0/0.3)]">
-          <X className="h-[1.1rem] w-[1.1rem]" />
-        </button>
-        {plato.foto ? (
-          <div className="relative aspect-square w-full overflow-hidden">
-            <Img src={plato.foto} alt={plato.nombre} className="absolute inset-0 h-full w-full object-cover" />
-          </div>
-        ) : (
-          <div className="flex aspect-[4/3] w-full items-center justify-center bg-demo-text/[0.04] px-[1rem] text-center">
-            <span className="font-demo-heading text-[2.4rem] leading-none text-demo-muted">{plato.nombre}</span>
-          </div>
-        )}
-        <div className="px-[0.3rem] pb-[0.6rem] pt-[0.5rem]">
-          <div className="flex items-baseline justify-between gap-[0.75rem]">
-            <p className="font-demo-heading text-[1.9rem] font-bold leading-none">{plato.nombre}</p>
-            <p className="shrink-0 text-right font-demo-heading text-[1.7rem] font-bold leading-none text-demo-accent" style={estiloPrecio('var(--demo-accent)')}>
-              {plato.precio}
-              {plato.antes && <span className="mt-[0.2rem] block font-demo-body text-[0.9rem] font-normal text-demo-muted line-through">{plato.antes}</span>}
-            </p>
-          </div>
-          {plato.hasta && (
-            <p className="mt-[0.35rem] text-[0.85rem] font-semibold text-demo-muted">
-              Hasta el {new Date(`${plato.hasta}T12:00:00`).toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}
-            </p>
-          )}
-          {plato.descripcion && <p className="mt-[0.4rem] text-[0.95rem] leading-[1.4] text-demo-muted">{plato.descripcion}</p>}
-          {plato.alergenos?.length > 0 && (
-            <p className="mt-[0.35rem] text-[0.85rem] text-demo-muted">Alérgenos: {plato.alergenos.map(a => ALERGENOS[a]?.nombre.toLowerCase()).join(', ')}</p>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
 
 // Menú del día: la foto del día en una polaroid grande y, debajo, la nota con los platos, como un papel pegado
 // El menú del día con foto es como una polaroid de verdad: la foto casi cuadrada y más pequeña, y debajo el borde grueso con el título y el precio grandes
@@ -115,7 +35,6 @@ function MenuDia({ menu }) {
               {/* Cuándo vale el menú (de martes a viernes, a mediodía...), justo debajo del título */}
               {menu.cuando && <span className="mt-[0.3rem] block text-[0.82rem] leading-[1.25] text-[color:var(--c-menu-cuando,var(--demo-muted))] [@media(min-height:46rem)]:text-[0.9rem]">{menu.cuando}</span>}
             </div>
-            <span className="ml-auto shrink-0 whitespace-nowrap precio-detalle font-demo-heading text-[length:calc(1.9rem*var(--demo-precio-escala,1))] font-bold leading-none text-[color:var(--demo-precio-texto,var(--demo-primary))] [@media(min-height:46rem)]:text-[length:calc(2.2rem*var(--demo-precio-escala,1))] [@media(min-height:56rem)]:text-[length:calc(2.5rem*var(--demo-precio-escala,1))]">{menu.precio}</span>
           </div>
         </div>
       )}
@@ -130,9 +49,15 @@ function MenuDia({ menu }) {
         {/* Sin foto, el cuándo va aquí, bajo el título; con foto, ya va en su polaroid */}
         {!menu.foto && menu.cuando && <p className="text-[0.8rem] text-[color:var(--c-menu-cuando,var(--demo-muted))] [@media(min-height:46rem)]:text-[0.88rem]">{menu.cuando}</p>}
         <div className={`mt-[0.35rem] grid gap-[0.35rem] [@media(min-height:46rem)]:mt-[0.5rem] [@media(min-height:46rem)]:gap-[0.5rem] ${menu.grupos.length > 3 ? 'grid-cols-2 gap-x-[0.8rem]' : ''}`}>
-          {menu.grupos.map(g => (
+          {menu.grupos.map((g, i) => (
             <div key={g.nombre}>
-              <p className="font-demo-heading text-[1.15rem] font-bold leading-none text-[color:var(--c-seccion,var(--demo-accent))] [@media(min-height:46rem)]:text-[1.25rem] [@media(min-height:56rem)]:text-[1.35rem]">{g.nombre}</p>
+              {/* Con foto, el precio del menú va en la línea del primer grupo, a la derecha; sin foto, junto al título */}
+              <div className="flex items-baseline justify-between gap-[0.5rem]">
+                <p className="font-demo-heading text-[1.15rem] font-bold leading-none text-[color:var(--c-seccion,var(--demo-accent))] [@media(min-height:46rem)]:text-[1.25rem] [@media(min-height:56rem)]:text-[1.35rem]">{g.nombre}</p>
+                {i === 0 && menu.foto && (
+                  <span className="shrink-0 whitespace-nowrap precio-detalle font-demo-heading text-[length:calc(1.4rem*var(--demo-precio-escala,1))] font-bold leading-none text-[color:var(--demo-precio-texto,var(--demo-primary))] [@media(min-height:46rem)]:text-[length:calc(1.6rem*var(--demo-precio-escala,1))] [@media(min-height:56rem)]:text-[length:calc(1.8rem*var(--demo-precio-escala,1))]">{menu.precio}</span>
+                )}
+              </div>
               <ul className="mt-[0.2rem] text-[0.98rem] leading-[1.32] [@media(min-height:46rem)]:text-[1.08rem] [@media(min-height:56rem)]:text-[1.16rem]">
                 {g.platos.map(p => <li key={p}>{p}</li>)}
               </ul>
@@ -181,7 +106,6 @@ export default function CartaPolaroid({ carta, negocio }) {
   const [modo, setModo] = useState(carta.menuDia ? 'menu' : 'carta')
   const [seccion, setSeccion] = useState(carta.secciones[0]?.nombre)
   const [idioma, setIdioma] = useState(carta.idiomas?.[0] ?? 'ES')
-  const [abierto, setAbierto] = useState(null)
   const [verAlergenos, setVerAlergenos] = useState(false)
 
   const usados = new Set(carta.secciones.flatMap(s => s.platos.flatMap(p => p.alergenos ?? [])))
@@ -191,9 +115,7 @@ export default function CartaPolaroid({ carta, negocio }) {
     { key: 'carta', texto: carta.textoCarta ?? 'Carta' },
   ]
   const abierta = carta.secciones.find(s => s.nombre === seccion) ?? carta.secciones[0]
-  // Hasta 6 polaroids por pantalla, de dos en dos (con una sola, sola y centrada)
-  const platos = abierta?.platos.slice(0, 6) ?? []
-  const filas = Math.ceil(platos.length / 2)
+  const platos = abierta?.platos ?? []
 
   return (
     <div className="sp h-svh overflow-hidden bg-[var(--c-fondo-polaroid,var(--demo-primary))] font-demo-body">
@@ -261,15 +183,35 @@ export default function CartaPolaroid({ carta, negocio }) {
           {modo === 'menu' && carta.menuDia ? (
             <MenuDia menu={carta.menuDia} />
           ) : (
-            <div
-              key={abierta?.nombre}
-              className={`grid min-h-0 flex-1 gap-x-[0.9rem] gap-y-[1rem] [@media(min-height:46rem)]:gap-x-[1.1rem] [@media(min-height:46rem)]:gap-y-[1.3rem] ${platos.length === 1 ? 'grid-cols-1 px-[12%]' : 'grid-cols-2'}`}
-              style={{ gridTemplateRows: `repeat(${filas}, minmax(0, 1fr))` }}
-            >
-              {platos.map((p, i) => (
-                <Polaroid key={p.nombre} plato={p} giro={GIROS[i % GIROS.length]} abrir={() => setAbierto(p)} />
+            <ul key={abierta?.nombre} className="grid shrink-0 content-start gap-[0.7rem] pb-[0.4rem] [@media(min-height:46rem)]:gap-[0.9rem] [@media(min-height:56rem)]:gap-[1.1rem]">
+              {platos.map(p => (
+                <li key={p.nombre} className={`flex items-start gap-[0.8rem] bg-demo-surface px-[0.9rem] py-[0.8rem] text-demo-text [@media(min-height:46rem)]:gap-[1rem] [@media(min-height:46rem)]:px-[1.1rem] [@media(min-height:46rem)]:py-[1rem] [@media(min-height:56rem)]:px-[1.25rem] [@media(min-height:56rem)]:py-[1.15rem] ${SOMBRA}`}>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-baseline justify-between gap-[0.6rem]">
+                      <p className="min-w-0 font-demo-heading text-[1.3rem] font-bold leading-tight [@media(min-height:46rem)]:text-[1.45rem] [@media(min-height:56rem)]:text-[1.65rem]">{p.nombre}</p>
+                      <p className="shrink-0 text-right font-demo-heading text-[1.2rem] font-bold leading-none text-demo-accent [@media(min-height:46rem)]:text-[1.35rem] [@media(min-height:56rem)]:text-[1.5rem]" style={estiloPrecio('var(--demo-accent)')}>
+                        {p.precio}
+                        {p.antes && <span className="mt-[0.15rem] block font-demo-body text-[0.8rem] font-normal text-demo-muted line-through [@media(min-height:46rem)]:text-[0.88rem] [@media(min-height:56rem)]:text-[0.95rem]">{p.antes}</span>}
+                      </p>
+                    </div>
+                    {p.hasta && (
+                      <p className="mt-[0.2rem] text-[0.8rem] font-semibold text-demo-muted [@media(min-height:46rem)]:text-[0.88rem] [@media(min-height:56rem)]:text-[0.95rem]">
+                        Hasta el {new Date(`${p.hasta}T12:00:00`).toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}
+                      </p>
+                    )}
+                    {p.descripcion && <p className="mt-[0.2rem] text-[0.9rem] leading-[1.35] text-demo-muted [@media(min-height:46rem)]:text-[1rem] [@media(min-height:56rem)]:text-[1.1rem]">{p.descripcion}</p>}
+                    {p.alergenos?.length > 0 && (
+                      <p className="mt-[0.2rem] text-[0.8rem] text-demo-muted [@media(min-height:46rem)]:text-[0.88rem] [@media(min-height:56rem)]:text-[0.95rem]">Alérgenos: {p.alergenos.map(a => ALERGENOS[a]?.nombre.toLowerCase()).join(', ')}</p>
+                    )}
+                  </div>
+                  {p.foto && (
+                    <div className="relative h-[4.5rem] w-[4.5rem] shrink-0 overflow-hidden bg-demo-text/10 [@media(min-height:46rem)]:h-[5.5rem] [@media(min-height:46rem)]:w-[5.5rem] [@media(min-height:56rem)]:h-[6.5rem] [@media(min-height:56rem)]:w-[6.5rem]">
+                      <Img src={p.foto} alt={p.nombre} className="absolute inset-0 h-full w-full object-cover" />
+                    </div>
+                  )}
+                </li>
               ))}
-            </div>
+            </ul>
           )}
         </div>
 
@@ -280,7 +222,6 @@ export default function CartaPolaroid({ carta, negocio }) {
         )}
       </main>
 
-      {abierto && <PolaroidAbierta plato={abierto} cerrar={() => setAbierto(null)} />}
       {verAlergenos && <HojaAlergenos claves={alergenos} cerrar={() => setVerAlergenos(false)} />}
     </div>
   )
