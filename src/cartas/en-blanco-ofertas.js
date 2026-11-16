@@ -1,4 +1,4 @@
-import { TEMA_NEUTRO } from '../lib/enBlanco'
+import { DESCRIPCION_PRUEBA, TEMA_NEUTRO } from '../lib/enBlanco'
 
 // Carta de ofertas en blanco (temática "Desde cero" de Nuevo perfil, tipo Promociones): ofertas y servicios con textos genéricos, colores
 // neutros y fotos de relleno. No sale en el catálogo ni en el asistente: solo se abre desde Nuevo perfil.
@@ -36,18 +36,18 @@ export default {
       nombre: 'Sección uno',
       foto: '',
       platos: [
-        { nombre: 'Servicio 1', descripcion: 'Descripción corta del servicio.', precio: '00 €', foto: '' },
-        { nombre: 'Servicio 2', descripcion: 'Descripción corta del servicio.', precio: '00 €', foto: '' },
-        { nombre: 'Servicio 3', descripcion: 'Descripción corta del servicio.', precio: '00 €', foto: '' },
+        { nombre: 'Servicio 1 ----------', descripcion: DESCRIPCION_PRUEBA, precio: '00 €', foto: '' },
+        { nombre: 'Servicio 2 ----------', descripcion: DESCRIPCION_PRUEBA, precio: '00 €', foto: '' },
+        { nombre: 'Servicio 3 ----------', descripcion: DESCRIPCION_PRUEBA, precio: '00 €', foto: '' },
       ],
     },
     {
       nombre: 'Sección dos',
       foto: '',
       platos: [
-        { nombre: 'Servicio 1', descripcion: 'Descripción corta del servicio.', precio: '00 €', foto: '' },
-        { nombre: 'Servicio 2', descripcion: 'Descripción corta del servicio.', precio: '00 €', foto: '' },
-        { nombre: 'Servicio 3', descripcion: 'Descripción corta del servicio.', precio: '00 €', foto: '' },
+        { nombre: 'Servicio 1 ----------', descripcion: DESCRIPCION_PRUEBA, precio: '00 €', foto: '' },
+        { nombre: 'Servicio 2 ----------', descripcion: DESCRIPCION_PRUEBA, precio: '00 €', foto: '' },
+        { nombre: 'Servicio 3 ----------', descripcion: DESCRIPCION_PRUEBA, precio: '00 €', foto: '' },
       ],
     },
   ],

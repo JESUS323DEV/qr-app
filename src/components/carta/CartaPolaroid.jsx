@@ -187,13 +187,7 @@ export default function CartaPolaroid({ carta, negocio }) {
               {platos.map(p => (
                 <li key={p.nombre} className={`flex items-start gap-[0.8rem] bg-demo-surface px-[0.9rem] py-[0.8rem] text-demo-text [@media(min-height:46rem)]:gap-[1rem] [@media(min-height:46rem)]:px-[1.1rem] [@media(min-height:46rem)]:py-[1rem] [@media(min-height:56rem)]:px-[1.25rem] [@media(min-height:56rem)]:py-[1.15rem] ${SOMBRA}`}>
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-baseline justify-between gap-[0.6rem]">
-                      <p className="min-w-0 font-demo-heading text-[1.3rem] font-bold leading-tight [@media(min-height:46rem)]:text-[1.45rem] [@media(min-height:56rem)]:text-[1.65rem]">{p.nombre}</p>
-                      <p className="shrink-0 text-right font-demo-heading text-[1.2rem] font-bold leading-none text-demo-accent [@media(min-height:46rem)]:text-[1.35rem] [@media(min-height:56rem)]:text-[1.5rem]" style={estiloPrecio('var(--demo-accent)')}>
-                        {p.precio}
-                        {p.antes && <span className="mt-[0.15rem] block font-demo-body text-[0.8rem] font-normal text-demo-muted line-through [@media(min-height:46rem)]:text-[0.88rem] [@media(min-height:56rem)]:text-[0.95rem]">{p.antes}</span>}
-                      </p>
-                    </div>
+                    <p className="font-demo-heading text-[1.3rem] font-bold leading-tight [@media(min-height:46rem)]:text-[1.45rem] [@media(min-height:56rem)]:text-[1.65rem]">{p.nombre}</p>
                     {p.hasta && (
                       <p className="mt-[0.2rem] text-[0.8rem] font-semibold text-demo-muted [@media(min-height:46rem)]:text-[0.88rem] [@media(min-height:56rem)]:text-[0.95rem]">
                         Hasta el {new Date(`${p.hasta}T12:00:00`).toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}
@@ -204,11 +198,18 @@ export default function CartaPolaroid({ carta, negocio }) {
                       <p className="mt-[0.2rem] text-[0.8rem] text-demo-muted [@media(min-height:46rem)]:text-[0.88rem] [@media(min-height:56rem)]:text-[0.95rem]">Alérgenos: {p.alergenos.map(a => ALERGENOS[a]?.nombre.toLowerCase()).join(', ')}</p>
                     )}
                   </div>
-                  {p.foto && (
-                    <div className="relative h-[4.5rem] w-[4.5rem] shrink-0 overflow-hidden bg-demo-text/10 [@media(min-height:46rem)]:h-[5.5rem] [@media(min-height:46rem)]:w-[5.5rem] [@media(min-height:56rem)]:h-[6.5rem] [@media(min-height:56rem)]:w-[6.5rem]">
-                      <Img src={p.foto} alt={p.nombre} className="absolute inset-0 h-full w-full object-cover" />
-                    </div>
-                  )}
+                  {/* A la derecha: la foto (si la tiene) y, debajo, el precio */}
+                  <div className="flex shrink-0 flex-col items-end gap-[0.4rem]">
+                    {p.foto && (
+                      <div className="relative h-[4.5rem] w-[4.5rem] overflow-hidden bg-demo-text/10 [@media(min-height:46rem)]:h-[5.5rem] [@media(min-height:46rem)]:w-[5.5rem] [@media(min-height:56rem)]:h-[6.5rem] [@media(min-height:56rem)]:w-[6.5rem]">
+                        <Img src={p.foto} alt={p.nombre} className="absolute inset-0 h-full w-full object-cover" />
+                      </div>
+                    )}
+                    <p className="text-right font-demo-heading text-[1.2rem] font-bold leading-none text-demo-accent [@media(min-height:46rem)]:text-[1.35rem] [@media(min-height:56rem)]:text-[1.5rem]" style={estiloPrecio('var(--demo-accent)')}>
+                      {p.precio}
+                      {p.antes && <span className="mt-[0.15rem] block font-demo-body text-[0.8rem] font-normal text-demo-muted line-through [@media(min-height:46rem)]:text-[0.88rem] [@media(min-height:56rem)]:text-[0.95rem]">{p.antes}</span>}
+                    </p>
+                  </div>
                 </li>
               ))}
             </ul>

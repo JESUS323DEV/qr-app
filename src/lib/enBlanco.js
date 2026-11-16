@@ -22,3 +22,7 @@ export const TEMA_NEUTRO = {
     },
   },
 }
+
+// Textos de prueba de los platos y servicios en blanco: largos a propósito, para comprobar cuánto aguanta cada diseño (el nombre con rayas y la descripción de unas tres líneas)
+export const DESCRIPCION_PRUEBA = 'Descripción de prueba larga para ver cuántas líneas caben: ingredientes y cómo se sirve.'
+export const nombrePlatoPrueba = n => `Plato ${n} ----------`

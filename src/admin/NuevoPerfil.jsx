@@ -16,6 +16,7 @@ import PanelResena from './perfil/paneles/PanelResena'
 import PanelReserva from './perfil/paneles/PanelReserva'
 import PanelHorario from './perfil/paneles/PanelHorario'
 import PanelRedes from './perfil/paneles/PanelRedes'
+import PanelAjustesCarta from './perfil/paneles/PanelAjustesCarta'
 import PanelMenu from './perfil/paneles/PanelMenu'
 import PanelNegocio from './perfil/paneles/PanelNegocio'
 import BloqueTextoInicio from './perfil/BloqueTextoInicio'
@@ -509,7 +510,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
   const gruposAjustes = sinPerfilCarta ? [] : (producto === 'miniweb'
                 ? [['negocio', 'Negocio'], ['portada', 'Portada'], ['menu', 'Menú'], ['redes', 'Redes'], ['horario', 'Horario'], ['reserva', 'Reserva'], ['resena', 'Reseña'], ['paletas', 'Paletas'], ['ajustes', 'Ajustes personalizados']]
                 : esCarta
-                  ? [['negocio', 'Negocio'], ['portada', 'Estilo'], ['imagenes', 'Imágenes'], ['estructura', 'Estructura'], ['paletas', 'Paletas'], ['ajustes', 'Ajustes personalizados']]
+                  ? [['negocio', 'Negocio'], ['portada', 'Estilo'], ['imagenes', 'Imágenes'], ['estructura', 'Estructura'], ['ajustescarta', 'Ajustes carta'], ['paletas', 'Paletas'], ['ajustes', 'Ajustes personalizados']]
                   : [['negocio', 'Negocio'], ['portada', 'Diseño'], ['paletas', 'Paletas'], ['ajustes', 'Ajustes personalizados']]
               )
 
@@ -638,7 +639,10 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
             <PanelImagenes cambiarExtra={cambiarExtra} cambiosExtra={cambiosExtra} datosEnBruto={datosEnBruto} />
           )}
           {ajustesAbiertos === 'estructura' && esCarta && (
-            <PanelEstructura carta={carta} esCarta={esCarta} />
+            <PanelEstructura key={claveCopia || 'sin-copia'} carta={carta} esCarta={esCarta} datosEnBruto={datosEnBruto} cambiosExtra={cambiosExtra} cambiarExtra={cambiarExtra} />
+          )}
+          {ajustesAbiertos === 'ajustescarta' && esCarta && (
+            <PanelAjustesCarta datosEnBruto={datosEnBruto} cambiosExtra={cambiosExtra} cambiarExtra={cambiarExtra} preguntar={setPreguntaSalir} />
           )}
           {ajustesAbiertos === 'paletas' && (
             // key: al cargar otra copia (o ninguna), el panel empieza de cero (sin sugerencias de la anterior y con la casilla marcada otra vez)

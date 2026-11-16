@@ -1,4 +1,4 @@
-import { TEMA_NEUTRO } from '../lib/enBlanco'
+import { DESCRIPCION_PRUEBA, TEMA_NEUTRO } from '../lib/enBlanco'
 
 // Carta en blanco (temática "Desde cero" de Nuevo perfil, tipo Carta): menú del día y secciones con textos genéricos, colores neutros y fotos
 // de relleno. No sale en el catálogo ni en el asistente: solo se abre desde Nuevo perfil.
@@ -36,18 +36,18 @@ export default {
       nombre: 'Sección uno',
       foto: '',
       platos: [
-        { nombre: 'Plato 1', descripcion: 'Descripción corta del plato.', precio: '00,00 €', alergenos: [], foto: '' },
-        { nombre: 'Plato 2', descripcion: 'Descripción corta del plato.', precio: '00,00 €', alergenos: [], foto: '' },
-        { nombre: 'Plato 3', descripcion: 'Descripción corta del plato.', precio: '00,00 €', alergenos: [], foto: '' },
+        { nombre: 'Plato 1 ----------', descripcion: DESCRIPCION_PRUEBA, precio: '00,00 €', alergenos: [], foto: '' },
+        { nombre: 'Plato 2 ----------', descripcion: DESCRIPCION_PRUEBA, precio: '00,00 €', alergenos: [], foto: '' },
+        { nombre: 'Plato 3 ----------', descripcion: DESCRIPCION_PRUEBA, precio: '00,00 €', alergenos: [], foto: '' },
       ],
     },
     {
       nombre: 'Sección dos',
       foto: '',
       platos: [
-        { nombre: 'Plato 1', descripcion: 'Descripción corta del plato.', precio: '00,00 €', alergenos: [], foto: '' },
-        { nombre: 'Plato 2', descripcion: 'Descripción corta del plato.', precio: '00,00 €', alergenos: [], foto: '' },
-        { nombre: 'Plato 3', descripcion: 'Descripción corta del plato.', precio: '00,00 €', alergenos: [], foto: '' },
+        { nombre: 'Plato 1 ----------', descripcion: DESCRIPCION_PRUEBA, precio: '00,00 €', alergenos: [], foto: '' },
+        { nombre: 'Plato 2 ----------', descripcion: DESCRIPCION_PRUEBA, precio: '00,00 €', alergenos: [], foto: '' },
+        { nombre: 'Plato 3 ----------', descripcion: DESCRIPCION_PRUEBA, precio: '00,00 €', alergenos: [], foto: '' },
       ],
     },
   ],
