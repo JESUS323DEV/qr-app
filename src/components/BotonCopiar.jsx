@@ -1,28 +1,13 @@
 import { useState } from 'react'
 import { Check, Copy } from 'lucide-react'
+import { copiarTexto } from '../lib/copiar'
 
 // Copia un enlace al portapapeles y avisa con "Copiado" un momento. enlace: la dirección completa (con el dominio)
 export default function BotonCopiar({ enlace, texto = 'Copiar enlace', className = '' }) {
   const [copiado, setCopiado] = useState(false)
 
   const copiar = async () => {
-    try {
-      await navigator.clipboard.writeText(enlace)
-    } catch {
-      // Sin permiso (o sin https): se copia desde un campo escondido
-      const campo = document.createElement('textarea')
-      campo.value = enlace
-      campo.style.position = 'fixed'
-      campo.style.opacity = '0'
-      document.body.appendChild(campo)
-      campo.select()
-      try {
-        document.execCommand('copy')
-      } catch {
-        // Si tampoco se puede, no se avisa de nada
-      }
-      campo.remove()
-    }
+    await copiarTexto(enlace)
     setCopiado(true)
     setTimeout(() => setCopiado(false), 1600)
   }

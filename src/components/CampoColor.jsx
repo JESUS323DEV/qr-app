@@ -1,13 +1,22 @@
 import { useEffect, useRef, useState } from 'react'
 import { HexColorPicker } from 'react-colorful'
+import { Check, Copy } from 'lucide-react'
+import { copiarTexto } from '../lib/copiar'
 import { CAMPO } from './panel'
 
 /* Color: una muestra que, al tocarla, abre un selector propio (cuadrado de tono e intensidad y barra de color,
    react-colorful), igual en el móvil que en el ordenador; al lado, el código para escribirlo o pegarlo.
    Se cierra tocando fuera o con Escape. */
 // auto: el color que se pone solo (borde de rayitas); soloCirculo: sin el campo del código, para que al elegir un color solo cambie el círculo
+// Al lado del código, un botón para copiarlo (también en el automático, que enseña el color aproximado): así se pega rápido en otro sitio
 export default function CampoColor({ valor, cambiar, auto = false, soloCirculo = false }) {
   const [abierto, setAbierto] = useState(false)
+  const [copiado, setCopiado] = useState(false)
+  const copiar = async () => {
+    await copiarTexto(valor.toUpperCase())
+    setCopiado(true)
+    setTimeout(() => setCopiado(false), 1400)
+  }
   const caja = useRef(null)
   // El selector solo entiende #rrggbb
   const seis = valor.length === 4 ? `#${[...valor.slice(1)].map(c => c + c).join('')}` : valor.slice(0, 7)
@@ -36,6 +45,18 @@ export default function CampoColor({ valor, cambiar, auto = false, soloCirculo =
         <span className="block h-full w-full rounded-full" style={{ background: seis }} />
       </button>
       {!auto && !soloCirculo && <input value={valor} onChange={e => cambiar(e.target.value)} className={`${CAMPO} font-mono`} spellCheck={false} />}
+      {!soloCirculo && (
+        <button
+          type="button"
+          title={copiado ? 'Copiado' : 'Copiar el código del color'}
+          aria-label={copiado ? 'Código copiado' : 'Copiar el código del color'}
+          aria-live="polite"
+          onClick={copiar}
+          className="shrink-0 rounded-full p-[0.5rem] text-zinc-500 hover:text-zinc-900"
+        >
+          {copiado ? <Check className="h-[1.1rem] w-[1.1rem]" aria-hidden="true" /> : <Copy className="h-[1.1rem] w-[1.1rem]" aria-hidden="true" />}
+        </button>
+      )}
       {abierto && (
         // En el móvil, abajo y a todo el ancho (para que no se salga de la pantalla); en el ordenador, debajo de la muestra
         <div className="fixed inset-x-[1rem] bottom-[1rem] z-50 rounded-[0.9rem] bg-white p-[0.8rem] shadow-[0_0.6rem_1.6rem_-0.4rem_rgb(0_0_0/0.35)] ring-1 ring-zinc-200 sm:absolute sm:inset-x-auto sm:bottom-auto sm:left-0 sm:top-[calc(100%+0.4rem)] sm:z-30 sm:w-[15rem] sm:p-[0.7rem] [&_.react-colorful]:!h-[13rem] [&_.react-colorful]:!w-full sm:[&_.react-colorful]:!h-[11rem]">
