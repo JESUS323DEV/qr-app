@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { LIBRERIA, armarDeLibreria } from './libreriaPaletas'
-import { coloresDeCarta, colorInactivoMenu, letrasSobre, rolesDePaleta } from './paletasSugeridas'
+import { coloresDeCarta, colorDelBoton, colorInactivoMenu, letrasSobre, rolesDePaleta } from './paletasSugeridas'
 import { contraste, hexAHsl, hslAHex, mezclar, tonoDistinto } from '../../lib/colorMath'
 import { CLAVES_COLORES_MINIWEB } from '../../lib/coloresMiniweb'
 
@@ -30,12 +30,31 @@ describe('letrasSobre y rolesDePaleta', () => {
     expect(r.redesFondo).not.toBe('#B04A8E')
     expect(contraste(r.redesIconos, r.redesFondo)).toBeGreaterThanOrEqual(4.5)
     expect(contraste(r.redesTexto, r.redesFondo)).toBeGreaterThanOrEqual(4.5)
-    expect(r.botonFondo).toBe('#292C5F')
+    expect(r.botonFondo).toBe('#B04A8E')
     expect(r.reservaBoton).toBe('#B04A8E')
     expect(contraste(r.menuTexto, r.menuFondo)).toBeGreaterThanOrEqual(4.5)
     expect(contraste(r.boton, r.botonFondo)).toBeGreaterThanOrEqual(4.5)
     expect(contraste(r.reservaBotonTexto, r.reservaBoton)).toBeGreaterThanOrEqual(4.5)
     expect(contraste(r.menuInactivo, r.menuFondo)).toBeGreaterThanOrEqual(4.5)
+  })
+
+  it('el botón de la portada: el acento si es del mismo color que el principal o el principal es casi gris; si no, el principal', () => {
+    // Rosa y burdeos (mismo color, distinta luz): el burdeos, que es más fuerte
+    expect(rolesDePaleta({ ...paleta, principal: '#B5546A', acento: '#6B1D34' }).botonFondo).toBe('#6B1D34')
+    expect(colorDelBoton({ ...paleta, principal: '#7A1F33', acento: '#D9567B' })).toBe('#D9567B')
+    // Principal casi gris: el acento es el único color
+    expect(colorDelBoton({ ...paleta, principal: '#1C1C1C', acento: '#D7263D' })).toBe('#D7263D')
+    // Otro color (lila con dorado, esmeralda con coral, marrón con rosa): el principal
+    expect(colorDelBoton({ ...paleta, principal: '#8A6FBF', acento: '#D8A93C' })).toBe('#8A6FBF')
+    expect(colorDelBoton({ ...paleta, principal: '#0E7C5A', acento: '#E8685A' })).toBe('#0E7C5A')
+    expect(colorDelBoton({ ...paleta, principal: '#5C3A2A', acento: '#D98BA0' })).toBe('#5C3A2A')
+  })
+
+  it('las letras del botón se leen sobre el botón que toque', () => {
+    for (const [principal, acento] of [['#B5546A', '#6B1D34'], ['#8A6FBF', '#D8A93C'], ['#1C1C1C', '#D7263D']]) {
+      const r = rolesDePaleta({ ...paleta, principal, acento })
+      expect(contraste(r.boton, r.botonFondo)).toBeGreaterThanOrEqual(4.5)
+    }
   })
 
   it('el subrayado usa el acento solo si se ve sobre la barra; si no, las letras de la barra', () => {
