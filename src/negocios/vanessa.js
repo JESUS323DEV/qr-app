@@ -41,8 +41,17 @@ export default {
     profesion: 'Psicóloga · Psicopedagoga',
     redesArriba: true, // redes en pequeño junto al nombre (no se repiten en el cuerpo)
     cambioSolo: 4000, // las pestañas pasan solas cada 4 s hasta que se toca una
-    // Quien llega viene de su Instagram: lo primero es el contacto directo
+    // Primero su canal de YouTube, luego la consulta y después Sobre mí
     pestanas: [
+      {
+        tipo: 'youtube',
+        texto: 'YouTube',
+        titulo: 'Mi canal',
+        captura: capturaCanal, // captura de su canal; si se quita, la pestaña vuelve a enseñar el vídeo destacado
+        video: 'Fx6msFr7ERI',
+        canal: CANAL,
+        boton: 'Suscribirse',
+      },
       {
         tipo: 'cita',
         texto: 'Consulta',
@@ -52,15 +61,6 @@ export default {
         url: `${WEB}/#contact`, // lleva al contacto de su web
         email: 'vmedina.psico@gmail.com',
         linkedin: 'https://www.linkedin.com/in/vanessa-atenas-medina-valdez/',
-      },
-      {
-        tipo: 'youtube',
-        texto: 'YouTube',
-        titulo: 'Mi canal',
-        captura: capturaCanal, // captura de su canal; si se quita, la pestaña vuelve a enseñar el vídeo destacado
-        video: 'Fx6msFr7ERI',
-        canal: CANAL,
-        boton: 'Suscribirse',
       },
       {
         tipo: 'sobremi',
