@@ -45,6 +45,7 @@ import { derivadosDeFondoYTexto } from '../lib/mezclarColores'
 import { COLORES_CARTA } from '../lib/coloresCarta'
 import { coloresAutomaticos } from '../lib/coloresMiniweb'
 import { pestanasDeMiniweb } from '../lib/miniweb'
+import { textoBotonSegunMenu } from '../lib/tipoMenu'
 import { tipoDe } from '../lib/tematicas'
 import { HEROS } from '../heros'
 import { FAMILIAS } from '../familias'
@@ -334,6 +335,13 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
       return nuevo
     })
   }
+  // Al cambiar el tipo de menú (menú del día o ofertas), el botón de la portada pasa a "Ver menú" o "Ver ofertas", solo si lleva uno de los de partida (uno escrito a mano no se toca)
+  const alCambiarTipoMenu = tipo => {
+    const nuevo = hayBotonPortada ? textoBotonSegunMenu(tipo, textoBoton) : null
+    if (nuevo === null) return
+    soltarExtraInicio('boton')
+    setTextosMini(t => ({ ...t, boton: nuevo }))
+  }
   // Los cambios a mano pasan a la vista previa (junto a lo del asistente) medio segundo después de dejar de escribir
   useEffect(() => {
     const t = setTimeout(() => {
@@ -621,7 +629,7 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
               <PanelPortada diseno={diseno} carta={carta} autosColores={autosColores} bloquePortada={bloquePortada} bloqueTextoInicio={bloqueTextoInicio} cambiarColorMini={cambiarColorMini} cambiarExtra={cambiarExtra} cambiosExtra={cambiosExtra} datosEnBruto={datosEnBruto} esCarta={esCarta} />
             )}
             {ajustesAbiertos === 'menu' && producto === 'miniweb' && (
-              <PanelMenu diseno={diseno} autosColores={autosColores} cambiarColorMini={cambiarColorMini} cambiarExtra={cambiarExtra} cambiosExtra={cambiosExtra} datosEnBruto={datosEnBruto} plantilla={plantilla} />
+              <PanelMenu alCambiarTipoMenu={alCambiarTipoMenu} diseno={diseno} autosColores={autosColores} cambiarColorMini={cambiarColorMini} cambiarExtra={cambiarExtra} cambiosExtra={cambiosExtra} datosEnBruto={datosEnBruto} plantilla={plantilla} />
             )}
             {ajustesAbiertos === 'redes' && producto === 'miniweb' && (
               <PanelRedes diseno={diseno} autosColores={autosColores} cambiarColorMini={cambiarColorMini} cambiarExtra={cambiarExtra} cambiosExtra={cambiosExtra} datosEnBruto={datosEnBruto} plantilla={plantilla} />

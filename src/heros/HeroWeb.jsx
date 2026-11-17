@@ -13,6 +13,7 @@ import BarraPestanas from '../fichas/barras'
 import { HEROS } from './index'
 import HeroRetratoWeb from './HeroRetratoWeb'
 import Ofertas from '../components/carta/Ofertas'
+import { tipoMenuDe } from '../lib/tipoMenu'
 import PaginaHorario from './PaginaHorario'
 import PaginaCita from './PaginaCita'
 import { ColoresMiniweb, esClaroHex, useRol } from '../components/ColoresPortada'
@@ -614,7 +615,9 @@ function SeccionCarta({ seccion }) {
    pestana: ofertas { texto, titulo, cuando, fotos, lista }, secciones, textoCarta? */
 function PaginaMenuPropia({ pestana }) {
   const ofertas = pestana.ofertas
-  const destacado = pestana.menuDia ?? ofertas
+  // Qué enseña: el menú del día y la carta (lo de siempre) o las ofertas y los servicios (menuTipo de la pestaña, que se elige en el Editor)
+  const conOfertas = tipoMenuDe(pestana) === 'ofertas'
+  const destacado = conOfertas ? ofertas : pestana.menuDia
   const [vista, setVista] = useState(destacado ? 'menu' : 'carta')
   const [seccionActiva, setSeccionActiva] = useState(pestana.secciones?.[0]?.nombre)
   const seccion = pestana.secciones?.find(s => s.nombre === seccionActiva)
@@ -626,7 +629,7 @@ function PaginaMenuPropia({ pestana }) {
           {destacado && <Subpestana activa={vista === 'menu'} onClick={() => setVista('menu')}>{destacado.texto ?? 'Ofertas'}</Subpestana>}
           {pestana.secciones?.length > 0 && (
             <Subpestana activa={vista === 'carta'} onClick={() => setVista('carta')}>
-              {pestana.textoCarta ?? (ofertas ? 'Servicios' : 'Carta')}
+              {pestana.textoCarta ?? (conOfertas ? 'Servicios' : 'Carta')}
             </Subpestana>
           )}
         </div>
@@ -643,8 +646,8 @@ function PaginaMenuPropia({ pestana }) {
       )}
 
       <div className="flex-1 overflow-y-auto px-[1.25rem] pb-[1.25rem] pt-[1rem]">
-        {vista === 'menu' && pestana.menuDia && <MenuDelDia menu={pestana.menuDia} />}
-        {vista === 'menu' && !pestana.menuDia && ofertas && (
+        {vista === 'menu' && !conOfertas && pestana.menuDia && <MenuDelDia menu={pestana.menuDia} />}
+        {vista === 'menu' && conOfertas && (
           <Ofertas estilo="polaroid" papelitos={false} menu={{ titulo: ofertas.titulo ?? 'Ofertas', cuando: ofertas.cuando, fotos: ofertas.fotos, ofertas: ofertas.lista ?? [] }} />
         )}
         {vista === 'carta' && seccion && <SeccionCarta seccion={seccion} />}
