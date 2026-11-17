@@ -6,9 +6,9 @@ import { conDominio } from '../lib/dominio'
 import { supabase } from '../lib/supabase'
 import { aplicar } from '../lib/ediciones'
 import { getNegocio, rutaNegocio } from '../negocios'
-import { ALERGENOS, cartas, getCarta, marcaDe, rutaCarta } from '../cartas'
+import { cartas, getCarta, marcaDe, rutaCarta } from '../cartas'
 import { BOTON, CAMPO, Confirmar, Etiqueta } from '../components/panel'
-import { TIPOGRAFIAS, parejaDe } from '../asistente/tipografias'
+import { parejaDe } from '../asistente/tipografias'
 import { PORTADAS_IA } from '../asistente/miniweb'
 import Movil from '../components/Movil'
 import { coloresAutomaticos } from '../lib/coloresMiniweb'
@@ -24,11 +24,10 @@ import { tipoDe } from '../lib/tematicas'
 import { HEROS } from '../heros'
 import { BARRAS } from '../fichas/barras'
 import { FAMILIAS } from '../familias'
-import { RESERVADAS, aSlug, llamar } from './comun'
+import { RESERVADAS, aSlug } from './comun'
 import { CampoFoto, ElegirTipografia } from './Campos'
 import { camposDe, leerRuta, organizar } from './datos'
-import { cambiosDeIA, camposParaIA, crearCartaConDueno, estructuraCarta, fusionar, inicioCopiaCarta, menuDelPanel, piezasDeIA, piezasParaIA, rutaTipografia, sinGuionLargo } from './ia'
-import { Retocar } from './Asistente'
+import { crearCartaConDueno, fusionar, inicioCopiaCarta, rutaTipografia } from './ia'
 import { ESTRUCTURA_DEFECTO, EstructuraMiniweb, PanelColoresMiniweb, SIN_PORTADA_MINIWEB, SelectorCartaMiniweb } from './PanelesMiniweb'
 import { Bloque } from './TextosEditor'
 
@@ -466,7 +465,7 @@ export function Editor({ tipo, slug, fila, filas, volver, recargar, abrir, irANu
   const [duplicando, setDuplicando] = useState(null)
   // Una copia se abre con su información; el editor entero se ve al pulsar Editar
   const [editando] = useState(false)
-  const [historial, setHistorial] = useState(fila?.historial ?? [])
+  const [historial] = useState(fila?.historial ?? [])
   // Sube cada vez que se guarda: la vista previa se recarga con lo nuevo
   const [version, setVersion] = useState(0)
   const cerrarPregunta = useCallback(() => setPregunta(null), [])
@@ -500,44 +499,6 @@ export function Editor({ tipo, slug, fila, filas, volver, recargar, abrir, irANu
     const { error } = await supabase.from('ediciones').upsert({ tipo, slug, base: fila?.base ?? null, cambios })
     if (error) return setEstado('error')
     setGuardados(cambios)
-    setEstado('guardado')
-    setVersion(v => v + 1)
-    recargar()
-  }
-
-  // Retoque con el asistente: le pasa los campos con su valor actual y lo pedido antes; sus cambios se suman
-  // a los del editor y se guardan al momento, para verlos ya en la vista previa
-  const retocar = async peticion => {
-    const fonts = leerRuta(vista, rutaTipografia(vista))
-    // Los mismos campos (con su máximo de caracteres) para pedir y para comprobar lo que devuelve
-    const camposIA = camposParaIA(vista)
-    const { resultado } = await llamar('asistente', {
-      paso: 'retocar',
-      peticion,
-      perfil: tipo === 'carta' ? 'carta' : tipoDe(vista),
-      historial: historial.map(h => h.peticion),
-      campos: camposIA,
-      // En las cartas, también sus secciones y su menú, por si piden añadir, quitar o mover platos
-      carta: estructuraCarta(vista),
-      alergenos: Object.keys(ALERGENOS),
-      tipografias: TIPOGRAFIAS.map(({ id, nombre, estilo }) => ({ id, nombre, estilo })),
-      tipografiaActual: parejaDe(fonts)?.id ?? '',
-      // En las fichas, también el aspecto (por si piden "otras pestañas" o "otro estilo")
-      ...(tipo === 'negocio' && tipoDe(vista) === 'ficha' ? { piezas: piezasParaIA(), disenoActual: vista.hero?.diseno, barraActual: vista.hero?.barra ?? HEROS[vista.hero?.diseno]?.barra } : {}),
-    })
-    const deLaIA = { ...(await cambiosDeIA(resultado, camposIA, vista)), ...(tipo === 'negocio' && tipoDe(vista) === 'ficha' ? piezasDeIA(resultado, vista) : {}) }
-    // El menú del día de una carta vive en su panel (tabla cartas): si la IA lo cambia, se cambia allí
-    if (tipo === 'carta' && deLaIA.menuDia) {
-      const { error } = await supabase.from('cartas').update({ menu_dia: menuDelPanel(deLaIA.menuDia) }).eq('slug', slug)
-      if (error) throw new Error('No se ha podido cambiar el menú del día.')
-    }
-    const nuevos = fusionar(cambios, deLaIA)
-    const nuevoHistorial = [...historial, { peticion, resumen: sinGuionLargo(resultado.resumen ?? '') }]
-    const { error } = await supabase.from('ediciones').upsert({ tipo, slug, base: fila?.base ?? null, cambios: nuevos, historial: nuevoHistorial })
-    if (error) throw new Error('No se han podido guardar los cambios del asistente.')
-    setCambios(nuevos)
-    setGuardados(nuevos)
-    setHistorial(nuevoHistorial)
     setEstado('guardado')
     setVersion(v => v + 1)
     recargar()
@@ -700,7 +661,6 @@ export function Editor({ tipo, slug, fila, filas, volver, recargar, abrir, irANu
               : setDuplicando({ nombre, slug: '', error: '', exportar: true })
           }}
         />}
-      {esCopia && editando && <Retocar historial={historial} enviar={retocar} />}
 
       {/* En las cartas, el menú del día no se edita aquí: es del dueño */}
       {tipo === 'carta' && !verInfo && (
