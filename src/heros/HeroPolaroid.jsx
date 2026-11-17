@@ -14,11 +14,10 @@ import { montajeDe } from '../lib/montajes'
 
 /* Polaroid (inspirado en la carta Polaroid de Forno Nonna). Hero por piezas: acepta cualquier pestaña común y
    cualquier barra (hero.barra; la suya son las pastillas, sobre el color de la marca).
-   Fondo del color fuerte de la marca (primary), con el nombre escrito a mano arriba. En la pestaña de fotos, las
-   fotos como polaroids pegadas un poco torcidas, de dos en dos, con su nombre a mano debajo; al tocar una se abre
-   grande y recta. Las demás pestañas (horario, contacto, ubicación, precios) van en una nota de papel pegada,
-   también un poco torcida.
-   La letra a mano es Caveat, siempre: es parte del diseño, no de la marca.
+   Fondo del color fuerte de la marca (primary), con el nombre arriba, en la tipografía de la marca (la que se elige en el Editor; si se elige Caveat,
+   sale a mano). En la pestaña de fotos, las fotos como polaroids pegadas un poco torcidas, de dos en dos, con su nombre a mano debajo; al tocar una
+   se abre grande y recta. Las demás pestañas (horario, contacto, ubicación, precios) van en una nota de papel pegada, también un poco torcida.
+   La letra a mano de los pies de las polaroids es Caveat, siempre: es parte del diseño, no de la marca.
    hero: barra?, pestanas[{ tipo, texto, ... }] */
 
 const A_MANO = '"Caveat", "Comic Sans MS", cursive'
@@ -150,10 +149,10 @@ export default function HeroPolaroid({ hero, nombre, lema, sinBarra = false, ini
   return (
     // Cualquier toque en el hero para la vuelta de presentación
     <div className="flex flex-1 flex-col bg-demo-header" style={{ color: textoAuto }} onPointerDown={parar}>
-      {/* Nombre a mano y lema; compartir a la derecha */}
+      {/* Nombre (con la tipografía de la marca) y lema; compartir a la derecha */}
       <div className="flex items-start justify-between gap-[1rem] px-[1.25rem] pt-[0.8rem]">
         <div className="min-w-0">
-          <h1 className="text-[clamp(2.2rem,1.8rem+2vw,2.8rem)] font-bold leading-[0.85]" style={{ fontFamily: A_MANO }}>
+          <h1 className="font-demo-heading text-[clamp(2.2rem,1.8rem+2vw,2.8rem)] font-bold leading-[0.85]">
             <NombreMarca nombre={nombre} tamano="grande" debajo={<TextoExtraBajoNombre inicio={inicio} className="text-[0.8rem] opacity-80" />} />
           </h1>
           {lema && <p style={rolSub} className="mt-[0.2rem] text-[0.85rem] opacity-80">{lema}</p>}
