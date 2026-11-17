@@ -14,7 +14,8 @@ Actualizado el 16-11-2026. Estados: idea, en curso, hecha, descartada. Una líne
 ## Refactor y limpieza
 
 - **Partir `src/components/GeneradorQR.jsx`** (2.573 líneas). Estado: idea. Jesús dice que de momento no le preocupa.
-- **Partir `LandingPage.jsx` y `HeroWeb.jsx`**. Estado: idea.
+- **Partir `LandingPage.jsx`** (1.141 líneas). Estado: no merece la pena de momento (17-11-2026): solo va a recibir alguna imagen y algo de texto. Solo si se rehace su diseño, y con pruebas de montaje antes.
+- **`Editor.jsx`** (de /admin, unas 850 líneas): una copia se abre con su información y Editar lleva al Nuevo perfil; la parte de edición con campos, Diseño, tipografía y Guardar solo la alcanza una página que no sea demo ni copia (hoy solo Vanessa). Estado: no se parte; decidir si esa parte se queda o se borra cuando se decida qué hacer con lo de Vanessa (17-11-2026).
 
 ## Editor de cartas
 
@@ -26,6 +27,7 @@ Actualizado el 16-11-2026. Estados: idea, en curso, hecha, descartada. Una líne
 
 ## Producto
 
+- **Linktree propio: un organizador de links con la ficha como base** (idea de Jesús, 17-11-2026, será lo siguiente tras el Editor). Reutilizar o crear fichas (el hero Ficha con pestañas de carpeta y su motor de pestañas, el que usa la página de Vanessa) para hacer una especie de Linktree: botones de enlace y pestañas de contacto, YouTube o Sobre mí, sin horario, reseña ni carta. No es una miniweb de negocio local: es para profesionales como Vanessa, que hoy tiene su página real en `/vanessa` (diseño Ficha, creada para sustituir su Beacons, que no cuenta como parte del Editor). Estado: idea. Por decidir: si lleva su propio producto en el Nuevo perfil y si sigue colgado de `Editor.jsx`.
 - **Tarjeta al compartir el enlace de un cliente** (WhatsApp, Instagram), hoy sale la genérica de Mostraq. Estado: idea, pendiente antes del primer cliente.
 - **Medir escaneos y pulsaciones** de las páginas de cliente para enseñárselo. Estado: idea.
 - **Una red de seguridad visual** (que las pantallas se vean igual tras un refactor). Estado: idea.
