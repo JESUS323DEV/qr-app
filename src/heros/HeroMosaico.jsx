@@ -46,7 +46,7 @@ export default function HeroMosaico({ hero, nombre, lema, sinBarra = false, inic
       ))}
     </h1>
   )
-  const descripcionMini = inicio?.descripcion && <p style={rolDescripcion} className="max-w-[22rem] text-[length:calc(0.9rem_+_max(0px,100svh_-_680px)_*_0.0065)] leading-[1.4] opacity-85">{inicio.descripcion}</p>
+  const descripcionMini = inicio?.descripcion && <p style={rolDescripcion} className="max-w-[22rem] text-[length:min(1.2rem,calc(0.9rem_+_max(0px,100svh_-_640px)_*_0.0066_+_max(0px,100svh_-_680px)_*_0.0077))] leading-[1.4] opacity-85">{inicio.descripcion}</p>
   const botonMini = inicio?.boton && inicio?.botonA && (
     <div className={`flex flex-wrap items-center gap-[0.75rem] ${inicio.descripcion ? 'mt-[0.6rem]' : ''}`}>
       <button
