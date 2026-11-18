@@ -69,8 +69,8 @@ export default function PanelAsistente({ diseno, carta, negocio, cambiarProducto
       <Etiqueta texto="Nombre del negocio">
         <input value={nombre} onChange={e => setNombre(e.target.value)} disabled={Boolean(disenando) || Boolean(creando)} className={CAMPO} placeholder="Peluquería Ranita" />
       </Etiqueta>
-      {/* Solo en miniwebs: un formulario corto que escribe el texto en el cuadro de abajo */}
-      {producto === 'miniweb' && <FormularioTexto alGenerar={setCuento} hayTexto={Boolean(cuento.trim())} bloqueado={Boolean(disenando) || Boolean(creando)} />}
+      {/* En miniwebs y en Menú y ofertas: un formulario corto que escribe el texto en el cuadro de abajo (en una carta, el de una carta y sin lista de prompts) */}
+      {(producto === 'miniweb' || producto === 'carta') && <FormularioTexto tipoCarta={producto === 'carta' ? tipoCarta : undefined} alGenerar={setCuento} hayTexto={Boolean(cuento.trim())} bloqueado={Boolean(disenando) || Boolean(creando)} />}
       <textarea
         value={cuento}
         onChange={e => setCuento(e.target.value)}

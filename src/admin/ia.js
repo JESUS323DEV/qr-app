@@ -58,21 +58,21 @@ export const rutaTipografia = datos => (datos?.marca ? 'marca.theme.fonts' : 'th
 /* Convierte la respuesta de la IA en cambios del editor, comprobando cada uno: solo rutas que existen en la
    página, colores bien escritos, tipografías de la lista, alérgenos de los 14 oficiales. Las fotos se buscan en
    Unsplash y se pone la primera. actual: los datos de la página tal como están ahora. */
-export async function cambiosDeIA(resultado, campos, actual) {
+export async function cambiosDeIA(resultado, campos, actual, { maxSecciones = 10, maxPlatos = 20 } = {}) {
   const porRuta = new Map(campos.map(c => [c.ruta, c]))
   const esCarta = Array.isArray(actual?.secciones)
   const orientacion = esCarta ? 'portrait' : undefined
   const cambios = {}
 
   // Carta: secciones y menú del día enteros, cuando la IA los rehace (crear la carta, añadir o quitar platos)
-  const secciones = esCarta && resultado.secciones?.length ? resultado.secciones.slice(0, 10) : null
+  const secciones = esCarta && resultado.secciones?.length ? resultado.secciones.slice(0, maxSecciones) : null
   const menu = esCarta && resultado.menu?.grupos?.length ? resultado.menu : null
   if (secciones) {
-    // Diseños polaroid y galería: una foto por plato, cuadrada; en los demás, una por sección (en vertical)
-    const porPlato = ['polaroid', 'galeria'].includes(actual.diseno)
+    // Diseños con foto por plato (polaroid, galería, revista e inmersiva): una foto por plato, cuadrada; en los demás, una por sección (en vertical)
+    const porPlato = ['polaroid', 'galeria', 'revista', 'inmersiva'].includes(actual.diseno)
     const fotos = await Promise.all(secciones.map(s => (!porPlato && s.busquedaFoto?.trim() ? primeraFoto(s.busquedaFoto, orientacion) : null)))
     const fotosPlatos = porPlato
-      ? await Promise.all(secciones.map(s => Promise.all((s.platos ?? []).slice(0, 20).map(p => (p.busquedaFoto?.trim() ? primeraFoto(p.busquedaFoto, 'square') : null)))))
+      ? await Promise.all(secciones.map(s => Promise.all((s.platos ?? []).slice(0, maxPlatos).map(p => (p.busquedaFoto?.trim() ? primeraFoto(p.busquedaFoto, 'square') : null)))))
       : []
     const todosLosPlatos = actual.secciones.flatMap(s => s.platos)
     cambios.secciones = secciones.map((s, i) => {
@@ -81,7 +81,7 @@ export async function cambiosDeIA(resultado, campos, actual) {
       return {
         nombre: sinGuionLargo(s.nombre),
         foto: fotos[i] ?? previa?.foto,
-        platos: (s.platos ?? []).slice(0, 20).map((p, j) => {
+        platos: (s.platos ?? []).slice(0, maxPlatos).map((p, j) => {
           // La foto del plato: la nueva o la que tenía un plato con el mismo nombre
           const fotoPlato = fotosPlatos[i]?.[j] ?? todosLosPlatos.find(x => x.nombre === p.nombre)?.foto
           return {

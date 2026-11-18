@@ -16,7 +16,7 @@ export default function usePerfilAcciones(datos) {
 
   // El botón del asistente, en dos tiempos: 1) elige el diseño (y el nombre, si falta) y lo pone en los selectores; 2) con esos
   // selectores ya puestos (efecto de más abajo), escribe los textos y busca las fotos. La vista previa lo enseña todo
-  const montar = async () => {
+  const montarYa = async () => {
     if (!(nombre.trim() || cuento.trim() || referencia || captura) || disenando) return
     // Con el diseño ya montado (DISENO_IA_ACTIVO apagado), en miniweb y en menú y ofertas: no se elige diseño; en una miniweb el asistente rellena Inicio, Horario y Reservar y pinta
     // los colores; en una carta se inventa los platos (o las ofertas) con sus precios, busca las fotos y pinta los colores
@@ -98,6 +98,21 @@ export default function usePerfilAcciones(datos) {
       setError(e.message)
       setDisenando(null)
     }
+  }
+
+  // El botón del asistente. En una carta, con lo que haya hecho a mano o con el asistente, avisa antes: el asistente la rehace entera y empieza de cero
+  const montar = () => {
+    if (!DISENO_IA_ACTIVO && esCarta && nombre.trim() && !disenando && (Object.keys(cambiosExtra).length > 0 || cambiosIA)) {
+      setPreguntaSalir({
+        titulo: '¿Empezar la carta de cero?',
+        texto: 'El asistente rehace la carta entera: grupos, platos, precios, menú del día, ofertas, fotos y colores. Se pierde lo que hayas cambiado a mano o hecho antes con el asistente.',
+        boton: 'Empezar de cero',
+        peligro: true,
+        accion: montarYa,
+      })
+      return
+    }
+    montarYa()
   }
 
   const cambiarProducto = clave => {

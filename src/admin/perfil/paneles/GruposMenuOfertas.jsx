@@ -9,7 +9,7 @@ import { leerRuta } from '../../datos'
 
 /* Los grupos del menú del día y las ofertas, para probar cómo queda el diseño con tantos como podría crear el dueño desde su panel
    (el menú del día admite hasta MAX_GRUPOS grupos de MAX_PLATOS platos, los mismos topes que su panel; las ofertas no tienen tope).
-   Aquí solo se tocan nombres y descripciones: los precios y demás datos reales los pone el dueño.
+   Aquí se tocan todos los textos y los precios, para poder montar una demo entera a mano; en la carta de un cliente real, el menú del día lo cambia el dueño desde su panel.
    Cada lista se guarda entera (con lo ya cambiado) y se quitan los cambios sueltos de sus elementos, que ya van dentro */
 
 // Guarda una lista entera en su ruta (menuDia.grupos, ofertas.lista) quitando los cambios sueltos que tuviera
@@ -28,6 +28,16 @@ const MAX_FOTOS = 6
 
 const BOTON_ICONO ='shrink-0 rounded-[0.6rem] p-[0.6rem] text-zinc-500 ring-1 ring-zinc-300 hover:text-zinc-900 disabled:opacity-40'
 const BOTON_ANADIR = 'flex items-center justify-center gap-[0.4rem] rounded-[0.6rem] px-[0.9rem] py-[0.5rem] text-[0.88rem] font-semibold ring-1 ring-zinc-300 disabled:opacity-40'
+
+// Un dato suelto con su etiqueta (el título, el precio...). aria: el nombre para lectores de pantalla cuando hay varios iguales (uno por oferta)
+function CampoTexto({ etiqueta, valor, cambiar, ejemplo, aria }) {
+  return (
+    <label className="grid gap-[0.25rem]">
+      <span className="text-[0.8rem] font-semibold text-zinc-500">{etiqueta}</span>
+      <input value={valor ?? ''} onChange={e => cambiar(e.target.value)} placeholder={ejemplo} aria-label={aria} className={CAMPO} />
+    </label>
+  )
+}
 
 // Hay nombres vacíos o repetidos (la carta usa el nombre como identificador)
 const hayProblema = nombres => {
@@ -69,7 +79,13 @@ export function GruposMenuDia({ datos, datosEnBruto, cambiosExtra, cambiarExtra,
   return (
     <Plegable titulo="Grupos del menú del día" elegido={`${grupos.length} ${grupos.length === 1 ? 'grupo' : 'grupos'}`}>
       <div className="grid gap-[0.6rem]">
-        {/* La foto del menú del día, justo arriba */}
+        <div className="grid grid-cols-2 gap-[0.5rem]">
+          <CampoTexto etiqueta="Título" valor={datos.menuDia.titulo} cambiar={v => cambiarExtra('menuDia.titulo', v)} ejemplo="Menú del día" />
+          <CampoTexto etiqueta="Precio" valor={datos.menuDia.precio} cambiar={v => cambiarExtra('menuDia.precio', v)} ejemplo="14,90 €" />
+        </div>
+        <CampoTexto etiqueta="Cuándo" valor={datos.menuDia.cuando} cambiar={v => cambiarExtra('menuDia.cuando', v)} ejemplo="De lunes a viernes, a mediodía" />
+        <CampoTexto etiqueta="Qué incluye" valor={datos.menuDia.incluye} cambiar={v => cambiarExtra('menuDia.incluye', v)} ejemplo="Bebida y postre" />
+        {/* La foto del menú del día */}
         <div className="grid gap-[0.4rem]">
           <p className="text-[0.8rem] font-semibold text-zinc-500">Foto del menú del día</p>
           <CampoFoto
@@ -154,7 +170,9 @@ export function ListaOfertas({ datos, datosEnBruto, cambiosExtra, cambiarExtra }
   return (
     <Plegable titulo="Ofertas" elegido={`${lista.length} ${lista.length === 1 ? 'oferta' : 'ofertas'}`}>
       <div className="grid gap-[0.6rem]">
-        {/* Las fotos de las ofertas, justo arriba */}
+        <CampoTexto etiqueta="Título" valor={datos.ofertas.titulo} cambiar={v => cambiarExtra('ofertas.titulo', v)} ejemplo="Ofertas" />
+        <CampoTexto etiqueta="Cuándo" valor={datos.ofertas.cuando} cambiar={v => cambiarExtra('ofertas.cuando', v)} ejemplo="Pídelas al reservar tu cita" />
+        {/* Las fotos de las ofertas */}
         <div className="grid gap-[0.5rem]">
           <p className="text-[0.8rem] font-semibold text-zinc-500">Fotos de las ofertas</p>
           <p className="text-[0.8rem] text-zinc-400">Pasan solas, una tras otra. Polaroid y Revista enseñan las {MAX_FOTOS_CORTAS} primeras; Galería, hasta {MAX_FOTOS}, de dos en dos.</p>
@@ -185,7 +203,7 @@ export function ListaOfertas({ datos, datosEnBruto, cambiosExtra, cambiarExtra }
             <span className="block text-[0.78rem] text-zinc-400">El precio de antes, junto al de la oferta. Desactivado, no se ve en ninguna oferta.</span>
           </span>
         </label>
-        <p className="text-[0.8rem] text-zinc-500">Nombre y descripción de cada oferta. Los precios los pone el dueño.</p>
+        <p className="text-[0.8rem] text-zinc-500">Nombre, descripción y precios de cada oferta. El precio de antes solo se ve si la casilla de arriba está marcada.</p>
         {lista.map((o, i) => (
           <div key={i} className="grid gap-[0.4rem] rounded-[0.7rem] bg-zinc-50 p-[0.5rem] ring-1 ring-zinc-200">
             <div className="flex items-center gap-[0.4rem]">
@@ -195,6 +213,10 @@ export function ListaOfertas({ datos, datosEnBruto, cambiosExtra, cambiarExtra }
               </button>
             </div>
             <textarea value={o.descripcion ?? ''} onChange={e => ponerOferta(i, { descripcion: e.target.value })} rows={2} aria-label={`Descripción de la oferta ${i + 1}`} className={`${CAMPO} resize-y`} />
+            <div className="grid grid-cols-2 gap-[0.4rem]">
+              <CampoTexto etiqueta="Precio" valor={o.precio} cambiar={v => ponerOferta(i, { precio: v })} ejemplo="12 €" aria={`Precio de la oferta ${i + 1}`} />
+              <CampoTexto etiqueta="Precio de antes" valor={o.antes} cambiar={v => ponerOferta(i, { antes: v })} ejemplo="18 €" aria={`Precio de antes de la oferta ${i + 1}`} />
+            </div>
           </div>
         ))}
         {hayProblema(lista.map(o => o.nombre)) && <p className="text-[0.8rem] font-semibold text-red-600">Cada oferta necesita un nombre, y distinto de los demás.</p>}

@@ -109,6 +109,14 @@ describe('asistente de menú y ofertas (modo terminar)', () => {
     }
   })
 
+  it('ordenDeCarta pide de cuatro a cinco grupos de cinco, todo inventado y sin 00 €', () => {
+    for (const t of ['carta', 'promociones']) {
+      expect(ordenDeCarta(t)).toContain('cuatro a cinco secciones')
+      expect(ordenDeCarta(t)).toContain('cinco')
+      expect(ordenDeCarta(t)).toContain('Nunca «00 €»')
+    }
+  })
+
   it('ordenDeColores de una carta habla de los cuatro colores de la marca y no de menú ni redes', () => {
     const t = ordenDeColores(null, true)
     expect(t).toContain('marca.theme.colors')

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import montarTexto, { CAMPOS_VACIOS, PROMPTS } from './montarTexto'
+import montarTexto, { CAMPOS_VACIOS, PROMPTS, montarTextoCarta } from './montarTexto'
 
 const FIJAS = [
   'Rellena todo lo editable, sin tocar el diseño:',
@@ -48,5 +48,31 @@ describe('montarTexto', () => {
   it('sin tipo pero con barrio, "Negocio en ..."; sin barrio, solo el tipo; los espacios se recortan', () => {
     expect(montarTexto({ ...CAMPOS_VACIOS, barrio: ' Sants ' }).split('\n')[0]).toBe('Negocio en Sants.')
     expect(montarTexto({ ...CAMPOS_VACIOS, tipo: ' peluquería ' }).split('\n')[0]).toBe('peluquería.')
+  })
+})
+
+describe('montarTextoCarta', () => {
+  const campos = { tipo: 'bar de tapas', barrio: 'Gràcia', tonos: ['Cercano'], colores: 'rojo y crema' }
+
+  it('empieza por el negocio, con su barrio, tono y colores, y sigue con lo que se rellena en una carta', () => {
+    const texto = montarTextoCarta(campos, 'carta')
+    expect(texto.split('\n')[0]).toBe('bar de tapas en Gràcia. Tono cercano. Colores: rojo y crema.')
+    expect(texto).toContain('de cuatro a cinco secciones con cinco platos cada una')
+    expect(texto).toContain('Menú del día')
+    expect(texto).toContain('sin tocar el diseño')
+  })
+
+  it('en promociones habla de ofertas y servicios, no de platos', () => {
+    const texto = montarTextoCarta(campos, 'promociones')
+    expect(texto).toContain('Ofertas')
+    expect(texto).toContain('cinco servicios cada una')
+    expect(texto).not.toContain('cinco platos')
+  })
+
+  it('lo que se deja vacío no sale y ninguno lleva guion largo', () => {
+    for (const t of ['carta', 'promociones']) {
+      expect(montarTextoCarta(CAMPOS_VACIOS, t).split('\n')[0]).toMatch(/^Monta /)
+      expect(montarTextoCarta(campos, t)).not.toContain('—')
+    }
   })
 })

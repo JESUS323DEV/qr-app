@@ -31,6 +31,26 @@ export default function montarTexto(campos) {
   return unir([lineaNegocio(campos), ...LINEAS_FIJAS])
 }
 
+// El texto para el asistente de una carta (Menú y ofertas): el mismo formulario, con lo que se rellena en una carta. tipoCarta: 'carta' (menú del día y platos) o 'promociones' (ofertas y servicios)
+const LINEAS_CARTA = {
+  carta: [
+    'Monta la carta de este negocio, sin tocar el diseño:',
+    '- Carta: de cuatro a cinco secciones con cinco platos cada una, cada plato con su descripción y un precio creíble, y una foto distinta para cada plato.',
+    '- Menú del día: su título, cuándo, precio, qué incluye y los platos de cada grupo.',
+    'Pinta también los colores de la marca, con buen contraste.',
+  ],
+  promociones: [
+    'Monta las ofertas y los servicios de este negocio, sin tocar el diseño:',
+    '- Ofertas: rellena las que hay, con su descripción, su precio y, si tiene sentido, un precio de antes más alto.',
+    '- Servicios: de cuatro a cinco secciones con cinco servicios cada una, cada servicio con su descripción y un precio creíble, y una foto distinta para cada uno.',
+    'Pinta también los colores de la marca, con buen contraste.',
+  ],
+}
+
+export function montarTextoCarta(campos, tipoCarta) {
+  return unir([lineaNegocio(campos), ...(LINEAS_CARTA[tipoCarta] ?? LINEAS_CARTA.carta)])
+}
+
 // Todos los prompts, con su título: cada uno es una función de los campos del formulario
 export const PROMPTS = [
   { titulo: 'Completo: textos, fotos y colores', construir: montarTexto },
