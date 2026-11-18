@@ -8,7 +8,7 @@ import FormularioTexto from '../FormularioTexto'
 
 // PanelAsistente: sacado de NuevoPerfil.jsx (el panel de un grupo de ajustes). Recibe los objetos de los hooks y lo demás que se calcula en NuevoPerfil
 export default function PanelAsistente({ diseno, carta, negocio, cambiarProducto, captura, creando, cuento, disenando, esMovil, montar, pasoMovil, referencia, resumenDiseno, setCaptura, setCuento, setError, setPasoMovil, setReferencia, setResumenDiseno, setVistaMovil }) {
-  const { producto } = diseno
+  const { producto, tematica } = diseno
   const { setTipoCarta, tipoCarta } = carta
   const { nombre, setNombre } = negocio
   // Copia el texto del cuadro al portapapeles (si el navegador no lo permite, no pasa nada: se puede seleccionar y copiar a mano)
@@ -52,7 +52,9 @@ export default function PanelAsistente({ diseno, carta, negocio, cambiarProducto
               key={t.clave}
               type="button"
               aria-pressed={tipoCarta === t.clave}
-              disabled={Boolean(disenando) || Boolean(creando)}
+              // Con la temática elegida, el tipo de carta ya está decidido: el otro queda bloqueado (se cambia con la temática, en Negocio)
+              disabled={Boolean(disenando) || Boolean(creando) || Boolean(tematica && tipoCarta !== t.clave)}
+              title={tematica && tipoCarta !== t.clave ? 'El perfil se elige con la temática, en Negocio' : undefined}
               onClick={() => {
                 setTipoCarta(t.clave)
                 // El tipo y la etiqueta de temática van juntos en Menú y ofertas

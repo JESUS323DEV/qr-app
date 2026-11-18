@@ -4,16 +4,20 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
    cuántas se piden y con qué forma, sin llamar a ningún servidor. */
 
 const peticiones = vi.hoisted(() => [])
+// modo de la búsqueda de fotos simulada: 'ok' da una foto, 'vacio' no encuentra nada y 'limite' falla como cuando se llega al tope de Unsplash
+const buscador = vi.hoisted(() => ({ modo: 'ok' }))
 vi.mock('./comun', () => ({
   llamar: async (funcion, datos) => {
     peticiones.push({ funcion, ...datos })
+    if (buscador.modo === 'limite') throw new Error('Has llegado al límite de búsquedas de esta hora. Espera un poco.')
+    if (buscador.modo === 'vacio') return { fotos: [] }
     return { fotos: [{ url: `https://fotos.test/${peticiones.length}.jpg` }] }
   },
   avisarElegida: () => {},
 }))
 vi.mock('../lib/supabase', () => ({ supabase: null }))
 
-import { cambiosDeIA } from './ia'
+import { cambiosDeIA, textoFotosFallidas } from './ia'
 
 const platos = (n, prefijo) => Array.from({ length: n }, (_, i) => ({ nombre: `${prefijo} ${i + 1}`, descripcion: 'Rico', precio: '9,50 €', alergenos: [], busquedaFoto: `${prefijo} ${i + 1} dish` }))
 const secciones = (g, p) => Array.from({ length: g }, (_, i) => ({ nombre: `Grupo ${i + 1}`, busquedaFoto: `grupo ${i + 1}`, platos: platos(p, `Plato ${i + 1}`) }))
@@ -21,6 +25,7 @@ const carta = diseno => ({ diseno, secciones: [{ nombre: 'Antes', foto: '', plat
 
 beforeEach(() => {
   peticiones.length = 0
+  buscador.modo = 'ok'
 })
 
 describe('cambiosDeIA de una carta', () => {
@@ -58,5 +63,37 @@ describe('cambiosDeIA de una carta', () => {
     const s = [{ nombre: 'Tapas — del día', busquedaFoto: '', platos: [{ nombre: 'Pulpo — gallego', descripcion: 'Rico — de verdad', precio: '12 €', alergenos: [], busquedaFoto: '' }] }]
     const r = await cambiosDeIA({ secciones: s, cambios: [], fotos: [] }, [], carta('base'))
     expect(JSON.stringify(r)).not.toContain('—')
+  })
+})
+
+describe('fotos que no se han podido poner', () => {
+  it('si todo va bien no avisa de nada', async () => {
+    const aviso = vi.fn()
+    await cambiosDeIA({ secciones: secciones(2, 3), cambios: [], fotos: [] }, [], carta('galeria'), { alFallarFotos: aviso })
+    expect(aviso).not.toHaveBeenCalled()
+  })
+
+  it('si se llega al límite de búsquedas, avisa de cuántas fotos faltan y del motivo, y la carta sale igual sin fotos', async () => {
+    buscador.modo = 'limite'
+    const aviso = vi.fn()
+    const r = await cambiosDeIA({ secciones: secciones(2, 3), cambios: [], fotos: [] }, [], carta('galeria'), { alFallarFotos: aviso })
+    expect(aviso).toHaveBeenCalledWith({ cantidad: 6, motivo: 'Has llegado al límite de búsquedas de esta hora. Espera un poco.' })
+    expect(r.secciones).toHaveLength(2)
+    expect(r.secciones.flatMap(s => s.platos).some(p => p.foto)).toBe(false)
+  })
+
+  it('si la búsqueda va bien pero no encuentra nada, lo dice con ese motivo', async () => {
+    buscador.modo = 'vacio'
+    const aviso = vi.fn()
+    await cambiosDeIA({ secciones: secciones(1, 2), cambios: [], fotos: [] }, [], carta('polaroid'), { alFallarFotos: aviso })
+    expect(aviso).toHaveBeenCalledWith({ cantidad: 2, motivo: 'sin resultados' })
+  })
+
+  it('el texto del aviso dice cuántas y por qué, sin guion largo', () => {
+    expect(textoFotosFallidas({ cantidad: 12, motivo: 'Has llegado al límite de búsquedas de esta hora. Espera un poco.' })).toBe(
+      'El asistente ha terminado, pero no ha podido poner 12 fotos. Has llegado al límite de búsquedas de esta hora. Espera un poco.',
+    )
+    expect(textoFotosFallidas({ cantidad: 1, motivo: 'sin resultados' })).toBe('El asistente ha terminado, pero no ha podido poner 1 foto. La búsqueda no encontró nada.')
+    expect(textoFotosFallidas({ cantidad: 3, motivo: 'x' })).not.toContain('—')
   })
 })

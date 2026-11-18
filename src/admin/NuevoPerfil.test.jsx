@@ -83,3 +83,36 @@ describe('Editor (Nuevo perfil) en móvil', () => {
     expect(screen.getByRole('button', { name: 'Elegir copia' })).toBeTruthy()
   })
 })
+
+describe('Editor (Nuevo perfil): el perfil de Menú y ofertas en el Asistente', () => {
+  // Elige Menú y ofertas, abre "Desde 0", elige la temática y acepta; luego pasa a la pestaña Asistente
+  function elegirTematicaYEntrarAlAsistente(nombreTematica) {
+    simularPantalla(1280)
+    const container = montarYAbrir()
+    fireEvent.click(screen.getAllByText('Menú y ofertas')[0])
+    fireEvent.click([...container.querySelectorAll('button')].find(b => /Desde 0/.test(b.getAttribute('aria-label') || '')))
+    fireEvent.click(screen.getByText(nombreTematica))
+    fireEvent.click(screen.getByRole('button', { name: 'Aceptar' }))
+    fireEvent.click(screen.getAllByText('Asistente')[0])
+  }
+
+  it('con Promociones elegida, en el Asistente sale Ofertas elegido y Menú del día bloqueado', () => {
+    elegirTematicaYEntrarAlAsistente('Promociones')
+    const ofertas = screen.getByRole('button', { name: 'Ofertas' })
+    const menu = screen.getByRole('button', { name: 'Menú del día' })
+    expect(ofertas.getAttribute('aria-pressed')).toBe('true')
+    expect(ofertas.disabled).toBe(false)
+    expect(menu.getAttribute('aria-pressed')).toBe('false')
+    expect(menu.disabled).toBe(true)
+  })
+
+  it('con Restaurante elegido, sale Menú del día elegido y Ofertas bloqueado', () => {
+    elegirTematicaYEntrarAlAsistente('Restaurante')
+    const menu = screen.getByRole('button', { name: 'Menú del día' })
+    const ofertas = screen.getByRole('button', { name: 'Ofertas' })
+    expect(menu.getAttribute('aria-pressed')).toBe('true')
+    expect(menu.disabled).toBe(false)
+    expect(ofertas.getAttribute('aria-pressed')).toBe('false')
+    expect(ofertas.disabled).toBe(true)
+  })
+})

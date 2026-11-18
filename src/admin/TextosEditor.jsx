@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import CampoColor from '../components/CampoColor'
 import { tipoComun } from '../fichas/escenas'
+import { ESTILOS_CARTA_CON_FOTO_POR_PLATO } from '../familias'
 import { ChevronDown, ImagePlus, Plus, X } from 'lucide-react'
 import { aplicar } from '../lib/ediciones'
 import { CAMPO } from '../components/panel'
@@ -191,7 +192,7 @@ export function ImagenesPorPestana({ original, cambios, cambiar, tipos, soloOtra
     // el menú del día y las ofertas, en todos. Solo se enseñan los huecos que el estilo elegido pinta (como en la miniweb, con las fotos de cada diseño)
     const estiloCarta = datos.diseno
     const usaFotoGeneral = !['galeria', 'polaroid', 'revista'].includes(estiloCarta)
-    const usaFotoPlatos = ['galeria', 'polaroid', 'revista', 'inmersiva'].includes(estiloCarta)
+    const usaFotoPlatos = ESTILOS_CARTA_CON_FOTO_POR_PLATO.includes(estiloCarta)
     const zonaDe = ruta => {
       const [primero, indice] = ruta.split('.')
       if (primero === 'foto') return ['0', estiloCarta === 'inmersiva' ? 'Foto de fondo' : 'Foto de arriba']

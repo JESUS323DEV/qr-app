@@ -11,6 +11,7 @@ import { ICONOS_DISENO, nombreDeDiseno } from '../PanelesMiniweb'
 import { MONTAJES } from '../../lib/montajes'
 import { claseIcono } from '../../components/panel'
 import { coloresAutomaticos } from '../../lib/coloresMiniweb'
+import { ESTILOS_CARTA_CON_FOTO_POR_PLATO } from '../../familias'
 
 // Un icono por estilo de carta (la clave es la del diseño de carta), como en la fila de portadas de las miniwebs
 const ICONOS_ESTILO_CARTA = { polaroid: Camera, galeria: GalleryHorizontal, revista: Newspaper, inmersiva: Maximize, base: List }
@@ -208,24 +209,35 @@ export default function BloquePortada({ diseno, carta, cambiarColorMini, colorAc
           ) : (
             <div className="grid gap-[0.45rem]">
               <span className={titulo}>Estilo</span>
-              <FilaIconos className="flex flex-wrap items-center gap-[0.4rem]">
-                {estilos.map(f => {
-                  const Icono = ICONOS_ESTILO_CARTA[f.carta] ?? Frame
-                  return (
-                    <button
-                      key={f.carta}
-                      type="button"
-                      title={f.nombre}
-                      aria-label={`Estilo ${f.nombre}`}
-                      aria-pressed={estilo === f.carta}
-                      onClick={() => setEstilo(f.carta)}
-                      className={claseIcono(estilo === f.carta)}
-                    >
-                      <Icono className="h-[1.3rem] w-[1.3rem]" strokeWidth={2} aria-hidden="true" />
-                    </button>
-                  )
-                })}
-              </FilaIconos>
+              {/* Separados según lleven foto por cada plato o servicio (Polaroid, Galería, Revista e Inmersiva) o solo una foto general (Base) */}
+              {[
+                ['Con foto por plato', estilos.filter(f => ESTILOS_CARTA_CON_FOTO_POR_PLATO.includes(f.carta))],
+                ['Sin foto por plato', estilos.filter(f => !ESTILOS_CARTA_CON_FOTO_POR_PLATO.includes(f.carta))],
+              ]
+                .filter(([, lista]) => lista.length > 0)
+                .map(([nombreGrupo, lista]) => (
+                  <div key={nombreGrupo} className="grid gap-[0.3rem]">
+                    <span className="text-[0.75rem] text-zinc-400">{nombreGrupo}</span>
+                    <FilaIconos className="flex flex-wrap items-center gap-[0.4rem]">
+                      {lista.map(f => {
+                        const Icono = ICONOS_ESTILO_CARTA[f.carta] ?? Frame
+                        return (
+                          <button
+                            key={f.carta}
+                            type="button"
+                            title={f.nombre}
+                            aria-label={`Estilo ${f.nombre}`}
+                            aria-pressed={estilo === f.carta}
+                            onClick={() => setEstilo(f.carta)}
+                            className={claseIcono(estilo === f.carta)}
+                          >
+                            <Icono className="h-[1.3rem] w-[1.3rem]" strokeWidth={2} aria-hidden="true" />
+                          </button>
+                        )
+                      })}
+                    </FilaIconos>
+                  </div>
+                ))}
               <p className="text-[0.85rem] font-semibold">{estilos.find(f => f.carta === estilo)?.nombre}</p>
               {/* Subdiseños de Inmersiva: las pestañas en fila (la base) o en columna */}
               {estilo === 'inmersiva' && (

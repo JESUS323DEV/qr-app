@@ -2,6 +2,7 @@ import { supabase } from '../lib/supabase'
 import { ALERGENOS, fotoDe, marcaDe } from '../cartas'
 import { TIPOGRAFIAS } from '../asistente/tipografias'
 import { HEROS } from '../heros'
+import { ESTILOS_CARTA_CON_FOTO_POR_PLATO } from '../familias'
 import { BARRAS } from '../fichas/barras'
 import { avisarElegida, llamar } from './comun'
 import { camposDe, esColor, leerRuta, maxCampo } from './datos'
@@ -24,21 +25,38 @@ const recortar = (texto, max) => {
 // Por si acaso: ningún guion largo llega a la página, aunque la IA se lo salte
 export const sinGuionLargo = texto => texto.replace(/\s*—\s*/g, ', ')
 
+// Cuando una búsqueda de fotos no da foto, se apunta el motivo con `fallo` (el mensaje del servidor, o SIN_RESULTADOS si fue bien pero no encontró nada)
+const SIN_RESULTADOS = 'sin resultados'
+
 // Primera foto de Unsplash para una búsqueda (o null). Se avisa a Unsplash de que se ha elegido.
-const primeraFoto = (busqueda, orientacion) =>
+const primeraFoto = (busqueda, orientacion, fallo) =>
   llamar('buscar-fotos', { texto: busqueda, orientacion })
     .then(d => {
       const foto = d.fotos?.[0]
       if (foto) avisarElegida(foto)
+      else fallo?.(SIN_RESULTADOS)
       return foto?.url ?? null
     })
-    .catch(() => null)
+    .catch(e => {
+      fallo?.(e.message)
+      return null
+    })
 
 // Las fotos de Unsplash para una búsqueda (hasta 24; vacío si falla). No se avisa a Unsplash: eso se hace al elegir una
-const fotosDe = (busqueda, orientacion) =>
+const fotosDe = (busqueda, orientacion, fallo) =>
   llamar('buscar-fotos', { texto: busqueda, orientacion })
-    .then(d => d.fotos ?? [])
-    .catch(() => [])
+    .then(d => {
+      if (!d.fotos?.length) fallo?.(SIN_RESULTADOS)
+      return d.fotos ?? []
+    })
+    .catch(e => {
+      fallo?.(e.message)
+      return []
+    })
+
+// El aviso para el panel cuando el asistente no ha podido poner todas las fotos: cuántas y por qué (cantidad y motivo, como los da alFallarFotos)
+export const textoFotosFallidas = ({ cantidad, motivo }) =>
+  `El asistente ha terminado, pero no ha podido poner ${cantidad} ${cantidad === 1 ? 'foto' : 'fotos'}. ${motivo === SIN_RESULTADOS ? 'La búsqueda no encontró nada.' : motivo}`
 
 /* Junta cambios nuevos con los que ya había. Si un cambio nuevo sustituye un bloque entero (las secciones de la
    carta, el menú del día, la marca), los cambios sueltos de dentro de ese bloque ya no valen y se quitan.
@@ -58,8 +76,11 @@ export const rutaTipografia = datos => (datos?.marca ? 'marca.theme.fonts' : 'th
 /* Convierte la respuesta de la IA en cambios del editor, comprobando cada uno: solo rutas que existen en la
    página, colores bien escritos, tipografías de la lista, alérgenos de los 14 oficiales. Las fotos se buscan en
    Unsplash y se pone la primera. actual: los datos de la página tal como están ahora. */
-export async function cambiosDeIA(resultado, campos, actual, { maxSecciones = 10, maxPlatos = 20 } = {}) {
+export async function cambiosDeIA(resultado, campos, actual, { maxSecciones = 10, maxPlatos = 20, alFallarFotos } = {}) {
   const porRuta = new Map(campos.map(c => [c.ruta, c]))
+  // Las búsquedas de fotos que no han dado foto: se apuntan para avisar al final (cuántas y el motivo de la primera que falló de verdad)
+  const fallos = []
+  const fallo = motivo => fallos.push(motivo)
   const esCarta = Array.isArray(actual?.secciones)
   const orientacion = esCarta ? 'portrait' : undefined
   const cambios = {}
@@ -69,10 +90,10 @@ export async function cambiosDeIA(resultado, campos, actual, { maxSecciones = 10
   const menu = esCarta && resultado.menu?.grupos?.length ? resultado.menu : null
   if (secciones) {
     // Diseños con foto por plato (polaroid, galería, revista e inmersiva): una foto por plato, cuadrada; en los demás, una por sección (en vertical)
-    const porPlato = ['polaroid', 'galeria', 'revista', 'inmersiva'].includes(actual.diseno)
-    const fotos = await Promise.all(secciones.map(s => (!porPlato && s.busquedaFoto?.trim() ? primeraFoto(s.busquedaFoto, orientacion) : null)))
+    const porPlato = ESTILOS_CARTA_CON_FOTO_POR_PLATO.includes(actual.diseno)
+    const fotos = await Promise.all(secciones.map(s => (!porPlato && s.busquedaFoto?.trim() ? primeraFoto(s.busquedaFoto, orientacion, fallo) : null)))
     const fotosPlatos = porPlato
-      ? await Promise.all(secciones.map(s => Promise.all((s.platos ?? []).slice(0, maxPlatos).map(p => (p.busquedaFoto?.trim() ? primeraFoto(p.busquedaFoto, 'square') : null)))))
+      ? await Promise.all(secciones.map(s => Promise.all((s.platos ?? []).slice(0, maxPlatos).map(p => (p.busquedaFoto?.trim() ? primeraFoto(p.busquedaFoto, 'square', fallo) : null)))))
       : []
     const todosLosPlatos = actual.secciones.flatMap(s => s.platos)
     cambios.secciones = secciones.map((s, i) => {
@@ -96,7 +117,7 @@ export async function cambiosDeIA(resultado, campos, actual, { maxSecciones = 10
     })
   }
   if (menu) {
-    const foto = menu.busquedaFoto?.trim() ? await primeraFoto(menu.busquedaFoto, orientacion) : null
+    const foto = menu.busquedaFoto?.trim() ? await primeraFoto(menu.busquedaFoto, orientacion, fallo) : null
     cambios.menuDia = {
       ...actual.menuDia,
       titulo: sinGuionLargo(menu.titulo || actual.menuDia?.titulo || 'Menú del día'),
@@ -130,7 +151,7 @@ export async function cambiosDeIA(resultado, campos, actual, { maxSecciones = 10
   )
   // Cada hueco, la primera foto de su búsqueda que no se haya puesto ya en otro hueco (aunque la IA repita la búsqueda, no sale la misma foto dos veces);
   // si todas las de esa búsqueda ya están usadas, la primera
-  const listas = await Promise.all(fotos.map(f => fotosDe(f.busqueda, orientacion)))
+  const listas = await Promise.all(fotos.map(f => fotosDe(f.busqueda, orientacion, fallo)))
   const usadas = new Set()
   fotos.forEach((f, i) => {
     const elegida = listas[i].find(x => !usadas.has(x.url)) ?? listas[i][0]
@@ -139,6 +160,7 @@ export async function cambiosDeIA(resultado, campos, actual, { maxSecciones = 10
     avisarElegida(elegida)
     cambios[f.ruta] = elegida.url
   })
+  if (fallos.length && alFallarFotos) alFallarFotos({ cantidad: fallos.length, motivo: fallos.find(m => m !== SIN_RESULTADOS) ?? SIN_RESULTADOS })
   return cambios
 }
 

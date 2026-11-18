@@ -175,7 +175,7 @@ export default function usePerfilAcciones(datos) {
     setFiltroCarta(i.filtroCarta ?? 100)
     setColorFiltroCarta(i.colorFiltroCarta ?? '')
     setDetallePrecio(i.detallePrecio ?? 'raya')
-    setTipoCarta(i.tipoCarta ?? (PLANTILLAS.find(p => p.clave === i.tema)?.carta === 'laca' ? 'promociones' : 'carta'))
+    setTipoCarta(i.tipoCarta ?? (i.tematica === 'promociones' || PLANTILLAS.find(p => p.clave === i.tema)?.carta === 'laca' ? 'promociones' : 'carta'))
     setHero(i.hero ?? 'polaroid')
     setBarra(i.barra ?? '')
     setEstilo(i.estilo ?? 'revista')

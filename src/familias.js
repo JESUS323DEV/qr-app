@@ -26,6 +26,10 @@ export const FAMILIAS = {
   base:      { nombre: 'Base',      ficha: null,        carta: 'base',      para: 'La carta sencilla de siempre (con scroll).' },
 }
 
+// Los estilos de carta (Menú y ofertas) que pintan una foto por cada plato o servicio. Los demás (Base) no: solo llevan una foto general. Es la lista que usan el
+// selector de estilo del Editor (para separarlos), las imágenes que enseña el Editor y la búsqueda de fotos del asistente
+export const ESTILOS_CARTA_CON_FOTO_POR_PLATO = ['polaroid', 'galeria', 'revista', 'inmersiva']
+
 // ¿La versión de ficha de esta familia va por piezas? (se puede mezclar y vale de portada de miniweb)
 export const fichaPorPiezas = familia => Boolean(HEROS[FAMILIAS[familia]?.ficha]?.piezas)
 

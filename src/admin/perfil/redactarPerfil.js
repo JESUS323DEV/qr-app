@@ -27,7 +27,9 @@ export default async function redactarPerfil(datos, base, cambios, nombreCrear, 
   })
   avisar('Buscando fotos...')
   // Una carta montada con el asistente: como mucho 5 grupos de 5 platos (lo que la carta aguanta de sobra y lo que cabe bien en una demo)
-  const deIA = await cambiosDeIA({ ...resultado, tipografia: '' }, campos, preparada, conColores && esCarta ? { maxSecciones: 5, maxPlatos: 5 } : {})
+  // Las fotos que no se han podido poner (límite de búsquedas, sin resultados...): se devuelven para avisar en el panel
+  let fotosFallidas = null
+  const deIA = await cambiosDeIA({ ...resultado, tipografia: '' }, campos, preparada, { ...(conColores && esCarta ? { maxSecciones: 5, maxPlatos: 5 } : {}), alFallarFotos: f => (fotosFallidas = f) })
   for (const ruta of ['nombre', 'marca.nombre', 'hero.diseno', 'hero.barra', 'hero.portada']) delete deIA[ruta]
-  return { deIA, historial: [{ peticion: cuento.trim(), resumen: sinGuionLargo(resultado.resumen ?? '') }] }
+  return { deIA, fotosFallidas, historial: [{ peticion: cuento.trim(), resumen: sinGuionLargo(resultado.resumen ?? '') }] }
 }

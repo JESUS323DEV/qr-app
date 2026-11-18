@@ -50,7 +50,7 @@ import { tipoDe } from '../lib/tematicas'
 import { HEROS } from '../heros'
 import { FAMILIAS } from '../familias'
 import { leerRuta, maxDe } from './datos'
-import { fusionar } from './ia'
+import { fusionar, textoFotosFallidas } from './ia'
 import { ESTRUCTURA_DEFECTO, PanelColoresMiniweb, Plegable, SIN_PORTADA_MINIWEB } from './PanelesMiniweb'
 import { TEXTO_EXTRA_EJEMPLO, TextosHorario } from './TextosEditor'
 
@@ -228,6 +228,8 @@ export function NuevoPerfil({ filas, recargar, abrir, cargar }) {
         const terminar = !DISENO_IA_ACTIVO
         const hecho = await redactar(base, cambios, nombreHecho, setDisenando, { conColores: terminar })
         let deIA = hecho.deIA
+        // Si alguna foto no se ha podido poner, se dice cuántas y por qué (antes se quedaban sin foto sin avisar)
+        if (hecho.fotosFallidas) setError(textoFotosFallidas(hecho.fotosFallidas))
         if (terminar) {
           // Los colores que ha pintado van a los selectores del Editor (paleta de la marca y colores sueltos), no a los cambios del asistente
           const { paleta, sueltos, resto } = repartirColores(deIA)
