@@ -89,7 +89,24 @@ describe('fotos que no se han podido poner', () => {
     expect(aviso).toHaveBeenCalledWith({ cantidad: 2, motivo: 'sin resultados' })
   })
 
+  it('si la IA no pide foto para los platos de un estilo con foto por plato, avisa de que no la ha pedido', async () => {
+    const aviso = vi.fn()
+    const sinBusquedas = [{ nombre: 'Entrantes', busquedaFoto: '', platos: [{ nombre: 'A', descripcion: '', precio: '1 €', alergenos: [], busquedaFoto: '' }, { nombre: 'B', descripcion: '', precio: '2 €', alergenos: [], busquedaFoto: '' }] }]
+    await cambiosDeIA({ secciones: sinBusquedas, cambios: [], fotos: [] }, [], carta('revista'), { alFallarFotos: aviso })
+    expect(aviso).toHaveBeenCalledWith({ cantidad: 2, motivo: 'sin búsqueda' })
+    expect(peticiones).toHaveLength(0)
+  })
+
+  it('un error real del servidor se prefiere como motivo a "no ha pedido foto"', async () => {
+    buscador.modo = 'limite'
+    const aviso = vi.fn()
+    const mezcla = [{ nombre: 'Entrantes', busquedaFoto: '', platos: [{ nombre: 'A', descripcion: '', precio: '1 €', alergenos: [], busquedaFoto: '' }, { nombre: 'B', descripcion: '', precio: '2 €', alergenos: [], busquedaFoto: 'b dish' }] }]
+    await cambiosDeIA({ secciones: mezcla, cambios: [], fotos: [] }, [], carta('galeria'), { alFallarFotos: aviso })
+    expect(aviso).toHaveBeenCalledWith({ cantidad: 2, motivo: 'Has llegado al límite de búsquedas de esta hora. Espera un poco.' })
+  })
+
   it('el texto del aviso dice cuántas y por qué, sin guion largo', () => {
+    expect(textoFotosFallidas({ cantidad: 4, motivo: 'sin búsqueda' })).toBe('El asistente ha terminado, pero no ha podido poner 4 fotos. No ha pedido foto para esos platos.')
     expect(textoFotosFallidas({ cantidad: 12, motivo: 'Has llegado al límite de búsquedas de esta hora. Espera un poco.' })).toBe(
       'El asistente ha terminado, pero no ha podido poner 12 fotos. Has llegado al límite de búsquedas de esta hora. Espera un poco.',
     )

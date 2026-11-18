@@ -27,6 +27,8 @@ export const sinGuionLargo = texto => texto.replace(/\s*—\s*/g, ', ')
 
 // Cuando una búsqueda de fotos no da foto, se apunta el motivo con `fallo` (el mensaje del servidor, o SIN_RESULTADOS si fue bien pero no encontró nada)
 const SIN_RESULTADOS = 'sin resultados'
+// Un plato de un estilo con foto por plato para el que la IA no ha pedido ninguna búsqueda (no hay nada que buscar)
+const SIN_BUSQUEDA = 'sin búsqueda'
 
 // Primera foto de Unsplash para una búsqueda (o null). Se avisa a Unsplash de que se ha elegido.
 const primeraFoto = (busqueda, orientacion, fallo) =>
@@ -56,7 +58,7 @@ const fotosDe = (busqueda, orientacion, fallo) =>
 
 // El aviso para el panel cuando el asistente no ha podido poner todas las fotos: cuántas y por qué (cantidad y motivo, como los da alFallarFotos)
 export const textoFotosFallidas = ({ cantidad, motivo }) =>
-  `El asistente ha terminado, pero no ha podido poner ${cantidad} ${cantidad === 1 ? 'foto' : 'fotos'}. ${motivo === SIN_RESULTADOS ? 'La búsqueda no encontró nada.' : motivo}`
+  `El asistente ha terminado, pero no ha podido poner ${cantidad} ${cantidad === 1 ? 'foto' : 'fotos'}. ${motivo === SIN_RESULTADOS ? 'La búsqueda no encontró nada.' : motivo === SIN_BUSQUEDA ? 'No ha pedido foto para esos platos.' : motivo}`
 
 /* Junta cambios nuevos con los que ya había. Si un cambio nuevo sustituye un bloque entero (las secciones de la
    carta, el menú del día, la marca), los cambios sueltos de dentro de ese bloque ya no valen y se quitan.
@@ -81,6 +83,10 @@ export async function cambiosDeIA(resultado, campos, actual, { maxSecciones = 10
   // Las búsquedas de fotos que no han dado foto: se apuntan para avisar al final (cuántas y el motivo de la primera que falló de verdad)
   const fallos = []
   const fallo = motivo => fallos.push(motivo)
+  const sinBusqueda = () => {
+    fallo(SIN_BUSQUEDA)
+    return null
+  }
   const esCarta = Array.isArray(actual?.secciones)
   const orientacion = esCarta ? 'portrait' : undefined
   const cambios = {}
@@ -93,7 +99,7 @@ export async function cambiosDeIA(resultado, campos, actual, { maxSecciones = 10
     const porPlato = ESTILOS_CARTA_CON_FOTO_POR_PLATO.includes(actual.diseno)
     const fotos = await Promise.all(secciones.map(s => (!porPlato && s.busquedaFoto?.trim() ? primeraFoto(s.busquedaFoto, orientacion, fallo) : null)))
     const fotosPlatos = porPlato
-      ? await Promise.all(secciones.map(s => Promise.all((s.platos ?? []).slice(0, maxPlatos).map(p => (p.busquedaFoto?.trim() ? primeraFoto(p.busquedaFoto, 'square', fallo) : null)))))
+      ? await Promise.all(secciones.map(s => Promise.all((s.platos ?? []).slice(0, maxPlatos).map(p => (p.busquedaFoto?.trim() ? primeraFoto(p.busquedaFoto, 'square', fallo) : sinBusqueda())))))
       : []
     const todosLosPlatos = actual.secciones.flatMap(s => s.platos)
     cambios.secciones = secciones.map((s, i) => {
@@ -160,7 +166,7 @@ export async function cambiosDeIA(resultado, campos, actual, { maxSecciones = 10
     avisarElegida(elegida)
     cambios[f.ruta] = elegida.url
   })
-  if (fallos.length && alFallarFotos) alFallarFotos({ cantidad: fallos.length, motivo: fallos.find(m => m !== SIN_RESULTADOS) ?? SIN_RESULTADOS })
+  if (fallos.length && alFallarFotos) alFallarFotos({ cantidad: fallos.length, motivo: fallos.find(m => m !== SIN_RESULTADOS && m !== SIN_BUSQUEDA) ?? fallos.find(m => m !== SIN_RESULTADOS) ?? SIN_RESULTADOS })
   return cambios
 }
 

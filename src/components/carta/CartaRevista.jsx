@@ -26,10 +26,11 @@ function MenuDia({ menu }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex shrink-0 items-end justify-between gap-[1rem]">
-        {/* w-min: la columna del título mide lo que mide el título (que va en una sola línea) y el texto de cuándo se parte dentro de ese ancho */}
-        <div className="w-min min-w-0">
-          <h2 className="text-[color:var(--c-menu-titulo,inherit)] whitespace-nowrap font-demo-heading text-[2rem] leading-[0.95] [@media(min-height:46rem)]:text-[2.4rem] [@media(min-height:56rem)]:text-[2.8rem]">{menu.titulo}</h2>
-          {menu.cuando && <p className="mt-[0.3rem] text-[0.82rem] text-[color:var(--c-menu-cuando,var(--demo-muted))] [@media(min-height:46rem)]:text-[0.9rem]">{menu.cuando}</p>}
+        {/* w-fit: la columna mide lo que mide el título (en una sola línea si cabe) y el texto de cuándo se parte dentro de ese ancho (w-0 min-w-full: no ensancha la columna).
+            Si el título es largo, la columna se encoge con el hueco que deja el precio y el título pasa a dos líneas, en vez de montarse encima del precio */}
+        <div className="w-fit min-w-0">
+          <h2 className="text-[color:var(--c-menu-titulo,inherit)] break-words font-demo-heading text-[2rem] leading-[0.95] [@media(min-height:46rem)]:text-[2.4rem] [@media(min-height:56rem)]:text-[2.8rem]">{menu.titulo}</h2>
+          {menu.cuando && <p className="mt-[0.3rem] w-0 min-w-full text-[0.82rem] text-[color:var(--c-menu-cuando,var(--demo-muted))] [@media(min-height:46rem)]:text-[0.9rem]">{menu.cuando}</p>}
         </div>
         <p className="shrink-0 whitespace-nowrap precio-detalle font-demo-heading text-[length:calc(1.8rem*var(--demo-precio-escala,1))] italic leading-none text-[color:var(--demo-precio-texto,var(--demo-primary))] [@media(min-height:46rem)]:text-[length:calc(2.1rem*var(--demo-precio-escala,1))] [@media(min-height:56rem)]:text-[length:calc(2.4rem*var(--demo-precio-escala,1))]">{menu.precio}</p>
       </div>

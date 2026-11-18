@@ -3,7 +3,16 @@ import { aplicar } from '../../lib/ediciones'
 import { cambiosDeIA, camposParaIA, estructuraCarta, sinGuionLargo } from '../ia'
 import { getNegocio } from '../../negocios'
 import { llamar } from '../comun'
+import { ESTILOS_CARTA_CON_FOTO_POR_PLATO } from '../../familias'
 import { ajustarMaximos, camposQueRellena, ordenDeCarta, ordenDeColores, ordenDeFotos, ordenDeTextos } from './repartirColores'
+
+// Lo que la IA ve de la carta. La función del servidor solo le deja pedir fotos por plato en Polaroid y Galería (en los demás estilos las deja vacías), pero Revista e Inmersiva
+// también las pintan: se le enseña como Galería para que pida la foto de cada plato. Solo cambia lo que ve la IA, no lo que se guarda
+const estructuraParaIA = preparada => {
+  const estructura = estructuraCarta(preparada)
+  if (estructura && ESTILOS_CARTA_CON_FOTO_POR_PLATO.includes(estructura.diseno)) estructura.diseno = 'galeria'
+  return estructura
+}
 
 // El asistente escribe los textos y busca las fotos sobre el diseño armado: devuelve los cambios (sin tocar nombre, diseño ni portada). Solo lee los datos que se le pasan.
 // conColores (modo "terminar" de una miniweb): solo rellena Inicio, Horario y Reservar (el menú y los servicios no se tocan) y pinta también los colores
@@ -22,7 +31,7 @@ export default async function redactarPerfil(datos, base, cambios, nombreCrear, 
     perfil: producto,
     nombre: nombreCrear,
     campos,
-    carta: estructuraCarta(preparada),
+    carta: estructuraParaIA(preparada),
     alergenos: Object.keys(ALERGENOS),
   })
   avisar('Buscando fotos...')
