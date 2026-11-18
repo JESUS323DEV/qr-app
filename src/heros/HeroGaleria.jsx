@@ -44,7 +44,7 @@ function GaleriaMiniweb({ fotos, inicio, irA, nombre, estilo }) {
       type="button"
       aria-label={texto}
       onClick={() => pasar(paso)}
-      className={`absolute top-1/2 ${lado} z-10 flex h-[2.2rem] w-[2.2rem] -translate-y-1/2 items-center justify-center rounded-full bg-black/35 text-white backdrop-blur-sm transition-colors hover:bg-black/55`}
+      className={`pointer-events-auto absolute top-1/2 ${lado} z-10 flex h-[2.2rem] w-[2.2rem] -translate-y-1/2 items-center justify-center rounded-full bg-black/35 text-white backdrop-blur-sm transition-colors hover:bg-black/55`}
     >
       <Icono className="h-[1.2rem] w-[1.2rem]" strokeWidth={2.5} aria-hidden="true" />
     </button>
@@ -71,17 +71,25 @@ function GaleriaMiniweb({ fotos, inicio, irA, nombre, estilo }) {
       <CompartirJuntoAlBoton titulo={nombre} />
     </div>
   )
-  // El titular pegado abajo sobre un degradado oscuro (y, en 'sobre', también la descripción y el botón)
-  const textoSobreFoto = (
-    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/45 to-transparent px-[0.9rem] pb-[0.8rem] pt-[3rem] text-left text-white">
+  // El titular pegado abajo sobre un degradado oscuro (y, en 'sobre', también la descripción y el botón). posicion: dónde va
+  // (pegado abajo de la foto, o, en 'sobre', al pie de una columna que deja arriba el hueco de las flechas)
+  const textoSobreFoto = posicion => (
+    <div className={`${posicion} bg-gradient-to-t from-black/80 via-black/45 to-transparent px-[0.9rem] pb-[0.8rem] pt-[3rem] text-left text-white`}>
       {estilo.titularSobre && titularEl('pointer-events-none', 'text-[length:calc(1.5rem_+_max(0px,100svh_-_680px)_*_0.0288)]')}
       {estilo.textoSobre && (
         <>
-          {inicio.descripcion && <p style={rolDescripcion} className="mt-[0.35rem] text-[0.85rem] leading-[1.35] opacity-90">{inicio.descripcion}</p>}
+          {inicio.descripcion && <p style={rolDescripcion} className="mt-[0.35rem] text-[length:calc(0.85rem_+_max(0px,100svh_-_680px)_*_0.0065)] leading-[1.35] opacity-90">{inicio.descripcion}</p>}
           {botonEl}
         </>
       )}
     </div>
+  )
+  const flechasEnHueco = estilo.textoSobre && !estilo.carrusel
+  const flechas = n > 1 && (
+    <>
+      {flecha(-1, ChevronLeft, 'Foto anterior', 'left-[0.5rem]')}
+      {flecha(1, ChevronRight, 'Foto siguiente', 'right-[0.5rem]')}
+    </>
   )
   const hayTextoFuera = !estilo.titularSobre || (!estilo.textoSobre && (inicio.descripcion || (inicio.boton && inicio.botonA)))
   return (
@@ -111,15 +119,20 @@ function GaleriaMiniweb({ fotos, inicio, irA, nombre, estilo }) {
                 <Img src={f.src} alt={f.alt} className="h-full w-full object-cover" />
               </div>
             ))}
-            {(estilo.titularSobre || estilo.textoSobre) && textoSobreFoto}
+            {/* En 'sobre', el texto es largo: foto y texto en columna, y las flechas centradas en el hueco de arriba para no quedar encima */}
+            {flechasEnHueco ? (
+              <div className="pointer-events-none absolute inset-0 flex flex-col">
+                <div className="relative min-h-0 flex-1">
+                  {flechas}
+                </div>
+                {textoSobreFoto('pointer-events-auto shrink-0')}
+              </div>
+            ) : (
+              estilo.titularSobre && textoSobreFoto('absolute inset-x-0 bottom-0')
+            )}
           </>
         )}
-        {n > 1 && (
-          <>
-            {flecha(-1, ChevronLeft, 'Foto anterior', 'left-[0.5rem]')}
-            {flecha(1, ChevronRight, 'Foto siguiente', 'right-[0.5rem]')}
-          </>
-        )}
+        {!flechasEnHueco && flechas}
       </div>
       {/* Fuera de la foto: el titular (si no va sobre ella), la descripción y el botón */}
       {hayTextoFuera && (
